@@ -1,0 +1,179 @@
+<div class="addContainer">
+  <div class="modalHeader">
+    <div class="avatarDetails">
+      <div class="modalTitle">
+        {{dialogTitle}}
+      </div>
+    </div>
+    <button mat-icon-button mat-dialog-close class="modal-close-button" aria-label="Close dialog" type="button">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+  <div mat-dialog-content>
+    <form class="register-form m-4" [formGroup]="onlineApplicationForm" (ngSubmit)="submit()">
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Student Name</mat-label>
+            <input matInput formControlName="student_name" required>
+            @if (onlineApplicationForm.get('student_name')?.hasError('required')) {
+            <mat-error>
+              Student Name is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Application No</mat-label>
+            <input matInput formControlName="application_no" required>
+            @if (onlineApplicationForm.get('application_no')?.hasError('required')) {
+            <mat-error>
+              Application No is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Email</mat-label>
+            <input matInput formControlName="email" required>
+            @if (onlineApplicationForm.get('email')?.hasError('required')) {
+            <mat-error>
+              Email is required
+            </mat-error>
+            }
+            @if (onlineApplicationForm.get('email')?.hasError('email')) {
+            <mat-error>
+              Not a valid email
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Mobile</mat-label>
+            <input matInput formControlName="mobile" required>
+            @if (onlineApplicationForm.get('mobile')?.hasError('required')) {
+            <mat-error>
+              Mobile is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Gender</mat-label>
+            <mat-select formControlName="gender" required>
+              <mat-option [value]="'Male'">Male</mat-option>
+              <mat-option [value]="'Female'">Female</mat-option>
+              <mat-option [value]="'Other'">Other</mat-option>
+            </mat-select>
+            @if (onlineApplicationForm.get('gender')?.hasError('required')) {
+            <mat-error>
+              Gender is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Date of Birth</mat-label>
+            <input matInput [matDatepicker]="dobPicker" formControlName="date_of_birth" required>
+            <mat-datepicker-toggle matSuffix [for]="dobPicker"></mat-datepicker-toggle>
+            <mat-datepicker #dobPicker></mat-datepicker>
+            @if (onlineApplicationForm.get('date_of_birth')?.hasError('required')) {
+            <mat-error>
+              Date of Birth is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Course</mat-label>
+            <mat-select formControlName="course" required>
+              <mat-option [value]="'Computer Science'">Computer Science</mat-option>
+              <mat-option [value]="'Business Admin'">Business Admin</mat-option>
+              <mat-option [value]="'Law'">Law</mat-option>
+              <mat-option [value]="'Economics'">Economics</mat-option>
+              <mat-option [value]="'Management'">Management</mat-option>
+              <mat-option [value]="'Finance'">Finance</mat-option>
+              <mat-option [value]="'Political Science'">Political Science</mat-option>
+              <mat-option [value]="'Mechanical Eng'">Mechanical Eng</mat-option>
+              <mat-option [value]="'Physics'">Physics</mat-option>
+              <mat-option [value]="'Journalism'">Journalism</mat-option>
+              <mat-option [value]="'Electrical Eng'">Electrical Eng</mat-option>
+            </mat-select>
+            @if (onlineApplicationForm.get('course')?.hasError('required')) {
+            <mat-error>
+              Course is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Application Date</mat-label>
+            <input matInput [matDatepicker]="appPicker" formControlName="application_date" required>
+            <mat-datepicker-toggle matSuffix [for]="appPicker"></mat-datepicker-toggle>
+            <mat-datepicker #appPicker></mat-datepicker>
+            @if (onlineApplicationForm.get('application_date')?.hasError('required')) {
+            <mat-error>
+              Application Date is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Payment Status</mat-label>
+            <mat-select formControlName="payment_status" required>
+              <mat-option [value]="'Paid'">Paid</mat-option>
+              <mat-option [value]="'Unpaid'">Unpaid</mat-option>
+            </mat-select>
+            @if (onlineApplicationForm.get('payment_status')?.hasError('required')) {
+            <mat-error>
+              Payment Status is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Application Status</mat-label>
+            <mat-select formControlName="application_status" required>
+              <mat-option [value]="'Approved'">Approved</mat-option>
+              <mat-option [value]="'Pending'">Pending</mat-option>
+              <mat-option [value]="'Under Review'">Under Review</mat-option>
+              <mat-option [value]="'Draft'">Draft</mat-option>
+              <mat-option [value]="'Rejected'">Rejected</mat-option>
+            </mat-select>
+            @if (onlineApplicationForm.get('application_status')?.hasError('required')) {
+            <mat-error>
+              Application Status is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+          <div class="example-button-row">
+            <button mat-flat-button class="formSubmitBtn" [disabled]="!onlineApplicationForm.valid"
+              type="submit">Save</button>
+            <button mat-flat-button mat-dialog-close class="formCancelBtn" tabindex="-1">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,217 @@
+<div class="addContainer">
+  @if (!isDetails) {
+  <div class="modalHeader">
+    <div class="avatarDetails">
+      <div class="modalTitle">
+        {{dialogTitle}}
+      </div>
+    </div>
+    <button mat-icon-button mat-dialog-close class="modal-close-button" aria-label="Close dialog" type="button">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+  <div mat-dialog-content>
+    <form class="register-form m-4" [formGroup]="leaveRequestForm!" (ngSubmit)="submit()">
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Leave Type</mat-label>
+            <input matInput formControlName="leaveType" required>
+            @if (leaveRequestForm?.get('leaveType')?.hasError('required')) {
+            <mat-error>Leave type required</mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Start Date</mat-label>
+            <input matInput [matDatepicker]="startPicker" formControlName="startDate" required>
+            <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+            <mat-datepicker #startPicker></mat-datepicker>
+            @if (leaveRequestForm?.get('startDate')?.hasError('required')) {
+            <mat-error>Start date required</mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>End Date</mat-label>
+            <input matInput [matDatepicker]="endPicker" formControlName="endDate" required>
+            <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
+            <mat-datepicker #endPicker></mat-datepicker>
+            @if (leaveRequestForm?.get('endDate')?.hasError('required')) {
+            <mat-error>End date required</mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Total Days</mat-label>
+            <input matInput type="number" formControlName="totalDays" required>
+            @if (leaveRequestForm?.get('totalDays')?.hasError('required')) {
+            <mat-error>Total days required</mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Status</mat-label>
+            <mat-select formControlName="status" required>
+              <mat-option [value]="'Approved'">Approved</mat-option>
+              <mat-option [value]="'Pending'">Pending</mat-option>
+              <mat-option [value]="'Rejected'">Rejected</mat-option>
+            </mat-select>
+            @if (leaveRequestForm?.get('status')?.hasError('required')) {
+            <mat-error>Select status</mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Date Submitted</mat-label>
+            <input matInput [matDatepicker]="submittedPicker" formControlName="dateSubmitted" required>
+            <mat-datepicker-toggle matSuffix [for]="submittedPicker"></mat-datepicker-toggle>
+            <mat-datepicker #submittedPicker></mat-datepicker>
+            @if (leaveRequestForm?.get('dateSubmitted')?.hasError('required')) {
+            <mat-error>Date submitted
+              required</mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Reason for Leave</mat-label>
+            <input matInput formControlName="reasonForLeave" required>
+            @if (leaveRequestForm?.get('reasonForLeave')?.hasError('required')) {
+            <mat-error>Reason for leave
+              required</mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Approver</mat-label>
+            <input matInput formControlName="approver" required>
+            @if (leaveRequestForm?.get('approver')?.hasError('required')) {
+            <mat-error>Approver required</mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Comments</mat-label>
+            <textarea matInput formControlName="comments"></textarea>
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+          <div class="example-button-row">
+            <button mat-flat-button class="formSubmitBtn" [disabled]="!leaveRequestForm!.valid"
+              type="submit">Save</button>
+            <button mat-flat-button mat-dialog-close class="formCancelBtn" tabindex="-1">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+  }
+  @if (isDetails) {
+  <div class="contact-details">
+    <div class="modalHeader">
+      <div class="avatarDetails">
+        <div class="modalTitle">
+          <div class="contact-details-name">{{leaveRequest.leaveType}}</div>
+        </div>
+      </div>
+      <button mat-icon-button mat-dialog-close class="modal-close-button" aria-label="Close dialog" type="button">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+    <div mat-dialog-content>
+      <mat-card-content>
+        <div class="d-flex m-b-20">
+          <div class="font-b-500"> Leave Type: </div>
+          <div class="m-l-10 m-r-10"> {{leaveRequest.leaveType}}
+          </div>
+        </div>
+        <div class="d-flex m-b-20">
+          <div class="font-b-500">Start Date: </div>
+          <div class="m-l-10 m-r-10 d-flex"> <mat-icon
+              class="tbl-icon material-icons-outlined col-green">calendar_month</mat-icon>
+            {{leaveRequest.startDate | date: 'MMMM d, yyyy'}}
+          </div>
+        </div>
+        <div class="d-flex m-b-20">
+          <div class="font-b-500">End Date: </div>
+          <div class="m-l-10 m-r-10 d-flex"> <mat-icon
+              class="tbl-icon material-icons-outlined col-green">calendar_month</mat-icon>
+            {{leaveRequest.endDate | date: 'MMMM d, yyyy'}}
+          </div>
+        </div>
+        <div class="d-flex m-b-20">
+          <div class="font-b-500">Total Days: </div>
+          <div class="m-l-10 m-r-10"> {{leaveRequest.totalDays}}
+          </div>
+        </div>
+        <div class="d-flex m-b-20" style="align-items: center;">
+          <div class="font-b-500">Status: </div>
+          <div class="m-l-10 m-r-10">
+            @switch (leaveRequest.status) {
+            @case ('Approved') {
+            <div>
+              <span class="badge badge-solid-green">{{ leaveRequest.status }}</span>
+            </div>
+            }
+            @case ('Pending') {
+            <div>
+              <span class="badge badge-solid-purple">{{ leaveRequest.status }}</span>
+            </div>
+            }
+            @case ('Rejected') {
+            <div>
+              <span class="badge badge-solid-orange">{{ leaveRequest.status }}</span>
+            </div>
+            }
+            }
+          </div>
+        </div>
+        <div class="d-flex m-b-20">
+          <div class="font-b-500">Date Submitted: </div>
+          <div class="m-l-10 m-r-10 d-flex"> <mat-icon
+              class="tbl-icon material-icons-outlined col-green">calendar_month</mat-icon>
+            {{leaveRequest.dateSubmitted | date: 'MMMM d, yyyy'}}
+          </div>
+        </div>
+        <div class="d-flex m-b-20">
+          <div class="font-b-500">Reason For Leave: </div>
+          <div class="m-l-10 m-r-10"> {{leaveRequest.reasonForLeave}}
+          </div>
+        </div>
+        <div class="d-flex m-b-20">
+          <div class="font-b-500">Approver: </div>
+          <div class="m-l-10 m-r-10 d-flex">
+            <mat-icon class="tbl-icon material-icons-outlined col-blue">person_3</mat-icon>
+            {{leaveRequest.approver}}
+          </div>
+        </div>
+        <div class="d-flex m-b-20">
+          <div class="font-b-500">Comments: </div>
+          <div class="m-l-10 m-r-10 d-flex">
+            <mat-icon class="tbl-icon material-icons-outlined col-brown">notes</mat-icon>
+            {{leaveRequest.comments}}
+          </div>
+        </div>
+      </mat-card-content>
+    </div>
+  </div>
+  }
+</div>

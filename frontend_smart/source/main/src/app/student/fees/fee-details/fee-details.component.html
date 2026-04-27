@@ -1,0 +1,19 @@
+<section class="content">
+  <div class="content-block">
+    <div class="block-header">
+      <app-breadcrumb [title]="'Fee Details'" [items]="['Fees']" [active_item]="'Fee Details'"></app-breadcrumb>
+    </div>
+    <div class="row">
+      <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+        <div class="card">
+          <div class="material-wrapper">
+            <app-master-table [title]="'Fee Details'" [columnDefinitions]="columnDefinitions" [dataSource]="dataSource"
+              [isLoading]="isLoading" [showAdd]="false" [showEdit]="false" [showDelete]="false" [showBulkDelete]="false"
+              [showCheckbox]="false" [enableRowClick]="true" (refresh)="refresh()"
+              (rowClick)="detailsCall($event)"></app-master-table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

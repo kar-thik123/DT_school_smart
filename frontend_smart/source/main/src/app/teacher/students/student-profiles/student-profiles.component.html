@@ -1,0 +1,254 @@
+<section class="content">
+    <div class="content-block">
+        @for (breadscrum of breadscrums; track breadscrum) {
+        <div class="block-header">
+            <!-- breadcrumb -->
+            <app-breadcrumb [title]="breadscrum.title" [items]="breadscrum.items" [active_item]="breadscrum.active">
+            </app-breadcrumb>
+        </div>
+        }
+        <div class="row clearfix">
+            <div class="col-lg-4 col-md-12">
+                <div class="profile-card">
+                    <div class="contact-grid">
+                        <div class="profile-header">
+                            <div class="user-name">{{studentProfile.firstName}} {{studentProfile.lastName}}</div>
+                            <div class="name-center">{{studentProfile.department}}</div>
+                        </div>
+                        <img [src]="studentProfile.img" class="user-img" alt="">
+                        <p>
+                            <mat-icon class="location-icon">location_on</mat-icon>
+                            {{studentProfile.address}}
+                            <br />{{studentProfile.location}}
+                        </p>
+                        <div>
+                            <span class="phone">
+                                <mat-icon>phone</mat-icon>{{studentProfile.mobile}}
+                            </span>
+                        </div>
+                        <div class="social-stats mb-4">
+                            <div class="row">
+                                <div class="col-4">
+                                    <h5>{{studentProfile.following}}</h5>
+                                    <small>Following</small>
+                                </div>
+                                <div class="col-4">
+                                    <h5>{{studentProfile.followers}}</h5>
+                                    <small>Followers</small>
+                                </div>
+                                <div class="col-4">
+                                    <h5>{{studentProfile.posts}}</h5>
+                                    <small>Posts</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="profile-card">
+                    <mat-tab-group mat-align-tabs="start" animationDuration="0ms">
+                        <mat-tab>
+                            <ng-template mat-tab-label>
+                                <mat-icon class="msr-2">person</mat-icon>
+                                About
+                            </ng-template>
+                            <div class="p-4">
+                                <p class="text-default">{{studentProfile.bio}}</p>
+                                <ul class="list-group list-group-unbordered">
+                                    <li class="list-group-item">
+                                        <b>Gender </b>
+                                        <div class="profile-desc-item float-end">{{studentProfile.gender}}</div>
+                                    </li>
+                                    <li class="list-group-item">
+                                        <b>Lectures Taken </b>
+                                        <div class="profile-desc-item float-end">{{studentProfile.stats.lectures}}</div>
+                                    </li>
+                                    <li class="list-group-item">
+                                        <b>Department </b>
+                                        <div class="profile-desc-item float-end">{{studentProfile.stats.category}}</div>
+                                    </li>
+                                </ul>
+                            </div>
+                        </mat-tab>
+                        <mat-tab>
+                            <ng-template mat-tab-label>
+                                <mat-icon class="msr-2">equalizer</mat-icon>
+                                Skills
+                            </ng-template>
+                            <ul class="list-unstyled p-4">
+                                @for (skill of studentProfile.skills; track skill) {
+                                <li>
+                                    <div class="skill-label">
+                                        <span>{{skill.name}}</span>
+                                        <span class="skill-percentage">{{skill.value}}%</span>
+                                    </div>
+                                    <div class="progress skill-progress">
+                                        <div class="progress-bar {{skill.color}}" role="progressbar"
+                                            [style.width.%]="skill.value" aria-valuenow="skill.value" aria-valuemin="0"
+                                            aria-valuemax="100"></div>
+                                    </div>
+                                </li>
+                                }
+                            </ul>
+                        </mat-tab>
+                    </mat-tab-group>
+                </div>
+            </div>
+            <div class="col-lg-8 col-md-12">
+                <div class="card">
+                    <mat-tab-group animationDuration="0ms">
+                        <mat-tab>
+                            <ng-template mat-tab-label>
+                                <mat-icon class="msr-2">face</mat-icon>
+                                About Me
+                            </ng-template>
+                            <div class="col-lg-12 col-md-12 col-sm-12">
+                                <div class="project_widget">
+                                    <div class="header">
+                                        <h2><strong>About</strong></h2>
+                                    </div>
+                                    <div class="body">
+                                        <div class="row info-row">
+                                            <div class="col-md-3 col-6 b-r">
+                                                <strong>Full Name</strong>
+                                                <p class="text-muted">{{studentProfile.firstName}}
+                                                    {{studentProfile.lastName}}</p>
+                                            </div>
+                                            <div class="col-md-3 col-6 b-r">
+                                                <strong>Mobile</strong>
+                                                <p class="text-muted">{{studentProfile.mobile}}</p>
+                                            </div>
+                                            <div class="col-md-3 col-6 b-r">
+                                                <strong>Email</strong>
+                                                <p class="text-muted">{{studentProfile.email}}</p>
+                                            </div>
+                                            <div class="col-md-3 col-6">
+                                                <strong>Location</strong>
+                                                <p class="text-muted">{{studentProfile.location}}</p>
+                                            </div>
+                                        </div>
+                                        <div class="bio-text">
+                                            <p>Open after rule place He earth earth good called days unto
+                                                which wherein day doesn't said day image
+                                                signs fish days forth for evening whose his make his bearing
+                                                years gathering good brought without.</p>
+                                            <p>Years living creepeth. Form them yielding behold greater
+                                                divided void was fowl earth in. Spirit Bring
+                                                grass they're you have shall years so morning. Grass
+                                                gathering won't heaven set greater darkness forth
+                                                abundantly he.</p>
+                                            <p>Isn't hath, forth. Brought sea subdue, from divided replenish
+                                                creature after creeping abundantly fly
+                                                is cattle fill were years years may darkness blessed which
+                                                land creepeth good moving good. Life living
+                                                you're.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-12 col-md-12 col-sm-12">
+                                <div class="project_widget">
+                                    <div class="header">
+                                        <h2><strong>Education</strong></h2>
+                                    </div>
+                                    <div class="body">
+                                        <ul class="education-list">
+                                            @for (edu of studentProfile.education; track edu) {
+                                            <li>
+                                                <mat-icon class="education-icon">{{edu.icon}}</mat-icon>
+                                                <span>{{edu.title}}</span>
+                                            </li>
+                                            }
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-12 col-md-12 col-sm-12">
+                                <div class="project_widget">
+                                    <div class="header">
+                                        <h2><strong>Certificates</strong></h2>
+                                    </div>
+                                    <div class="body">
+                                        <ul class="certificate-list">
+                                            @for (cert of studentProfile.certificates; track cert) {
+                                            <li>
+                                                <mat-icon class="certificate-icon">{{cert.icon}}</mat-icon>
+                                                <span>{{cert.title}}</span>
+                                            </li>
+                                            }
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </mat-tab>
+                        <mat-tab>
+                            <ng-template mat-tab-label>
+                                <mat-icon class="msr-2">settings</mat-icon>
+                                Settings
+                            </ng-template>
+                            <div class="header">
+                                <h2><strong>Account</strong> Settings</h2>
+                            </div>
+                            <div class="body">
+                                <div class="row clearfix">
+                                    <div class="col-lg-6 col-md-12">
+                                        <div class="form-group">
+                                            <mat-form-field appearance="outline" class="example-full-width">
+                                                <mat-label>First Name</mat-label>
+                                                <input matInput [value]="studentProfile.firstName">
+                                            </mat-form-field>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-6 col-md-12">
+                                        <div class="form-group">
+                                            <mat-form-field appearance="outline" class="example-full-width">
+                                                <mat-label>Last Name</mat-label>
+                                                <input matInput [value]="studentProfile.lastName">
+                                            </mat-form-field>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4 col-md-12">
+                                        <div class="form-group">
+                                            <mat-form-field appearance="outline" class="example-full-width">
+                                                <mat-label>Roll No</mat-label>
+                                                <input matInput [value]="studentProfile.rollNo">
+                                            </mat-form-field>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4 col-md-12">
+                                        <div class="form-group">
+                                            <mat-form-field appearance="outline" class="example-full-width">
+                                                <mat-label>Email</mat-label>
+                                                <input matInput [value]="studentProfile.email">
+                                            </mat-form-field>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4 col-md-12">
+                                        <div class="form-group">
+                                            <mat-form-field appearance="outline" class="example-full-width">
+                                                <mat-label>Class</mat-label>
+                                                <input matInput [value]="studentProfile.class">
+                                            </mat-form-field>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-12">
+                                        <div class="form-group">
+                                            <mat-form-field appearance="outline" class="example-full-width">
+                                                <mat-label>Address</mat-label>
+                                                <textarea matInput [value]="studentProfile.address"></textarea>
+                                            </mat-form-field>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-12">
+                                        <div class="form-group">
+                                            <button mat-raised-button color="primary">Save Changes</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </mat-tab>
+                    </mat-tab-group>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

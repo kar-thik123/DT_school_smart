@@ -1,0 +1,189 @@
+<div class="addContainer">
+  <div class="modalHeader">
+    <div class="avatarDetails">
+      <div class="modalTitle">
+        {{ dialogTitle }}
+      </div>
+    </div>
+    <button mat-icon-button mat-dialog-close class="modal-close-button" aria-label="Close dialog" type="button">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+  <div mat-dialog-content>
+    <form class="register-form m-4" [formGroup]="visitorsForm" (ngSubmit)="submit()">
+      <div class="row">
+        <!-- Visitor ID -->
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Visitor ID</mat-label>
+            <input matInput formControlName="visitorId" required>
+            @if (visitorsForm.get('visitorId')?.hasError('required')) {
+            <mat-error>
+              Visitor ID is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+        <!-- Visitor Name -->
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Visitor Name</mat-label>
+            <input matInput formControlName="visitorName" required>
+            @if (visitorsForm.get('visitorName')?.hasError('required')) {
+            <mat-error>
+              Visitor Name is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="row">
+        <!-- Visit Date -->
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Visit Date</mat-label>
+            <input matInput [matDatepicker]="visitDatePicker" formControlName="visitDate" required>
+            <mat-datepicker-toggle matSuffix [for]="visitDatePicker"></mat-datepicker-toggle>
+            <mat-datepicker #visitDatePicker></mat-datepicker>
+            @if (visitorsForm.get('visitDate')?.hasError('required')) {
+            <mat-error>
+              Visit Date is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+        <!-- Visit Time -->
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Visit Time</mat-label>
+            <input matInput [matTimepicker]="timepicker" formControlName="visitTime" [placeholder]="'HH:MM'">
+            <mat-timepicker-toggle matIconSuffix [for]="timepicker" />
+            <mat-timepicker #timepicker />
+            @if (visitorsForm.get('visitTime')?.hasError('required')) {
+            <mat-error>
+              Visit Time is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="row">
+        <!-- Purpose of Visit -->
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Purpose of Visit</mat-label>
+            <input matInput formControlName="purposeOfVisit" required>
+            @if (visitorsForm.get('purposeOfVisit')?.hasError('required')) {
+            <mat-error>
+              Purpose of Visit is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+        <!-- Contact Number -->
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Contact Number</mat-label>
+            <input matInput formControlName="contactNumber" required>
+            @if (visitorsForm.get('contactNumber')?.hasError('required')) {
+            <mat-error>
+              Contact Number is required
+            </mat-error>
+            }
+            @if (visitorsForm.get('contactNumber')?.hasError('pattern')) {
+            <mat-error>
+              Contact Number must be 10 digits
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="row">
+        <!-- Visitor Type -->
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Visitor Type</mat-label>
+            <mat-select formControlName="visitorType" required>
+              <mat-option value="Parent">Parent</mat-option>
+              <mat-option value="Vendor">Vendor</mat-option>
+              <mat-option value="Guest">Guest</mat-option>
+              <mat-option value="Volunteer">Volunteer</mat-option>
+              <mat-option value="Contractor">Contractor</mat-option>
+              <mat-option value="Applicant">Applicant</mat-option>
+              <mat-option value="Chaperone">Chaperone</mat-option>
+              <mat-option value="Counselor">Counselor</mat-option>
+            </mat-select>
+            @if (visitorsForm.get('visitorType')?.hasError('required')) {
+            <mat-error>
+              Visitor Type is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+        <!-- ID Proof Type -->
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>ID Proof Type</mat-label>
+            <mat-select formControlName="idProofType">
+              <mat-option value="Driver's License">Driver's License</mat-option>
+              <mat-option value="Passport">Passport</mat-option>
+              <mat-option value="Business Card">Business Card</mat-option>
+              <mat-option value="Employee ID">Employee ID</mat-option>
+              <mat-option value="School ID">School ID</mat-option>
+              <mat-option value="University ID">University ID</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="row">
+        <!-- ID Proof Number -->
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>ID Proof Number</mat-label>
+            <input matInput formControlName="idProofNumber">
+          </mat-form-field>
+        </div>
+
+        <!-- Department Visited -->
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Department Visited</mat-label>
+            <input matInput formControlName="departmentPersonVisited" required>
+            @if (visitorsForm.get('departmentPersonVisited')?.hasError('required')) {
+            <mat-error>
+              Department Visited is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="row">
+        <!-- Notes -->
+        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Notes</mat-label>
+            <textarea matInput formControlName="notes"></textarea>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-12">
+          <div class="example-button-row">
+            <button mat-flat-button class="formSubmitBtn" [disabled]="!visitorsForm.valid" type="submit">Save</button>
+            <button mat-flat-button mat-dialog-close class="formCancelBtn" tabindex="-1">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

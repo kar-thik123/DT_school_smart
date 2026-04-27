@@ -1,0 +1,38 @@
+.table-header {
+  border-bottom: 1px solid #f0f0f0;
+  background-color: #fafafa;
+  
+  h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #333;
+  }
+}
+
+.left-side {
+  flex: 1;
+}
+
+::ng-deep .materialMainTable {
+  .mat-mdc-form-field-subscript-wrapper {
+    display: none;
+  }
+}
+
+.badge-solid-green {
+  background-color: #28a745;
+  color: #fff;
+}
+
+.badge-solid-orange {
+  background-color: #ff9800;
+  color: #fff;
+}
+
+.text-nowrap {
+  white-space: nowrap;
+}
+
+.gap-4 {
+  gap: 1.5rem;
+}

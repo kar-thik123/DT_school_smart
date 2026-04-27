@@ -1,0 +1,12 @@
+<div class="container">
+    <h3 mat-dialog-title>Confirm Delete</h3>
+    <div mat-dialog-content>
+        <p>Are you sure you want to delete assignment for class: <strong>{{data.className}}</strong> and subject:
+            <strong>{{data.subjectName}}</strong>?
+        </p>
+    </div>
+    <div mat-dialog-actions align="end">
+        <button mat-raised-button color="warn" (click)="confirmDelete()">Delete</button>
+        <button mat-raised-button (click)="onNoClick()">Cancel</button>
+    </div>
+</div>

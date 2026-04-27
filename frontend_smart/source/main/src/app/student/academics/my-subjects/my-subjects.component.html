@@ -1,0 +1,102 @@
+<section class="content">
+  <div class="content-block">
+    @for (breadscrum of breadscrums; track breadscrum) {
+      <div class="block-header">
+        <!-- breadcrumb -->
+        <app-breadcrumb [title]="breadscrum.title" [items]="breadscrum.items" [active_item]="breadscrum.active">
+        </app-breadcrumb>
+      </div>
+    }
+    <div class="row">
+      <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+        <div class="card">
+          <div class="materialTableHeader">
+            <div class="left">
+              <ul class="header-buttons-left ms-0">
+                <li class="tbl-title">
+                  <h2>My Subjects</h2>
+                </li>
+                <li class="tbl-search-box">
+                  <label for="search-input"><i class="material-icons search-icon">search</i></label>
+
+                  <input matInput id="search-input" [(ngModel)]="searchText" (input)="filterSubjects()"
+                    placeholder="Search by name or teacher" class="browser-default search-field">
+                </li>
+              </ul>
+            </div>
+
+          </div>
+          <div class="row clearfix">
+            <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+
+              <div class="my-subject-container">
+
+                @if (isLoading) {
+                  <div class="loading-spinner">
+                    <mat-spinner></mat-spinner>
+                    <p>Loading subjects...</p>
+                  </div>
+                }
+
+                @if (!isLoading && hasError) {
+                  <div class="error-message">
+                    <mat-icon color="warn">error_outline</mat-icon>
+                    <p>Failed to load subjects. Please try again later.</p>
+                  </div>
+                }
+
+                @if (!isLoading && !hasError && filteredSubjects.length === 0) {
+                  <div class="no-subjects-message">
+                    <mat-icon>info_outline</mat-icon>
+                    <p>No subjects found.</p>
+                  </div>
+                }
+
+                @if (!isLoading && !hasError && filteredSubjects.length > 0) {
+                  <div class="subject-grid">
+                    @for (subject of filteredSubjects; track subject) {
+                      <mat-card class="subject-card">
+                        <mat-card-header class="subject-card-header">
+                          @if (subject.teacherPhotoUrl) {
+                            <img mat-card-avatar [src]="subject.teacherPhotoUrl"
+                              alt="Teacher Photo">
+                          }
+                          <mat-card-title>{{ subject.name }}</mat-card-title>
+                          <mat-card-subtitle>{{ subject.code }}</mat-card-subtitle>
+                        </mat-card-header>
+                        <mat-card-content>
+                          <p><strong>Teacher:</strong> {{ subject.teacherName }} ({{ subject.teacherEmail }})</p>
+                          @if (subject.description) {
+                            <p>{{ subject.description }}</p>
+                          }
+                          @if (subject.resources && subject.resources.length > 0) {
+                            <div>
+                              <h5>Resources:</h5>
+                              @for (resource of subject.resources; track resource) {
+                                <div>
+                                  <button mat-button color="primary" (click)="downloadResource(resource.url)">
+                                    <mat-icon>{{ resource.type === 'pdf' ? 'picture_as_pdf' : resource.type === 'video' ?
+                                    'videocam' : 'link' }}</mat-icon>
+                                    {{ resource.title }}
+                                  </button>
+                                </div>
+                              }
+                            </div>
+                          }
+                        </mat-card-content>
+                        <mat-card-actions>
+                          <button mat-button color="accent" (click)="openSubjectDetails(subject)">View Details</button>
+                        </mat-card-actions>
+                      </mat-card>
+                    }
+                  </div>
+                }
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

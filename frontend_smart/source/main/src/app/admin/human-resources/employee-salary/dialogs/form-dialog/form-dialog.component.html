@@ -1,0 +1,171 @@
+<div class="addContainer">
+  <div class="modalHeader">
+    <div class="avatarDetails">
+      <label class="hoverable" for="tableFileInput">
+        <img [src]="employeeSalary.img" alt="avatar">
+      </label>
+      <div class="modalTitle">
+        {{dialogTitle}}
+      </div>
+    </div>
+    <button mat-icon-button mat-dialog-close class="modal-close-button" aria-label="Close dialog" type="button">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+  <div mat-dialog-content>
+    <form class="register-form m-4" [formGroup]="employeeSalaryForm" (ngSubmit)="submit()">
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Name</mat-label>
+            <input matInput formControlName="name" required>
+            <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>face</mat-icon>
+            @if (employeeSalaryForm.get('name')?.hasError('required')) {
+            <mat-error>
+              Name is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Employee ID</mat-label>
+            <input matInput formControlName="empID" required>
+            <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>tag</mat-icon>
+            @if (employeeSalaryForm.get('empID')?.hasError('required')) {
+            <mat-error>
+              Employee ID is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Email</mat-label>
+            <input matInput formControlName="email" required>
+            <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>email</mat-icon>
+            @if (employeeSalaryForm.get('email')?.hasError('required') || employeeSalaryForm.get('email')?.touched) {
+            <mat-error>
+              Please enter a valid email address
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Department</mat-label>
+            <mat-select formControlName="department" required>
+              <mat-option [value]="'Mathematics'">Mathematics</mat-option>
+              <mat-option [value]="'Science'">Science</mat-option>
+              <mat-option [value]="'History'">History</mat-option>
+              <mat-option [value]="'Technology'">Technology</mat-option>
+              <mat-option [value]="'English'">English</mat-option>
+              <mat-option [value]="'Health Center'">Health Center</mat-option>
+              <mat-option [value]="'Library'">Library</mat-option>
+              <mat-option [value]="'Administration'">Administration</mat-option>
+              <mat-option [value]="'Outreach Programs'">Outreach Programs</mat-option>
+              <mat-option [value]="'other'">Other</mat-option>
+            </mat-select>
+            @if (employeeSalaryForm.get('department')?.hasError('required')) {
+            <mat-error>
+              Department is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Role</mat-label>
+            <mat-select formControlName="role" required>
+              <mat-option [value]="'Math Teacher'">Math Teacher</mat-option>
+              <mat-option [value]="'Head of Science Department'">Head of Science Department</mat-option>
+              <mat-option [value]="'Senior History Teacher'">Senior History Teacher</mat-option>
+              <mat-option [value]="'School Technician'">School Technician</mat-option>
+              <mat-option [value]="'Lab Technician'">Lab Technician</mat-option>
+              <mat-option [value]="'Junior Teacher'">Junior Teacher</mat-option>
+              <mat-option [value]="'Teaching Assistant'">Teaching Assistant</mat-option>
+              <mat-option [value]="'Admin Assistant'">Admin Assistant</mat-option>
+              <mat-option [value]="'Librarian'">Librarian</mat-option>
+              <mat-option [value]="'Principal'">Principal</mat-option>
+              <mat-option [value]="'Department Head (English)'">Department Head (English)</mat-option>
+              <mat-option [value]="'School Administrator'">School Administrator</mat-option>
+              <mat-option [value]="'Teaching Assistant'">Teaching Assistant</mat-option>
+              <mat-option [value]="'Admin Assistant'">Admin Assistant</mat-option>
+              <mat-option [value]="'Other'">Other</mat-option>
+            </mat-select>
+            @if (employeeSalaryForm.get('role')?.hasError('required')) {
+            <mat-error>
+              Role is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Salary</mat-label>
+            <input matInput formControlName="salary" required>
+            <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>payments</mat-icon>
+            @if (employeeSalaryForm.get('salary')?.hasError('required')) {
+            <mat-error>
+              Salary is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Bonus</mat-label>
+            <input matInput formControlName="bonus">
+            <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>monetization_on</mat-icon>
+            @if (employeeSalaryForm.get('bonus')?.hasError('pattern')) {
+            <mat-error>
+              Bonus must be a valid number
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Deductions</mat-label>
+            <input matInput formControlName="deductions">
+            <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>remove_circle</mat-icon>
+            @if (employeeSalaryForm.get('deductions')?.hasError('pattern')) {
+            <mat-error>
+              Deductions must be a valid number
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Net Salary</mat-label>
+            <input matInput formControlName="netSalary">
+            <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>monetization_on</mat-icon>
+            @if (employeeSalaryForm.get('netSalary')?.hasError('pattern')) {
+            <mat-error>
+              netSalary be a valid number
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+          <div class="example-button-row">
+            <button mat-flat-button class="formSubmitBtn" [disabled]="!employeeSalaryForm.valid"
+              type="submit">Save</button>
+            <button mat-flat-button mat-dialog-close class="formCancelBtn" tabindex="-1">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

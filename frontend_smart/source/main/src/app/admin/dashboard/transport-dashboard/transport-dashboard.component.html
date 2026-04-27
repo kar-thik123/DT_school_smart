@@ -1,0 +1,196 @@
+<section class="content">
+    <div class="content-block">
+        @for (breadscrum of breadscrums; track breadscrum) {
+        <div class="block-header">
+            <!-- breadcrumb -->
+            <app-breadcrumb [title]="breadscrum.title" [items]="breadscrum.items" [active_item]="breadscrum.active">
+            </app-breadcrumb>
+        </div>
+        }
+
+        <div class="row clearfix">
+            <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                <app-transport-overview></app-transport-overview>
+            </div>
+        </div>
+
+        <!-- Chart Cards for Transport Patterns Visualization -->
+        <div class="row clearfix">
+            <!-- Students per Route Chart -->
+            <div class="col-xs-12 col-sm-12 col-md-4 col-lg-4">
+                <mat-card>
+                    <mat-card-header class="header-menu">
+                        <mat-card-title>Students per Route</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <apx-chart [series]="routeDistributionChartOptions?.series"
+                            [chart]="routeDistributionChartOptions?.chart"
+                            [xaxis]="routeDistributionChartOptions?.xaxis"
+                            [yaxis]="routeDistributionChartOptions?.yaxis"
+                            [dataLabels]="routeDistributionChartOptions?.dataLabels"
+                            [plotOptions]="routeDistributionChartOptions?.plotOptions"
+                            [fill]="routeDistributionChartOptions?.fill"
+                            [stroke]="routeDistributionChartOptions?.stroke"
+                            [tooltip]="routeDistributionChartOptions?.tooltip">
+                        </apx-chart>
+                    </mat-card-content>
+                </mat-card>
+            </div>
+
+            <!-- On-Time Performance Chart -->
+            <div class="col-xs-12 col-sm-12 col-md-4 col-lg-4">
+                <mat-card>
+                    <mat-card-header class="header-menu">
+                        <mat-card-title>On-Time Performance</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <apx-chart [series]="onTimePerformanceChartOptions?.series"
+                            [chart]="onTimePerformanceChartOptions?.chart"
+                            [labels]="onTimePerformanceChartOptions?.labels"
+                            [colors]="onTimePerformanceChartOptions?.colors"
+                            [legend]="onTimePerformanceChartOptions?.legend"
+                            [dataLabels]="onTimePerformanceChartOptions?.dataLabels"
+                            [plotOptions]="onTimePerformanceChartOptions?.plotOptions"
+                            [tooltip]="onTimePerformanceChartOptions?.tooltip">
+                        </apx-chart>
+                    </mat-card-content>
+                </mat-card>
+            </div>
+
+            <!-- Weekly Usage Chart -->
+            <div class="col-xs-12 col-sm-12 col-md-4 col-lg-4">
+                <mat-card>
+                    <mat-card-header class="header-menu">
+                        <mat-card-title>Weekly Transport Usage</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <apx-chart [series]="weeklyUsageChartOptions?.series" [chart]="weeklyUsageChartOptions?.chart"
+                            [xaxis]="weeklyUsageChartOptions?.xaxis" [yaxis]="weeklyUsageChartOptions?.yaxis"
+                            [dataLabels]="weeklyUsageChartOptions?.dataLabels"
+                            [stroke]="weeklyUsageChartOptions?.stroke" [fill]="weeklyUsageChartOptions?.fill"
+                            [colors]="weeklyUsageChartOptions?.colors" [tooltip]="weeklyUsageChartOptions?.tooltip">
+                        </apx-chart>
+                    </mat-card-content>
+                </mat-card>
+            </div>
+        </div>
+
+        <!-- Vehicle Status Section -->
+        <div class="row clearfix">
+            <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                <mat-card>
+                    <mat-card-header class="header-menu">
+                        <mat-card-title>Vehicle Status</mat-card-title>
+                        <div class="header-buttons">
+                            <button mat-icon-button color="primary">
+                                <mat-icon>refresh</mat-icon>
+                            </button>
+                        </div>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Vehicle</th>
+                                        <th>Status</th>
+                                        <th>Driver</th>
+                                        <th>Location</th>
+                                        <th>Last Update</th>
+                                        <th>Fuel Level</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @for (vehicle of vehicles; track vehicle.id) {
+                                    <tr>
+                                        <td>{{ vehicle.id }}</td>
+                                        <td>{{ vehicle.name }}</td>
+                                        <td>
+                                            @if (vehicle.status === 'active') {
+                                            <span class="badge bg-success">Active</span>
+                                            } @else if (vehicle.status === 'maintenance') {
+                                            <span class="badge bg-warning">Maintenance</span>
+                                            } @else {
+                                            <span class="badge bg-secondary">Inactive</span>
+                                            }
+                                        </td>
+                                        <td>{{ vehicle.driver }}</td>
+                                        <td>{{ vehicle.location }}</td>
+                                        <td>{{ vehicle.lastUpdate }}</td>
+                                        <td>
+                                            <div class="progress-container">
+                                                <mat-progress-bar mode="determinate"
+                                                    [value]="vehicle.fuelLevel"></mat-progress-bar>
+                                                <span class="progress-value">{{ vehicle.fuelLevel }}%</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </mat-card-content>
+                </mat-card>
+            </div>
+        </div>
+
+        <!-- Route Completion Section -->
+        <div class="row clearfix">
+            <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
+                <mat-card>
+                    <mat-card-header class="header-menu">
+                        <mat-card-title>Route Completion</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <apx-chart [series]="routeCompletionChartOptions?.series"
+                            [chart]="routeCompletionChartOptions?.chart" [xaxis]="routeCompletionChartOptions?.xaxis"
+                            [yaxis]="routeCompletionChartOptions?.yaxis"
+                            [dataLabels]="routeCompletionChartOptions?.dataLabels"
+                            [stroke]="routeCompletionChartOptions?.stroke"
+                            [colors]="routeCompletionChartOptions?.colors"
+                            [tooltip]="routeCompletionChartOptions?.tooltip">
+                        </apx-chart>
+                    </mat-card-content>
+                </mat-card>
+            </div>
+
+            <!-- Student Transport Section -->
+            <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
+                <mat-card>
+                    <mat-card-header class="header-menu">
+                        <mat-card-title>Student Transport</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <ng-scrollbar style="height: 270px" visibility="hover">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Route</th>
+                                            <th>Total Students</th>
+                                            <th>Present Today</th>
+                                            <th>Absent</th>
+                                            <th>Special Needs</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @for (route of studentTransport; track route.route) {
+                                        <tr>
+                                            <td>{{ route.route }}</td>
+                                            <td>{{ route.totalStudents }}</td>
+                                            <td>{{ route.presentToday }}</td>
+                                            <td>{{ route.absent }}</td>
+                                            <td>{{ route.specialNeeds }}</td>
+                                        </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </ng-scrollbar>
+                    </mat-card-content>
+                </mat-card>
+            </div>
+        </div>
+    </div>
+</section>

@@ -1,0 +1,34 @@
+<div class="addContainer">
+  <div class="modalHeader">
+    <div class="avatarDetails">
+      <div class="modalTitle">
+        Are you sure?
+      </div>
+    </div>
+  </div>
+  <div mat-dialog-content>
+    <div class="row">
+      <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12">
+        <ul class="clearfix list-style-none ">
+          <li class="mb-2">
+            <span class="font-bold">Student Name: </span>{{data.student_name}}
+          </li>
+          <li class="mb-2">
+            <span class="font-bold">Student ID: </span>{{data.student_id}}
+          </li>
+          <li class="mb-2">
+            <span class="font-bold">Amount: </span>{{data.amount}}
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+        <div class="example-button-row">
+          <button mat-flat-button color="warn" (click)="confirmDelete()">Delete</button>
+          <button mat-flat-button mat-dialog-close class="formCancelBtn">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,282 @@
+.timetable-container {
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 15px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+
+  .timetable-grid {
+    display: flex;
+    gap: 20px;
+    overflow-x: auto;
+    padding-bottom: 20px;
+    scrollbar-width: thin;
+    scrollbar-color: #ddd transparent;
+
+    &::-webkit-scrollbar {
+      height: 6px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: #ddd;
+      border-radius: 10px;
+    }
+  }
+
+  .day-column {
+    flex: 0 0 300px;
+    min-width: 300px;
+    background: #fff;
+    border-radius: 12px;
+    padding: 15px;
+    border: 1px solid #eee;
+    transition: all 0.3s ease;
+
+    &:hover {
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+    }
+  }
+
+  .day-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #f1f3f5;
+
+    .day-name {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #2d3436;
+    }
+
+    .day-date {
+      font-size: 0.9rem;
+      color: #636e72;
+      background: #f1f3f5;
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+  }
+
+  .subject-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .subject-card {
+    position: relative;
+    display: flex;
+    padding: 15px;
+    background: #fff;
+    border-radius: 10px;
+    border: 1px solid #f1f3f5;
+    transition: all 0.2s ease;
+    overflow: hidden;
+
+    &:hover {
+      transform: translateX(5px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    }
+
+    .card-icon {
+      width: 45px;
+      height: 45px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      margin-right: 15px;
+      flex-shrink: 0;
+    }
+
+    .card-content {
+      flex-grow: 1;
+
+      .subject-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 8px;
+
+        .subject-name {
+          font-size: 1rem;
+          font-weight: 500;
+          color: #ffffff;
+          margin: 0;
+        }
+
+        .lecture-type {
+          font-size: 0.75rem;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          padding: 2px 8px;
+          border-radius: 4px;
+          background: rgba(0, 0, 0, 0.05);
+        }
+      }
+
+      .details {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+
+        .detail-item {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 0.85rem;
+
+          i {
+            width: 14px;
+            text-align: center;
+          }
+        }
+      }
+    }
+
+    .card-accent {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+    }
+
+    // Color variations
+    &.bg-green {
+      .card-icon {
+        background: #e6fffa;
+        color: #38b2ac;
+      }
+      .card-accent {
+        background: #38b2ac;
+      }
+    }
+    &.bg-orange {
+      .card-icon {
+        background: #fffaf0;
+        color: #ed8936;
+      }
+      .card-accent {
+        background: #ed8936;
+      }
+    }
+    &.bg-blue {
+      .card-icon {
+        background: #ebf8ff;
+        color: #4299e1;
+      }
+      .card-accent {
+        background: #4299e1;
+      }
+    }
+    &.bg-purple {
+      .card-icon {
+        background: #faf5ff;
+        color: #9f7aea;
+      }
+      .card-accent {
+        background: #9f7aea;
+      }
+    }
+    &.bg-teal {
+      .card-icon {
+        background: #e6fffa;
+        color: #319795;
+      }
+      .card-accent {
+        background: #319795;
+      }
+    }
+    &.bg-indigo {
+      .card-icon {
+        background: #ebf4ff;
+        color: #5a67d8;
+      }
+      .card-accent {
+        background: #5a67d8;
+      }
+    }
+    &.bg-brown {
+      .card-icon {
+        background: #fefcbf;
+        color: #b7791f;
+      }
+      .card-accent {
+        background: #b7791f;
+      }
+    }
+    &.bg-pink {
+      .card-icon {
+        background: #fff5f7;
+        color: #ed64a6;
+      }
+      .card-accent {
+        background: #ed64a6;
+      }
+    }
+    &.bg-amber {
+      .card-icon {
+        background: #fffaf0;
+        color: #d69e2e;
+      }
+      .card-accent {
+        background: #d69e2e;
+      }
+    }
+    &.bg-red {
+      .card-icon {
+        background: #fff5f5;
+        color: #e53e3e;
+      }
+      .card-accent {
+        background: #e53e3e;
+      }
+    }
+  }
+
+  .no-schedule {
+    padding: 30px 10px;
+    text-align: center;
+    color: #b2bec3;
+
+    i {
+      font-size: 2rem;
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    p {
+      font-size: 0.9rem;
+      margin: 0;
+    }
+  }
+}
+
+// Media queries for responsiveness
+@media (max-width: 768px) {
+  .timetable-container {
+    padding: 10px;
+
+    .day-column {
+      flex: 0 0 280px;
+      min-width: 280px;
+    }
+  }
+}
+
+::ng-deep .dark {
+  .timetable-container {
+    background-color: #1c1f2e !important;
+    .day-column {
+      background-color: #1a202e !important;
+      border: 1px solid #555555 !important;
+    }
+    .day-header .day-name {
+      color: #dfe6e9 !important;
+    }
+  }
+}

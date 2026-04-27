@@ -1,0 +1,171 @@
+{
+  "LOGIN": {
+    "TITLE": "Bienvenido a Smart"
+  },
+  "MENUITEMS": {
+    "MAIN": {
+      "TEXT": "Principal"
+    },
+    "FRONT-OFFICE": {
+      "TEXT": "Recepción",
+      "LIST": {
+        "ADMISSION": "Consulta de Admisión",
+        "VISITORS": "Libro de Visitantes",
+        "COMPLAINTS": "Quejas"
+      }
+    },
+    "DASHBOARD": {
+      "TEXT": "Tablero",
+      "LIST": {
+        "DASHBOARD1": "Tablero 1",
+        "DASHBOARD2": "Tablero 2",
+        "TEACHER-DASHBOARD": "Tablero del Maestro",
+        "STUDENT-DASHBOARD": "Tablero del Estudiante",
+        "LIBRARY-DASHBOARD": "Library Dashboard",
+        "TRANSPORT-DASHBOARD": "Transport Dashboard"
+      }
+    },
+    "TEACHERS": {
+      "TEXT": "Maestros",
+      "LIST": {
+        "ALL-TEACHERS": "Todos los Maestros",
+        "ADD-TEACHER": "Agregar Maestro",
+        "EDIT-TEACHER": "Editar Maestro",
+        "ABOUT-TEACHER": "Acerca del Maestro",
+        "TEACHER-TIMETABLE": "Horario del Maestro",
+        "ASSIGN-CLASS-TEACHER": "Asignar Maestro de Clase"
+      }
+    },
+    "STUDENTS": {
+      "TEXT": "Estudiantes",
+      "LIST": {
+        "ALL-STUDENTS": "Todos los Estudiantes",
+        "ADD-STUDENT": "Agregar Estudiante",
+        "EDIT-STUDENT": "Editar Estudiante",
+        "ABOUT-STUDENT": "Acerca del Estudiante",
+        "STUDENT-ATTENDANCE": "Asistencia del Estudiante"
+      }
+    },
+    "COURSES": {
+      "TEXT": "Cursos",
+      "LIST": {
+        "ALL-COURSES": "Todos los Cursos",
+        "ADD-Course": "Agregar Curso",
+        "EDIT-COURSE": "Editar Curso",
+        "ABOUT-COURSE": "Acerca del Curso"
+      }
+    },
+    "LIBRARY": {
+      "TEXT": "Biblioteca",
+      "LIST": {
+        "ALL-LIBRARY": "Todos los Activos de la Biblioteca",
+        "ADD-LIBRARY": "Agregar Activo de Biblioteca",
+        "EDIT-LIBRARY": "Editar Activo de Biblioteca",
+        "BOOK-STATUS": "Estado del Libro"
+      }
+    },
+    "DEPARTMENTS": {
+      "TEXT": "Departamentos",
+      "LIST": {
+        "ALL-DEPARTMENT": "Todos los Departamentos",
+        "ADD-DEPARTMENT": "Agregar Departamento",
+        "EDIT-DEPARTMENT": "Editar Departamento"
+      }
+    },
+    "STAFF": {
+      "TEXT": "Personal",
+      "LIST": {
+        "ALL-STAFF": "Todo el Personal",
+        "ADD-STAFF": "Agregar Personal",
+        "EDIT-STAFF": "Editar Personal",
+        "ABOUT-STAFF": "Acerca del Personal",
+        "STAFF-ATTENDANCE": "Asistencia del Personal"
+      }
+    },
+    "HOLIDAY": {
+      "TEXT": "Vacaciones",
+      "LIST": {
+        "ALL-HOLIDAY": "Todas las Vacaciones",
+        "ADD-HOLIDAY": "Agregar Vacación",
+        "EDIT-HOLIDAY": "Editar Vacación"
+      }
+    },
+    "FEES": {
+      "TEXT": "Tarifas",
+      "LIST": {
+        "ALL-FEES": "Todas las Tarifas",
+        "ADD-FEES": "Agregar Tarifa",
+        "EDIT-FEES": "Editar Tarifa",
+        "FEES-TYPE": "Tipo de Tarifa",
+        "FEES-DISCOUNT": "Descuento de Tarifa",
+        "FEE-RECEIPT": "Recibo de Tarifa"
+      }
+    },
+    "CLASS": {
+      "TEXT": "Clase",
+      "LIST": {
+        "CLASS-LIST": "Lista de Clases",
+        "CLASS-TIMETABLE": "Horario de Clase"
+      }
+    },
+    "HOSTEL": {
+      "TEXT": "Hostal",
+      "LIST": {
+        "ROOM-LIST": "Lista de Habitaciones",
+        "ROOM-TYPE": "Tipo de Habitación"
+      }
+    },
+    "HR": {
+      "TEXT": "Recursos Humanos",
+      "LIST": {
+        "LEAVE-REQUESTS": "Solicitudes de Licencia del Empleado",
+        "LEAVE-BALANCE": "Saldo de Licencias del Empleado",
+        "LEAVE-TYPES": "Tipos de Licencia",
+        "HOLIDAYS": "Vacaciones",
+        "TODAY-ATTENDANCE": "Asistencia de Hoy",
+        "ATTENDANCE-DETAIL": "Detalle de Asistencia",
+        "ATTENDANCE-SHEET": "Hoja de Asistencia",
+        "EMPLOYEE-SALARY": "Salario del Empleado",
+        "PAYSLIP": "Recibo de Pago"
+      }
+    },
+    "TEACHER": {
+      "TEXT": "Maestro",
+      "LIST": {
+        "DASHBOARD": "Tablero",
+        "LECTURES": "Clases",
+        "LEAVE-REQUEST": "Solicitud de Licencia",
+        "EXAM-SCHEDULE": "Horario de Exámenes",
+        "MY-CLASSES": "My Classes",
+        "SUBJECTS-TAUGHT": "Subject Taught",
+        "PROFILE": "Profile",
+        "SETTINGS": "Configuraciones"
+      }
+    },
+    "STUDENT": {
+      "TEXT": "Estudiante",
+      "LIST": {
+        "DASHBOARD": "Tablero",
+        "HOMEWORK": "Tareas",
+        "LEAVE-REQUEST": "Solicitud de Licencia",
+        "TIME-TABLE": "Horario",
+        "MY-CLASS": "My Class",
+        "MY-SUBJECTS": "My Subjects",
+        "PROFILE": "Profile",
+        "SETTINGS": "Configuraciones"
+      }
+    },
+    "APPS": {
+      "TEXT": "Aplicaciones"
+    },
+    "CALENDAR": {
+      "TEXT": "Calendario"
+    },
+    "TASK": {
+      "TEXT": "Tarea"
+    },
+    "CONTACTS": {
+      "TEXT": "Contactos"
+    }
+  }
+}

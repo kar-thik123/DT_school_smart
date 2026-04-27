@@ -1,0 +1,71 @@
+<div class="addContainer">
+  <div class="modalHeader">
+    <div class="editRowModal">
+      <div class="modalHeader clearfix">
+        <div class="modal-about">
+          {{ dialogTitle }}
+        </div>
+      </div>
+    </div>
+    <button mat-icon-button (click)="onNoClick()" class="modal-close-button" aria-label="Close dialog">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+  <mat-dialog-content>
+    <form class="register-form m-4" [formGroup]="userForm" (ngSubmit)="submit()">
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Full Name</mat-label>
+            <input matInput formControlName="name" required>
+            <mat-icon matSuffix>face</mat-icon>
+            <mat-error *ngIf="userForm.get('name')?.invalid">{{getErrorMessage('name')}}</mat-error>
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Email Address</mat-label>
+            <input matInput formControlName="email" required>
+            <mat-icon matSuffix>email</mat-icon>
+            <mat-error *ngIf="userForm.get('email')?.invalid">{{getErrorMessage('email')}}</mat-error>
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Assign Role</mat-label>
+            <mat-select formControlName="role" required>
+              <mat-option *ngFor="let role of roles" [value]="role.name">
+                {{role.name}}
+              </mat-option>
+            </mat-select>
+            <mat-error *ngIf="userForm.get('role')?.invalid">{{getErrorMessage('role')}}</mat-error>
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+           <mat-form-field class="example-full-width" appearance="outline" *ngIf="action === 'add'">
+            <mat-label>Password</mat-label>
+            <input matInput formControlName="password" type="password" required>
+            <mat-icon matSuffix>lock</mat-icon>
+            <mat-error *ngIf="userForm.get('password')?.invalid">{{getErrorMessage('password')}}</mat-error>
+          </mat-form-field>
+          <div *ngIf="action === 'edit'" class="pt-3">
+             <mat-label class="text-muted">Status: </mat-label>
+             <span [class]="userForm.get('is_active')?.value ? 'badge badge-solid-green' : 'badge badge-solid-red'">
+               {{ userForm.get('is_active')?.value ? 'Active' : 'Inactive' }}
+             </span>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+          <div class="example-button-row text-end">
+            <button mat-raised-button color="primary" [disabled]="!userForm.valid" (click)="submit()">Save User</button>
+            <button mat-raised-button color="warn" (click)="onNoClick()" tabindex="-1">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </mat-dialog-content>
+</div>

@@ -1,0 +1,182 @@
+<div class="addContainer">
+  <div class="modalHeader">
+    <div class="avatarDetails">
+      <label class="hoverable" for="tableFileInput">
+        <img [src]="assignClassTeacher.img" alt="avatar" />
+      </label>
+      <div class="modalTitle">
+        {{ dialogTitle }}
+      </div>
+    </div>
+    <button mat-icon-button mat-dialog-close class="modal-close-button" aria-label="Close dialog" type="button">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+  <div mat-dialog-content>
+    <form class="register-form m-4" [formGroup]="stdForm" (ngSubmit)="submit()">
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Teacher ID</mat-label>
+            <input matInput formControlName="teacherId" required />
+            @if (stdForm.get('teacherId')?.hasError('required')) {
+            <mat-error>
+              Teacher ID is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Teacher Name</mat-label>
+            <input matInput formControlName="teacherName" required />
+            @if (stdForm.get('teacherName')?.hasError('required')) {
+            <mat-error>
+              Teacher Name is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Class ID</mat-label>
+            <input matInput formControlName="classId" required />
+            @if (stdForm.get('classId')?.hasError('required')) {
+            <mat-error>
+              Class ID is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Class Name</mat-label>
+            <input matInput formControlName="className" required />
+            @if (stdForm.get('className')?.hasError('required')) {
+            <mat-error>
+              Class Name is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Subject</mat-label>
+            <input matInput formControlName="subject" required />
+            @if (stdForm.get('subject')?.hasError('required')) {
+            <mat-error>
+              Subject is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Start Date</mat-label>
+            <input matInput [matDatepicker]="startDatePicker" formControlName="startDate" required />
+            <mat-datepicker-toggle matSuffix [for]="startDatePicker"></mat-datepicker-toggle>
+            <mat-datepicker #startDatePicker></mat-datepicker>
+            @if (stdForm.get('startDate')?.hasError('required')) {
+            <mat-error>
+              Start Date is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>End Date</mat-label>
+            <input matInput [matDatepicker]="endDatePicker" formControlName="endDate" required />
+            <mat-datepicker-toggle matSuffix [for]="endDatePicker"></mat-datepicker-toggle>
+            <mat-datepicker #endDatePicker></mat-datepicker>
+            @if (stdForm.get('endDate')?.hasError('required')) {
+            <mat-error>
+              End Date is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Assigned By</mat-label>
+            <input matInput formControlName="assignedBy" required />
+            @if (stdForm.get('assignedBy')?.hasError('required')) {
+            <mat-error>
+              Assigned By is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Assignment Status</mat-label>
+            <mat-select formControlName="assignmentStatus" required>
+              <mat-option value="Active">Active</mat-option>
+              <mat-option value="Inactive">Inactive</mat-option>
+            </mat-select>
+            @if (stdForm.get('assignmentStatus')?.hasError('required')) {
+            <mat-error>
+              Select Any Assignment Status
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Academic Year</mat-label>
+            <input matInput formControlName="academicYear" required />
+            @if (stdForm.get('academicYear')?.hasError('required')) {
+            <mat-error>
+              Academic Year is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Class Timing</mat-label>
+            <input matInput formControlName="classTiming" required />
+            @if (stdForm.get('classTiming')?.hasError('required')) {
+            <mat-error>
+              Class Timing is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Room Number</mat-label>
+            <input matInput formControlName="roomNumber" required />
+            @if (stdForm.get('roomNumber')?.hasError('required')) {
+            <mat-error>
+              Room Number is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+          <div class="example-button-row">
+            <button mat-flat-button class="formSubmitBtn" [disabled]="!stdForm.valid" type="submit">
+              Save
+            </button>
+            <button mat-flat-button mat-dialog-close class="formCancelBtn">
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

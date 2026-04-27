@@ -1,0 +1,116 @@
+<div class="addContainer">
+  <div class="modalHeader">
+    <div class="editRowModal">
+      <div class="modalHeaderClear"></div>
+      <div class="modalHeaderTitle">
+        {{dialogTitle}}
+      </div>
+    </div>
+    <button mat-icon-button (click)="dialogRef.close()" class="modal-close-button" aria-label="Close dialog">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+  <div mat-dialog-content>
+    <form class="register-form m-4" [formGroup]="curriculumForm" (ngSubmit)="submit()">
+      <div class="row">
+        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Course Name</mat-label>
+            <input matInput formControlName="courseName" required>
+            <mat-icon matSuffix>assignment</mat-icon>
+            @if (curriculumForm.get('courseName')?.hasError('required')) {
+            <mat-error>
+              {{curriculumForm.get('courseName') ? getErrorMessage(curriculumForm.get('courseName')) : ''}}
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Class</mat-label>
+            <input matInput formControlName="className" required>
+            <mat-icon matSuffix>school</mat-icon>
+            @if (curriculumForm.get('className')?.hasError('required')) {
+            <mat-error>
+              {{curriculumForm.get('className') ? getErrorMessage(curriculumForm.get('className')) : ''}}
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Subject</mat-label>
+            <input matInput formControlName="subjectName" required>
+            <mat-icon matSuffix>book</mat-icon>
+            @if (curriculumForm.get('subjectName')?.hasError('required')) {
+            <mat-error>
+              {{curriculumForm.get('subjectName') ? getErrorMessage(curriculumForm.get('subjectName')) : ''}}
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Description</mat-label>
+            <textarea matInput formControlName="description"></textarea>
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Duration</mat-label>
+            <input matInput formControlName="duration" required>
+            <mat-icon matSuffix>timer</mat-icon>
+            @if (curriculumForm.get('duration')?.hasError('required')) {
+            <mat-error>
+              {{curriculumForm.get('duration') ? getErrorMessage(curriculumForm.get('duration')) : ''}}
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Reference Material</mat-label>
+            <input matInput formControlName="referenceMaterial">
+            <mat-icon matSuffix>menu_book</mat-icon>
+            @if (curriculumForm.get('referenceMaterial')?.hasError('required')) {
+            <mat-error>
+              {{curriculumForm.get('referenceMaterial') ? getErrorMessage(curriculumForm.get('referenceMaterial')) :
+              ''}}
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Status</mat-label>
+            <mat-select formControlName="status" required>
+              <mat-option [value]="'Active'">Active</mat-option>
+              <mat-option [value]="'Inactive'">Inactive</mat-option>
+            </mat-select>
+            @if (curriculumForm.get('status')?.hasError('required')) {
+            <mat-error>
+              {{curriculumForm.get('status') ? getErrorMessage(curriculumForm.get('status')) : ''}}
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+          <div class="example-button-row">
+            <button mat-flat-button class="formSubmitBtn" [disabled]="!curriculumForm.valid" type="submit">Save</button>
+            <button mat-flat-button mat-dialog-close class="formCancelBtn" tabindex="-1">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

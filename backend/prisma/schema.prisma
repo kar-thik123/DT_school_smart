@@ -1,0 +1,500 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum OrganizationStatus {
+  DRAFT
+  PROVISIONING
+  ACTIVE
+  MAINTENANCE
+  SUSPENDED
+  ARCHIVED
+}
+
+enum LicenseStatus {
+  ACTIVE
+  EXPIRED
+  REVOKED
+  GRACE_PERIOD
+}
+
+model Organization {
+  id                  String              @id @default(uuid()) @db.Uuid
+  school_name         String
+  school_type         String?
+  medium              String?
+  contact_email       String?
+  contact_phone       String?
+  address             String?
+  logo_url            String?
+  domain_type         String              @default("subdomain")
+  subdomain           String?             @unique
+  custom_domain       String?
+  smtp_host           String?
+  smtp_port           Int?
+  smtp_email          String?
+  smtp_password       String?
+  backup_enabled      Boolean             @default(false)
+  status              OrganizationStatus  @default(DRAFT)
+  login_limit         Int                 @default(100)
+  created_at          DateTime            @default(now())
+  users               User[]
+  roles               Role[]
+  boards              Board[]
+  mediums             Medium[]
+  organization_types  OrganizationType[]
+  academic_years      AcademicYear[]
+  grades              Grade[]
+  sections            Section[]
+  subjects            Subject[]
+  syllabuses          Syllabus[]
+  units               Unit[]
+  topics              Topic[]
+  teacher_assignments TeacherAssignment[]
+  questions           Question[]
+  topic_activations   TopicActivation[]
+  practice_attempts   PracticeAttempt[]
+
+  subject_groups           SubjectGroup[]
+  student_group_mappings   StudentGroupMapping[]
+  license                  OrganizationLicense?
+
+  @@index([subdomain])
+  @@map("organizations")
+}
+
+model OrganizationLicense {
+  id                String        @id @default(uuid()) @db.Uuid
+  organization_id   String        @unique @db.Uuid
+  licensed_seats    Int           @default(100)
+  renewal_date      DateTime?
+  grace_period_days Int           @default(7)
+  warning_threshold Int           @default(80)
+  status            LicenseStatus @default(ACTIVE)
+  internal_notes    String?
+  created_at        DateTime      @default(now())
+  updated_at        DateTime      @updatedAt
+
+  organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+
+  @@map("organization_licenses")
+}
+
+model User {
+  id              String   @id @default(uuid()) @db.Uuid
+  name            String
+  email           String   @unique
+  password_hash   String
+  role_id         String   @db.Uuid
+  role            Role     @relation(fields: [role_id], references: [id])
+  organization_id String   @db.Uuid
+  grade_id        String?  @db.Uuid
+  section_id      String?  @db.Uuid
+  is_active       Boolean  @default(true)
+  created_at      DateTime @default(now())
+
+  organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  grade        Grade?       @relation(fields: [grade_id], references: [id])
+  section      Section?     @relation(fields: [section_id], references: [id])
+
+  password_resets     PasswordReset[]
+  teacher_assignments TeacherAssignment[]
+  questions           Question[]
+  practice_attempts   PracticeAttempt[]
+
+  student_group_mappings StudentGroupMapping[]
+
+  @@index([organization_id])
+  @@index([email])
+  @@map("users")
+}
+
+model PasswordReset {
+  id         String   @id @default(uuid()) @db.Uuid
+  user_id    String   @db.Uuid
+  token      String   @unique
+  expires_at DateTime
+  used       Boolean  @default(false)
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([token])
+  @@map("password_resets")
+}
+
+model Role {
+  id              String           @id @default(uuid()) @db.Uuid
+  name            String
+  description     String?
+  organization_id String?          @db.Uuid
+  is_system       Boolean          @default(false)
+  users           User[]
+  permissions     RolePermission[]
+  organization    Organization?    @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+
+  @@unique([name, organization_id])
+  @@index([organization_id])
+  @@map("roles")
+}
+
+model Permission {
+  id          String           @id @default(uuid()) @db.Uuid
+  module      String
+  action      String
+  description String?
+  roles       RolePermission[]
+
+  @@unique([module, action])
+  @@map("permissions")
+}
+
+model RolePermission {
+  role_id       String     @db.Uuid
+  permission_id String     @db.Uuid
+  role          Role       @relation(fields: [role_id], references: [id], onDelete: Cascade)
+  permission    Permission @relation(fields: [permission_id], references: [id], onDelete: Cascade)
+
+  @@id([role_id, permission_id])
+  @@map("role_permissions")
+}
+
+// --- Configuration Tables ---
+
+model Board {
+  id              String       @id @default(uuid()) @db.Uuid
+  name            String
+  organization_id String       @db.Uuid
+  organization    Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  syllabuses      Syllabus[]
+
+  @@unique([name, organization_id])
+  @@map("boards")
+}
+
+model Medium {
+  id              String       @id @default(uuid()) @db.Uuid
+  name            String
+  organization_id String       @db.Uuid
+  organization    Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+
+  @@unique([name, organization_id])
+  @@map("mediums")
+}
+
+model OrganizationType {
+  id              String       @id @default(uuid()) @db.Uuid
+  name            String
+  organization_id String       @db.Uuid
+  organization    Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+
+  @@unique([name, organization_id])
+  @@map("organization_types")
+}
+
+model AcademicYear {
+  id              String       @id @default(uuid()) @db.Uuid
+  name            String // e.g. "2025-2026"
+  start_date      DateTime?
+  end_date        DateTime?
+  is_active       Boolean      @default(true)
+  organization_id String       @db.Uuid
+  organization    Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  grades          Grade[]
+
+  @@unique([name, organization_id])
+  @@map("academic_years")
+}
+
+// --- Academic Structure Tables ---
+
+model Grade {
+  id               String @id @default(uuid()) @db.Uuid
+  name             String
+  academic_year_id String @db.Uuid
+  organization_id  String @db.Uuid
+
+  academic_year AcademicYear @relation(fields: [academic_year_id], references: [id], onDelete: Cascade)
+  organization  Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+
+  sections            Section[]
+  subjects            Subject[]
+  teacher_assignments TeacherAssignment[]
+  users               User[]
+
+  subject_groups  SubjectGroup[]
+
+  @@unique([name, academic_year_id, organization_id])
+  @@map("grades")
+}
+
+model Section {
+  id              String @id @default(uuid()) @db.Uuid
+  name            String
+  grade_id        String @db.Uuid
+  organization_id String @db.Uuid
+
+  grade               Grade               @relation(fields: [grade_id], references: [id], onDelete: Cascade)
+  organization        Organization        @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  teacher_assignments TeacherAssignment[]
+  users               User[]
+  subject_groups      SubjectGroup[]
+
+  @@unique([name, grade_id, organization_id])
+  @@map("sections")
+}
+
+model Subject {
+  id              String @id @default(uuid()) @db.Uuid
+  name            String
+  grade_id        String @db.Uuid
+  organization_id String @db.Uuid
+
+  grade        Grade        @relation(fields: [grade_id], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+
+  syllabuses          Syllabus[]
+  units               Unit[]
+  teacher_assignments TeacherAssignment[]
+  questions           Question[]
+  practice_attempts   PracticeAttempt[]
+
+  subject_groups           SubjectGroupSubject[]
+
+  @@unique([name, grade_id, organization_id])
+  @@map("subjects")
+}
+
+model Syllabus {
+  id              String  @id @default(uuid()) @db.Uuid
+  subject_id      String  @db.Uuid
+  board_id        String  @db.Uuid
+  organization_id String  @db.Uuid
+  description     String?
+
+  subject      Subject      @relation(fields: [subject_id], references: [id], onDelete: Cascade)
+  board        Board        @relation(fields: [board_id], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+
+  units Unit[]
+
+  @@unique([subject_id, board_id, organization_id])
+  @@map("syllabuses")
+}
+
+model Unit {
+  id              String  @id @default(uuid()) @db.Uuid
+  name            String
+  subject_id      String? @db.Uuid
+  syllabus_id     String? @db.Uuid
+  organization_id String  @db.Uuid
+
+  subject      Subject?     @relation(fields: [subject_id], references: [id], onDelete: Cascade)
+  syllabus     Syllabus?    @relation(fields: [syllabus_id], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+
+  topics    Topic[]
+  questions Question[]
+
+  @@map("units")
+}
+
+model Topic {
+  id              String @id @default(uuid()) @db.Uuid
+  name            String
+  unit_id         String @db.Uuid
+  organization_id String @db.Uuid
+
+  unit              Unit              @relation(fields: [unit_id], references: [id], onDelete: Cascade)
+  organization      Organization      @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  questions         Question[]
+  practice_attempts PracticeAttempt[]
+  topic_activations TopicActivation[]
+
+  @@map("topics")
+}
+
+enum AssignmentType {
+  CLASS_INCHARGE
+  SUBJECT_TEACHER
+}
+
+model TeacherAssignment {
+  id              String         @id @default(uuid()) @db.Uuid
+  organization_id String         @db.Uuid
+  teacher_id      String         @db.Uuid
+  assignment_type AssignmentType
+  grade_id        String         @db.Uuid
+  section_id      String?        @db.Uuid
+  subject_id      String?        @db.Uuid
+  created_at      DateTime       @default(now())
+
+  organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  teacher      User         @relation(fields: [teacher_id], references: [id], onDelete: Cascade)
+  grade        Grade        @relation(fields: [grade_id], references: [id], onDelete: Cascade)
+  section      Section?     @relation(fields: [section_id], references: [id], onDelete: Cascade)
+  subject      Subject?     @relation(fields: [subject_id], references: [id], onDelete: Cascade)
+
+  @@unique([teacher_id, assignment_type, grade_id, section_id, subject_id, organization_id], name: "unique_assignment")
+  @@map("teacher_assignments")
+}
+
+enum DifficultyLevel {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum QuestionType {
+  MCQ_SINGLE
+  MCQ_MULTI
+  TRUE_FALSE
+  YES_NO
+  FILL_BLANK
+  DRAG_DROP_FILL
+  MATCH_FOLLOWING
+  DRAG_DROP_MATCH
+  SENTENCE_ORDER
+  STRUCTURED_2MARK
+  STRUCTURED_5MARK
+  LONG_ANSWER
+}
+
+model Question {
+  id              String          @id @default(uuid()) @db.Uuid
+  organization_id String          @db.Uuid
+  created_by      String          @db.Uuid
+  subject_id      String          @db.Uuid
+  unit_id         String          @db.Uuid
+  topic_id        String          @db.Uuid
+  question_text   String
+  type            QuestionType    @default(MCQ_SINGLE)
+  answer          String?
+  answer_config   Json            @default("{}")
+  marks           Int
+  difficulty      DifficultyLevel
+  is_important    Boolean         @default(false)
+  created_at      DateTime        @default(now())
+
+  organization     Organization     @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  creator          User             @relation(fields: [created_by], references: [id], onDelete: Cascade)
+  subject          Subject          @relation(fields: [subject_id], references: [id], onDelete: Cascade)
+  unit             Unit             @relation(fields: [unit_id], references: [id], onDelete: Cascade)
+  topic            Topic            @relation(fields: [topic_id], references: [id], onDelete: Cascade)
+  practice_answers PracticeAnswer[]
+
+  @@index([subject_id, unit_id, topic_id])
+  @@map("questions")
+}
+
+model TopicActivation {
+  id               String       @id @default(uuid()) @db.Uuid
+  organization_id  String       @db.Uuid
+  topic_id         String       @db.Uuid
+  subject_group_id String       @db.Uuid
+  is_active        Boolean      @default(true)
+  is_completed     Boolean      @default(false)
+  completed_at     DateTime?
+  created_at       DateTime     @default(now())
+
+  organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  topic        Topic        @relation(fields: [topic_id], references: [id], onDelete: Cascade)
+  subjectGroup SubjectGroup @relation(fields: [subject_group_id], references: [id], onDelete: Cascade)
+
+  @@unique([topic_id, subject_group_id, organization_id])
+  @@map("topic_activations")
+}
+
+model PracticeAttempt {
+  id              String   @id @default(uuid()) @db.Uuid
+  organization_id String   @db.Uuid
+  student_id      String   @db.Uuid
+  subject_id      String   @db.Uuid
+  topic_id        String   @db.Uuid
+  total_questions Int
+  correct_answers Int
+  created_at      DateTime @default(now())
+
+  organization Organization     @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  student      User             @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  subject      Subject          @relation(fields: [subject_id], references: [id], onDelete: Cascade)
+  topic        Topic            @relation(fields: [topic_id], references: [id], onDelete: Cascade)
+  answers      PracticeAnswer[]
+
+  @@map("practice_attempts")
+}
+
+model PracticeAnswer {
+  id              String  @id @default(uuid()) @db.Uuid
+  attempt_id      String  @db.Uuid
+  question_id     String  @db.Uuid
+  selected_answer String
+  is_correct      Boolean
+
+  attempt  PracticeAttempt @relation(fields: [attempt_id], references: [id], onDelete: Cascade)
+  question Question        @relation(fields: [question_id], references: [id], onDelete: Cascade)
+
+  @@map("practice_answers")
+}
+
+// --- New Academic Structure ---
+
+enum SubjectType {
+  MANDATORY
+  OPTIONAL
+  ELECTIVE
+}
+
+model SubjectGroup {
+  id              String   @id @default(uuid()) @db.Uuid
+  organization_id String   @db.Uuid
+  name            String
+  grade_id        String   @db.Uuid
+  section_id      String   @db.Uuid
+  created_at      DateTime @default(now())
+
+  organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  grade        Grade        @relation(fields: [grade_id], references: [id], onDelete: Cascade)
+  section      Section      @relation(fields: [section_id], references: [id], onDelete: Cascade)
+
+  subjects        SubjectGroupSubject[]
+  students        StudentGroupMapping[]
+  activations     TopicActivation[]
+
+  @@unique([name, grade_id, section_id, organization_id])
+  @@index([organization_id])
+  @@map("subject_groups")
+}
+
+model SubjectGroupSubject {
+  group_id     String      @db.Uuid
+  subject_id   String      @db.Uuid
+  subject_type SubjectType @default(MANDATORY)
+
+  group   SubjectGroup @relation(fields: [group_id], references: [id], onDelete: Cascade)
+  subject Subject      @relation(fields: [subject_id], references: [id], onDelete: Cascade)
+
+  @@id([group_id, subject_id])
+  @@map("subject_group_subjects")
+}
+
+model StudentGroupMapping {
+  id              String   @id @default(uuid()) @db.Uuid
+  organization_id String   @db.Uuid
+  student_id      String   @db.Uuid
+  group_id        String   @db.Uuid
+  created_at      DateTime @default(now())
+
+  organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  student      User         @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  group        SubjectGroup @relation(fields: [group_id], references: [id], onDelete: Cascade)
+
+  @@unique([student_id, group_id])
+  @@index([organization_id])
+  @@map("student_group_mapping")
+}
+

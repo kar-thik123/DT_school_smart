@@ -1,0 +1,180 @@
+<section class="content">
+  <div class="content-block">
+    <div class="block-header">
+      <!-- breadcrumb -->
+      <app-breadcrumb [title]="'Invoice'" [items]="['Billing']" [active_item]="'Invoice'"></app-breadcrumb>
+    </div>
+    <div class="row clearfix">
+      <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+        <mat-card class="invoice-card">
+          <mat-card-header class="invoice-header">
+            <div class="invoice-title">
+              <h2 class="invoice-id">INVOICE #345766</h2>
+              <div class="invoice-status">
+                <span class="status-badge success">Paid</span>
+              </div>
+            </div>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="invoice-info-section">
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="company-info">
+                    <img src="assets/images/invoice_logo.png" alt="logo" class="company-logo" />
+                    <h3 class="company-name">Cliniva Hospital</h3>
+                    <div class="company-address">
+                      <p>
+                        D 103, Cliniva Hospital<br>
+                        Opp. Town Hall<br>
+                        Sardar Patel Road<br>
+                        Ahmedabad - 380015
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="client-info align-right">
+                    <h3 class="text-right">BILL TO</h3>
+                    <h4>Jayesh Patel</h4>
+                    <div class="client-address">
+                      <p>
+                        207, Prem Sagar Appt.<br>
+                        Near Income Tax Office<br>
+                        Ashram Road<br>
+                        Ahmedabad - 380057
+                      </p>
+                    </div>
+                    <div class="invoice-meta align-right">
+                      <div class="meta-item">
+                        <span class="meta-label">Invoice Date:</span>
+                        <span class="meta-value">14th July 2023</span>
+                      </div>
+                      <div class="meta-item">
+                        <span class="meta-label">Due Date:</span>
+                        <span class="meta-value">28th July 2023</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="invoice-items-section">
+              <h3 class="section-title">Invoice Items</h3>
+              <div class="mat-elevation-z0">
+                <table mat-table [dataSource]="invoiceItems" class="invoice-table">
+                  <!-- Item Number Column -->
+                  <ng-container matColumnDef="no">
+                    <th mat-header-cell *matHeaderCellDef> # </th>
+                    <td mat-cell *matCellDef="let item"> {{item.no}} </td>
+                    <td mat-footer-cell *matFooterCellDef></td>
+                  </ng-container>
+
+                  <!-- Description Column -->
+                  <ng-container matColumnDef="description">
+                    <th mat-header-cell *matHeaderCellDef> Description </th>
+                    <td mat-cell *matCellDef="let item"> {{item.description}} </td>
+                    <td mat-footer-cell *matFooterCellDef> <strong>Subtotal</strong> </td>
+                  </ng-container>
+
+                  <!-- Quantity Column -->
+                  <ng-container matColumnDef="quantity">
+                    <th mat-header-cell *matHeaderCellDef class="text-right"> Quantity </th>
+                    <td mat-cell *matCellDef="let item" class="text-right"> {{item.quantity}} </td>
+                    <td mat-footer-cell *matFooterCellDef></td>
+                  </ng-container>
+
+                  <!-- Unit Price Column -->
+                  <ng-container matColumnDef="unitPrice">
+                    <th mat-header-cell *matHeaderCellDef class="text-right"> Unit Price </th>
+                    <td mat-cell *matCellDef="let item" class="text-right"> {{item.unitPrice}} </td>
+                    <td mat-footer-cell *matFooterCellDef></td>
+                  </ng-container>
+
+                  <!-- Charges Column -->
+                  <ng-container matColumnDef="charges">
+                    <th mat-header-cell *matHeaderCellDef class="text-right"> Charges </th>
+                    <td mat-cell *matCellDef="let item" class="text-right"> {{item.charges}} </td>
+                    <td mat-footer-cell *matFooterCellDef></td>
+                  </ng-container>
+
+                  <!-- Discount Column -->
+                  <ng-container matColumnDef="discount">
+                    <th mat-header-cell *matHeaderCellDef class="text-right"> Discount </th>
+                    <td mat-cell *matCellDef="let item" class="text-right"> {{item.discount}} </td>
+                    <td mat-footer-cell *matFooterCellDef></td>
+                  </ng-container>
+
+                  <!-- Total Column -->
+                  <ng-container matColumnDef="total">
+                    <th mat-header-cell *matHeaderCellDef class="text-right"> Total </th>
+                    <td mat-cell *matCellDef="let item" class="text-right"> {{item.total}} </td>
+                    <td mat-footer-cell *matFooterCellDef class="text-right"> <strong>$2600</strong> </td>
+                  </ng-container>
+
+                  <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                  <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+                  <tr mat-footer-row *matFooterRowDef="displayedColumns"></tr>
+                </table>
+              </div>
+            </div>
+            <div class="invoice-summary-section">
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="payment-info">
+                    <h3 class="section-title">Payment Information</h3>
+                    <div class="payment-details">
+                      <div class="payment-method">
+                        <span class="label">Payment Method:</span>
+                        <span class="value">Credit Card</span>
+                      </div>
+                      <div class="payment-terms">
+                        <span class="label">Payment Terms:</span>
+                        <span class="value">Due on Receipt</span>
+                      </div>
+                      <div class="payment-note">
+                        <span class="label">Note:</span>
+                        <span class="value">Thank you for your business!</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="invoice-totals">
+                    <div class="totals-row">
+                      <span class="label">Subtotal:</span>
+                      <span class="value">$2,600.00</span>
+                    </div>
+                    <div class="totals-row">
+                      <span class="label">Discount:</span>
+                      <span class="value">-$100.00</span>
+                    </div>
+                    <div class="totals-row">
+                      <span class="label">Tax (10%):</span>
+                      <span class="value">$160.00</span>
+                    </div>
+                    <div class="totals-row total">
+                      <span class="label">Total:</span>
+                      <span class="value">$2,760.00</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="invoice-actions">
+              <button mat-flat-button color="primary">
+                <mat-icon>print</mat-icon> Print
+              </button>
+              <button mat-flat-button color="accent">
+                <mat-icon>download</mat-icon> Download PDF
+              </button>
+              <button mat-stroked-button>
+                <mat-icon>email</mat-icon> Email Invoice
+              </button>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+  </div>
+</section>

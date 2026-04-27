@@ -1,0 +1,86 @@
+<div class="addContainer">
+  <div class="modalHeader">
+    <div class="avatarDetails">
+      <div class="modalTitle">
+        {{dialogTitle}}
+      </div>
+    </div>
+    <button mat-icon-button mat-dialog-close class="modal-close-button" aria-label="Close dialog" type="button">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+  <div mat-dialog-content>
+    <form class="register-form m-4" [formGroup]="libraryReportForm" (ngSubmit)="submit()">
+      <div class="row">
+        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Report Name</mat-label>
+            <input matInput formControlName="report_name" required>
+            @if (libraryReportForm.get('report_name')?.hasError('required')) {
+            <mat-error>
+              Report Name is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Report Type</mat-label>
+            <mat-select formControlName="type" required>
+              <mat-option [value]="'Stock Report'">Stock Report</mat-option>
+              <mat-option [value]="'Overdue Report'">Overdue Report</mat-option>
+              <mat-option [value]="'Borrowing Report'">Borrowing Report</mat-option>
+              <mat-option [value]="'Finance Report'">Finance Report</mat-option>
+              <mat-option [value]="'Catalog Report'">Catalog Report</mat-option>
+            </mat-select>
+            @if (libraryReportForm.get('type')?.hasError('required')) {
+            <mat-error>
+              Report Type is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Generated Date</mat-label>
+            <input matInput [matDatepicker]="generatedDatePicker" formControlName="generated_date" required>
+            <mat-datepicker-toggle matSuffix [for]="generatedDatePicker"></mat-datepicker-toggle>
+            <mat-datepicker #generatedDatePicker></mat-datepicker>
+            @if (libraryReportForm.get('generated_date')?.hasError('required')) {
+            <mat-error>
+              Generated Date is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Status</mat-label>
+            <mat-select formControlName="status" required>
+              <mat-option [value]="'Available'">Available</mat-option>
+              <mat-option [value]="'Processing'">Processing</mat-option>
+            </mat-select>
+            @if (libraryReportForm.get('status')?.hasError('required')) {
+            <mat-error>
+              Status is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+          <div class="example-button-row">
+            <button mat-flat-button class="formSubmitBtn" [disabled]="!libraryReportForm.valid"
+              type="submit">Save</button>
+            <button mat-flat-button mat-dialog-close class="formCancelBtn" tabindex="-1">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

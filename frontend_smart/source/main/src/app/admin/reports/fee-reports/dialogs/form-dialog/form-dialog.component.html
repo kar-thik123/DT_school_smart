@@ -1,0 +1,126 @@
+<div class="addContainer">
+    <div class="modalHeader">
+        <div class="avatarDetails">
+            <div class="modalTitle">{{dialogTitle}}</div>
+        </div>
+        <button mat-icon-button mat-dialog-close class="modal-close-button" aria-label="Close dialog" type="button">
+            <mat-icon>close</mat-icon>
+        </button>
+    </div>
+    <div mat-dialog-content>
+        <form class="register-form m-4" [formGroup]="feeReportForm" (ngSubmit)="submit()">
+            <div class="row">
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Report Type</mat-label>
+                        <mat-select formControlName="reportType" required>
+                            <mat-option value="Fee Collection">Fee Collection</mat-option>
+                            <mat-option value="Due Fees">Due Fees</mat-option>
+                            <mat-option value="Fee Summary">Fee Summary</mat-option>
+                            <mat-option value="Miscellaneous Fees">Miscellaneous Fees</mat-option>
+                            <mat-option value="Discount Report">Discount Report</mat-option>
+                            <mat-option value="Refund Report">Refund Report</mat-option>
+                            <mat-option value="Overdue List">Overdue List</mat-option>
+                        </mat-select>
+                        @if (feeReportForm.get('reportType')?.hasError('required')) {
+                        <mat-error>Report Type is required</mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Fee Category</mat-label>
+                        <mat-select formControlName="feeCategory" required>
+                            <mat-option value="Tuition Fee">Tuition Fee</mat-option>
+                            <mat-option value="Hostel Fee">Hostel Fee</mat-option>
+                            <mat-option value="Transport Fee">Transport Fee</mat-option>
+                            <mat-option value="Library Fee">Library Fee</mat-option>
+                            <mat-option value="Lab Fee">Lab Fee</mat-option>
+                            <mat-option value="Admission Fee">Admission Fee</mat-option>
+                            <mat-option value="Exam Fee">Exam Fee</mat-option>
+                            <mat-option value="Registration Fee">Registration Fee</mat-option>
+                            <mat-option value="Sports Fee">Sports Fee</mat-option>
+                            <mat-option value="Miscellaneous Fee">Miscellaneous Fee</mat-option>
+                        </mat-select>
+                        @if (feeReportForm.get('feeCategory')?.hasError('required')) {
+                        <mat-error>Fee Category is required</mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Date From</mat-label>
+                        <input matInput type="date" formControlName="dateFrom" required>
+                        @if (feeReportForm.get('dateFrom')?.hasError('required')) {
+                        <mat-error>Date From is required</mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Date To</mat-label>
+                        <input matInput type="date" formControlName="dateTo" required>
+                        @if (feeReportForm.get('dateTo')?.hasError('required')) {
+                        <mat-error>Date To is required</mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Total Amount</mat-label>
+                        <input matInput type="number" formControlName="totalAmount" required>
+                        @if (feeReportForm.get('totalAmount')?.hasError('required')) {
+                        <mat-error>Total Amount is required</mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Generated By</mat-label>
+                        <input matInput formControlName="generatedBy" required>
+                        @if (feeReportForm.get('generatedBy')?.hasError('required')) {
+                        <mat-error>Generated By is required</mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Date</mat-label>
+                        <input matInput type="date" formControlName="date" required>
+                        @if (feeReportForm.get('date')?.hasError('required')) {
+                        <mat-error>Date is required</mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Status</mat-label>
+                        <mat-select formControlName="status" required>
+                            <mat-option value="Completed">Completed</mat-option>
+                            <mat-option value="Pending">Pending</mat-option>
+                            <mat-option value="In Progress">In Progress</mat-option>
+                        </mat-select>
+                        @if (feeReportForm.get('status')?.hasError('required')) {
+                        <mat-error>Status is required</mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+                    <div class="example-button-row">
+                        <button mat-flat-button class="formSubmitBtn" [disabled]="!feeReportForm.valid"
+                            type="submit">Save</button>
+                        <button mat-flat-button mat-dialog-close class="formCancelBtn" tabindex="-1">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

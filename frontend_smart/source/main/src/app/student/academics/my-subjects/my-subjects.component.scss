@@ -1,0 +1,75 @@
+.my-subject-container {
+  padding: 20px;
+}
+
+.subject-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.subject-card {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  background: linear-gradient(145deg, #ffffff, #f0f0f0);
+  box-shadow: 8px 8px 16px #d9d9d9, -8px -8px 16px #ffffff;
+  border: 1px solid #e0e0e0;
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+  }
+
+  mat-card-actions {
+    padding-top: 10px;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .subject-card-header {
+    img {
+      margin-bottom: 0px;
+    }
+    .mat-mdc-card-subtitle {
+      color: #333;
+    }
+  }
+}
+
+.loading-spinner,
+.error-message,
+.no-subjects-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 50px;
+  text-align: center;
+}
+
+.error-message mat-icon,
+.no-subjects-message mat-icon {
+  font-size: 48px;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 10px;
+}
+::ng-deep .dark {
+  .my-subject-container {
+    .subject-card {
+      background: #000000 !important;
+      box-shadow: none !important;
+      border: 1px solid #000000 !important;
+
+      .subject-card-header {
+        border-bottom: 1px solid #1a1a1a !important;
+        .mat-mdc-card-subtitle {
+          color: #96a2b4 !important;
+        }
+      }
+    }
+  }
+}

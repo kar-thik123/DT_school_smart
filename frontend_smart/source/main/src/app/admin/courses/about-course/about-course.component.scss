@@ -1,0 +1,438 @@
+// Modern Course Detail Page Styling
+
+// Variables
+$primary-color: #3f51b5;
+$accent-color: #ff4081;
+$text-light: #999999;
+$border-color: #e0e0e0;
+$card-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+$border-radius: 8px;
+$transition-speed: 0.3s;
+
+// Global Styles
+.course-card {
+  border-radius: $border-radius;
+  box-shadow: $card-shadow;
+  border: none;
+  margin-bottom: 25px;
+  overflow: hidden;
+  transition: transform $transition-speed, box-shadow $transition-speed;
+  background-color: #ffffff;
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  }
+
+  .card-header {
+    padding: 20px 25px;
+    background-color: #fff;
+    border-bottom: 1px solid $border-color;
+
+    .section-title {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: $primary-color;
+    }
+  }
+
+  .card-body {
+    padding: 25px;
+    background: #ffffff;
+  }
+}
+
+// Course Header Card
+.course-header-card {
+  .course-header {
+    position: relative;
+  }
+
+  .course-cover-img {
+    position: relative;
+    height: 200px;
+    overflow: hidden;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform $transition-speed;
+    }
+
+    &:hover img {
+      transform: scale(1.05);
+    }
+
+    .course-category {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background-color: $accent-color;
+      color: white;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+  }
+
+  .course-title-section {
+    padding: 20px;
+
+    .course-title {
+      margin: 0 0 10px;
+      font-size: 1.8rem;
+      font-weight: 600;
+    }
+
+    .course-rating {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+
+      .star-icon {
+        color: #ffc107;
+        font-size: 1.2rem;
+        width: 20px;
+        height: 20px;
+      }
+
+      .star-icon-half {
+        @extend .star-icon;
+      }
+
+      .rating-count {
+        margin-left: 8px;
+        font-size: 0.9rem;
+      }
+    }
+
+    .course-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+
+      span {
+        display: flex;
+        align-items: center;
+        font-size: 0.9rem;
+
+        mat-icon {
+          font-size: 1.1rem;
+          width: 18px;
+          height: 18px;
+          margin-right: 5px;
+          color: $primary-color;
+        }
+      }
+    }
+  }
+}
+
+// Course Info Card
+.course-info-card {
+  .course-description {
+    margin-bottom: 25px;
+
+    p {
+      line-height: 1.6;
+      margin: 0;
+    }
+  }
+
+  .course-details-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 25px;
+
+    .detail-item {
+      display: flex;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid $border-color;
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      .detail-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        background-color: rgba($primary-color, 0.1);
+        border-radius: 50%;
+        margin-right: 15px;
+
+        mat-icon {
+          color: $primary-color;
+        }
+      }
+
+      .detail-content {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+
+        .detail-label {
+          font-size: 0.85rem;
+          color: $text-light;
+          margin-bottom: 3px;
+        }
+
+        .detail-value {
+          font-size: 1rem;
+          font-weight: 500;
+        }
+      }
+    }
+  }
+
+  .course-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
+
+    .enroll-btn {
+      flex: 1;
+      padding: 10px 20px;
+      font-weight: 500;
+    }
+
+    .wishlist-btn {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+
+      mat-icon {
+        font-size: 1.1rem;
+        width: 18px;
+        height: 18px;
+      }
+    }
+  }
+}
+
+// Course Content Card
+.course-content-card {
+  .course-description-content {
+    p {
+      line-height: 1.7;
+      margin-bottom: 20px;
+    }
+  }
+
+  .key-features {
+    margin: 30px 0;
+
+    h4 {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 20px;
+
+      .feature-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border-radius: $border-radius;
+        transition: background-color $transition-speed;
+
+        &:hover {
+          background-color: rgba($primary-color, 0.05);
+        }
+
+        mat-icon {
+          color: $primary-color;
+          font-size: 1.8rem;
+          width: 30px;
+          height: 30px;
+          margin-bottom: 10px;
+        }
+
+        span {
+          font-size: 0.9rem;
+          font-weight: 500;
+        }
+      }
+    }
+  }
+
+  .section-divider {
+    margin: 30px 0;
+    border-top: 1px solid $border-color;
+  }
+
+  .section-subtitle {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+    color: $primary-color;
+  }
+
+  // Syllabus Section
+  .syllabus-section {
+    margin-bottom: 30px;
+
+    .syllabus-modules {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+
+      .module-item {
+        background-color: #f9f9f9;
+        border-radius: $border-radius;
+        overflow: hidden;
+
+        .module-header {
+          display: flex;
+          align-items: center;
+          padding: 15px 20px;
+          background-color: rgba($primary-color, 0.05);
+
+          mat-icon {
+            color: $primary-color;
+            margin-right: 15px;
+          }
+
+          h5 {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 500;
+          }
+        }
+
+        .module-topics {
+          list-style: none;
+          padding: 15px 20px;
+          margin: 0;
+
+          li {
+            position: relative;
+            padding: 8px 0 8px 20px;
+            font-size: 0.95rem;
+
+            .topic-bullet {
+              position: absolute;
+              left: 0;
+              top: 15px;
+              width: 6px;
+              height: 6px;
+              background-color: $primary-color;
+              border-radius: 50%;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Outcomes Section
+  .outcomes-section {
+    margin-bottom: 20px;
+
+    .outcomes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 15px;
+
+      .outcome-item {
+        display: flex;
+        align-items: flex-start;
+        padding: 10px;
+
+        mat-icon {
+          color: $accent-color;
+          margin-right: 10px;
+          font-size: 1.2rem;
+          flex-shrink: 0;
+        }
+
+        p {
+          margin: 0;
+          font-size: 0.95rem;
+          line-height: 1.5;
+        }
+      }
+    }
+  }
+}
+
+// Responsive Adjustments
+@media (max-width: 992px) {
+  .course-info-card .course-actions {
+    flex-direction: column;
+  }
+
+  .course-content-card .key-features .features-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  }
+
+  .course-content-card .outcomes-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .course-header-card .course-title-section .course-meta {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .course-content-card .key-features .features-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 576px) {
+  .card .card-body {
+    padding: 15px;
+  }
+
+  .course-header-card .course-cover-img {
+    height: 150px;
+  }
+
+  .course-header-card .course-title-section .course-title {
+    font-size: 1.5rem;
+  }
+
+  .course-content-card .key-features .features-grid {
+    grid-template-columns: 1fr;
+  }
+}
+::ng-deep .dark {
+  .course-content-card {
+    .key-features .features-grid .feature-item {
+      background-color: #0a0b0e !important;
+    }
+    .syllabus-section .syllabus-modules .module-item {
+      background-color: #1a202e !important;
+      .module-header {
+        background-color: #1a202e !important;
+      }
+    }
+  }
+  .course-card {
+    background: #1a202e !important;
+    .card-header {
+      background: #1a202e !important;
+    }
+    .card-body {
+      background: #1a202e !important;
+    }
+  }
+}

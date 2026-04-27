@@ -1,0 +1,37 @@
+<div class="matrix-wrapper">
+  <div class="table-responsive border rounded">
+    <table class="table matrix-table mb-0">
+      <thead>
+        <tr>
+          <th>Module</th>
+          <th *ngFor="let action of actions" class="text-center">{{ action }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let module of modules">
+          <td class="module-name">
+            <strong>{{ module }}</strong>
+          </td>
+          <td *ngFor="let action of actions" class="text-center">
+             <mat-checkbox 
+               *ngIf="!isPermissionDisabled(module, action) || isReadOnly"
+               [checked]="hasPermission(module, action)"
+               [disabled]="isReadOnly || isPermissionDisabled(module, action)"
+               (change)="togglePermission(module, action)"
+               color="primary">
+             </mat-checkbox>
+             <span *ngIf="isPermissionDisabled(module, action) && !isReadOnly" class="not-applicable">-</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="matrix-actions mt-4 d-flex justify-content-end" *ngIf="!isReadOnly && roleId">
+    <button mat-flat-button color="primary" (click)="savePermissions()" [disabled]="isSaving">
+      <mat-icon *ngIf="!isSaving">sync</mat-icon>
+      <mat-icon *ngIf="isSaving" class="spinner">refresh</mat-icon>
+      {{ isSaving ? 'SYNCHRONIZING...' : 'SAVE CAPABILITIES' }}
+    </button>
+  </div>
+</div>

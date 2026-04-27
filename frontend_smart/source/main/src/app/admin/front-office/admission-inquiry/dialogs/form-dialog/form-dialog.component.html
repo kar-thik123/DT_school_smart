@@ -1,0 +1,247 @@
+<div class="addContainer">
+  <div class="modalHeader">
+    <div class="avatarDetails">
+      <label class="hoverable" for="tableFileInput">
+        <img [src]='admissionInquiry.img' alt="avatar">
+      </label>
+      <div class="modalTitle">
+        {{ dialogTitle }}
+      </div>
+    </div>
+    <button mat-icon-button mat-dialog-close class="modal-close-button" aria-label="Close dialog" type="button">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+  <div mat-dialog-content>
+    <form class="register-form m-4" [formGroup]="admissionInquiryForm" (ngSubmit)="submit()">
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Inquiry ID</mat-label>
+            <input matInput formControlName="inquiryId" readonly>
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Student Name</mat-label>
+            <input matInput formControlName="studentName" required>
+            <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>person</mat-icon>
+            @if (admissionInquiryForm.get('studentName')?.hasError('required')) {
+            <mat-error>
+              Student name is required
+            </mat-error>
+            }
+            @if (admissionInquiryForm.get('studentName')?.hasError('maxlength')) {
+            <mat-error>
+              Maximum length is 100 characters
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Guardian Name</mat-label>
+            <input matInput formControlName="guardianName" required>
+            @if (admissionInquiryForm.get('guardianName')?.hasError('required')) {
+            <mat-error>
+              Guardian name is required
+            </mat-error>
+            }
+            @if (admissionInquiryForm.get('guardianName')?.hasError('maxlength')) {
+            <mat-error>
+              Maximum length is 100 characters
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Contact Number</mat-label>
+            <input matInput formControlName="contactNumber" required>
+            <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>phone</mat-icon>
+            @if (admissionInquiryForm.get('contactNumber')?.hasError('required')) {
+            <mat-error>
+              Contact number is required
+            </mat-error>
+            }
+            @if (admissionInquiryForm.get('contactNumber')?.hasError('maxlength')) {
+            <mat-error>
+              Maximum length is 15 characters
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Email Address</mat-label>
+            <input matInput formControlName="emailAddress" required>
+            <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>email</mat-icon>
+            @if (admissionInquiryForm.get('emailAddress')?.hasError('required')) {
+            <mat-error>
+              Email address is required
+            </mat-error>
+            }
+            @if (admissionInquiryForm.get('emailAddress')?.hasError('email')) {
+            <mat-error>
+              Please enter a valid email address
+            </mat-error>
+            }
+            @if (admissionInquiryForm.get('emailAddress')?.hasError('maxlength')) {
+            <mat-error>
+              Maximum length is 100 characters
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Date of Inquiry</mat-label>
+            <input matInput [matDatepicker]="picker" formControlName="dateOfInquiry" required>
+            <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+            <mat-datepicker #picker></mat-datepicker>
+            @if (admissionInquiryForm.get('dateOfInquiry')?.hasError('required')) {
+            <mat-error>
+              Date of inquiry is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Program of Interest</mat-label>
+            <input matInput formControlName="programOfInterest" required>
+            @if (admissionInquiryForm.get('programOfInterest')?.hasError('required')) {
+            <mat-error>
+              Program of interest is required
+            </mat-error>
+            }
+            @if (admissionInquiryForm.get('programOfInterest')?.hasError('maxlength')) {
+            <mat-error>
+              Maximum length is 100 characters
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Preferred Start Date</mat-label>
+            <input matInput [matDatepicker]="startPicker" formControlName="preferredStartDate" required>
+            <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+            <mat-datepicker #startPicker></mat-datepicker>
+            @if (admissionInquiryForm.get('preferredStartDate')?.hasError('required')) {
+            <mat-error>
+              Preferred start date is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Inquiry Source</mat-label>
+            <input matInput formControlName="inquirySource" required>
+            @if (admissionInquiryForm.get('inquirySource')?.hasError('required')) {
+            <mat-error>
+              Inquiry source is required
+            </mat-error>
+            }
+            @if (admissionInquiryForm.get('inquirySource')?.hasError('maxlength')) {
+            <mat-error>
+              Maximum length is 50 characters
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Status</mat-label>
+            <mat-select formControlName="status" required>
+              <mat-option value="New">New</mat-option>
+              <mat-option value="Closed">Closed</mat-option>
+              <mat-option value="In Process">In Process</mat-option>
+            </mat-select>
+            @if (admissionInquiryForm.get('status')?.hasError('required')) {
+            <mat-error>
+              Status is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Follow Up Date</mat-label>
+            <input matInput [matDatepicker]="followUpPicker" formControlName="followUpDate">
+            <mat-datepicker-toggle matSuffix [for]="followUpPicker"></mat-datepicker-toggle>
+            <mat-datepicker #followUpPicker></mat-datepicker>
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Assigned To</mat-label>
+            <input matInput formControlName="assignedTo">
+            @if (admissionInquiryForm.get('assignedTo')?.hasError('maxlength')) {
+            <mat-error>
+              Maximum length is 100 characters
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Campus Location</mat-label>
+            <input matInput formControlName="campusLocation">
+            @if (admissionInquiryForm.get('campusLocation')?.hasError('maxlength')) {
+            <mat-error>
+              Maximum length is 100 characters
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Previous Education</mat-label>
+            <input matInput formControlName="previousEducation">
+            @if (admissionInquiryForm.get('previousEducation')?.hasError('maxlength')) {
+            <mat-error>
+              Maximum length is 500 characters
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Notes</mat-label>
+            <textarea matInput formControlName="notes" matTooltip="Maximum 1000 characters"></textarea>
+            @if (admissionInquiryForm.get('notes')?.hasError('maxlength')) {
+            <mat-error>
+              Maximum length is 1000 characters
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+          <div class="example-button-row">
+            <button mat-flat-button class="formSubmitBtn" [disabled]="!admissionInquiryForm.valid"
+              type="submit">Save</button>
+            <button mat-flat-button mat-dialog-close class="formCancelBtn" tabindex="-1">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,105 @@
+<div class="addContainer">
+    <div class="modalHeader">
+        <div class="avatarDetails">
+            <div class="modalTitle">
+                {{dialogTitle}}
+            </div>
+        </div>
+        <button mat-icon-button mat-dialog-close class="modal-close-button" aria-label="Close dialog" type="button">
+            <mat-icon>close</mat-icon>
+        </button>
+    </div>
+    <div mat-dialog-content>
+        <form class="register-form m-4" [formGroup]="documentForm" (ngSubmit)="submit()">
+            <div class="row">
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Document Name</mat-label>
+                        <input matInput formControlName="name" required>
+                        <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>description</mat-icon>
+                        @if (documentForm.get('name')?.hasError('required')) {
+                        <mat-error>
+                            Name is required
+                        </mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Type</mat-label>
+                        <mat-select formControlName="type" required>
+                            <mat-option [value]="'ID Proof'">ID Proof</mat-option>
+                            <mat-option [value]="'Degree'">Degree</mat-option>
+                            <mat-option [value]="'Contract'">Contract</mat-option>
+                            <mat-option [value]="'Certificate'">Certificate</mat-option>
+                            <mat-option [value]="'Other'">Other</mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Upload Date</mat-label>
+                        <input matInput [matDatepicker]="picker" formControlName="uploadDate" required>
+                        <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                        <mat-datepicker #picker></mat-datepicker>
+                    </mat-form-field>
+                </div>
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Size</mat-label>
+                        <input matInput formControlName="size" placeholder="e.g., 2.5 MB" required>
+                        <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>summarize</mat-icon>
+                        @if (documentForm.get('size')?.hasError('required')) {
+                        <mat-error>
+                            Size is required
+                        </mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>File URL (Optional)</mat-label>
+                        <input matInput formControlName="fileUrl">
+                        <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>link</mat-icon>
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+                    <div class="file-upload-container" 
+                         (dragover)="onDragOver($event)" 
+                         (dragleave)="onDragLeave($event)" 
+                         (drop)="onDrop($event)" 
+                         (click)="fileInput.click()">
+                        <input #fileInput type="file" (change)="onFileSelected($event)" style="display: none;">
+                        <div class="file-upload-content" [class.drag-over]="isDragOver">
+                            <mat-icon class="upload-icon">cloud_upload</mat-icon>
+                            <p class="upload-text">Drag & drop files here or click to select</p>
+                            <p class="upload-hint">Supports PDF, DOC, DOCX, JPG, PNG, XLS, XLSX</p>
+                            @if (selectedFile) {
+                                <div class="selected-file">
+                                    <mat-icon class="file-icon">insert_drive_file</mat-icon>
+                                    <span class="file-name">{{ selectedFile.name }}</span>
+                                    <span class="file-size">({{ formatFileSize(selectedFile.size) }})</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+                    <div class="example-button-row">
+                        <button mat-flat-button class="formSubmitBtn" [disabled]="!documentForm.valid"
+                            (click)="submit()">Save</button>
+                        <button mat-flat-button mat-dialog-close class="formCancelBtn" tabindex="-1">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

@@ -1,0 +1,445 @@
+<section class="content">
+  <div class="content-block">
+    @for (breadscrum of breadscrums; track breadscrum) {
+    <div class="block-header">
+      <!-- breadcrumb -->
+      <app-breadcrumb [title]="breadscrum.title" [items]="breadscrum.items" [active_item]="breadscrum.active">
+      </app-breadcrumb>
+    </div>
+    }
+    <div class="row">
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+        <mat-card>
+          <mat-card-header>
+            <mat-card-title>Your Progress</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <ng-scrollbar style="height: 380px" visibility="hover">
+              <app-progress-table [subjects]="subjects"></app-progress-table>
+            </ng-scrollbar>
+          </mat-card-content>
+        </mat-card>
+      </div>
+      <div class="col-xs-12 col-sm-12 col-md-4 col-lg-4">
+        <mat-card>
+          <mat-card-header class="header-style">
+            <mat-card-title>Assignments</mat-card-title>
+            <a mat-button color="primary" href="#" (click)="$event.preventDefault();">View All</a>
+          </mat-card-header>
+          <mat-card-content>
+            <ng-scrollbar style="height: 380px" visibility="hover">
+              <div class="doc-file-type">
+                <app-document-list [documents]="documentList"></app-document-list>
+              </div>
+            </ng-scrollbar>
+          </mat-card-content>
+        </mat-card>
+      </div>
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+        <mat-card>
+          <mat-card-header class="header-style">
+            <mat-card-title> Upcomming Class</mat-card-title>
+            <a mat-button color="primary" href="#" (click)="$event.preventDefault();">View All</a>
+          </mat-card-header>
+          <mat-card-content>
+            <ng-scrollbar style="height: 380px" visibility="hover">
+              <div class="doc-file-type">
+                <app-emp-schedule [schedules]="scheduleList"></app-emp-schedule>
+              </div>
+            </ng-scrollbar>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+    <div class="row clearfix">
+      <!-- Customer Review -->
+      <div class="col-xs-12 col-sm-12 col-md-8 col-lg-8">
+        <mat-card>
+          <mat-card-header class="header-style">
+            <mat-card-title> Customer Review</mat-card-title>
+            <a mat-button color="primary" href="#" (click)="$event.preventDefault();">View All</a>
+          </mat-card-header>
+          <mat-card-content>
+            <ng-scrollbar style="height: 400px" visibility="hover">
+              <app-review-widget [reviews]="reviewList"></app-review-widget>
+            </ng-scrollbar>
+          </mat-card-content>
+        </mat-card>
+      </div>
+      <!-- #END# Customer Review -->
+      <div class="col-md-4 col-sm-12 col-12">
+        <mat-card>
+          <mat-card-header>
+            <mat-card-title>Earning Source</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <ng-scrollbar style="height: 400px" visibility="hover">
+              <div class="totalEarning">
+                <h6>$90,808</h6>
+              </div>
+              <app-earning-source [earningSources]="sources"></app-earning-source>
+            </ng-scrollbar>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+    <div class="row clearfix">
+      <div class="col-lg-4 col-md-4 col-sm-4 col-xs-12">
+        <div class="box-part text-center">
+          <i class="fab fa-twitter fa-3x col-blue"></i>
+          <div class="title p-t-15">
+            <h3>Twitter</h3>
+          </div>
+          <div class="text p-b-10">
+            <span>Lorem ipsum dolor sit amet, id quo eruditi
+              eloquentiam. Assum decore te sed. Elitr scripta ocurreret qui
+              ad.</span>
+          </div>
+          <a href="#">Learn More</a>
+        </div>
+      </div>
+      <div class="col-lg-4 col-md-4 col-sm-4 col-xs-12">
+        <div class="box-part text-center">
+          <i class="fab fa-instagram fa-3x col-red"></i>
+          <div class="title p-t-15">
+            <h3>Instagram</h3>
+          </div>
+          <div class="text p-b-10">
+            <span>Lorem ipsum dolor sit amet, id quo eruditi
+              eloquentiam. Assum decore te sed. Elitr scripta ocurreret qui
+              ad.</span>
+          </div>
+          <a href="#">Learn More</a>
+        </div>
+      </div>
+      <div class="col-lg-4 col-md-4 col-sm-4 col-xs-12">
+        <div class="box-part text-center">
+          <i class="fab fa-facebook-f fa-3x col-blue"></i>
+          <div class="title p-t-15">
+            <h3>Facebook</h3>
+          </div>
+          <div class="text p-b-10">
+            <span>Lorem ipsum dolor sit amet, id quo eruditi
+              eloquentiam. Assum decore te sed. Elitr scripta ocurreret qui
+              ad.</span>
+          </div>
+          <a href="#">Learn More</a>
+        </div>
+      </div>
+    </div>
+    <div class="row clearfix">
+      <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
+        <mat-card>
+          <mat-card-header>
+            <mat-card-title>Activity</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <ng-scrollbar style="height: 400px" visibility="hover">
+              <app-activity-list [activities]="activities"></app-activity-list>
+            </ng-scrollbar>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
+        <mat-card>
+          <mat-card-header>
+            <mat-card-title>Assign Task</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <ng-scrollbar style="height: 400px" visibility="hover">
+              <app-assign-task [tasks]="assignTasks"></app-assign-task>
+            </ng-scrollbar>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
+        <mat-card>
+          <mat-card-header>
+            <mat-card-title>New Order List</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <ng-scrollbar style="height: 360px" visibility="hover">
+              <app-new-order-list></app-new-order-list>
+            </ng-scrollbar>
+          </mat-card-content>
+        </mat-card>
+      </div>
+      <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
+        <mat-card>
+          <mat-card-header>
+            <mat-card-title>Employee Task List</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <ng-scrollbar style="height: 360px" visibility="hover">
+              <app-emp-task-tab [employees]="employeeData"></app-emp-task-tab>
+            </ng-scrollbar>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+
+    <div class="row clearfix">
+      <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
+        <div class="card profile-header">
+          <div class="body">
+            <div class="row">
+              <div class="col-lg-4 col-md-4 col-12">
+                <div class="profile-image float-md-right"> <img src="assets/images/user/user6.jpg" alt="">
+                </div>
+              </div>
+              <div class="col-lg-8 col-md-8 col-12">
+                <h5 class="m-t-0 m-b-0">John Deo</h5>
+                <span class="job_post">Java Develper</span>
+                <p>102, Svayam Appartment, new P.L. road, Rajkot-369852</p>
+                <div>
+                  <button type="button" class="btn btn-outline-success btn-border-radius msr-2">Follow</button>
+                  <button type="button" class="btn btn-outline-danger btn-border-radius">Message</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
+        <div class="card profile-header">
+          <div class="body">
+            <div class="row">
+              <div class="col-lg-4 col-md-4 col-12">
+                <div class="profile-image float-md-right"> <img src="assets/images/user/user1.jpg" alt="">
+                </div>
+              </div>
+              <div class="col-lg-8 col-md-8 col-12">
+                <h5 class="m-t-0 m-b-0">Sarah Smith</h5>
+                <span class="job_post">Java Develper</span>
+                <p>102, Svayam Appartment, new P.L. road, Rajkot-369852</p>
+                <div>
+                  <button type="button" class="btn btn-outline-success btn-border-radius msr-2">Follow</button>
+                  <button type="button" class="btn btn-outline-danger btn-border-radius">Message</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-xs-12 col-sm-12 col-md-4 col-lg-4">
+        <mat-card>
+          <mat-card-header class="header-style">
+            <mat-card-title>Recent Activity</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <ng-scrollbar style="height: 400px" visibility="hover">
+              <app-recent-activity [activities]="recentActivities"></app-recent-activity>
+            </ng-scrollbar>
+          </mat-card-content>
+        </mat-card>
+      </div>
+      <div class="col-xs-12 col-sm-12 col-md-4 col-lg-4">
+        <div class="card">
+          <app-chat-widget [avatar]="'assets/images/user/user2.jpg'" [userName]="'Michael'" [newMessagesCount]="2"
+            [messages]="messages" (messageSent)="onMessageSent($event)">
+          </app-chat-widget>
+        </div>
+      </div>
+      <div class="col-xs-12 col-sm-12 col-md-4 col-lg-4">
+        <mat-card>
+          <mat-card-header class="header-style">
+            <mat-card-title>Latest Posts</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <ng-scrollbar style="height: 400px" visibility="hover">
+              <app-latest-post [posts]="postList"></app-latest-post>
+            </ng-scrollbar>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+    <div class="row clearfix">
+      <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
+        <mat-card>
+          <mat-card-header class="header-style">
+            <mat-card-title>Recent Comments</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <ng-scrollbar style="height: 400px" visibility="hover">
+              <app-recent-comments [comments]="comments"></app-recent-comments>
+            </ng-scrollbar>
+          </mat-card-content>
+        </mat-card>
+      </div>
+      <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
+        <mat-card>
+          <mat-card-header class="header-style">
+            <mat-card-title>Timeline</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <ng-scrollbar style="height: 400px" visibility="hover">
+              <app-timeline-list [timelineItems]="timelineData"></app-timeline-list>
+            </ng-scrollbar>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-xs-12 col-sm-12 col-md-4 col-lg-4">
+        <mat-card>
+          <mat-card-header class="header-style">
+            <mat-card-title>Todo List</mat-card-title>
+            <a mat-button color="primary" href="#" (click)="$event.preventDefault();">View All</a>
+          </mat-card-header>
+          <mat-card-content>
+            <ng-scrollbar style="height: 400px" visibility="hover">
+              <app-todo-widget [todos]="tasks" (todoToggled)="onTodoToggled($event)"
+                (todosUpdated)="onTodosUpdated($event)">
+              </app-todo-widget>
+            </ng-scrollbar>
+          </mat-card-content>
+        </mat-card>
+      </div>
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+        <mat-card>
+          <mat-card-header class="header-style">
+            <mat-card-title>Medications</mat-card-title>
+            <a mat-button color="primary" href="#" (click)="$event.preventDefault();">View All</a>
+          </mat-card-header>
+          <mat-card-content>
+            <ng-scrollbar style="height: 400px" visibility="hover">
+              <div class="table-responsive">
+                <app-medicine-list [medicineDataSource]="medicineDataSource"></app-medicine-list>
+              </div>
+              <div class="text-center p-t-20">
+                <button mat-stroked-button color="primary">Report Adverse Effect</button>
+              </div>
+            </ng-scrollbar>
+          </mat-card-content>
+        </mat-card>
+      </div>
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+        <app-report-card-widget [heading]="'Patient Report'" [todayCount]="105" [weekCount]="825" [monthCount]="22067"
+          [progressPercentage]="74" progressColor="orange">
+        </app-report-card-widget>
+
+        <app-report-card-widget [heading]="'Income Report'" [todayCount]="1247" [weekCount]="22568" [monthCount]="65147"
+          [progressPercentage]="70" progressColor="Olive">
+        </app-report-card-widget>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+        <mat-card>
+          <mat-card-content>
+            <ng-scrollbar style="height: 380px" visibility="hover">
+              <app-event-card [events]="events" [maxEvents]="3" [showViewMore]="true">
+              </app-event-card>
+            </ng-scrollbar>
+          </mat-card-content>
+        </mat-card>
+      </div>
+      <div class="col-xs-12 col-sm-12 col-md-4 col-lg-4">
+        <mat-card>
+          <mat-card-header class="header-menu">
+            <mat-card-title>Exam Schedule</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <ng-scrollbar style="height: 330px" visibility="hover">
+              <app-schedule-card [schedules]="examList"></app-schedule-card>
+            </ng-scrollbar>
+          </mat-card-content>
+        </mat-card>
+      </div>
+      <div class="col-xs-12 col-sm-12 col-md-4 col-lg-4">
+        <mat-card>
+          <mat-card-header class="header-style">
+            <mat-card-title>Teacher List</mat-card-title>
+            <a mat-button color="primary" href="#" (click)="$event.preventDefault();">View All</a>
+          </mat-card-header>
+          <mat-card-content>
+            <ng-scrollbar style="height: 330px" visibility="hover">
+              <app-emp-status></app-emp-status>
+            </ng-scrollbar>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+        <mat-card>
+          <mat-card-header class="header-style">
+            <mat-card-title>Noticeboard</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <ng-scrollbar style="height: 400px" visibility="hover">
+              <app-noticeboard></app-noticeboard>
+            </ng-scrollbar>
+          </mat-card-content>
+        </mat-card>
+      </div>
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+        <mat-card>
+          <mat-card-header class="header-style">
+            <mat-card-title>Project Hours</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <ng-scrollbar style="height: 400px" visibility="hover">
+              <app-project-hours></app-project-hours>
+            </ng-scrollbar>
+          </mat-card-content>
+        </mat-card>
+      </div>
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+        <app-attendance-overview></app-attendance-overview>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+        <app-enhanced-events-card [events]="enhancedEvents" [maxEvents]="5" [showViewMore]="true">
+        </app-enhanced-events-card>
+      </div>
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+        <app-noticeboard-announcements></app-noticeboard-announcements>
+      </div>
+    </div>
+    <div class="row mb-3">
+      <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+        <app-teacher-activity-tracker></app-teacher-activity-tracker>
+      </div>
+    </div>
+
+    <div class="row clearfix">
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+        <app-top-students-card></app-top-students-card>
+      </div>
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+        <app-message-center></app-message-center>
+      </div>
+    </div>
+
+    <div class="row clearfix">
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+        <app-class-schedule-card></app-class-schedule-card>
+      </div>
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+        <app-recent-activity></app-recent-activity>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+        <app-quick-notes-panel></app-quick-notes-panel>
+      </div>
+      <div class="col-xs-12 col-sm-12 col-md-4 col-lg-4">
+        <app-upcoming-assignments></app-upcoming-assignments>
+      </div>
+      <div class="col-xs-12 col-sm-12 col-md-4 col-lg-4">
+        <app-recent-grades></app-recent-grades>
+      </div>
+    </div>
+
+
+  </div>
+</section>

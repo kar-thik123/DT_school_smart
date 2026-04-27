@@ -1,0 +1,250 @@
+<section class="content">
+  <div class="content-block">
+    @for (breadscrum of breadscrums; track breadscrum) {
+    <div class="block-header">
+      <!-- breadcrumb -->
+      <app-breadcrumb [title]="breadscrum.title" [items]="breadscrum.items" [active_item]="breadscrum.active">
+      </app-breadcrumb>
+    </div>
+    }
+    <!-- Your content goes here  -->
+    <div class="row clearfix">
+      <div class="col-lg-4 col-md-12">
+        <div class="course-card course-header-card">
+          <div class="course-header">
+            <div class="course-cover-img">
+              <img src="assets/images/banner/course2.png" alt="Course Cover Image">
+              <div class="course-category">Development</div>
+            </div>
+            <div class="course-title-section">
+              <h2 class="course-title">Web Development</h2>
+              <div class="course-rating">
+                <mat-icon class="star-icon">star</mat-icon>
+                <mat-icon class="star-icon">star</mat-icon>
+                <mat-icon class="star-icon">star</mat-icon>
+                <mat-icon class="star-icon">star</mat-icon>
+                <mat-icon class="star-icon-half">star_half</mat-icon>
+                <span class="rating-count">(128 reviews)</span>
+              </div>
+              <div class="course-meta">
+                <span class="students"><mat-icon class="material-icons-outlined">people</mat-icon> 1,240 students</span>
+                <span class="last-update"><mat-icon class="material-icons-outlined">update</mat-icon> Last updated: Jan
+                  2023</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="course-card course-info-card">
+          <div class="card-header">
+            <h3 class="section-title">About Course</h3>
+          </div>
+          <div class="card-body">
+            <div class="course-description">
+              <p>Master web development fundamentals and advanced techniques in this comprehensive course designed for
+                beginners and intermediate developers alike.</p>
+            </div>
+            <div class="course-details-list">
+              <div class="detail-item">
+                <div class="detail-icon">
+                  <mat-icon class="material-icons-outlined">schedule</mat-icon>
+                </div>
+                <div class="detail-content">
+                  <span class="detail-label">Duration</span>
+                  <span class="detail-value">1 Year</span>
+                </div>
+              </div>
+              <div class="detail-item">
+                <div class="detail-icon">
+                  <mat-icon class="material-icons-outlined">attach_money</mat-icon>
+                </div>
+                <div class="detail-content">
+                  <span class="detail-label">Price</span>
+                  <span class="detail-value">$230.00</span>
+                </div>
+              </div>
+              <div class="detail-item">
+                <div class="detail-icon">
+                  <mat-icon class="material-icons-outlined">person</mat-icon>
+                </div>
+                <div class="detail-content">
+                  <span class="detail-label">Instructor</span>
+                  <span class="detail-value">Abdul Saikh</span>
+                </div>
+              </div>
+              <div class="detail-item">
+                <div class="detail-icon">
+                  <mat-icon class="material-icons-outlined">event</mat-icon>
+                </div>
+                <div class="detail-content">
+                  <span class="detail-label">Start Date</span>
+                  <span class="detail-value">21st Jan 2023</span>
+                </div>
+              </div>
+              <div class="detail-item">
+                <div class="detail-icon">
+                  <mat-icon class="material-icons-outlined">language</mat-icon>
+                </div>
+                <div class="detail-content">
+                  <span class="detail-label">Language</span>
+                  <span class="detail-value">English</span>
+                </div>
+              </div>
+              <div class="detail-item">
+                <div class="detail-icon">
+                  <mat-icon class="material-icons-outlined">school</mat-icon>
+                </div>
+                <div class="detail-content">
+                  <span class="detail-label">Certificate</span>
+                  <span class="detail-value">Yes</span>
+                </div>
+              </div>
+            </div>
+            <div class="course-actions">
+              <button mat-flat-button color="primary" class="enroll-btn">Enroll Now</button>
+              <button mat-stroked-button class="wishlist-btn">
+                <mat-icon class="material-icons-outlined">favorite_border</mat-icon> Add to Wishlist
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-8 col-md-12">
+        <div class="row clearfix">
+          <div class="col-lg-12 col-md-12 col-sm-12">
+            <div class="course-card course-content-card">
+              <div class="card-header">
+                <h3 class="section-title">Course Details</h3>
+              </div>
+              <div class="card-body">
+                <div class="course-description-content">
+                  <p>This comprehensive Web Development course covers everything you need to become a professional web
+                    developer. From front-end technologies like HTML, CSS, and JavaScript to back-end frameworks and
+                    database management, you'll gain hands-on experience building real-world web applications.</p>
+
+                  <p>Throughout this course, you'll learn modern development practices including responsive design,
+                    progressive web apps, and API integration. Our project-based approach ensures you'll build a
+                    portfolio of work to showcase your skills to potential employers.</p>
+
+                  <p>The curriculum is regularly updated to reflect the latest industry standards and technologies,
+                    ensuring you graduate with relevant, in-demand skills for today's job market.</p>
+
+                  <div class="key-features">
+                    <h4>Key Features</h4>
+                    <div class="features-grid">
+                      <div class="feature-item">
+                        <mat-icon class="material-icons-outlined">code</mat-icon>
+                        <span>Hands-on Coding</span>
+                      </div>
+                      <div class="feature-item">
+                        <mat-icon class="material-icons-outlined">assignment</mat-icon>
+                        <span>Real Projects</span>
+                      </div>
+                      <div class="feature-item">
+                        <mat-icon class="material-icons-outlined">forum</mat-icon>
+                        <span>Community Support</span>
+                      </div>
+                      <div class="feature-item">
+                        <mat-icon class="material-icons-outlined">verified_user</mat-icon>
+                        <span>Industry Certificate</span>
+                      </div>
+                      <div class="feature-item">
+                        <mat-icon class="material-icons-outlined">update</mat-icon>
+                        <span>Lifetime Updates</span>
+                      </div>
+                      <div class="feature-item">
+                        <mat-icon class="material-icons-outlined">devices</mat-icon>
+                        <span>Cross-platform</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <hr class="section-divider">
+                <div class="syllabus-section">
+                  <h4 class="section-subtitle">Course Syllabus</h4>
+                  <div class="syllabus-modules">
+                    <div class="module-item">
+                      <div class="module-header">
+                        <mat-icon class="material-icons-outlined">computer</mat-icon>
+                        <h5>Module 1: Web Fundamentals</h5>
+                      </div>
+                      <ul class="module-topics">
+                        <li><span class="topic-bullet"></span>Introduction to Computer and Internet</li>
+                        <li><span class="topic-bullet"></span>HTML5 Structure and Semantics</li>
+                        <li><span class="topic-bullet"></span>CSS3 Styling and Layouts</li>
+                        <li><span class="topic-bullet"></span>Responsive Design Principles</li>
+                      </ul>
+                    </div>
+                    <div class="module-item">
+                      <div class="module-header">
+                        <mat-icon class="material-icons-outlined">code</mat-icon>
+                        <h5>Module 2: Programming Fundamentals</h5>
+                      </div>
+                      <ul class="module-topics">
+                        <li><span class="topic-bullet"></span>JavaScript Basics</li>
+                        <li><span class="topic-bullet"></span>Object Oriented Programming Concepts</li>
+                        <li><span class="topic-bullet"></span>Modern JavaScript (ES6+)</li>
+                        <li><span class="topic-bullet"></span>DOM Manipulation</li>
+                      </ul>
+                    </div>
+                    <div class="module-item">
+                      <div class="module-header">
+                        <mat-icon class="material-icons-outlined">storage</mat-icon>
+                        <h5>Module 3: Backend Development</h5>
+                      </div>
+                      <ul class="module-topics">
+                        <li><span class="topic-bullet"></span>Server-side Programming</li>
+                        <li><span class="topic-bullet"></span>Database Design and Management</li>
+                        <li><span class="topic-bullet"></span>RESTful API Development</li>
+                        <li><span class="topic-bullet"></span>Authentication and Security</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <hr class="section-divider">
+
+                <div class="outcomes-section">
+                  <h4 class="section-subtitle">Learning Outcomes</h4>
+                  <div class="outcomes-grid">
+                    <div class="outcome-item">
+                      <mat-icon class="material-icons-outlined">check_circle</mat-icon>
+                      <p>Build responsive, modern websites using HTML5, CSS3 and JavaScript</p>
+                    </div>
+                    <div class="outcome-item">
+                      <mat-icon class="material-icons-outlined">check_circle</mat-icon>
+                      <p>Develop full-stack web applications with frontend and backend integration</p>
+                    </div>
+                    <div class="outcome-item">
+                      <mat-icon class="material-icons-outlined">check_circle</mat-icon>
+                      <p>Implement database design and management for web applications</p>
+                    </div>
+                    <div class="outcome-item">
+                      <mat-icon class="material-icons-outlined">check_circle</mat-icon>
+                      <p>Create and consume RESTful APIs for data exchange</p>
+                    </div>
+                    <div class="outcome-item">
+                      <mat-icon class="material-icons-outlined">check_circle</mat-icon>
+                      <p>Apply best practices for web security and performance optimization</p>
+                    </div>
+                    <div class="outcome-item">
+                      <mat-icon class="material-icons-outlined">check_circle</mat-icon>
+                      <p>Deploy web applications to production environments</p>
+                    </div>
+                    <div class="outcome-item">
+                      <mat-icon class="material-icons-outlined">check_circle</mat-icon>
+                      <p>Implement modern frontend frameworks for interactive UIs</p>
+                    </div>
+                    <div class="outcome-item">
+                      <mat-icon class="material-icons-outlined">check_circle</mat-icon>
+                      <p>Collaborate effectively using version control and project management tools</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

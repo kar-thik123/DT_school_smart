@@ -1,0 +1,50 @@
+/* Academic Calendar Component Styles */
+
+.academic-calendar-container {
+  padding: 20px;
+}
+
+.academic-calendar-header {
+  margin-bottom: 20px;
+}
+
+.academic-calendar-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.academic-calendar-table th,
+.academic-calendar-table td {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.academic-calendar-table th {
+  background-color: #f5f5f5;
+  font-weight: bold;
+}
+
+.event-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.event-badge.holiday {
+  background-color: #ffebee;
+  color: #c62828;
+}
+
+.event-badge.exam {
+  background-color: #e3f2fd;
+  color: #1565c0;
+}
+
+.event-badge.assignment {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}

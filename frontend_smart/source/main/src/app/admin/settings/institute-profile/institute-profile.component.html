@@ -1,0 +1,191 @@
+<section class="content">
+    <div class="content-block">
+        @for (breadscrum of breadscrums; track breadscrum) {
+        <div class="block-header">
+            <app-breadcrumb [title]="breadscrum.title" [items]="breadscrum.items" [active_item]="breadscrum.active">
+            </app-breadcrumb>
+        </div>
+        }
+
+        <div class="row">
+            <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12">
+                <mat-card class="card-box">
+                    <div class="header">
+                        <h2><strong>Institute</strong> Details</h2>
+                    </div>
+                    <div class="body">
+                        <form [formGroup]="instituteForm" (ngSubmit)="saveProfile()">
+                            <mat-tab-group animationDuration="500ms">
+                                <!-- General Info Tab -->
+                                <mat-tab label="General Information">
+                                    <ng-template mat-tab-label>
+                                        <mat-icon class="me-2">business</mat-icon>
+                                        General
+                                    </ng-template>
+                                    <div class="p-4" formGroupName="general">
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <mat-form-field class="example-full-width" appearance="outline">
+                                                    <mat-label>Institute Name</mat-label>
+                                                    <input matInput formControlName="name">
+                                                    <mat-icon matSuffix>corporate_fare</mat-icon>
+                                                </mat-form-field>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <mat-form-field class="example-full-width" appearance="outline">
+                                                    <mat-label>Institute Code</mat-label>
+                                                    <input matInput formControlName="code">
+                                                    <mat-icon matSuffix>vpn_key</mat-icon>
+                                                </mat-form-field>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <mat-form-field class="example-full-width" appearance="outline">
+                                                    <mat-label>Institute Type</mat-label>
+                                                    <mat-select formControlName="type">
+                                                        <mat-option value="School">School</mat-option>
+                                                        <mat-option value="Engineering College">Engineering
+                                                            College</mat-option>
+                                                        <mat-option value="Medical College">Medical College</mat-option>
+                                                        <mat-option value="University">University</mat-option>
+                                                    </mat-select>
+                                                </mat-form-field>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <mat-form-field class="example-full-width" appearance="outline">
+                                                    <mat-label>Founding Date</mat-label>
+                                                    <input matInput type="date" formControlName="foundingDate">
+                                                </mat-form-field>
+                                            </div>
+                                            <div class="col-md-12 mb-3">
+                                                <mat-form-field class="example-full-width" appearance="outline">
+                                                    <mat-label>Institute Motto</mat-label>
+                                                    <textarea matInput formControlName="motto"></textarea>
+                                                </mat-form-field>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </mat-tab>
+
+                                <!-- Contact Info Tab -->
+                                <mat-tab label="Contact Details">
+                                    <ng-template mat-tab-label>
+                                        <mat-icon class="me-2">contact_mail</mat-icon>
+                                        Contact
+                                    </ng-template>
+                                    <div class="p-4" formGroupName="contact">
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <mat-form-field class="example-full-width" appearance="outline">
+                                                    <mat-label>Email Address</mat-label>
+                                                    <input matInput formControlName="email">
+                                                    <mat-icon matSuffix>email</mat-icon>
+                                                </mat-form-field>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <mat-form-field class="example-full-width" appearance="outline">
+                                                    <mat-label>Phone Number</mat-label>
+                                                    <input matInput formControlName="phone">
+                                                    <mat-icon matSuffix>phone</mat-icon>
+                                                </mat-form-field>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <mat-form-field class="example-full-width" appearance="outline">
+                                                    <mat-label>Website</mat-label>
+                                                    <input matInput formControlName="website">
+                                                    <mat-icon matSuffix>language</mat-icon>
+                                                </mat-form-field>
+                                            </div>
+                                            <div class="col-md-12 mb-3">
+                                                <mat-form-field class="example-full-width" appearance="outline">
+                                                    <mat-label>Postal Address</mat-label>
+                                                    <textarea matInput formControlName="address"></textarea>
+                                                    <mat-icon matSuffix>location_on</mat-icon>
+                                                </mat-form-field>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </mat-tab>
+
+                                <!-- Social Links Tab -->
+                                <mat-tab label="Social Links">
+                                    <ng-template mat-tab-label>
+                                        <mat-icon class="me-2">share</mat-icon>
+                                        Social
+                                    </ng-template>
+                                    <div class="p-4" formGroupName="social">
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <mat-form-field class="example-full-width" appearance="outline">
+                                                    <mat-label>Facebook URL</mat-label>
+                                                    <input matInput formControlName="facebook">
+                                                </mat-form-field>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <mat-form-field class="example-full-width" appearance="outline">
+                                                    <mat-label>Twitter URL</mat-label>
+                                                    <input matInput formControlName="twitter">
+                                                </mat-form-field>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <mat-form-field class="example-full-width" appearance="outline">
+                                                    <mat-label>LinkedIn URL</mat-label>
+                                                    <input matInput formControlName="linkedin">
+                                                </mat-form-field>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <mat-form-field class="example-full-width" appearance="outline">
+                                                    <mat-label>Instagram URL</mat-label>
+                                                    <input matInput formControlName="instagram">
+                                                </mat-form-field>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </mat-tab>
+
+                                <!-- Branding Tab -->
+                                <mat-tab label="Branding">
+                                    <ng-template mat-tab-label>
+                                        <mat-icon class="me-2">palette</mat-icon>
+                                        Branding
+                                    </ng-template>
+                                    <div class="p-4" formGroupName="branding">
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <div class="file-upload-placeholder border rounded p-4 text-center">
+                                                    <mat-icon size="large" color="primary">add_a_photo</mat-icon>
+                                                    <p>Institute Logo upload placeholder</p>
+                                                    <button type="button" mat-stroked-button color="primary">Upload
+                                                        Logo</button>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <div class="file-upload-placeholder border rounded p-4 text-center">
+                                                    <mat-icon size="large" color="accent">draw</mat-icon>
+                                                    <p>Digital Signature upload placeholder</p>
+                                                    <button type="button" mat-stroked-button color="accent">Upload
+                                                        Signature</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </mat-tab>
+                            </mat-tab-group>
+
+                            <div class="row mt-3 px-4 pb-4">
+                                <div class="col-md-12 button-row">
+                                    <button mat-raised-button color="primary" class="me-2" type="submit"
+                                        [disabled]="!instituteForm.valid">
+                                        <mat-icon>save</mat-icon> Save Profile
+                                    </button>
+                                    <button mat-stroked-button type="button">
+                                        <mat-icon>refresh</mat-icon> Reset
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </mat-card>
+            </div>
+        </div>
+    </div>
+</section>

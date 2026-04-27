@@ -1,0 +1,27 @@
+[
+  {
+    "id": "bace0eb8-5897-4dd7-8eac-8d9c4a80a72d",
+    "name": "SYSTEM_ADMIN",
+    "is_system": true
+  },
+  {
+    "id": "da025826-62a8-46fc-9b23-9bda79a91025",
+    "name": "SUPER_ADMIN",
+    "is_system": false
+  },
+  {
+    "id": "6fcc23b5-4e80-471d-a4e1-2bdf295cc1d6",
+    "name": "MANAGEMENT",
+    "is_system": false
+  },
+  {
+    "id": "90a64085-a86b-4aba-882f-9b08c74d3f66",
+    "name": "TEACHER",
+    "is_system": false
+  },
+  {
+    "id": "58613bdd-c1a4-4e2a-9309-1dee3aa22bb9",
+    "name": "STUDENT",
+    "is_system": false
+  }
+]

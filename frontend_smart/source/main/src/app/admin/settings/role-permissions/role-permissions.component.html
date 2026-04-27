@@ -1,0 +1,246 @@
+<section class="content">
+  <div class="content-block">
+    <div class="block-header">
+      <app-breadcrumb [title]="breadscrums[0].title" [items]="breadscrums[0].items" [active_item]="breadscrums[0].active">
+      </app-breadcrumb>
+    </div>
+
+    <mat-drawer-container class="drawer-container" autosize>
+      <mat-drawer #drawer mode="over" position="end" class="side-drawer" [opened]="showDrawer" (closed)="showDrawer = false">
+        <div class="header">
+          <h2>{{ drawerAction === 'add' ? 'Create Role' : drawerAction === 'edit' ? 'Edit Role' : 'Clone Role' }}</h2>
+          <button mat-icon-button (click)="showDrawer = false">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="body mt-4">
+          <form [formGroup]="roleForm" (ngSubmit)="saveRole()">
+            <div class="row">
+              <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12">
+                <mat-form-field class="example-full-width" appearance="outline">
+                  <mat-label>Role Name</mat-label>
+                  <input matInput formControlName="name" required>
+                  <mat-error *ngIf="roleForm.get('name')?.hasError('required')">
+                    Role name is required
+                  </mat-error>
+                </mat-form-field>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12">
+                <mat-form-field class="example-full-width" appearance="outline">
+                  <mat-label>Description</mat-label>
+                  <textarea matInput formControlName="description" rows="3"></textarea>
+                </mat-form-field>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mt-4">
+                <button mat-raised-button color="primary" [disabled]="roleForm.invalid || isSaving" type="submit">
+                  <mat-icon class="col-white me-2">{{ isSaving ? 'hourglass_empty' : 'save' }}</mat-icon>
+                  {{ drawerAction === 'clone' ? 'Clone Now' : 'Save Role' }}
+                </button>
+                <button mat-button class="ms-2" type="button" (click)="showDrawer = false">Cancel</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </mat-drawer>
+
+      <mat-drawer-content>
+        <div class="row">
+          <!-- Left Panel: Role Inventory -->
+          <div class="col-xl-3 col-lg-4 col-md-12 col-sm-12">
+            <div class="card card-box">
+              <div class="header d-flex justify-content-between align-items-center">
+                <h2>Role Inventory</h2>
+                <button mat-mini-fab color="primary" (click)="openAddRole()" matTooltip="Create Custom Role">
+                  <mat-icon>add</mat-icon>
+                </button>
+              </div>
+              <div class="body role-list p-0">
+                <div *ngIf="isLoading" class="p-4 text-center">
+                  <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+                </div>
+
+                <!-- System Roles -->
+                <div class="inventory-section mt-2">
+                  <h6>System Roles</h6>
+                  <mat-nav-list>
+                    <mat-list-item *ngFor="let role of systemRoles" 
+                                   [class.active-role]="selectedRole?.id === role.id"
+                                   (click)="selectRole(role)" 
+                                   class="role-item transition cursor-pointer">
+                      <div class="d-flex justify-content-between align-items-center w-100">
+                        <div class="d-flex flex-column">
+                          <span class="fw-bold">{{ role.name }}</span>
+                          <small class="text-muted">{{ role._count?.users || 0 }} Users</small>
+                        </div>
+                        <span class="system-badge">System</span>
+                      </div>
+                    </mat-list-item>
+                  </mat-nav-list>
+                </div>
+
+                <mat-divider></mat-divider>
+
+                <!-- Custom Roles -->
+                <div class="inventory-section">
+                  <h6>Custom Roles</h6>
+                  <div *ngIf="customRoles.length === 0 && !isLoading" class="p-3 text-center text-muted">
+                    <small>No custom roles created yet.</small>
+                  </div>
+                  <mat-nav-list>
+                    <mat-list-item *ngFor="let role of customRoles" 
+                                   [class.active-role]="selectedRole?.id === role.id"
+                                   (click)="selectRole(role)" 
+                                   class="role-item transition cursor-pointer">
+                      <div class="d-flex justify-content-between align-items-center w-100">
+                        <div class="d-flex flex-column">
+                          <span class="fw-bold">{{ role.name }}</span>
+                          <small class="text-muted">{{ role._count?.users || 0 }} Users</small>
+                        </div>
+                        <div class="role-actions">
+                          <button mat-icon-button [matMenuTriggerFor]="menu" (click)="$event.stopPropagation()">
+                            <mat-icon>more_vert</mat-icon>
+                          </button>
+                          <mat-menu #menu="matMenu">
+                            <button mat-menu-item (click)="openEditRole(role)">
+                              <mat-icon>edit</mat-icon>
+                              <span>Edit Details</span>
+                            </button>
+                            <button mat-menu-item (click)="openCloneRole(role)">
+                              <mat-icon>content_copy</mat-icon>
+                              <span>Clone Role</span>
+                            </button>
+                            <mat-divider></mat-divider>
+                            <button mat-menu-item class="text-danger" (click)="deleteRole(role)">
+                              <mat-icon class="text-danger">delete</mat-icon>
+                              <span>Delete</span>
+                            </button>
+                          </mat-menu>
+                        </div>
+                      </div>
+                    </mat-list-item>
+                  </mat-nav-list>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Panel: Role Detail + Matrix -->
+          <div class="col-xl-9 col-lg-8 col-md-12 col-sm-12">
+            <div class="card card-box" *ngIf="selectedRole">
+              <div class="header d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                  <div class="p-2 rounded-circle bg-light me-3">
+                    <mat-icon color="primary">{{ selectedRole.is_system ? 'verified_user' : 'person_outline' }}</mat-icon>
+                  </div>
+                  <div>
+                    <h2 class="mb-0">{{ selectedRole.name }}</h2>
+                    <small class="text-muted">{{ selectedRole.description || 'No description provided' }}</small>
+                  </div>
+                </div>
+                <div class="actions">
+                   <button mat-stroked-button color="primary" class="me-2" (click)="openCloneRole(selectedRole)" matTooltip="Clone this role structure">
+                    <mat-icon>content_copy</mat-icon> Clone
+                  </button>
+                </div>
+              </div>
+              <div class="body p-0">
+                <mat-tab-group animationDuration="0ms">
+                  <!-- Tab 1: Permissions Matrix -->
+                  <mat-tab>
+                    <ng-template mat-tab-label>
+                      <mat-icon class="me-2">security</mat-icon>
+                      Permissions Matrix
+                    </ng-template>
+                    
+                    <div class="matrix-container">
+                      <div class="sticky-actions px-4 py-3 d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                          <mat-icon class="text-muted me-2">info_outline</mat-icon>
+                          <span class="text-muted small">Manage module-level access for this role.</span>
+                        </div>
+                        <button mat-raised-button color="primary" 
+                                [disabled]="selectedRole.is_system || isSaving" 
+                                (click)="syncPermissions()">
+                          <mat-icon class="me-2">{{ isSaving ? 'hourglass_empty' : 'sync' }}</mat-icon>
+                          Update Permissions
+                        </button>
+                      </div>
+
+                      <div class="p-0">
+                        <table class="permission-table">
+                          <thead>
+                            <tr>
+                              <th class="ps-4">Module / Feature</th>
+                              <th>Actions & Access Levels</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr *ngFor="let group of permissionGroups" class="transition">
+                              <td class="ps-4">
+                                <div class="d-flex align-items-center">
+                                  <mat-checkbox 
+                                    [checked]="isModuleAllSelected(group)"
+                                    [indeterminate]="isModulePartialSelected(group)"
+                                    [disabled]="selectedRole.is_system"
+                                    (change)="toggleModule(group, $event.checked)"
+                                    class="me-3">
+                                  </mat-checkbox>
+                                  <span>{{ group.module }}</span>
+                                </div>
+                              </td>
+                              <td>
+                                <div class="action-checkboxes">
+                                  <mat-checkbox *ngFor="let action of group.actions"
+                                                [(ngModel)]="action.selected"
+                                                [disabled]="selectedRole.is_system"
+                                                (change)="togglePermission(action)"
+                                                class="me-3">
+                                    {{ action.action }}
+                                  </mat-checkbox>
+                                </div>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                      
+                      <div *ngIf="selectedRole.is_system" class="alert alert-info m-4">
+                        <mat-icon class="me-2">lock</mat-icon>
+                        System roles have predefined permissions and cannot be modified.
+                      </div>
+                    </div>
+                  </mat-tab>
+
+                  <!-- Tab 2: Users (Place-holder for now) -->
+                  <mat-tab>
+                    <ng-template mat-tab-label>
+                      <mat-icon class="me-2">group</mat-icon>
+                      Assigned Users ({{ selectedRole._count?.users || 0 }})
+                    </ng-template>
+                    <div class="p-4 text-center">
+                      <mat-icon class="display-4 text-light mb-3">group</mat-icon>
+                      <p class="text-muted">User list for this role will be available in the next phase.</p>
+                      <button mat-stroked-button color="primary" routerLink="/admin/administration/users">Go to User Management</button>
+                    </div>
+                  </mat-tab>
+                </mat-tab-group>
+              </div>
+            </div>
+
+            <!-- Empty State -->
+            <div class="card card-box py-5 text-center" *ngIf="!selectedRole && !isLoading">
+              <mat-icon class="display-1 text-light mb-4">security</mat-icon>
+              <h3>No Role Selected</h3>
+              <p class="text-muted">Select a role from the inventory to view and manage its permissions.</p>
+            </div>
+          </div>
+        </div>
+      </mat-drawer-content>
+    </mat-drawer-container>
+  </div>
+</section>

@@ -1,0 +1,76 @@
+/* Syllabus Component Styles */
+
+.syllabus-container {
+  padding: 20px;
+}
+
+.syllabus-header {
+  margin-bottom: 20px;
+}
+
+.syllabus-card {
+  margin-bottom: 15px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.syllabus-header-content {
+  padding: 15px;
+  background-color: #f5f5f5;
+  border-bottom: 1px solid #ddd;
+  font-weight: bold;
+}
+
+.syllabus-body {
+  padding: 15px;
+}
+
+.syllabus-subject {
+  font-weight: bold;
+  color: #1976d2;
+  margin-bottom: 10px;
+}
+
+.syllabus-title {
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+.syllabus-description {
+  margin-bottom: 15px;
+  color: #555;
+}
+
+.syllabus-topics {
+  margin-bottom: 15px;
+}
+
+.syllabus-topic {
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.syllabus-topic:last-child {
+  border-bottom: none;
+}
+
+.syllabus-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 15px;
+  padding: 10px;
+  background-color: #f9f9f9;
+  border-radius: 4px;
+}
+
+.syllabus-date {
+  color: #777;
+}
+
+.syllabus-actions {
+  text-align: right;
+  margin-top: 15px;
+}

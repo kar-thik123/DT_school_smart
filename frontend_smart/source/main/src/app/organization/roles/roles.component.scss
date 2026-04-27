@@ -1,0 +1,62 @@
+.roles-container {
+  height: calc(100vh - 150px);
+  background: transparent;
+}
+
+.role-drawer {
+  width: 450px;
+  box-shadow: -5px 0 20px rgba(0,0,0,0.1);
+  border-left: 1px solid #eee;
+}
+
+.user-count {
+  background: #f0f0f0;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.system-icon {
+  color: #d32f2f;
+  margin-left: 5px;
+  vertical-align: middle;
+}
+
+.badge-solid-red { background: #fee2e2; color: #991b1b; }
+.badge-solid-blue { background: #e0f2fe; color: #075985; }
+
+// Matrix Table
+.matrix-table {
+  th {
+    background: #f8f9fa;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  td {
+    vertical-align: middle;
+  }
+  .module-name {
+    background: #fafafa;
+    min-width: 150px;
+  }
+  .not-applicable {
+    color: #eee;
+  }
+}
+
+.drawer-header {
+  padding: 20px;
+  border-bottom: 1px solid #eee;
+  h3 { margin: 0; font-weight: 700; }
+}
+
+.spinner {
+  animation: rotate 2s linear infinite;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

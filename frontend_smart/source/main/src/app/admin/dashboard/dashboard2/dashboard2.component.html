@@ -1,0 +1,410 @@
+<section class="content">
+  <div class="content-block">
+    @for (breadscrum of breadscrums; track breadscrum) {
+      <div class="block-header">
+        <!-- breadcrumb -->
+        <app-breadcrumb [title]="breadscrum.title" [items]="breadscrum.items" [active_item]="breadscrum.active">
+        </app-breadcrumb>
+      </div>
+    }
+    <div class="row">
+      <div class="col-lg-3 col-sm-6">
+        <app-order-info-box title="Total Students" value="2347" percentageText="18% Higher Than Last Month"
+          iconClass="fas fa-graduation-cap" bgClass="bg-c-blue">
+        </app-order-info-box>
+      </div>
+      <div class="col-lg-3 col-sm-6">
+        <app-order-info-box title="Total Teachers" value="258" percentageText="21% Higher Than Last Month"
+          iconClass="fas fa-user-tie" bgClass="bg-c-green">
+        </app-order-info-box>
+      </div>
+      <div class="col-lg-3 col-sm-6">
+        <app-order-info-box title="Awards" value="27" percentageText="37% Higher Than Last Month"
+          iconClass="fas fa-trophy" bgClass="bg-c-yellow">
+        </app-order-info-box>
+      </div>
+      <div class="col-lg-3 col-sm-6">
+        <app-order-info-box title="Total Earning" value="$25,698" percentageText="10% Higher Than Last Month"
+          iconClass="fas fa-dollar-sign" bgClass="bg-c-pink">
+        </app-order-info-box>
+      </div>
+    </div>
+    <div class="row clearfix">
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+        <app-student-attendance-widget></app-student-attendance-widget>
+      </div>
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+        <app-noticeboard-announcements></app-noticeboard-announcements>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-xs-12 col-sm-12 col-md-8 col-lg-8">
+        <mat-card>
+          <mat-card-header class="header-style">
+            <mat-card-title>Fee Details</mat-card-title>
+            <a mat-button color="primary" href="#" (click)="$event.preventDefault();">View All</a>
+          </mat-card-header>
+          <mat-card-content>
+            <ng-scrollbar style="height: 350px" visibility="hover">
+              <app-table-card [dataSource]="feesData" [columnDefinitions]="feesColumnDefinitions"></app-table-card>
+            </ng-scrollbar>
+          </mat-card-content>
+        </mat-card>
+      </div>
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+        <mat-card>
+          <mat-card-header class="header-style">
+            <mat-card-title> Upcomming Class</mat-card-title>
+            <a mat-button color="primary" href="#" (click)="$event.preventDefault();">View All</a>
+          </mat-card-header>
+          <mat-card-content>
+            <ng-scrollbar style="height: 350px" visibility="hover">
+              <div class="doc-file-type">
+                <app-emp-schedule [schedules]="scheduleList"></app-emp-schedule>
+              </div>
+            </ng-scrollbar>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+
+    <div class="row clearfix">
+      <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+        <mat-card>
+          <mat-card-header class="header-style">
+            <mat-card-title>Professors List</mat-card-title>
+            <a mat-button color="primary" href="#" (click)="$event.preventDefault();">View All</a>
+          </mat-card-header>
+          <mat-card-content>
+            <ng-scrollbar style="height: 450px" visibility="hover">
+              <app-table-card [dataSource]="professorsData"
+              [columnDefinitions]="professorsColumnDefinitions"></app-table-card>
+            </ng-scrollbar>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+
+    <div class="row clearfix">
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+        <mat-card>
+          <mat-card-header class="header-style">
+            <mat-card-title>Top Performer</mat-card-title>
+            <a mat-button color="primary" href="#" (click)="$event.preventDefault();">View All</a>
+          </mat-card-header>
+          <mat-card-content>
+            <app-top-performer></app-top-performer>
+          </mat-card-content>
+        </mat-card>
+      </div>
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+        <mat-card>
+          <mat-card-header class="header-style">
+            <mat-card-title>Student Performance Chart</mat-card-title>
+            <button mat-icon-button [matMenuTriggerFor]="menu" class="header-dropdown">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+            <mat-menu #menu="matMenu">
+              <button mat-menu-item>
+                <mat-icon>add_circle_outline</mat-icon>
+                <span>Add</span>
+              </button>
+              <button mat-menu-item disabled>
+                <mat-icon>delete_outline</mat-icon>
+                <span>Delete</span>
+              </button>
+              <button mat-menu-item>
+                <mat-icon>refresh</mat-icon>
+                <span>Refresh</span>
+              </button>
+            </mat-menu>
+          </mat-card-header>
+          <mat-card-content>
+            <apx-chart [series]="barChartOptions.series!" [chart]="barChartOptions.chart!"
+              [dataLabels]="barChartOptions.dataLabels!" [plotOptions]="barChartOptions.plotOptions!"
+              [grid]="barChartOptions.grid!" [yaxis]="barChartOptions.yaxis!" [xaxis]="barChartOptions.xaxis!"
+              [fill]="barChartOptions.fill!" [tooltip]="barChartOptions.tooltip!">
+            </apx-chart>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+
+    <div class="row clearfix">
+      <!-- Upcoming Events Table -->
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+        <mat-card>
+          <mat-card-header class="header-style">
+            <mat-card-title>
+              <i class="fas fa-calendar-alt mr-2"></i> Upcoming Events
+            </mat-card-title>
+            <a mat-button color="primary" href="#" (click)="$event.preventDefault();">View Calendar</a>
+          </mat-card-header>
+          <mat-card-content>
+            <ng-scrollbar style="height: 350px" visibility="hover">
+              <app-table-card [dataSource]="upcomingEvents"
+              [columnDefinitions]="eventsColumnDefinitions"></app-table-card>
+            </ng-scrollbar>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <!-- Recent Admissions Table -->
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+        <mat-card>
+          <mat-card-header class="header-style">
+            <mat-card-title>
+              <i class="fas fa-user-plus mr-2"></i> Recent Admissions
+            </mat-card-title>
+            <a mat-button color="primary" href="#" (click)="$event.preventDefault();">View All</a>
+          </mat-card-header>
+          <mat-card-content>
+            <ng-scrollbar style="height: 350px" visibility="hover">
+              <app-table-card [dataSource]="recentAdmissions"
+              [columnDefinitions]="admissionsColumnDefinitions"></app-table-card>
+            </ng-scrollbar>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+
+    <!-- Additional School Management Components -->
+    <div class="row clearfix">
+      <!-- Budget Overview Card -->
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+        <mat-card>
+          <mat-card-header class="header-style">
+            <mat-card-title>
+              <i class="fas fa-money-bill-wave mr-2"></i> Budget Overview
+            </mat-card-title>
+            <button mat-icon-button [matMenuTriggerFor]="budgetMenu" class="header-dropdown">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+            <mat-menu #budgetMenu="matMenu">
+              <button mat-menu-item>
+                <mat-icon>refresh</mat-icon>
+                <span>Refresh</span>
+              </button>
+              <button mat-menu-item>
+                <mat-icon>file_download</mat-icon>
+                <span>Export</span>
+              </button>
+            </mat-menu>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="budget-overview">
+              <div class="budget-summary mb-4">
+                <div class="row">
+                  <div class="col-6">
+                    <h6>Total Budget</h6>
+                    <h4>${{ budgetOverview.totalBudget.toLocaleString() }}</h4>
+                  </div>
+                  <div class="col-6 text-right">
+                    <h6>Remaining</h6>
+                    <h4>${{ budgetOverview.remainingBudget.toLocaleString() }}</h4>
+                  </div>
+                </div>
+                <div class="progress mt-2">
+                  <div class="progress-bar" role="progressbar" [style.width.%]="budgetOverview.usedPercentage"
+                    [ngClass]="{'bg-success': budgetOverview.usedPercentage < 70, 'bg-warning': budgetOverview.usedPercentage >= 70 && budgetOverview.usedPercentage < 90, 'bg-danger': budgetOverview.usedPercentage >= 90}">
+                    {{ budgetOverview.usedPercentage }}%
+                  </div>
+                </div>
+              </div>
+              <div class="budget-allocation">
+                <h5 class="mb-3">Budget Allocation</h5>
+                @for (item of budgetOverview.allocation; track item) {
+                  <div class="budget-item">
+                    <div class="d-flex justify-content-between mb-1">
+                      <span>{{ item.category }}</span>
+                      <span>${{ item.amount.toLocaleString() }}</span>
+                    </div>
+                    <div class="progress">
+                      <div class="progress-bar" [ngClass]="item.colorClass" role="progressbar"
+                        [style.width.%]="item.percentage">
+                        {{ item.percentage }}%
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <!-- Library Statistics -->
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+
+        <mat-card>
+          <mat-card-header class="header-style">
+            <mat-card-title>
+              <i class="fas fa-chart-bar mr-2"></i> Staff Performance Metrics
+            </mat-card-title>
+            <button mat-icon-button [matMenuTriggerFor]="staffMenu" class="header-dropdown">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+            <mat-menu #staffMenu="matMenu">
+              <button mat-menu-item>
+                <mat-icon>refresh</mat-icon>
+                <span>Refresh</span>
+              </button>
+              <button mat-menu-item>
+                <mat-icon>filter_list</mat-icon>
+                <span>Filter</span>
+              </button>
+            </mat-menu>
+          </mat-card-header>
+          <mat-card-content>
+            <apx-chart [series]="staffPerformanceChart.series2!" [chart]="staffPerformanceChart.chart!"
+              [plotOptions]="staffPerformanceChart.plotOptions!" [labels]="staffPerformanceChart.labels!"
+              [legend]="staffPerformanceChart.legend!" [colors]="staffPerformanceChart.colors!"
+              [responsive]="staffPerformanceChart.responsive!">
+            </apx-chart>
+            <div class="staff-metrics-summary mt-3">
+              <div class="row">
+                <div class="col-4 text-center">
+                  <h6>Top Performer</h6>
+                  <h5>{{ staffMetrics.topPerformer }}</h5>
+                  <small>Score: {{ staffMetrics.topScore }}%</small>
+                </div>
+                <div class="col-4 text-center">
+                  <h6>Average Score</h6>
+                  <h5>{{ staffMetrics.averageScore }}%</h5>
+                  <small>{{ staffMetrics.trend }}</small>
+                </div>
+                <div class="col-4 text-center">
+                  <h6>Departments</h6>
+                  <h5>{{ staffMetrics.departmentCount }}</h5>
+                  <small>{{ staffMetrics.staffCount }} Total Staff</small>
+                </div>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+
+    <div class="row clearfix">
+      <!-- Staff Performance Metrics -->
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+        <mat-card>
+          <mat-card-header class="header-style">
+            <mat-card-title>
+              <i class="fas fa-book mr-2"></i> Library Statistics
+            </mat-card-title>
+            <a mat-button color="primary" href="#" (click)="$event.preventDefault();">View Details</a>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="row mb-4">
+              <div class="col-3 text-center">
+                <div class="library-stat-circle bg-c-blue d-flex align-items-center justify-content-center">
+                  <i class="fas fa-book font-20 text-white"></i>
+                </div>
+                <h6 class="mt-2">Total Books</h6>
+                <h4>{{ libraryStats.totalBooks }}</h4>
+              </div>
+              <div class="col-3 text-center">
+                <div class="library-stat-circle bg-c-green d-flex align-items-center justify-content-center">
+                  <i class="fas fa-book-reader font-20 text-white"></i>
+                </div>
+                <h6 class="mt-2">Borrowed</h6>
+                <h4>{{ libraryStats.borrowedBooks }}</h4>
+              </div>
+              <div class="col-3 text-center">
+                <div class="library-stat-circle bg-c-yellow d-flex align-items-center justify-content-center">
+                  <i class="fas fa-undo font-20 text-white"></i>
+                </div>
+                <h6 class="mt-2">Overdue</h6>
+                <h4>{{ libraryStats.overdueBooks }}</h4>
+              </div>
+              <div class="col-3 text-center">
+                <div class="library-stat-circle bg-c-pink d-flex align-items-center justify-content-center">
+                  <i class="fas fa-plus-circle font-20 text-white"></i>
+                </div>
+                <h6 class="mt-2">New Books</h6>
+                <h4>{{ libraryStats.newBooks }}</h4>
+              </div>
+            </div>
+            <h5 class="mb-3">Most Popular Books</h5>
+            <div class="popular-books">
+              @for (book of libraryStats.popularBooks; track book) {
+                <div class="book-item">
+                  <div class="d-flex align-items-center">
+                    <div class="book-icon">
+                      <i class="fas fa-book"></i>
+                    </div>
+                    <div class="book-info">
+                      <h6 class="mb-0">{{ book.title }}</h6>
+                      <small>{{ book.author }} | Borrowed: {{ book.borrowCount }} times</small>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <!-- Transportation Management -->
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+        <mat-card>
+          <mat-card-header class="header-style">
+            <mat-card-title>
+              <i class="fas fa-bus mr-2"></i> Transportation Management
+            </mat-card-title>
+            <a mat-button color="primary" href="#" (click)="$event.preventDefault();">View Routes</a>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="row mb-4">
+              <div class="col-3 text-center">
+                <div class="transport-stat-circle bg-c-blue d-flex align-items-center justify-content-center">
+                  <i class="fas fa-bus font-20 text-white"></i>
+                </div>
+                <h6 class="mt-2">Total Buses</h6>
+                <h4>{{ transportStats.totalBuses }}</h4>
+              </div>
+              <div class="col-3 text-center">
+                <div class="transport-stat-circle bg-c-green d-flex align-items-center justify-content-center">
+                  <i class="fas fa-route font-20 text-white"></i>
+                </div>
+                <h6 class="mt-2">Routes</h6>
+                <h4>{{ transportStats.totalRoutes }}</h4>
+              </div>
+              <div class="col-3 text-center">
+                <div class="transport-stat-circle bg-c-yellow d-flex align-items-center justify-content-center">
+                  <i class="fas fa-user-friends font-20 text-white"></i>
+                </div>
+                <h6 class="mt-2">Students</h6>
+                <h4>{{ transportStats.totalStudents }}</h4>
+              </div>
+              <div class="col-3 text-center">
+                <div class="transport-stat-circle bg-c-pink d-flex align-items-center justify-content-center">
+                  <i class="fas fa-user-tie font-20 text-white"></i>
+                </div>
+                <h6 class="mt-2">Drivers</h6>
+                <h4>{{ transportStats.totalDrivers }}</h4>
+              </div>
+            </div>
+            <h5 class="mb-3">Bus Status</h5>
+            <div class="bus-status">
+              @for (bus of transportStats.busStatus; track bus) {
+                <div class="bus-item">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <h6 class="mb-0">Bus #{{ bus.busNumber }}</h6>
+                      <small>Route: {{ bus.route }} | Driver: {{ bus.driver }}</small>
+                    </div>
+                    <div>
+                      <span class="badge" [ngClass]="bus.statusClass">{{ bus.status }}</span>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+  </div>
+</section>

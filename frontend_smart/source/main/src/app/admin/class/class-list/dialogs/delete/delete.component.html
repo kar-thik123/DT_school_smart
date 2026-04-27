@@ -1,0 +1,26 @@
+<div class="container">
+    <h3 mat-dialog-title>Are you sure?</h3>
+    <div mat-dialog-content>
+        <ul class="clearfix">
+            <li>
+                <p><span class="font-weight-bold"> Class ID: </span>{{ data.classId }}</p>
+            </li>
+            <li>
+                <p>
+                    <span class="font-weight-bold">Class Name: </span>{{ data.className}}
+                </p>
+            </li>
+            <li>
+                <p>
+                    <span class="font-weight-bold">Capacity: </span>{{ data.classCapacity}}
+                </p>
+            </li>
+        </ul>
+    </div>
+    <div mat-dialog-actions class="mb-1">
+        <button mat-flat-button class="formCancelBtn" (click)="confirmDelete()">
+            Delete
+        </button>
+        <button mat-flat-button (click)="onNoClick()" tabindex="-1">Cancel</button>
+    </div>
+</div>

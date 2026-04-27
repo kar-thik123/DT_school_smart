@@ -1,0 +1,67 @@
+<mat-card class="top-students-card">
+  <mat-card-header class="header-style">
+    <mat-card-title>
+      <i class="fas fa-trophy me-1"></i> {{ title }}
+    </mat-card-title>
+    <button mat-button color="primary">View All</button>
+  </mat-card-header>
+
+  <mat-card-content>
+    <div class="students-container">
+      <ng-scrollbar style="height: 400px" visibility="hover">
+        @for (student of students; track student; let i = $index) {
+          <div class="student-card">
+            <div class="student-rank" [ngClass]="'rank-' + student.rank">
+              <span class="rank-number">{{ student.rank }}</span>
+            </div>
+            <div class="student-avatar">
+              @if (student.avatar) {
+                <div class="avatar-container">
+                  <img [src]="student.avatar" [alt]="student.name">
+                </div>
+              }
+              @if (!student.avatar) {
+                <div class="avatar-container no-image">
+                  {{ student.name.charAt(0) }}
+                </div>
+              }
+            </div>
+            <div class="student-info">
+              <div class="student-name-row">
+                <h3 class="student-name">{{ student.name }}</h3>
+                <div class="score-chip">
+                  <span>{{ student.score }}%</span>
+                </div>
+              </div>
+              <div class="student-details">
+                <div class="subject-chip">
+                  <i class="fas fa-book me-1"></i>
+                  <span>{{ student.subject }}</span>
+                </div>
+                @if (student.improvement !== undefined) {
+                  <div class="improvement-chip" [ngClass]="getImprovementColor(student.improvement)">
+                    <mat-icon>{{ getImprovementIcon(student.improvement) }}</mat-icon>
+                    <span>{{ student.improvement > 0 ? '+' : '' }}{{ student.improvement }}%</span>
+                  </div>
+                }
+              </div>
+              @if (student.badges && student.badges.length > 0) {
+                <div class="badges-row">
+                  @for (badge of student.badges; track badge) {
+                    <div class="badge-chip" [ngClass]="getBadgeColor(badge)" [matTooltip]="getBadgeTooltip(badge)">
+                      <mat-icon>{{ badge }}</mat-icon>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </ng-scrollbar>
+    </div>
+  </mat-card-content>
+
+  <mat-card-actions align="end">
+    <button mat-button color="primary">VIEW ALL STUDENTS</button>
+  </mat-card-actions>
+</mat-card>

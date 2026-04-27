@@ -1,0 +1,145 @@
+<div class="addContainer">
+  <div class="modalHeader">
+    <div class="avatarDetails">
+      <div class="modalTitle">
+        {{dialogTitle}}
+      </div>
+    </div>
+    <button mat-icon-button mat-dialog-close class="modal-close-button" aria-label="Close dialog" type="button">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+  <div mat-dialog-content>
+    <form class="register-form m-4" [formGroup]="studentCertificateForm" (ngSubmit)="submit()">
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Student Name</mat-label>
+            <input matInput formControlName="student_name" required>
+            <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>person</mat-icon>
+            @if (studentCertificateForm.get('student_name')?.hasError('required')) {
+            <mat-error>
+              Student name required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Certificate Type</mat-label>
+            <mat-select formControlName="certificate_type" required>
+              <mat-option [value]="'Transfer Certificate'">Transfer Certificate</mat-option>
+              <mat-option [value]="'Character Certificate'">Character Certificate</mat-option>
+              <mat-option [value]="'Merit Certificate'">Merit Certificate</mat-option>
+              <mat-option [value]="'Leaving Certificate'">Leaving Certificate</mat-option>
+            </mat-select>
+            @if (studentCertificateForm.get('certificate_type')?.hasError('required')) {
+            <mat-error>
+              Select Certificate Type
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Issue Date</mat-label>
+            <input matInput [matDatepicker]="picker1" formControlName="issue_date" required>
+            <mat-datepicker-toggle matSuffix [for]="picker1"></mat-datepicker-toggle>
+            <mat-datepicker #picker1></mat-datepicker>
+            @if (studentCertificateForm.get('issue_date')?.hasError('required')) {
+            <mat-error>
+              Issue Date is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Expiry Date</mat-label>
+            <input matInput [matDatepicker]="picker2" formControlName="expiry_date">
+            <mat-datepicker-toggle matSuffix [for]="picker2"></mat-datepicker-toggle>
+            <mat-datepicker #picker2></mat-datepicker>
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Certificate No</mat-label>
+            <input matInput formControlName="certificate_no" required>
+            <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>subtitles</mat-icon>
+            @if (studentCertificateForm.get('certificate_no')?.hasError('required')) {
+            <mat-error>
+              Certificate No is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Issued By</mat-label>
+            <input matInput formControlName="issued_by" required>
+            <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>assignment_ind</mat-icon>
+            @if (studentCertificateForm.get('issued_by')?.hasError('required')) {
+            <mat-error>
+              Issued By is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Category</mat-label>
+            <mat-select formControlName="category" required>
+              <mat-option [value]="'Academic'">Academic</mat-option>
+              <mat-option [value]="'Sports'">Sports</mat-option>
+              <mat-option [value]="'Extra-curricular'">Extra-curricular</mat-option>
+              <mat-option [value]="'Administrative'">Administrative</mat-option>
+              <mat-option [value]="'General'">General</mat-option>
+            </mat-select>
+            @if (studentCertificateForm.get('category')?.hasError('required')) {
+            <mat-error>
+              Category is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Status</mat-label>
+            <mat-select formControlName="status" required>
+              <mat-option [value]="'Active'">Active</mat-option>
+              <mat-option [value]="'Closed'">Closed</mat-option>
+              <mat-option [value]="'Pending'">Pending</mat-option>
+            </mat-select>
+            @if (studentCertificateForm.get('status')?.hasError('required')) {
+            <mat-error>
+              Select Status
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Description</mat-label>
+            <textarea matInput formControlName="description"></textarea>
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+          <div class="example-button-row">
+            <button mat-flat-button class="formSubmitBtn" [disabled]="!studentCertificateForm.valid" type="submit">Save</button>
+            <button mat-flat-button mat-dialog-close class="formCancelBtn" tabindex="-1">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

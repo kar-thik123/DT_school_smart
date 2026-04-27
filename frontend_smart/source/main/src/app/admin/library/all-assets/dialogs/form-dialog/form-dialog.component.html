@@ -1,0 +1,174 @@
+<div class="addContainer">
+  <div class="modalHeader">
+    <div class="avatarDetails">
+      <div class="modalTitle">
+        {{dialogTitle}}
+      </div>
+    </div>
+    <button mat-icon-button mat-dialog-close class="modal-close-button" aria-label="Close dialog" type="button">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+  <div mat-dialog-content>
+    <form class="register-form m-4" [formGroup]="libraryForm" (ngSubmit)="submit()">
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Bill No</mat-label>
+            <input matInput formControlName="no" required>
+            <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>receipt</mat-icon>
+            @if (libraryForm.get('no')?.hasError('required')) {
+            <mat-error>
+              Please enter bill no
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Title</mat-label>
+            <input matInput formControlName="title" required>
+            <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>credit_card</mat-icon>
+            @if (libraryForm.get('title')?.hasError('required')) {
+            <mat-error>
+              Please enter title
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Subject</mat-label>
+            <mat-select formControlName="subject" required>
+              <mat-option value="mathematics">Mathematics</mat-option>
+              <mat-option value="java">Java</mat-option>
+              <mat-option value="networking">Networking</mat-option>
+              <mat-option value="politics">Politics</mat-option>
+              <mat-option value="animation">Animation</mat-option>
+              <mat-option value="other">Other</mat-option>
+            </mat-select>
+            @if (libraryForm.get('subject')?.hasError('required')) {
+            <mat-error>
+              Subject is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Purchase Date</mat-label>
+            <input matInput [matDatepicker]="picker" formControlName="purchase_date" required>
+            <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+            <mat-datepicker #picker></mat-datepicker>
+            @if (libraryForm.get('purchase_date')?.hasError('required')) {
+            <mat-error>
+              Please select a purchase date
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Select Department</mat-label>
+            <mat-select formControlName="department" required>
+              <mat-option value="mechanical">Mechanical</mat-option>
+              <mat-option value="science">Science</mat-option>
+              <mat-option value="mathematics">Mathematics</mat-option>
+              <mat-option value="computer">Computer</mat-option>
+              <mat-option value="civil">Civil</mat-option>
+              <mat-option value="management">Management</mat-option>
+            </mat-select>
+            @if (libraryForm.get('department')?.hasError('required')) {
+            <mat-error>
+              Select any department
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Asset Type</mat-label>
+            <mat-select formControlName="type" required>
+              <mat-option value="book">Book</mat-option>
+              <mat-option value="cd">CD</mat-option>
+              <mat-option value="dvd">DVD</mat-option>
+              <mat-option value="news paper">News Paper</mat-option>
+            </mat-select>
+            @if (libraryForm.get('type')?.hasError('required')) {
+            <mat-error>
+              Select any asset type
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Last Borrowed</mat-label>
+            <input matInput [matDatepicker]="lastBorrowedPicker" formControlName="last_borrowed">
+            <mat-datepicker-toggle matSuffix [for]="lastBorrowedPicker"></mat-datepicker-toggle>
+            <mat-datepicker #lastBorrowedPicker></mat-datepicker>
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Borrower Name</mat-label>
+            <input matInput formControlName="borrower_name">
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Due Date</mat-label>
+            <input matInput [matDatepicker]="duePicker" formControlName="due_date">
+            <mat-datepicker-toggle matSuffix [for]="duePicker"></mat-datepicker-toggle>
+            <mat-datepicker #duePicker></mat-datepicker>
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Shelf Location</mat-label>
+            <input matInput formControlName="shelf_location" required>
+            @if (libraryForm.get('shelf_location')?.hasError('required')) {
+            <mat-error>
+              Please enter shelf location
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Status</mat-label>
+            <mat-select formControlName="status" required>
+              <mat-option value="in stock">In Stock</mat-option>
+              <mat-option value="out of stock">Out Of Stock</mat-option>
+              <mat-option value="issue">Issue</mat-option>
+              <mat-option value="repair">Repair</mat-option>
+            </mat-select>
+            @if (libraryForm.get('status')?.hasError('required')) {
+            <mat-error>
+              Select any status
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+          <div class="example-button-row">
+            <button mat-flat-button class="formSubmitBtn" [disabled]="!libraryForm.valid" type="submit">Save</button>
+            <button mat-flat-button mat-dialog-close class="formCancelBtn" tabindex="-1">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

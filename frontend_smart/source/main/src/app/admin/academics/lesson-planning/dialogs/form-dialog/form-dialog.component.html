@@ -1,0 +1,137 @@
+<div class="addContainer">
+  <div class="modalHeader">
+    <div class="editRowModal">
+      <div class="modalHeaderClear"></div>
+      <div class="modalHeaderTitle">
+        {{dialogTitle}}
+      </div>
+    </div>
+    <button mat-icon-button (click)="dialogRef.close()" class="modal-close-button" aria-label="Close dialog">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+  <div mat-dialog-content>
+    <form class="register-form m-4" [formGroup]="lessonPlanningForm" (ngSubmit)="submit()">
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Topic Name</mat-label>
+            <input matInput formControlName="topicName" required>
+            <mat-icon matSuffix>topic</mat-icon>
+            @if (lessonPlanningForm.get('topicName')?.hasError('required')) {
+            <mat-error>
+              {{lessonPlanningForm.get('topicName') ? getErrorMessage(lessonPlanningForm.get('topicName')) : ''}}
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Lesson Name</mat-label>
+            <input matInput formControlName="lessonName" required>
+            <mat-icon matSuffix>assignment</mat-icon>
+            @if (lessonPlanningForm.get('lessonName')?.hasError('required')) {
+            <mat-error>
+              {{lessonPlanningForm.get('lessonName') ? getErrorMessage(lessonPlanningForm.get('lessonName')) : ''}}
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Class</mat-label>
+            <input matInput formControlName="className" required>
+            <mat-icon matSuffix>school</mat-icon>
+            @if (lessonPlanningForm.get('className')?.hasError('required')) {
+            <mat-error>
+              {{lessonPlanningForm.get('className') ? getErrorMessage(lessonPlanningForm.get('className')) : ''}}
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Subject</mat-label>
+            <input matInput formControlName="subjectName" required>
+            <mat-icon matSuffix>book</mat-icon>
+            @if (lessonPlanningForm.get('subjectName')?.hasError('required')) {
+            <mat-error>
+              {{lessonPlanningForm.get('subjectName') ? getErrorMessage(lessonPlanningForm.get('subjectName')) : ''}}
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Teacher</mat-label>
+            <input matInput formControlName="teacherName" required>
+            <mat-icon matSuffix>person</mat-icon>
+            @if (lessonPlanningForm.get('teacherName')?.hasError('required')) {
+            <mat-error>
+              {{lessonPlanningForm.get('teacherName') ? getErrorMessage(lessonPlanningForm.get('teacherName')) : ''}}
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Lesson Date</mat-label>
+            <input matInput [matDatepicker]="picker" formControlName="lessonDate" required>
+            <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+            <mat-datepicker #picker></mat-datepicker>
+            @if (lessonPlanningForm.get('lessonDate')?.hasError('required')) {
+            <mat-error>
+              {{lessonPlanningForm.get('lessonDate') ? getErrorMessage(lessonPlanningForm.get('lessonDate')) : ''}}
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Objectives</mat-label>
+            <textarea matInput formControlName="objectives"></textarea>
+            <mat-icon matSuffix>list</mat-icon>
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Teaching Method</mat-label>
+            <input matInput formControlName="teachingMethod">
+            <mat-icon matSuffix>school</mat-icon>
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Status</mat-label>
+            <mat-select formControlName="status" required>
+              <mat-option [value]="'Active'">Active</mat-option>
+              <mat-option [value]="'Inactive'">Inactive</mat-option>
+            </mat-select>
+            @if (lessonPlanningForm.get('status')?.hasError('required')) {
+            <mat-error>
+              {{lessonPlanningForm.get('status') ? getErrorMessage(lessonPlanningForm.get('status')) : ''}}
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+          <div class="example-button-row">
+            <button mat-flat-button class="formSubmitBtn" [disabled]="!lessonPlanningForm.valid"
+              type="submit">Save</button>
+            <button mat-flat-button mat-dialog-close class="formCancelBtn" tabindex="-1">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

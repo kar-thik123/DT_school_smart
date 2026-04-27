@@ -1,0 +1,235 @@
+.profile-card {
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px 1px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.08);
+  margin-bottom: 30px;
+  overflow: hidden;
+
+  .contact-grid {
+    text-align: center;
+    padding: 30px 15px;
+
+    .profile-header {
+      margin-bottom: 20px;
+
+      .user-name {
+        font-size: 20px;
+        font-weight: 600;
+        color: #333;
+      }
+
+      .name-center {
+        color: #777;
+        font-size: 14px;
+      }
+    }
+
+    .user-img {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      border: 3px solid #fff;
+      box-shadow: 0 5px 25px 0 rgba(0, 0, 0, 0.2);
+      margin-bottom: 20px;
+    }
+
+    p {
+      color: #777;
+      font-size: 14px;
+      line-height: 1.6;
+
+      mat-icon {
+        vertical-align: middle;
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+        margin-right: 5px;
+        color: #999;
+      }
+    }
+
+    .phone {
+      display: inline-block;
+      margin-top: 10px;
+      color: #555;
+      font-weight: 500;
+
+      mat-icon {
+        vertical-align: middle;
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+        margin-right: 5px;
+      }
+    }
+
+    .social-stats {
+      margin-top: 25px;
+      padding-top: 20px;
+      border-top: 1px solid #eee;
+
+      h5 {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 5px;
+        color: #333;
+      }
+
+      small {
+        color: #888;
+        font-size: 13px;
+      }
+    }
+  }
+}
+
+.list-group-unbordered {
+  .list-group-item {
+    border-left: 0;
+    border-right: 0;
+    border-radius: 0;
+    border-top: 0;
+    padding: 15px 0;
+    margin-bottom: 0;
+
+    &:last-child {
+      border-bottom: 0;
+    }
+  }
+}
+
+.profile-desc-item {
+  color: #666;
+  font-weight: 500;
+}
+
+.project_widget {
+  padding: 0;
+  margin-bottom: 20px;
+
+  .header {
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+
+    h2 {
+      font-size: 18px;
+      margin: 0;
+      color: #333;
+    }
+  }
+}
+
+.info-row {
+  margin-bottom: 25px;
+
+  .b-r {
+    border-right: 1px solid #eee;
+  }
+
+  strong {
+    display: block;
+    color: #444;
+    margin-bottom: 5px;
+  }
+}
+
+.bio-text {
+  color: #666;
+  line-height: 1.7;
+
+  p {
+    margin-bottom: 15px;
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+}
+
+.skill-list,
+.education-list,
+.certificate-list {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+
+  li {
+    position: relative;
+    padding: 10px 0 10px 40px;
+    margin-bottom: 10px;
+    border-bottom: 1px dashed #eee;
+
+    &:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+    }
+
+    mat-icon {
+      position: absolute;
+      left: 0;
+      top: 10px;
+      color: #fff;
+      width: 30px;
+      height: 30px;
+      line-height: 30px;
+      text-align: center;
+      border-radius: 50%;
+      font-size: 16px;
+    }
+
+    .education-icon {
+      background: linear-gradient(45deg, #FFB64D, #ffcb80);
+    }
+
+    .certificate-icon {
+      background: linear-gradient(45deg, #2ed8b6, #59e0c5);
+    }
+    
+    span {
+        color: #555;
+        font-weight: 500;
+        vertical-align: middle;
+    }
+  }
+}
+
+.skill-label {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 5px;
+  color: #555;
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.skill-progress {
+  height: 6px;
+  border-radius: 3px;
+  background-color: #f0f0f0;
+  margin-bottom: 15px;
+  
+  .progress-bar {
+      border-radius: 3px;
+  }
+}
+
+.l-bg-green {
+  background: linear-gradient(45deg, #2ed8b6, #59e0c5) !important;
+}
+
+.l-bg-orange {
+  background: linear-gradient(45deg, #FFB64D, #ffcb80) !important;
+}
+
+.l-bg-cyan {
+  background: linear-gradient(45deg, #01a9ac, #01dbdf) !important;
+}
+
+.l-bg-purple {
+  background: linear-gradient(45deg, #ab8ce4, #26cac0) !important;
+}
+
+/* Mat Tab specific spacing */
+::ng-deep .mat-mdc-tab-body-wrapper {
+    margin-top: 15px;
+}

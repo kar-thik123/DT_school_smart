@@ -1,0 +1,70 @@
+<div class="drawer-header">
+  <div class="d-flex justify-content-between align-items-center">
+    <h3>{{ role ? 'Manage Role' : 'Create Role' }}</h3>
+    <button mat-icon-button (click)="onClose.emit()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+  <div class="role-meta" *ngIf="role">
+    <span class="badge" [ngClass]="role.is_system ? 'badge-solid-red' : 'badge-solid-blue'">
+      {{ role.is_system ? 'System Protected' : 'Organization Custom' }}
+    </span>
+  </div>
+</div>
+
+<mat-tab-group class="drawer-tabs">
+  <!-- Tab 1: Permissions -->
+  <mat-tab>
+    <ng-template mat-tab-label>
+      <mat-icon class="mr-2">security</mat-icon> Capabilities
+    </ng-template>
+    <div class="tab-content p-4">
+      <div *ngIf="role?.is_system" class="alert alert-info mb-4">
+        <mat-icon>info</mat-icon>
+        <span>This is a system role. Core permissions are predefined and locked to ensure platform stability.</span>
+      </div>
+      
+      <app-permission-matrix [roleId]="role?.id" [isReadOnly]="role?.is_system || false"></app-permission-matrix>
+    </div>
+  </mat-tab>
+
+  <!-- Tab 2: Metadata -->
+  <mat-tab>
+    <ng-template mat-tab-label>
+      <mat-icon class="mr-2">info</mat-icon> Identity
+    </ng-template>
+    <div class="tab-content p-4">
+      <form [formGroup]="roleForm" (ngSubmit)="saveRole()">
+        <mat-form-field class="w-100" appearance="outline">
+          <mat-label>Role Name</mat-label>
+          <input matInput formControlName="name" required [readonly]="role?.is_system">
+        </mat-form-field>
+        
+        <mat-form-field class="w-100" appearance="outline">
+          <mat-label>Description</mat-label>
+          <textarea matInput formControlName="description" rows="3"></textarea>
+        </mat-form-field>
+
+        <div class="actions mt-4" *ngIf="!role?.is_system">
+          <button mat-flat-button color="primary" type="submit" [disabled]="roleForm.invalid">
+            {{ role ? 'Update Role' : 'Create Role' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </mat-tab>
+
+  <!-- Tab 3: Users -->
+  <mat-tab *ngIf="role">
+    <ng-template mat-tab-label>
+      <mat-icon class="mr-2">group</mat-icon> Users
+    </ng-template>
+    <div class="tab-content p-4 text-center">
+       <div class="p-5 border rounded bg-light">
+          <mat-icon style="font-size: 48px; width: 48px; height: 48px; color: #ccc;">people</mat-icon>
+          <p class="text-muted mt-3">There are <strong>{{ role._count?.users || 0 }}</strong> users assigned to this role.</p>
+          <button mat-stroked-button color="primary">Manage Assignments</button>
+       </div>
+    </div>
+  </mat-tab>
+</mat-tab-group>

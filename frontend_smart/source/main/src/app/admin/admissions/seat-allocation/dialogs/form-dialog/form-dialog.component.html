@@ -1,0 +1,126 @@
+<div class="addContainer">
+  <div class="modalHeader">
+    <div class="avatarDetails">
+      <div class="modalTitle">
+        {{dialogTitle}}
+      </div>
+    </div>
+    <button mat-icon-button mat-dialog-close class="modal-close-button" aria-label="Close dialog" type="button">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+  <div mat-dialog-content>
+    <form class="register-form m-4" [formGroup]="seatAllocationForm" (ngSubmit)="submit()">
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Student Name</mat-label>
+            <input matInput formControlName="student_name" required>
+            @if (seatAllocationForm.get('student_name')?.hasError('required')) {
+            <mat-error>
+              Student Name is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Application No</mat-label>
+            <input matInput formControlName="application_no" required>
+            @if (seatAllocationForm.get('application_no')?.hasError('required')) {
+            <mat-error>
+              Application No is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Course</mat-label>
+            <mat-select formControlName="course" required>
+              <mat-option [value]="'Computer Science'">Computer Science</mat-option>
+              <mat-option [value]="'Business Admin'">Business Admin</mat-option>
+              <mat-option [value]="'Law'">Law</mat-option>
+              <mat-option [value]="'Economics'">Economics</mat-option>
+              <mat-option [value]="'Management'">Management</mat-option>
+              <mat-option [value]="'Finance'">Finance</mat-option>
+              <mat-option [value]="'Political Science'">Political Science</mat-option>
+              <mat-option [value]="'Mechanical Eng'">Mechanical Eng</mat-option>
+              <mat-option [value]="'Physics'">Physics</mat-option>
+              <mat-option [value]="'Journalism'">Journalism</mat-option>
+              <mat-option [value]="'Electrical Eng'">Electrical Eng</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Category</mat-label>
+            <mat-select formControlName="category" required>
+              <mat-option [value]="'General'">General</mat-option>
+              <mat-option [value]="'OBC'">OBC</mat-option>
+              <mat-option [value]="'SC'">SC</mat-option>
+              <mat-option [value]="'ST'">ST</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Seat Type</mat-label>
+            <mat-select formControlName="allotted_seat_type" required>
+              <mat-option [value]="'Merit'">Merit</mat-option>
+              <mat-option [value]="'Management'">Management</mat-option>
+              <mat-option [value]="'Reserved'">Reserved</mat-option>
+              <mat-option [value]="'NRI'">NRI</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Allocation Date</mat-label>
+            <input matInput [matDatepicker]="allocPicker" formControlName="allocation_date" required>
+            <mat-datepicker-toggle matSuffix [for]="allocPicker"></mat-datepicker-toggle>
+            <mat-datepicker #allocPicker></mat-datepicker>
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Reporting Date</mat-label>
+            <input matInput [matDatepicker]="reportPicker" formControlName="reporting_date" required>
+            <mat-datepicker-toggle matSuffix [for]="reportPicker"></mat-datepicker-toggle>
+            <mat-datepicker #reportPicker></mat-datepicker>
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Status</mat-label>
+            <mat-select formControlName="status" required>
+              <mat-option [value]="'Confirmed'">Confirmed</mat-option>
+              <mat-option [value]="'Pending'">Pending</mat-option>
+              <mat-option [value]="'Cancelled'">Cancelled</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+          <mat-checkbox formControlName="fees_paid">Fees Paid</mat-checkbox>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+          <div class="example-button-row">
+            <button mat-flat-button class="formSubmitBtn" [disabled]="!seatAllocationForm.valid"
+              type="submit">Save</button>
+            <button mat-flat-button mat-dialog-close class="formCancelBtn" tabindex="-1">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

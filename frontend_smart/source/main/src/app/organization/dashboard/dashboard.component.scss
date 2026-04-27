@@ -1,0 +1,38 @@
+.bg-red { background-color: #d32f2f !important; }
+.bg-black { background-color: #1a1a1a !important; }
+.bg-grey { background-color: #757575 !important; }
+.bg-dark-red { background-color: #8e0000 !important; }
+
+.info-box7 {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+  &:hover {
+    transform: translateY(-5px);
+  }
+}
+
+.card {
+  border-radius: 12px;
+  border: none;
+  box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+  .header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #eee;
+    h2 {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #333;
+    }
+  }
+}
+
+.badge-solid-green {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-weight: 600;
+}

@@ -1,0 +1,47 @@
+.matrix-wrapper {
+  .matrix-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+
+    th {
+      padding: 12px;
+      background: #f8f9fa;
+      color: #666;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 2px solid #eee;
+    }
+
+    td {
+      padding: 12px;
+      border-bottom: 1px solid #f0f0f0;
+      
+      &.module-name {
+        background: #fafafa;
+        font-weight: 600;
+        color: #444;
+        border-right: 1px solid #f0f0f0;
+      }
+    }
+
+    tr:hover td {
+      background: #fffafa;
+    }
+  }
+
+  .not-applicable {
+    color: #eee;
+    font-size: 1.2rem;
+  }
+}
+
+.spinner {
+  animation: rotate 2s linear infinite;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

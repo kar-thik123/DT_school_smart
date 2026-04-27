@@ -1,0 +1,131 @@
+<section class="content">
+  <div class="content-block">
+    <div class="block-header">
+      <app-breadcrumb [title]="org?.school_name || 'Organization Console'" [items]="['Organization', 'List']" [active_item]="'Manage'"></app-breadcrumb>
+    </div>
+
+    <div class="row" *ngIf="org">
+      <!-- Tenant Overview Sidebar -->
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+        <div class="card p-4">
+          <div class="text-center">
+            <img [src]="org.logo_url || 'assets/images/user/user1.jpg'" class="img-fluid rounded-circle border mb-3" style="width: 100px; height: 100px;">
+            <h3 class="mb-0">{{ org.school_name }}</h3>
+            <p class="text-primary">{{ org.subdomain }}.platform.com</p>
+            <mat-chip-listbox>
+              <mat-chip-option [color]="org.status === 'ACTIVE' ? 'primary' : 'warn'" selected>
+                {{ org.status }}
+              </mat-chip-option>
+            </mat-chip-listbox>
+          </div>
+          <hr class="my-4">
+          <div class="tenant-meta">
+            <div class="d-flex justify-content-between mb-2">
+              <span class="text-muted">Provisioned:</span>
+              <span class="font-weight-bold">{{ org.created_at | date:'mediumDate' }}</span>
+            </div>
+            <div class="d-flex justify-content-between mb-2">
+              <span class="text-muted">Admin:</span>
+              <span class="font-weight-bold">{{ org.users[0]?.email || 'N/A' }}</span>
+            </div>
+            <div class="d-flex justify-content-between">
+              <span class="text-muted">User Count:</span>
+              <span class="font-weight-bold">{{ org._count?.users }}</span>
+            </div>
+          </div>
+          <div class="mt-4 d-grid gap-2">
+            <button mat-flat-button color="primary" (click)="toggleStatus()">
+              <mat-icon>{{ org.status === 'ACTIVE' ? 'pause' : 'play_arrow' }}</mat-icon>
+              {{ org.status === 'ACTIVE' ? 'SUSPEND TENANT' : 'ACTIVATE TENANT' }}
+            </button>
+            <button mat-stroked-button color="accent">
+              <mat-icon>login</mat-icon> IMPERSONATE ADMIN
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Management Tabs -->
+      <div class="col-xl-8 col-lg-8 col-md-12 col-sm-12">
+        <div class="card">
+          <mat-tab-group>
+            <!-- Settings -->
+            <mat-tab>
+              <ng-template mat-tab-label>
+                <mat-icon class="mr-2">settings</mat-icon> General Settings
+              </ng-template>
+              <div class="p-4">
+                <h5 class="mb-3">Branding & Identity</h5>
+                <div class="row mb-4">
+                  <div class="col-6">
+                     <p class="small text-muted mb-1">SCHOOL NAME</p>
+                     <div class="font-weight-bold">{{ org.school_name }}</div>
+                  </div>
+                  <div class="col-6">
+                     <p class="small text-muted mb-1">CONTACT EMAIL</p>
+                     <div class="font-weight-bold">{{ org.contact_email }}</div>
+                  </div>
+                </div>
+                <h5 class="mb-3">Connectivity (SMTP)</h5>
+                <div class="row mb-4">
+                   <div class="col-6">
+                      <p class="small text-muted mb-1">HOST</p>
+                      <code>{{ org.smtp_host || 'Using Default Relay' }}</code>
+                   </div>
+                   <div class="col-3">
+                      <p class="small text-muted mb-1">PORT</p>
+                      <code>{{ org.smtp_port }}</code>
+                   </div>
+                </div>
+                <button mat-flat-button color="primary">Update Settings</button>
+              </div>
+            </mat-tab>
+
+            <!-- Usage & Billing -->
+            <mat-tab>
+              <ng-template mat-tab-label>
+                <mat-icon class="mr-2">analytics</mat-icon> Usage & Billing
+              </ng-template>
+              <div class="p-4">
+                <div class="row">
+                   <div class="col-6">
+                      <div class="border rounded p-3 text-center">
+                         <div class="h4 mb-0">{{ org.login_limit }}</div>
+                         <div class="small text-muted">User Limit</div>
+                      </div>
+                   </div>
+                   <div class="col-6">
+                      <div class="border rounded p-3 text-center">
+                         <div class="h4 mb-0">{{ org._count?.users }}</div>
+                         <div class="small text-muted">Current Active</div>
+                      </div>
+                   </div>
+                </div>
+                <div class="mt-4 alert alert-warning">
+                   Subscription Management will be available in Phase 3.
+                </div>
+              </div>
+            </mat-tab>
+
+            <!-- Activity Logs -->
+            <mat-tab>
+              <ng-template mat-tab-label>
+                <mat-icon class="mr-2">history</mat-icon> Audit History
+              </ng-template>
+              <div class="p-4">
+                <ul class="list-unstyled">
+                  <li class="mb-3">
+                    <span class="text-primary font-weight-bold">Today 14:20</span> - System Admin <strong>provisioned</strong> this organization.
+                  </li>
+                  <li>
+                    <span class="text-primary font-weight-bold">Today 14:25</span> - Super Admin <strong>logged in</strong> for the first time.
+                  </li>
+                </ul>
+              </div>
+            </mat-tab>
+          </mat-tab-group>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

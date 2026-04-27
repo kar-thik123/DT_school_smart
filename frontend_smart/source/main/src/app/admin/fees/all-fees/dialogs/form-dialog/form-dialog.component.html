@@ -1,0 +1,179 @@
+<div class="addContainer">
+  <div class="modalHeader">
+    <div class="avatarDetails">
+      <div class="modalTitle">
+        {{dialogTitle}}
+      </div>
+    </div>
+    <button mat-icon-button mat-dialog-close class="modal-close-button" aria-label="Close dialog" type="button">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+  <div mat-dialog-content>
+    <form class="register-form m-4" [formGroup]="feesForm" (ngSubmit)="submit()">
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Roll No</mat-label>
+            <input matInput formControlName="rollNo" required>
+            <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>label</mat-icon>
+            @if (feesForm.get('rollNo')?.hasError('required')) {
+            <mat-error>Please enter roll no</mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Student Name</mat-label>
+            <input matInput formControlName="studentName" required>
+            <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>account_circle</mat-icon>
+            @if (feesForm.get('studentName')?.hasError('required')) {
+            <mat-error>Please enter student name</mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Class</mat-label>
+            <mat-select formControlName="class" required>
+              <mat-option [value]="'1st Grade'">1st Grade</mat-option>
+              <mat-option [value]="'2nd Grade'">2nd Grade</mat-option>
+              <mat-option [value]="'3rd Grade'">3rd Grade</mat-option>
+              <mat-option [value]="'4th Grade'">4th Grade</mat-option>
+              <mat-option [value]="'5th Grade'">5th Grade</mat-option>
+              <mat-option [value]="'6th Grade'">6th Grade</mat-option>
+              <mat-option [value]="'7th Grade'">7th Grade</mat-option>
+              <mat-option [value]="'8th Grade'">8th Grade</mat-option>
+              <mat-option [value]="'9th Grade'">9th Grade</mat-option>
+              <mat-option [value]="'10th Grade'">10th Grade</mat-option>
+              <mat-option [value]="'11th Grade'">11th Grade</mat-option>
+              <mat-option [value]="'12th Grade'">12th Grade</mat-option>
+            </mat-select>
+            @if (feesForm.get('class')?.hasError('required')) {
+            <mat-error>Select Class</mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Fees Type</mat-label>
+            <mat-select formControlName="feesType" required>
+              <mat-option [value]="'annual'">Annual</mat-option>
+              <mat-option [value]="'tution'">Tution</mat-option>
+              <mat-option [value]="'transport'">Transport</mat-option>
+              <mat-option [value]="'exam'">Exam</mat-option>
+              <mat-option [value]="'library'">Library</mat-option>
+              <mat-option [value]="'other'">Other</mat-option>
+            </mat-select>
+            @if (feesForm.get('feesType')?.hasError('required')) {
+            <mat-error>Select Fees Type</mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Invoice Number</mat-label>
+            <input matInput formControlName="invoiceNo" required>
+            <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>receipt</mat-icon>
+            @if (feesForm.get('invoiceNo')?.hasError('required')) {
+            <mat-error>Enter Invoice Number</mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Payment Due Date</mat-label>
+            <input matInput [matDatepicker]="pddPicker" formControlName="paymentDueDate" required>
+            <mat-datepicker-toggle matSuffix [for]="pddPicker"></mat-datepicker-toggle>
+            <mat-datepicker #pddPicker></mat-datepicker>
+            @if (feesForm.get('paymentDueDate')?.hasError('required')) {
+            <mat-error>
+              Please select date of birth
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Payment Date</mat-label>
+            <input matInput [matDatepicker]="pdPicker" formControlName="paymentDate">
+            <mat-datepicker-toggle matSuffix [for]="pdPicker"></mat-datepicker-toggle>
+            <mat-datepicker #pdPicker></mat-datepicker>
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Payment Type</mat-label>
+            <mat-select formControlName="paymentType">
+              <mat-option [value]="'cash'">Cash</mat-option>
+              <mat-option [value]="'cheque'">Cheque</mat-option>
+              <mat-option [value]="'online transfer'">Online Transfer</mat-option>
+              <mat-option [value]="'credit card'">Credit Card</mat-option>
+              <mat-option [value]="'other'">Other</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Status</mat-label>
+            <mat-select formControlName="status" required>
+              <mat-option [value]="'paid'">paid</mat-option>
+              <mat-option [value]="'pending'">pending</mat-option>
+            </mat-select>
+            @if (feesForm.get('status')?.hasError('required')) {
+            <mat-error>Select Status</mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Amount</mat-label>
+            <input matInput formControlName="amount" required>
+            <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>monetization_on</mat-icon>
+            @if (feesForm.get('amount')?.hasError('required')) {
+            <mat-error>Enter amount</mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Late Fee</mat-label>
+            <input matInput formControlName="lateFee">
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Discount</mat-label>
+            <input matInput formControlName="discount">
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Notes</mat-label>
+            <textarea matInput formControlName="notes"></textarea>
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+          <div class="example-button-row">
+            <button mat-flat-button class="formSubmitBtn" [disabled]="!feesForm.valid" type="submit">Save</button>
+            <button mat-flat-button mat-dialog-close class="formCancelBtn" tabindex="-1">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

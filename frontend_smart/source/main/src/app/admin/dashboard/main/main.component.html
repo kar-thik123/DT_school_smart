@@ -1,0 +1,178 @@
+<section class="content">
+  <div class="content-block">
+    @for (breadscrum of breadscrums; track breadscrum) {
+    <div class="block-header">
+      <!-- breadcrumb -->
+      <app-breadcrumb [title]="breadscrum.title" [items]="breadscrum.items" [active_item]="breadscrum.active">
+      </app-breadcrumb>
+    </div>
+    }
+
+    <!-- License Usage Warning Banner -->
+    <div class="row animate__animated animate__fadeIn" *ngIf="licenseInfo && licenseInfo.usagePercent >= licenseInfo.warning_threshold">
+      <div class="col-12">
+        <div class="alert mb-4 d-flex align-items-center justify-content-between" 
+             [class.alert-warning]="licenseInfo.usagePercent < 90"
+             [class.alert-danger]="licenseInfo.usagePercent >= 90"
+             style="border-radius: 12px; padding: 1.25rem;">
+          <div class="d-flex align-items-center">
+            <mat-icon class="mr-3" [style.fontSize]="'32px'" style="width: 32px; height: 32px;">
+              {{ licenseInfo.usagePercent >= 100 ? 'block' : 'report_problem' }}
+            </mat-icon>
+            <div>
+              <h6 class="alert-heading mb-1 font-weight-bold" style="color: inherit;">
+                {{ licenseInfo.usagePercent >= 100 ? 'LICENSE LIMIT REACHED' : 'LICENSE USAGE WARNING' }}
+              </h6>
+              <p class="mb-0">
+                You have used <strong>{{ licenseInfo.activeUsers }}</strong> of your <strong>{{ licenseInfo.limit }}</strong> licensed seats 
+                ({{ licenseInfo.usagePercent }}%). 
+                <span *ngIf="licenseInfo.usagePercent >= 100">You cannot create new users until seats are increased.</span>
+              </p>
+            </div>
+          </div>
+          <button mat-flat-button color="warn" *ngIf="licenseInfo.usagePercent >= 90">REQUEST SEATS</button>
+        </div>
+      </div>
+    </div>
+    <!-- Widgets -->
+    <div class="row">
+      <div class="col-lg-3 col-md-3 col-sm-12">
+        <app-statistic-card2 title="Total Sales" value="1500" description="Total sales this month"
+          img="assets/images/banner/img1.png" arrowIcon="trending_up">
+        </app-statistic-card2>
+      </div>
+      <div class="col-lg-3 col-md-3 col-sm-12">
+        <app-statistic-card2 title="Total Courses" value="125" description="Total course this month"
+          img="assets/images/banner/img2.png" arrowIcon="trending_down">
+        </app-statistic-card2>
+      </div>
+      <div class="col-lg-3 col-md-3 col-sm-12">
+        <app-statistic-card2 title="Total Teachers" value="89" description="12% Higher Then
+        Last Month" img="assets/images/banner/img3.png" arrowIcon="trending_up">
+        </app-statistic-card2>
+      </div>
+      <div class="col-lg-3 col-md-3 col-sm-12">
+        <app-statistic-card2 title="Fees Collection" value="$48,697" description="22% Less Then
+        Last
+        Month" img="assets/images/banner/img4.png" arrowIcon="trending_down">
+        </app-statistic-card2>
+      </div>
+    </div>
+
+    <div class="row">
+
+      <div class="col-xl-8 col-lg-8 col-md-12 col-sm-12">
+        <div class="row">
+          <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+            <app-attendance-chart></app-attendance-chart>
+          </div>
+          <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+            <app-chart-card1 [title]="title2" [subtitle]="subtitle2"></app-chart-card1>
+          </div>
+          <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-3">
+            <app-teacher-activity-tracker></app-teacher-activity-tracker>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+        <app-fee-payment-overview></app-fee-payment-overview>
+        <mat-card>
+          <mat-card-header class="header-menu">
+            <mat-card-title>Exam Schedule</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <ng-scrollbar style="height: 360px" visibility="hover">
+              <app-schedule-card [schedules]="examList"></app-schedule-card>
+            </ng-scrollbar>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card>
+          <mat-card-content>
+            <app-appointment-card [totalAppointments]="128" [completed]="73" [upcoming]="55">
+            </app-appointment-card>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-xl-8 col-lg-8 col-md-12 col-sm-12">
+        <mat-card>
+          <mat-card-header class="header-style">
+            <mat-card-title>Sport Achievements</mat-card-title>
+            <a mat-button color="primary" href="#" (click)="$event.preventDefault();">View All</a>
+          </mat-card-header>
+          <mat-card-content>
+            <ng-scrollbar style="height: 350px" visibility="hover">
+              <app-table-card [dataSource]="sportData" [columnDefinitions]="sportColumnDefinitions"></app-table-card>
+            </ng-scrollbar>
+          </mat-card-content>
+        </mat-card>
+      </div>
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+        <mat-card>
+          <mat-card-header class="header-style">
+            <mat-card-title>Teacher List</mat-card-title>
+            <a mat-button color="primary" href="#" (click)="$event.preventDefault();">View All</a>
+          </mat-card-header>
+          <mat-card-content>
+            <ng-scrollbar style="height: 350px" visibility="hover">
+              <app-emp-status></app-emp-status>
+            </ng-scrollbar>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+        <app-chart-card4 [maleCount]="2078" [femaleCount]="1825">
+        </app-chart-card4>
+      </div>
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+        <mat-card>
+          <mat-card-content>
+            <ng-scrollbar style="height: 370px" visibility="hover">
+              <app-event-card [events]="events" [maxEvents]="3" [showViewMore]="true">
+              </app-event-card>
+            </ng-scrollbar>
+          </mat-card-content>
+        </mat-card>
+      </div>
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+        <mat-card>
+          <mat-card-header class="header-style">
+            <mat-card-title>Average Class Attendance</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <apx-chart [series]="performanceRateChartOptions.series!" [chart]="performanceRateChartOptions.chart!"
+              [xaxis]="performanceRateChartOptions.xaxis!" [stroke]="performanceRateChartOptions.stroke!"
+              [colors]="performanceRateChartOptions.colors!" [dataLabels]="performanceRateChartOptions.dataLabels!"
+              [legend]="performanceRateChartOptions.legend!" [markers]="performanceRateChartOptions.markers!"
+              [grid]="performanceRateChartOptions.grid!" [yaxis]="performanceRateChartOptions.yaxis!"
+              [tooltip]="performanceRateChartOptions.tooltip!" [title]="performanceRateChartOptions.title!">
+            </apx-chart>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+    <div class="row clearfix">
+      <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+        <mat-card>
+          <mat-card-header class="header-style">
+            <mat-card-title>New Student List</mat-card-title>
+            <a mat-button color="primary" href="#" (click)="$event.preventDefault();">View All</a>
+          </mat-card-header>
+          <mat-card-content>
+            <ng-scrollbar style="height: 450px" visibility="hover">
+              <app-table-card [dataSource]="studentData"
+                [columnDefinitions]="studentColumnDefinitions"></app-table-card>
+            </ng-scrollbar>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,135 @@
+<div class="addContainer">
+  <div class="modalHeader">
+    <div class="avatarDetails">
+      <div class="modalTitle">
+        {{dialogTitle}}
+      </div>
+    </div>
+    <button mat-icon-button mat-dialog-close class="modal-close-button" aria-label="Close dialog" type="button">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+  <div mat-dialog-content>
+    <form class="register-form m-4" [formGroup]="feeForm" (ngSubmit)="submit()">
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Student Name</mat-label>
+            <input matInput formControlName="student_name" required>
+            <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>person</mat-icon>
+            @if (feeForm.get('student_name')?.hasError('required')) {
+            <mat-error>
+              Student Name is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Student ID</mat-label>
+            <input matInput formControlName="student_id" required>
+            <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>badge</mat-icon>
+            @if (feeForm.get('student_id')?.hasError('required')) {
+            <mat-error>
+              Student ID is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Class</mat-label>
+            <input matInput formControlName="class_section" required>
+            <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>school</mat-icon>
+            @if (feeForm.get('class_section')?.hasError('required')) {
+            <mat-error>
+              Class is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Route</mat-label>
+            <input matInput formControlName="route_name" required>
+            <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>route</mat-icon>
+            @if (feeForm.get('route_name')?.hasError('required')) {
+            <mat-error>
+              Route is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Amount</mat-label>
+            <input matInput formControlName="amount" required>
+            <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>attach_money</mat-icon>
+            @if (feeForm.get('amount')?.hasError('required')) {
+            <mat-error>
+              Amount is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Payment Date</mat-label>
+            <input matInput [matDatepicker]="paymentDatePicker" formControlName="payment_date" required>
+            <mat-datepicker-toggle matSuffix [for]="paymentDatePicker"></mat-datepicker-toggle>
+            <mat-datepicker #paymentDatePicker></mat-datepicker>
+            @if (feeForm.get('payment_date')?.hasError('required')) {
+            <mat-error>
+              Payment Date is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Payment Method</mat-label>
+            <mat-select formControlName="payment_method" required>
+              <mat-option [value]="'Online'">Online</mat-option>
+              <mat-option [value]="'Cash'">Cash</mat-option>
+              <mat-option [value]="'Card'">Card</mat-option>
+            </mat-select>
+            @if (feeForm.get('payment_method')?.hasError('required')) {
+            <mat-error>
+              Payment Method is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Status</mat-label>
+            <mat-select formControlName="status" required>
+              <mat-option [value]="'Paid'">Paid</mat-option>
+              <mat-option [value]="'Unpaid'">Unpaid</mat-option>
+            </mat-select>
+            @if (feeForm.get('status')?.hasError('required')) {
+            <mat-error>
+              Status is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+          <div class="example-button-row">
+            <button mat-flat-button class="formSubmitBtn" [disabled]="!feeForm.valid"
+              type="submit">Save</button>
+            <button mat-flat-button mat-dialog-close class="formCancelBtn" tabindex="-1">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

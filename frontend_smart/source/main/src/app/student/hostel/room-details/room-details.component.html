@@ -1,0 +1,20 @@
+<section class="content">
+  <div class="content-block">
+    @for (breadscrum of breadscrums; track breadscrum) {
+    <div class="block-header">
+      <!-- breadcrumb -->
+      <app-breadcrumb [title]="breadscrum.title" [items]="breadscrum.items" [active_item]="breadscrum.active">
+      </app-breadcrumb>
+    </div>
+    }
+    <div class="row">
+      <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+        <app-master-table [title]="'Room Details'" [columnDefinitions]="columnDefinitions" [dataSource]="dataSource"
+          [isLoading]="isLoading" [exportFileName]="'room_details_export'" [showAdd]="false" [showDelete]="false"
+          [showEdit]="false" [showBulkDelete]="false" [showCheckbox]="false" [enableRowClick]="true"
+          (refresh)="handleRefresh()" (rowClick)="detailsCall($event)">
+        </app-master-table>
+      </div>
+    </div>
+  </div>
+</section>

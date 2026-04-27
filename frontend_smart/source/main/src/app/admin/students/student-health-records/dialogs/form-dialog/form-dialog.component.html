@@ -1,0 +1,97 @@
+<div class="addContainer">
+  <div class="modalHeader">
+    <div class="avatarDetails">
+      <div class="modalTitle">
+        {{dialogTitle}}
+      </div>
+    </div>
+    <button mat-icon-button mat-dialog-close class="modal-close-button" aria-label="Close dialog" type="button">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+  <div mat-dialog-content>
+    <form class="register-form m-4" [formGroup]="studentHealthRecordForm" (ngSubmit)="submit()">
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Student Name</mat-label>
+            <input matInput formControlName="student_name" required>
+            <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>person</mat-icon>
+            @if (studentHealthRecordForm.get('student_name')?.hasError('required')) {
+            <mat-error>
+              Student name required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Blood Group</mat-label>
+            <mat-select formControlName="blood_group" required>
+              <mat-option [value]="'A+'">A+</mat-option>
+              <mat-option [value]="'A-'">A-</mat-option>
+              <mat-option [value]="'B+'">B+</mat-option>
+              <mat-option [value]="'B-'">B-</mat-option>
+              <mat-option [value]="'O+'">O+</mat-option>
+              <mat-option [value]="'O-'">O-</mat-option>
+              <mat-option [value]="'AB+'">AB+</mat-option>
+              <mat-option [value]="'AB-'">AB-</mat-option>
+            </mat-select>
+            @if (studentHealthRecordForm.get('blood_group')?.hasError('required')) {
+            <mat-error>
+              Select Blood Group
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Allergies</mat-label>
+            <input matInput formControlName="allergies">
+            <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>medical_services</mat-icon>
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Last Checkup</mat-label>
+            <input matInput [matDatepicker]="picker1" formControlName="last_checkup" required>
+            <mat-datepicker-toggle matSuffix [for]="picker1"></mat-datepicker-toggle>
+            <mat-datepicker #picker1></mat-datepicker>
+            @if (studentHealthRecordForm.get('last_checkup')?.hasError('required')) {
+            <mat-error>
+              Last Checkup Date is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Status</mat-label>
+            <mat-select formControlName="status" required>
+              <mat-option [value]="'Fit'">Fit</mat-option>
+              <mat-option [value]="'Unfit'">Unfit</mat-option>
+              <mat-option [value]="'Under Treatment'">Under Treatment</mat-option>
+            </mat-select>
+            @if (studentHealthRecordForm.get('status')?.hasError('required')) {
+            <mat-error>
+              Select Status
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+          <div class="example-button-row">
+            <button mat-flat-button class="formSubmitBtn" [disabled]="!studentHealthRecordForm.valid" type="submit">Save</button>
+            <button mat-flat-button mat-dialog-close class="formCancelBtn" tabindex="-1">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

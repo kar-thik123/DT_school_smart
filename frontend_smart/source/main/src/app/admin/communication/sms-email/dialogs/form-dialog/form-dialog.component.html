@@ -1,0 +1,137 @@
+<div class="addContainer">
+    <div class="modalHeader">
+        <div class="avatarDetails">
+            <div class="modalTitle">{{dialogTitle}}</div>
+        </div>
+        <button mat-icon-button mat-dialog-close class="modal-close-button" aria-label="Close dialog" type="button">
+            <mat-icon>close</mat-icon>
+        </button>
+    </div>
+    <div mat-dialog-content>
+        <form class="register-form m-4" [formGroup]="smsEmailForm" (ngSubmit)="submit()">
+            <div class="row">
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Type</mat-label>
+                        <mat-select formControlName="type" required>
+                            <mat-option [value]="'SMS'">SMS</mat-option>
+                            <mat-option [value]="'Email'">Email</mat-option>
+                        </mat-select>
+                        @if (smsEmailForm.get('type')?.hasError('required')) {
+                        <mat-error>Select Type</mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Recipient Group</mat-label>
+                        <mat-select formControlName="recipientGroup" required>
+                            <mat-option [value]="'All Students'">All Students</mat-option>
+                            <mat-option [value]="'All Teachers'">All Teachers</mat-option>
+                            <mat-option [value]="'All Staff'">All Staff</mat-option>
+                            <mat-option [value]="'Parents'">Parents</mat-option>
+                            <mat-option [value]="'All Parents'">All Parents</mat-option>
+                            <mat-option [value]="'Custom'">Custom</mat-option>
+                            <mat-option [value]="'All'">All</mat-option>
+                        </mat-select>
+                        @if (smsEmailForm.get('recipientGroup')?.hasError('required')) {
+                        <mat-error>Select Recipient Group</mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Recipient</mat-label>
+                        <input matInput formControlName="recipient" required>
+                        <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>email</mat-icon>
+                        @if (smsEmailForm.get('recipient')?.hasError('required')) {
+                        <mat-error>Recipient is required</mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Subject (for Email)</mat-label>
+                        <input matInput formControlName="subject">
+                        <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>subject</mat-icon>
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Message</mat-label>
+                        <textarea matInput formControlName="message" rows="5" required></textarea>
+                        <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>message</mat-icon>
+                        @if (smsEmailForm.get('message')?.hasError('required')) {
+                        <mat-error>Message is required</mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Sent By</mat-label>
+                        <input matInput formControlName="sentBy" required>
+                        <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>person</mat-icon>
+                        @if (smsEmailForm.get('sentBy')?.hasError('required')) {
+                        <mat-error>Sent By is required</mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Sent Date</mat-label>
+                        <input matInput type="date" formControlName="sentDate" required>
+                        <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>calendar_today</mat-icon>
+                        @if (smsEmailForm.get('sentDate')?.hasError('required')) {
+                        <mat-error>Sent Date is required</mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Status</mat-label>
+                        <mat-select formControlName="status" required>
+                            <mat-option [value]="'Draft'">Draft</mat-option>
+                            <mat-option [value]="'Sent'">Sent</mat-option>
+                            <mat-option [value]="'Scheduled'">Scheduled</mat-option>
+                        </mat-select>
+                        @if (smsEmailForm.get('status')?.hasError('required')) {
+                        <mat-error>Select Status</mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Delivery Status</mat-label>
+                        <mat-select formControlName="deliveryStatus" required>
+                            <mat-option [value]="'Pending'">Pending</mat-option>
+                            <mat-option [value]="'Delivered'">Delivered</mat-option>
+                            <mat-option [value]="'Failed'">Failed</mat-option>
+                        </mat-select>
+                        @if (smsEmailForm.get('deliveryStatus')?.hasError('required')) {
+                        <mat-error>Select Delivery Status</mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+                    <div class="example-button-row">
+                        <button mat-flat-button class="formSubmitBtn" [disabled]="!smsEmailForm.valid"
+                            type="submit">Save</button>
+                        <button mat-flat-button mat-dialog-close class="formCancelBtn" tabindex="-1">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

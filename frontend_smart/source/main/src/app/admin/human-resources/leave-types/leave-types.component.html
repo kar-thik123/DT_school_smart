@@ -1,0 +1,20 @@
+<section class="content">
+  <div class="content-block">
+    <div class="block-header">
+      <!-- breadcrumb -->
+      <app-breadcrumb [title]="'Leave Types'" [items]="['HR']" [active_item]="'Leave Types'">
+      </app-breadcrumb>
+    </div>
+    <div class="row">
+      <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+        <div class="card">
+          <app-master-table [title]="'Leave Types'" [dataSource]="dataSource" [columnDefinitions]="columnDefinitions"
+            [isLoading]="isLoading" (add)="handleAdd()" (edit)="handleEdit($event)" (delete)="handleDelete($event)"
+            (refresh)="handleRefresh()" (bulkDelete)="handleBulkDelete($event)" [showExport]="true"
+            [showContextMenu]="true">
+          </app-master-table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,18 @@
+<section class="content">
+    <div class="content-block">
+        <div class="block-header">
+            <app-breadcrumb title="Subjects Taught" [items]="['Home']" active_item="Subjects Taught">
+            </app-breadcrumb>
+        </div>
+        <div class="row">
+            <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                <app-master-table [title]="'Subjects Taught'" [columnDefinitions]="columnDefinitions"
+                    [dataSource]="dataSource" [isLoading]="isLoading" [exportFileName]="'subjects_taught_export'"
+                    [showAdd]="false" [showDelete]="true" [showEdit]="false" [showBulkDelete]="true"
+                    [showCheckbox]="true" (add)="handleAdd()" (delete)="handleDelete($event)"
+                    (refresh)="handleRefresh()" (bulkDelete)="handleBulkDelete($event)">
+                </app-master-table>
+            </div>
+        </div>
+    </div>
+</section>

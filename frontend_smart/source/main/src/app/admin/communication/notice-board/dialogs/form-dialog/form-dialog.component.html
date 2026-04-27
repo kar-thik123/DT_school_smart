@@ -1,0 +1,156 @@
+<div class="addContainer">
+    <div class="modalHeader">
+        <div class="avatarDetails">
+            <div class="modalTitle">
+                {{dialogTitle}}
+            </div>
+        </div>
+        <button mat-icon-button mat-dialog-close class="modal-close-button" aria-label="Close dialog" type="button">
+            <mat-icon>close</mat-icon>
+        </button>
+    </div>
+    <div mat-dialog-content>
+        <form class="register-form m-4" [formGroup]="noticeBoardForm" (ngSubmit)="submit()">
+            <div class="row">
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Title</mat-label>
+                        <input matInput formControlName="title" required>
+                        <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>title</mat-icon>
+                        @if (noticeBoardForm.get('title')?.hasError('required')) {
+                        <mat-error>
+                            Title is required
+                        </mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Department</mat-label>
+                        <mat-select formControlName="department" required>
+                            <mat-option [value]="'Administration'">Administration</mat-option>
+                            <mat-option [value]="'Sports'">Sports</mat-option>
+                            <mat-option [value]="'Science'">Science</mat-option>
+                            <mat-option [value]="'Mathematics'">Mathematics</mat-option>
+                            <mat-option [value]="'Library'">Library</mat-option>
+                            <mat-option [value]="'Accounts'">Accounts</mat-option>
+                            <mat-option [value]="'Counseling'">Counseling</mat-option>
+                            <mat-option [value]="'Health'">Health</mat-option>
+                            <mat-option [value]="'Music'">Music</mat-option>
+                            <mat-option [value]="'Transport'">Transport</mat-option>
+                            <mat-option [value]="'Arts'">Arts</mat-option>
+                            <mat-option [value]="'Discipline'">Discipline</mat-option>
+                            <mat-option [value]="'Facilities'">Facilities</mat-option>
+                        </mat-select>
+                        @if (noticeBoardForm.get('department')?.hasError('required')) {
+                        <mat-error>
+                            Select Department
+                        </mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Description</mat-label>
+                        <textarea matInput formControlName="description" rows="4" required></textarea>
+                        <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>description</mat-icon>
+                        @if (noticeBoardForm.get('description')?.hasError('required')) {
+                        <mat-error>
+                            Description is required
+                        </mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Priority</mat-label>
+                        <mat-select formControlName="priority" required>
+                            <mat-option [value]="'High'">High</mat-option>
+                            <mat-option [value]="'Medium'">Medium</mat-option>
+                            <mat-option [value]="'Low'">Low</mat-option>
+                        </mat-select>
+                        @if (noticeBoardForm.get('priority')?.hasError('required')) {
+                        <mat-error>
+                            Select Priority
+                        </mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Target Audience</mat-label>
+                        <mat-select formControlName="targetAudience" required>
+                            <mat-option [value]="'All'">All</mat-option>
+                            <mat-option [value]="'All Students'">All Students</mat-option>
+                            <mat-option [value]="'All Teachers'">All Teachers</mat-option>
+                            <mat-option [value]="'All Staff'">All Staff</mat-option>
+                            <mat-option [value]="'Parents'">Parents</mat-option>
+                            <mat-option [value]="'Senior Students'">Senior Students</mat-option>
+                            <mat-option [value]="'Transport Users'">Transport Users</mat-option>
+                        </mat-select>
+                        @if (noticeBoardForm.get('targetAudience')?.hasError('required')) {
+                        <mat-error>
+                            Select Target Audience
+                        </mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Posted By</mat-label>
+                        <input matInput formControlName="postedBy" required>
+                        <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>person</mat-icon>
+                        @if (noticeBoardForm.get('postedBy')?.hasError('required')) {
+                        <mat-error>
+                            Posted By is required
+                        </mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Date</mat-label>
+                        <input matInput type="date" formControlName="date" required>
+                        <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>calendar_today</mat-icon>
+                        @if (noticeBoardForm.get('date')?.hasError('required')) {
+                        <mat-error>
+                            Date is required
+                        </mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Status</mat-label>
+                        <mat-select formControlName="status" required>
+                            <mat-option [value]="'Active'">Active</mat-option>
+                            <mat-option [value]="'Archived'">Archived</mat-option>
+                        </mat-select>
+                        @if (noticeBoardForm.get('status')?.hasError('required')) {
+                        <mat-error>
+                            Select Status
+                        </mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+                    <div class="example-button-row">
+                        <button mat-flat-button class="formSubmitBtn" [disabled]="!noticeBoardForm.valid"
+                            type="submit">Save</button>
+                        <button mat-flat-button mat-dialog-close class="formCancelBtn" tabindex="-1">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

@@ -1,0 +1,194 @@
+<mat-card class="noticeboard-card">
+  <mat-card-header class="header-style">
+    <mat-card-title>Noticeboard & Announcements @if (getUnreadCount() > 0) {
+      <span class="badge-container">
+        <span class="unread-badge" matBadge="{{getUnreadCount()}}" matBadgeOverlap="false" matBadgeColor="warn"></span>
+      </span>
+    }</mat-card-title>
+
+    <div class="actions">
+      <button mat-icon-button [matMenuTriggerFor]="menu" aria-label="Filter announcements">
+        <mat-icon>filter_list</mat-icon>
+      </button>
+      <mat-menu #menu="matMenu">
+        @for (category of categories; track category) {
+          <button mat-menu-item (click)="setCategory(category)">
+            {{ category }}
+          </button>
+        }
+      </mat-menu>
+    </div>
+  </mat-card-header>
+  <mat-card-content class="content-style">
+    <mat-tab-group [(selectedIndex)]="activeTab" animationDuration="300ms">
+      <mat-tab label="All ({{announcements.length}})">
+        <div class="announcements-container">
+          <ng-scrollbar style="height: 350px" visibility="hover">
+            @for (announcement of getFilteredAnnouncements(); track announcement) {
+              <div class="announcement-item"
+                [ngClass]="{'unread': !announcement.isRead}" (click)="markAsRead(announcement)">
+                <div class="announcement-header">
+                  <div class="announcement-title">
+                    <mat-icon [ngClass]="getUrgencyColor(announcement.urgency)"
+                      matTooltip="{{announcement.urgency | titlecase}} Priority"
+                    class="material-icons-outlined urgency-icon">{{getUrgencyIcon(announcement.urgency)}}</mat-icon>
+                    <h3>{{ announcement.title }}</h3>
+                  </div>
+                  <div class="announcement-meta">
+                    <span class="date">{{ formatDate(announcement.date) }}</span>
+                    <span class="days-ago">{{ getDaysAgo(announcement.date) }}</span>
+                  </div>
+                </div>
+                <div class="announcement-content">
+                  <p>{{ announcement.content }}</p>
+                </div>
+                <div class="announcement-footer">
+                  <div class="category-chip">
+                    <mat-chip>{{ announcement.category }}</mat-chip>
+                  </div>
+                  @if (announcement.attachments && announcement.attachments.length > 0) {
+                    <div class="attachments">
+                      @for (attachment of announcement.attachments; track attachment) {
+                        <button mat-button color="primary">
+                          <mat-icon class="material-icons-outlined">attach_file</mat-icon>
+                          {{ attachment }}
+                        </button>
+                      }
+                    </div>
+                  }
+                  @if (announcement.sender) {
+                    <div class="sender">
+                      <span>From: {{ announcement.sender }}</span>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </ng-scrollbar>
+          @if (getFilteredAnnouncements().length === 0) {
+            <div class="no-announcements">
+              <mat-icon class="material-icons-outlined">announcement</mat-icon>
+              <p>No announcements found for the selected category.</p>
+            </div>
+          }
+        </div>
+      </mat-tab>
+
+      <mat-tab label="Unread ({{getUnreadCount()}})">
+        <div class="announcements-container">
+          <ng-scrollbar style="height: 350px" visibility="hover">
+            @for (announcement of getUnreadAnnouncements(); track announcement) {
+              <div class="announcement-item unread"
+                (click)="markAsRead(announcement)">
+                <div class="announcement-header">
+                  <div class="announcement-title">
+                    <mat-icon [ngClass]="getUrgencyColor(announcement.urgency)"
+                      matTooltip="{{announcement.urgency | titlecase}} Priority"
+                    class="material-icons-outlined urgency-icon">{{getUrgencyIcon(announcement.urgency)}}</mat-icon>
+                    <h3>{{ announcement.title }}</h3>
+                  </div>
+                  <div class="announcement-meta">
+                    <span class="date">{{ formatDate(announcement.date) }}</span>
+                    <span class="days-ago">{{ getDaysAgo(announcement.date) }}</span>
+                  </div>
+                </div>
+                <div class="announcement-content">
+                  <p>{{ announcement.content }}</p>
+                </div>
+                <div class="announcement-footer">
+                  <div class="category-chip">
+                    <mat-chip>{{ announcement.category }}</mat-chip>
+                  </div>
+                  @if (announcement.attachments && announcement.attachments.length > 0) {
+                    <div class="attachments">
+                      @for (attachment of announcement.attachments; track attachment) {
+                        <button mat-button color="primary">
+                          <mat-icon class="material-icons-outlined">attach_file</mat-icon>
+                          {{ attachment }}
+                        </button>
+                      }
+                    </div>
+                  }
+                  @if (announcement.sender) {
+                    <div class="sender">
+                      <span>From: {{ announcement.sender }}</span>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </ng-scrollbar>
+          @if (getUnreadAnnouncements().length === 0) {
+            <div class="no-announcements">
+              <mat-icon class="material-icons-outlined">done_all</mat-icon>
+              <p>You have no unread announcements.</p>
+            </div>
+          }
+        </div>
+      </mat-tab>
+
+      <mat-tab label="Urgent ({{getUrgentCount()}})">
+        <div class="announcements-container">
+          <ng-scrollbar style="height: 350px" visibility="hover">
+            @for (announcement of getUrgentAnnouncements(); track announcement) {
+              <div class="announcement-item"
+                [ngClass]="{'unread': !announcement.isRead}" (click)="markAsRead(announcement)">
+                <div class="announcement-header">
+                  <div class="announcement-title">
+                    <mat-icon [ngClass]="getUrgencyColor(announcement.urgency)"
+                      matTooltip="{{announcement.urgency | titlecase}} Priority"
+                    class="material-icons-outlined urgency-icon">{{getUrgencyIcon(announcement.urgency)}}</mat-icon>
+                    <h3>{{ announcement.title }}</h3>
+                  </div>
+                  <div class="announcement-meta">
+                    <span class="date">{{ formatDate(announcement.date) }}</span>
+                    <span class="days-ago">{{ getDaysAgo(announcement.date) }}</span>
+                  </div>
+                </div>
+                <div class="announcement-content">
+                  <p>{{ announcement.content }}</p>
+                </div>
+                <div class="announcement-footer">
+                  <div class="category-chip">
+                    <mat-chip>{{ announcement.category }}</mat-chip>
+                  </div>
+                  @if (announcement.attachments && announcement.attachments.length > 0) {
+                    <div class="attachments">
+                      @for (attachment of announcement.attachments; track attachment) {
+                        <button mat-button color="primary">
+                          <mat-icon class="material-icons-outlined">attach_file</mat-icon>
+                          {{ attachment }}
+                        </button>
+                      }
+                    </div>
+                  }
+                  @if (announcement.sender) {
+                    <div class="sender">
+                      <span>From: {{ announcement.sender }}</span>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </ng-scrollbar>
+          @if (getUrgentAnnouncements().length === 0) {
+            <div class="no-announcements">
+              <mat-icon class="material-icons-outlined">check_circle</mat-icon>
+              <p>There are no urgent announcements at this time.</p>
+            </div>
+          }
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </mat-card-content>
+  <mat-card-actions class="footer-actions">
+    <button mat-button color="primary">
+      <mat-icon class="material-icons-outlined">add_circle</mat-icon>
+      New Announcement
+    </button>
+    <button mat-button color="accent">
+      <mat-icon class="material-icons-outlined">mark_email_read</mat-icon>
+      Mark All Read
+    </button>
+  </mat-card-actions>
+</mat-card>

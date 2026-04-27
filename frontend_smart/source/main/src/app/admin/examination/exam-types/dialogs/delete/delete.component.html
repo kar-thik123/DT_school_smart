@@ -1,0 +1,19 @@
+<div class="addContainer">
+  <div class="modalHeader">
+    <div class="avatarDetails">
+      <div class="modalTitle">
+        Confirm Delete
+      </div>
+    </div>
+    <button mat-icon-button mat-dialog-close class="modal-close-button" aria-label="Close dialog">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+  <div mat-dialog-content>
+    <p>Are you sure you want to delete this Exam Type: <strong>{{data.exam_name}}</strong>?</p>
+  </div>
+  <div mat-dialog-actions align="end">
+    <button mat-flat-button class="formSubmitBtn" (click)="confirmDelete()">Delete</button>
+    <button mat-flat-button mat-dialog-close class="formCancelBtn">Cancel</button>
+  </div>
+</div>

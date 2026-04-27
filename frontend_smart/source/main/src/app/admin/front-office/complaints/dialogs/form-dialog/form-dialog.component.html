@@ -1,0 +1,205 @@
+<div class="addContainer">
+  <div class="modalHeader">
+    <label class="hoverable" for="tableFileInput">
+      <img [src]='complaints.img' alt="avatar">
+    </label>
+    <div class="modalTitle">
+      {{ dialogTitle }}
+    </div>
+    <button mat-icon-button mat-dialog-close class="modal-close-button" aria-label="Close dialog" type="button">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+  <div mat-dialog-content>
+    <form class="register-form m-4" [formGroup]="complaintsForm" (ngSubmit)="submit()">
+      <div class="row">
+        <!-- Complaint ID -->
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Complaint ID</mat-label>
+            <input matInput formControlName="complaintId" required>
+            @if (complaintsForm.get('complaintId')?.hasError('required')) {
+            <mat-error>
+              Complaint ID is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+        <!-- Complaint Date -->
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Complaint Date</mat-label>
+            <input matInput [matDatepicker]="complaintDatePicker" formControlName="complaintDate" required>
+            <mat-datepicker-toggle matSuffix [for]="complaintDatePicker"></mat-datepicker-toggle>
+            <mat-datepicker #complaintDatePicker></mat-datepicker>
+            @if (complaintsForm.get('complaintDate')?.hasError('required')) {
+            <mat-error>
+              Complaint Date is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="row">
+        <!-- Complaint Time -->
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Visit Time</mat-label>
+            <input matInput [matTimepicker]="timepicker" formControlName="complaintTime" [placeholder]="'HH:MM'">
+            <mat-timepicker-toggle matIconSuffix [for]="timepicker" />
+            <mat-timepicker #timepicker />
+            @if (complaintsForm.get('complaintTime')?.hasError('required')) {
+            <mat-error>
+              Complaint Time is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+        <!-- Complainant Name -->
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Complainant Name</mat-label>
+            <input matInput formControlName="complainantName" required>
+            @if (complaintsForm.get('complainantName')?.hasError('required')) {
+            <mat-error>
+              Complainant Name is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="row">
+        <!-- Complainant Type -->
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Complainant Type</mat-label>
+            <mat-select formControlName="complainantType" required>
+              <mat-option value="Parent">Parent</mat-option>
+              <mat-option value="Student">Student</mat-option>
+              <mat-option value="Staff">Staff</mat-option>
+              <mat-option value="other">Other</mat-option>
+            </mat-select>
+            @if (complaintsForm.get('complainantType')?.hasError('required')) {
+            <mat-error>
+              Complainant Type is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+        <!-- Student Name -->
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Student Name</mat-label>
+            <input matInput formControlName="studentName">
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="row">
+        <!-- Complaint Description -->
+        <div class="col-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Complaint Description</mat-label>
+            <textarea matInput formControlName="complaintDescription" required></textarea>
+            @if (complaintsForm.get('complaintDescription')?.hasError('required')) {
+            <mat-error>
+              Complaint Description is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="row">
+        <!-- Department -->
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Department</mat-label>
+            <mat-select formControlName="department" required>
+              <mat-option value="Administration">Administration</mat-option>
+              <mat-option value="Transportation">Transportation</mat-option>
+              <mat-option value="Classroom">Classroom</mat-option>
+              <mat-option value="Library">Library</mat-option>
+              <mat-option value="Human Resources">Human Resources</mat-option>
+              <mat-option value="Facilities">Facilities</mat-option>
+              <mat-option value="IT Department">IT Department</mat-option>
+            </mat-select>
+            @if (complaintsForm.get('department')?.hasError('required')) {
+            <mat-error>
+              Department is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+        <!-- Status -->
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Status</mat-label>
+            <mat-select formControlName="status" required>
+              <mat-option value="Open">Open</mat-option>
+              <mat-option value="In Progress">In Progress</mat-option>
+              <mat-option value="Resolved">Resolved</mat-option>
+            </mat-select>
+            @if (complaintsForm.get('status')?.hasError('required')) {
+            <mat-error>
+              Status is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="row">
+        <!-- Priority Level -->
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Priority Level</mat-label>
+            <mat-select formControlName="priorityLevel" required>
+              <mat-option value="Low">Low</mat-option>
+              <mat-option value="Medium">Medium</mat-option>
+              <mat-option value="High">High</mat-option>
+            </mat-select>
+            @if (complaintsForm.get('priorityLevel')?.hasError('required')) {
+            <mat-error>
+              Priority Level is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+        <!-- Assigned To -->
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Assigned To</mat-label>
+            <input matInput formControlName="assignedTo">
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="row">
+        <!-- Feedback -->
+        <div class="col-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Feedback</mat-label>
+            <textarea matInput formControlName="feedback"></textarea>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-12">
+          <div class="example-button-row">
+            <button mat-flat-button class="formSubmitBtn" [disabled]="!complaintsForm.valid" type="submit">Save</button>
+            <button mat-flat-button mat-dialog-close class="formCancelBtn" tabindex="-1">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

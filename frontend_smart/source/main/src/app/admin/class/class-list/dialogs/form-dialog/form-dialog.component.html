@@ -1,0 +1,168 @@
+<div class="addContainer">
+  <div class="modalHeader">
+    <div class="avatarDetails">
+      <div class="modalTitle">
+        {{dialogTitle}}
+      </div>
+    </div>
+    <button mat-icon-button mat-dialog-close class="modal-close-button" aria-label="Close dialog" type="button">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+  <div mat-dialog-content>
+    <form class="class-form m-4" [formGroup]="classListForm" (ngSubmit)="submit()">
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Class Name</mat-label>
+            <input matInput formControlName="className" required maxlength="100">
+            @if (classListForm.get('className')?.hasError('required')) {
+            <mat-error>Class name is required</mat-error>
+            } @else if (classListForm.get('className')?.hasError('maxlength')) {
+            <mat-error>Class name cannot exceed 100 characters</mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Class Code</mat-label>
+            <input matInput formControlName="classCode" required maxlength="50">
+            @if (classListForm.get('classCode')?.hasError('required')) {
+            <mat-error>Class code is required</mat-error>
+            } @else if (classListForm.get('classCode')?.hasError('maxlength')) {
+            <mat-error>Class code cannot exceed 50 characters</mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Teacher ID</mat-label>
+            <input matInput formControlName="teacherId">
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Room Number</mat-label>
+            <input matInput formControlName="roomNumber" required>
+            @if (classListForm.get('roomNumber')?.hasError('required')) {
+            <mat-error>Room number is required</mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Start Date</mat-label>
+            <input matInput [matDatepicker]="startDatePicker" formControlName="startDate" required>
+            <mat-datepicker-toggle matSuffix [for]="startDatePicker"></mat-datepicker-toggle>
+            <mat-datepicker #startDatePicker></mat-datepicker>
+            @if (classListForm.get('startDate')?.hasError('required')) {
+            <mat-error>Start date is required</mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>End Date</mat-label>
+            <input matInput [matDatepicker]="endDatePicker" formControlName="endDate">
+            <mat-datepicker-toggle matSuffix [for]="endDatePicker"></mat-datepicker-toggle>
+            <mat-datepicker #endDatePicker></mat-datepicker>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Semester</mat-label>
+            <mat-select formControlName="semester">
+              <mat-option value="Fall 2024">Fall 2024</mat-option>
+              <mat-option value="Spring 2025">Spring 2025</mat-option>
+              <mat-option value="Summer 2025">Summer 2025</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Class Capacity</mat-label>
+            <input matInput type="number" formControlName="classCapacity" required min="1" max="500">
+            @if (classListForm.get('classCapacity')?.hasError('required')) {
+            <mat-error>Class capacity is required</mat-error>
+            } @else if (classListForm.get('classCapacity')?.hasError('min')) {
+            <mat-error>Capacity must be at least 1</mat-error>
+            } @else if (classListForm.get('classCapacity')?.hasError('max')) {
+            <mat-error>Capacity cannot exceed 500</mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Status</mat-label>
+            <mat-select formControlName="status" required>
+              <mat-option value="Active">Active</mat-option>
+              <mat-option value="Inactive">Inactive</mat-option>
+            </mat-select>
+            @if (classListForm.get('status')?.hasError('required')) {
+            <mat-error>Status is required</mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Class Type</mat-label>
+            <mat-select formControlName="classType" required>
+              <mat-option value="Lecture">Lecture</mat-option>
+              <mat-option value="Lab">Lab</mat-option>
+              <mat-option value="Seminar">Seminar</mat-option>
+              <mat-option value="Workshop">Workshop</mat-option>
+            </mat-select>
+            @if (classListForm.get('classType')?.hasError('required')) {
+            <mat-error>Class type is required</mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Schedule</mat-label>
+            <input matInput formControlName="schedule" maxlength="200">
+            @if (classListForm.get('schedule')?.hasError('maxlength')) {
+            <mat-error>Schedule cannot exceed 200 characters</mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Description</mat-label>
+            <textarea matInput formControlName="description" rows="3" maxlength="500"></textarea>
+            @if (classListForm.get('description')?.hasError('maxlength')) {
+            <mat-error>Description cannot exceed 500 characters</mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+          <div class="example-button-row">
+            <button mat-flat-button class="formSubmitBtn" [disabled]="!classListForm.valid" type="submit">Save</button>
+            <button mat-flat-button mat-dialog-close class="formCancelBtn" tabindex="-1">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,146 @@
+<div class="addContainer">
+  <div class="modalHeader">
+    <div class="avatarDetails">
+      <div class="modalTitle">
+        {{dialogTitle}}
+      </div>
+    </div>
+    <button mat-icon-button mat-dialog-close class="modal-close-button" aria-label="Close dialog" type="button">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+  <div mat-dialog-content>
+    <form class="book-status-form m-4" [formGroup]="bookStatusForm" (ngSubmit)="submit()">
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Book ID</mat-label>
+            <input matInput formControlName="bookID" required>
+            @if (bookStatusForm.get('bookID')?.hasError('required')) {
+            <mat-error>Book ID is required</mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Book Name</mat-label>
+            <input matInput formControlName="bookName" required>
+            @if (bookStatusForm.get('bookName')?.hasError('required')) {
+            <mat-error>Book name is required</mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Status</mat-label>
+            <mat-select formControlName="status" required>
+              <mat-option value="Available">Available</mat-option>
+              <mat-option value="Checked Out">Checked Out</mat-option>
+              <mat-option value="Reserved">Reserved</mat-option>
+              <mat-option value="Lost">Lost</mat-option>
+              <mat-option value="Under Repair">Under Repair</mat-option>
+            </mat-select>
+            @if (bookStatusForm.get('status')?.hasError('required')) {
+            <mat-error>Status is required</mat-error>
+            } @else if (bookStatusForm.get('status')?.hasError('maxlength')) {
+            <mat-error>Status cannot exceed 50 characters</mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Condition</mat-label>
+            <mat-select formControlName="condition">
+              <mat-option value="Good">Good</mat-option>
+              <mat-option value="Excellent">Excellent</mat-option>
+              <mat-option value="Damaged">Damaged</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Last Checked Out Date</mat-label>
+            <input matInput [matDatepicker]="lastCheckedOutPicker" formControlName="lastCheckedOutDate">
+            <mat-datepicker-toggle matSuffix [for]="lastCheckedOutPicker"></mat-datepicker-toggle>
+            <mat-datepicker #lastCheckedOutPicker></mat-datepicker>
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Due Date</mat-label>
+            <input matInput [matDatepicker]="dueDatePicker" formControlName="dueDate">
+            <mat-datepicker-toggle matSuffix [for]="dueDatePicker"></mat-datepicker-toggle>
+            <mat-datepicker #dueDatePicker></mat-datepicker>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Checked Out By</mat-label>
+            <input matInput formControlName="checkedOutBy" maxlength="100">
+            @if (bookStatusForm.get('checkedOutBy')?.hasError('maxlength')) {
+            <mat-error>Checked out by cannot exceed 100 characters</mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Reserved By</mat-label>
+            <input matInput formControlName="reservedBy" maxlength="100">
+            @if (bookStatusForm.get('reservedBy')?.hasError('maxlength')) {
+            <mat-error>Reserved by cannot exceed 100 characters</mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Return Date</mat-label>
+            <input matInput [matDatepicker]="returnDatePicker" formControlName="returnDate">
+            <mat-datepicker-toggle matSuffix [for]="returnDatePicker"></mat-datepicker-toggle>
+            <mat-datepicker #returnDatePicker></mat-datepicker>
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Date Updated</mat-label>
+            <input matInput [matDatepicker]="dateUpdatedPicker" formControlName="dateUpdated">
+            <mat-datepicker-toggle matSuffix [for]="dateUpdatedPicker"></mat-datepicker-toggle>
+            <mat-datepicker #dateUpdatedPicker></mat-datepicker>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Notes</mat-label>
+            <textarea matInput formControlName="notes" rows="3" maxlength="500"></textarea>
+            @if (bookStatusForm.get('notes')?.hasError('maxlength')) {
+            <mat-error>Notes cannot exceed 500 characters</mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+          <div class="example-button-row">
+            <button mat-flat-button class="formSubmitBtn" [disabled]="!bookStatusForm.valid" type="submit">Save</button>
+            <button mat-flat-button mat-dialog-close class="formCancelBtn" tabindex="-1">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

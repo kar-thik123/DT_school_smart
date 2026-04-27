@@ -1,0 +1,24 @@
+.tenant-meta {
+  padding: 15px 0;
+  border-top: 1px solid #eee;
+  border-bottom: 1px solid #eee;
+}
+
+mat-tab-group {
+  ::ng-deep .mat-mdc-tab-header {
+    background-color: #f8f9fa;
+  }
+  ::ng-deep .mat-mdc-tab.mdc-tab--active .mdc-tab__text-label {
+    color: #d32f2f;
+  }
+  ::ng-deep .mat-mdc-tab-link-active .mdc-tab-indicator__content--underline {
+    border-color: #d32f2f;
+  }
+}
+
+.alert-warning {
+  background-color: #fff3e0;
+  color: #ef6c00;
+  border: none;
+  border-radius: 8px;
+}

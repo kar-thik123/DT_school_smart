@@ -1,0 +1,16 @@
+.addContainer {
+  padding: 10px;
+}
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+}
+.modalHeaderTitle {
+  font-size: 18px;
+  font-weight: 500;
+}
+.modal-close-button {
+  cursor: pointer;
+}

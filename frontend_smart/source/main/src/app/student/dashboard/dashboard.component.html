@@ -1,0 +1,153 @@
+<section class="content">
+  <div class="content-block">
+    @for (breadscrum of breadscrums; track breadscrum) {
+    <div class="block-header">
+      <!-- breadcrumb -->
+      <app-breadcrumb [title]="breadscrum.title" [items]="breadscrum.items" [active_item]="breadscrum.active">
+      </app-breadcrumb>
+    </div>
+    }
+    <!-- Widgets -->
+    <div class="row">
+      <div class="col-xl-8 col-lg-8 col-md-12 col-sm-12">
+        <div class="card">
+          <div class="body">
+            <div class="row align-items-center">
+              <div class="col-md-4 mb-0">
+                <div class="recent-report__chart">
+                  <canvas baseChart height="200px" width="200px" class="chart" [data]="doughnutChartData"
+                    [labels]="doughnutChartLabels" [options]="doughnutChartOptions" [type]="doughnutChartType"></canvas>
+                </div>
+              </div>
+              <div class="col-md-8">
+                <h4>
+                  <div class="weight-600 col-pink pt-1">Good Job, Sarah. Keep Going!! </div>
+                </h4>
+                <p class="font-15 max-width-600">You task are 80% completed this week. Keep it up and improve your
+                  result. Progress is very good!!!</p>
+                <div class="row">
+                  <div class="col-lg-6">
+                    <div><i class="fa fa-circle dot1 msr-2"></i> Development - 1 hour 50 Mins</div>
+                  </div>
+                  <div class="col-lg-6">
+                    <div><i class="fa fa-circle dot2 msr-2"></i> Java Class - 50 Mins</div>
+                  </div>
+                  <div class="col-lg-6">
+                    <div><i class="fa fa-circle dot3 msr-2"></i> painting - 1 hour 20 Mins</div>
+                  </div>
+                  <div class="col-lg-6">
+                    <div><i class="fa fa-circle dot4 msr-2"></i> Geography Class - 30 Mins</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+        <div class="card l-bg-purple p-2 px-4 text-white py-3">
+          <div class="info d-flex justify-content-between align-items-center">
+            <div class="d-flex flex-column text-white"> <span class="font-22 font-b-500">English Vocabulary Test</span>
+              <small class="mt-2 font-16"><i class=" far fa-clock msr-2"></i> 25, Feb, 2020. 04:00 PM</small>
+            </div>
+          </div>
+        </div>
+        <div class="card l-bg-green p-2 px-4 text-white py-3">
+          <div class="info d-flex justify-content-between align-items-center">
+            <div class="d-flex flex-column text-white"> <span class="font-22 font-b-500">Science Homework
+                Submition</span>
+              <small class="mt-2 font-16"><i class="far fa-clock msr-2"></i> 28, Feb, 2020. 10:00 AM</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- #END# Widgets -->
+    <div class="row clearfix">
+      <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
+        <app-course-progress></app-course-progress>
+      </div>
+      <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
+        <app-daily-timetable></app-daily-timetable>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+        <mat-card>
+          <mat-card-header>
+            <mat-card-title>Your Progress</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <ng-scrollbar style="height: 360px" visibility="hover">
+              <app-progress-table [subjects]="subjects"></app-progress-table>
+            </ng-scrollbar>
+          </mat-card-content>
+        </mat-card>
+      </div>
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+        <mat-card>
+          <mat-card-header>
+            <mat-card-title>Time Spent On Learning</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <apx-chart [series]="barChartOptions.series!" [chart]="barChartOptions.chart!"
+              [dataLabels]="barChartOptions.dataLabels!" [plotOptions]="barChartOptions.plotOptions!"
+              [responsive]="barChartOptions.responsive!" [xaxis]="barChartOptions.xaxis!" [grid]="barChartOptions.grid!"
+              [legend]="barChartOptions.legend!" [fill]="barChartOptions.fill!"></apx-chart>
+          </mat-card-content>
+        </mat-card>
+      </div>
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+        <mat-card>
+          <mat-card-header class="header-style">
+            <mat-card-title> Upcomming Class</mat-card-title>
+            <a mat-button color="primary" href="#" (click)="$event.preventDefault();">View All</a>
+          </mat-card-header>
+          <mat-card-content>
+            <ng-scrollbar style="height: 360px" visibility="hover">
+              <div class="doc-file-type">
+                <app-emp-schedule [schedules]="scheduleList"></app-emp-schedule>
+              </div>
+            </ng-scrollbar>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+    <div class="row clearfix">
+      <div class="col-xs-12 col-sm-12 col-md-8 col-lg-8">
+        <div class="card">
+          <div class="header">
+            <h2>Test Results</h2>
+          </div>
+          <div class="body">
+            <apx-chart [series]="areaChartOptions.series!" [chart]="areaChartOptions.chart!"
+              [xaxis]="areaChartOptions.xaxis!" [yaxis]="areaChartOptions.yaxis!" [colors]="areaChartOptions.colors!"
+              [stroke]="areaChartOptions.stroke!" [legend]="areaChartOptions.legend!" [grid]="areaChartOptions.grid!"
+              [tooltip]="areaChartOptions.tooltip!" [dataLabels]="areaChartOptions.dataLabels!"></apx-chart>
+          </div>
+        </div>
+      </div>
+      <div class="col-xs-12 col-sm-12 col-md-4 col-lg-4">
+        <app-upcoming-assignments></app-upcoming-assignments>
+      </div>
+    </div>
+    <div class="row clearfix">
+      <div class="col-xs-12 col-sm-12 col-md-4 col-lg-4">
+        <app-recent-grades></app-recent-grades>
+      </div>
+      <div class="col-xs-12 col-sm-12 col-md-8 col-lg-8">
+        <mat-card>
+          <mat-card-header class="header-style">
+            <mat-card-title>Library Book Issue List</mat-card-title>
+            <a mat-button color="primary" href="#" (click)="$event.preventDefault();">View All</a>
+          </mat-card-header>
+          <mat-card-content>
+            <ng-scrollbar style="height: 400px" visibility="hover">
+              <app-table-card [dataSource]="booksData" [columnDefinitions]="libraryColumnDefinitions"></app-table-card>
+            </ng-scrollbar>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+  </div>
+</section>

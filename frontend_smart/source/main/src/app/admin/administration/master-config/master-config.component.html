@@ -1,0 +1,208 @@
+<section class="content">
+  <div class="content-block">
+    <div class="block-header">
+      <app-breadcrumb [title]="breadscrums[0].title" [items]="breadscrums[0].items" [active_item]="breadscrums[0].active">
+      </app-breadcrumb>
+    </div>
+
+    <div *ngIf="isLoading" class="p-5 text-center">
+      <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+      <p class="mt-2 text-muted">Loading configuration...</p>
+    </div>
+
+    <div class="row" *ngIf="!isLoading">
+      <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12">
+        <mat-tab-group animationDuration="0ms">
+          
+          <!-- Tab 1: Institution Profile -->
+          <mat-tab>
+            <ng-template mat-tab-label>
+              <mat-icon class="me-2">business</mat-icon>
+              Institution Profile
+            </ng-template>
+            <div class="p-4">
+              <div class="row">
+                <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+                  <mat-card class="p-4 text-center">
+                    <div class="mb-3">
+                      <img [src]="organization?.logo_url || 'assets/images/user/hospital.png'" 
+                           class="img-thumbnail" style="max-height: 150px;" alt="Logo">
+                    </div>
+                    <input type="file" #fileInput style="display: none" (change)="onFileSelected($event)" accept="image/*">
+                    <button mat-stroked-button color="primary" (click)="fileInput.click()">
+                      <mat-icon class="me-2">photo_camera</mat-icon> Change Logo
+                    </button>
+                    <p class="mt-3 text-muted small">Allowed formats: PNG, JPG. Max size: 2MB</p>
+                  </mat-card>
+                </div>
+                <div class="col-xl-8 col-lg-8 col-md-12 col-sm-12">
+                  <mat-card class="p-4">
+                    <form [formGroup]="profileForm" (ngSubmit)="saveBranding()">
+                      <div class="row">
+                        <div class="col-md-6">
+                          <mat-form-field class="example-full-width" appearance="outline">
+                            <mat-label>Institution Name</mat-label>
+                            <input matInput formControlName="school_name">
+                          </mat-form-field>
+                        </div>
+                        <div class="col-md-6">
+                          <mat-form-field class="example-full-width" appearance="outline">
+                            <mat-label>Contact Email</mat-label>
+                            <input matInput formControlName="contact_email">
+                          </mat-form-field>
+                        </div>
+                      </div>
+                      <div class="row">
+                        <div class="col-md-6">
+                          <mat-form-field class="example-full-width" appearance="outline">
+                            <mat-label>Phone Number</mat-label>
+                            <input matInput formControlName="contact_phone">
+                          </mat-form-field>
+                        </div>
+                        <div class="col-md-6">
+                          <mat-form-field class="example-full-width" appearance="outline">
+                            <mat-label>Organization Type</mat-label>
+                            <input matInput formControlName="school_type">
+                          </mat-form-field>
+                        </div>
+                      </div>
+                      <div class="row">
+                        <div class="col-md-12">
+                          <mat-form-field class="example-full-width" appearance="outline">
+                            <mat-label>Address</mat-label>
+                            <textarea matInput formControlName="address" rows="3"></textarea>
+                          </mat-form-field>
+                        </div>
+                      </div>
+                      <div class="mt-3">
+                        <button mat-raised-button color="primary" [disabled]="profileForm.invalid || isSaving">
+                          <mat-icon class="me-2">{{ isSaving ? 'hourglass_empty' : 'save' }}</mat-icon>
+                          Save Changes
+                        </button>
+                      </div>
+                    </form>
+                  </mat-card>
+                </div>
+              </div>
+            </div>
+          </mat-tab>
+
+          <!-- Tab 2: Reference Masters -->
+          <mat-tab>
+            <ng-template mat-tab-label>
+              <mat-icon class="me-2">list_alt</mat-icon>
+              Reference Masters
+            </ng-template>
+            <div class="p-4">
+              <div class="row">
+                <div class="col-md-6 mb-4" *ngFor="let master of [
+                  { title: 'Education Boards', type: 'boards', data: boards },
+                  { title: 'Mediums of Instruction', type: 'mediums', data: mediums },
+                  { title: 'Organization Types', type: 'organization-types', data: orgTypes }
+                ]">
+                  <mat-card class="h-100">
+                    <div class="card-header p-3 d-flex justify-content-between align-items-center">
+                      <h3 class="mb-0">{{ master.title }}</h3>
+                      <button mat-icon-button color="primary" (click)="addMaster(master.type, newMaster.value); newMaster.value=''">
+                        <mat-icon>add_circle</mat-icon>
+                      </button>
+                    </div>
+                    <div class="px-3 pb-2">
+                       <mat-form-field class="w-100" appearance="outline">
+                        <mat-label>Quick Add {{ master.title }}</mat-label>
+                        <input matInput #newMaster placeholder="Enter name...">
+                      </mat-form-field>
+                    </div>
+                    <mat-divider></mat-divider>
+                    <div class="card-body p-0">
+                      <table class="table mb-0">
+                        <tbody>
+                          <tr *ngFor="let item of master.data">
+                            <td class="ps-3">{{ item.name }}</td>
+                            <td class="text-end pe-3">
+                              <button mat-icon-button color="warn" (click)="deleteMaster(master.type, item.id)">
+                                <mat-icon>delete_outline</mat-icon>
+                              </button>
+                            </td>
+                          </tr>
+                          <tr *ngIf="master.data.length === 0">
+                            <td colspan="2" class="text-center p-3 text-muted">No records found.</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </mat-card>
+                </div>
+              </div>
+            </div>
+          </mat-tab>
+
+          <!-- Tab 3: Academic Setup -->
+          <mat-tab>
+            <ng-template mat-tab-label>
+              <mat-icon class="me-2">event_available</mat-icon>
+              Academic Setup
+            </ng-template>
+            <div class="p-4">
+               <div class="row">
+                 <div class="col-md-6">
+                   <mat-card>
+                     <div class="card-header p-3">
+                       <h3 class="mb-0">Academic Years</h3>
+                     </div>
+                     <div class="p-3">
+                        <div class="alert alert-info">
+                          The active academic year determines the default data for the entire organization.
+                        </div>
+                        <table class="table mt-3">
+                          <thead>
+                            <tr>
+                              <th>Year Label</th>
+                              <th>Status</th>
+                              <th>Action</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr *ngFor="let year of academicYears">
+                              <td>{{ year.name }}</td>
+                              <td>
+                                <span [class]="year.is_active ? 'badge badge-solid-green' : 'badge badge-solid-red'">
+                                  {{ year.is_active ? 'Active' : 'Inactive' }}
+                                </span>
+                              </td>
+                              <td>
+                                <button mat-icon-button (click)="deleteMaster('academic-years', year.id)">
+                                  <mat-icon>delete</mat-icon>
+                                </button>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                        <button mat-stroked-button color="primary" class="mt-2" (click)="addMaster('academic-years', '2025-2026')">
+                          <mat-icon class="me-2">add</mat-icon> Add New Year
+                        </button>
+                     </div>
+                   </mat-card>
+                 </div>
+               </div>
+            </div>
+          </mat-tab>
+
+          <!-- Tab 4: System Settings -->
+          <mat-tab>
+            <ng-template mat-tab-label>
+              <mat-icon class="me-2">settings_suggest</mat-icon>
+              System Settings
+            </ng-template>
+            <div class="p-5 text-center">
+               <mat-icon class="display-1 text-light mb-4">settings_suggest</mat-icon>
+               <h3>System Defaults</h3>
+               <p class="text-muted">SMTP, Notification Channels, and Global Prefixes configuration will be available in the next release.</p>
+            </div>
+          </mat-tab>
+
+        </mat-tab-group>
+      </div>
+    </div>
+  </div>
+</section>

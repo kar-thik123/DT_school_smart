@@ -1,0 +1,123 @@
+<div class="addContainer">
+  <div class="contact-form">
+    <div class="modalHeader">
+      <div class="avatarDetails">
+        <label class="hoverable" for="tableFileInput">
+          <img [src]='leaveBalance.img' alt="avatar">
+        </label>
+        <div class="modalTitle">
+          {{dialogTitle}}
+        </div>
+      </div>
+      <button mat-icon-button (click)="dialogRef.close()" class="modal-close-button" aria-label="Close dialog">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+    <div mat-dialog-content>
+      <form class="register-form m-4" [formGroup]="leaveBalanceForm" (ngSubmit)="submit()">
+        <div class="row">
+          <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+            <mat-form-field class="example-full-width mb-3" appearance="outline">
+              <mat-label>Name</mat-label>
+              <input matInput formControlName="name" required>
+              <i class="material-icons-outlined p-3" matSuffix>face</i>
+              @if (leaveBalanceForm.get('name')?.hasError('required')) {
+              <mat-error>Name is required</mat-error>
+              }
+            </mat-form-field>
+          </div>
+          <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+            <mat-form-field class="example-full-width mb-3" appearance="outline">
+              <mat-label>Previous Balance</mat-label>
+              <input matInput formControlName="prev" required>
+              @if (leaveBalanceForm.get('prev')?.hasError('required')) {
+              <mat-error>Previous balance is required</mat-error>
+              }
+            </mat-form-field>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+            <mat-form-field class="example-full-width mb-3" appearance="outline">
+              <mat-label>Current Balance</mat-label>
+              <input matInput formControlName="current" required>
+              @if (leaveBalanceForm.get('current')?.hasError('required')) {
+              <mat-error>Current balance is required</mat-error>
+              }
+            </mat-form-field>
+          </div>
+          <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+            <mat-form-field class="example-full-width mb-3" appearance="outline">
+              <mat-label>Total Balance</mat-label>
+              <input matInput formControlName="total" required>
+              @if (leaveBalanceForm.get('total')?.hasError('required')) {
+              <mat-error>Total balance is required</mat-error>
+              }
+            </mat-form-field>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+            <mat-form-field class="example-full-width mb-3" appearance="outline">
+              <mat-label>Used Balance</mat-label>
+              <input matInput formControlName="used" required>
+              @if (leaveBalanceForm.get('used')?.hasError('required')) {
+              <mat-error>Used balance is required</mat-error>
+              }
+            </mat-form-field>
+          </div>
+          <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+            <mat-form-field class="example-full-width mb-3" appearance="outline">
+              <mat-label>Accepted</mat-label>
+              <input matInput formControlName="accepted" required>
+              @if (leaveBalanceForm.get('accepted')?.hasError('required')) {
+              <mat-error>Accepted count is required</mat-error>
+              }
+            </mat-form-field>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+            <mat-form-field class="example-full-width mb-3" appearance="outline">
+              <mat-label>Rejected</mat-label>
+              <input matInput formControlName="rejected" required>
+              @if (leaveBalanceForm.get('rejected')?.hasError('required')) {
+              <mat-error>Rejected count is required</mat-error>
+              }
+            </mat-form-field>
+          </div>
+          <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+            <mat-form-field class="example-full-width mb-3" appearance="outline">
+              <mat-label>Expired</mat-label>
+              <input matInput formControlName="expired" required>
+              @if (leaveBalanceForm.get('expired')?.hasError('required')) {
+              <mat-error>Expired count is required</mat-error>
+              }
+            </mat-form-field>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+            <mat-form-field class="example-full-width mb-3" appearance="outline">
+              <mat-label>Carry Over</mat-label>
+              <input matInput formControlName="carryOver" required>
+              @if (leaveBalanceForm.get('carryOver')?.hasError('required')) {
+              <mat-error>Carry over balance is
+                required</mat-error>
+              }
+            </mat-form-field>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+            <div class="example-button-row">
+              <button mat-flat-button class="formSubmitBtn" [disabled]="!leaveBalanceForm.valid"
+                type="submit">Save</button>
+              <button mat-flat-button mat-dialog-close class="formCancelBtn" tabindex="-1">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

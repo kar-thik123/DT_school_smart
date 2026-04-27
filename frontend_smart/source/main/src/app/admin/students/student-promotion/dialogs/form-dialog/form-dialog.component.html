@@ -1,0 +1,178 @@
+<div class="addContainer">
+  <div class="modalHeader">
+    <div class="avatarDetails">
+      <div class="modalTitle">
+        {{dialogTitle}}
+      </div>
+    </div>
+    <button mat-icon-button mat-dialog-close class="modal-close-button" aria-label="Close dialog" type="button">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+  <div mat-dialog-content>
+    <form class="register-form m-4" [formGroup]="studentPromotionForm" (ngSubmit)="submit()">
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Student Name</mat-label>
+            <input matInput formControlName="student_name" required>
+            <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>person</mat-icon>
+            @if (studentPromotionForm.get('student_name')?.hasError('required')) {
+            <mat-error>
+              Student name required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Roll No</mat-label>
+            <input matInput formControlName="rollNo" required>
+            <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>tag</mat-icon>
+            @if (studentPromotionForm.get('rollNo')?.hasError('required')) {
+            <mat-error>
+              Roll No is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Current Class</mat-label>
+            <input matInput formControlName="current_class" required>
+            <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>school</mat-icon>
+            @if (studentPromotionForm.get('current_class')?.hasError('required')) {
+            <mat-error>
+              Current Class is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Promoted Class</mat-label>
+            <input matInput formControlName="promoted_class" required>
+            <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>trending_up</mat-icon>
+            @if (studentPromotionForm.get('promoted_class')?.hasError('required')) {
+            <mat-error>
+              Promoted Class is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Section</mat-label>
+            <input matInput formControlName="section" required>
+            <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>group</mat-icon>
+            @if (studentPromotionForm.get('section')?.hasError('required')) {
+            <mat-error>
+              Section is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Session</mat-label>
+            <input matInput formControlName="session" required>
+            <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>calendar_today</mat-icon>
+            @if (studentPromotionForm.get('session')?.hasError('required')) {
+            <mat-error>
+              Session is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Promotion Date</mat-label>
+            <input matInput [matDatepicker]="picker" formControlName="promotion_date" required>
+            <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+            <mat-datepicker #picker></mat-datepicker>
+            @if (studentPromotionForm.get('promotion_date')?.hasError('required')) {
+            <mat-error>
+              Date is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Result</mat-label>
+            <mat-select formControlName="result" required>
+              <mat-option [value]="'Pass'">Pass</mat-option>
+              <mat-option [value]="'Fail'">Fail</mat-option>
+            </mat-select>
+            @if (studentPromotionForm.get('result')?.hasError('required')) {
+            <mat-error>
+              Select Result
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Total Marks</mat-label>
+            <input matInput type="number" formControlName="total_marks" required>
+            @if (studentPromotionForm.get('total_marks')?.hasError('required')) {
+            <mat-error>
+              Total marks required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Obtained Marks</mat-label>
+            <input matInput type="number" formControlName="obtained_marks" required>
+            @if (studentPromotionForm.get('obtained_marks')?.hasError('required')) {
+            <mat-error>
+              Obtained marks required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Percentage</mat-label>
+            <input matInput formControlName="percentage">
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Status</mat-label>
+            <mat-select formControlName="status" required>
+              <mat-option [value]="'Promoted'">Promoted</mat-option>
+              <mat-option [value]="'Detained'">Detained</mat-option>
+              <mat-option [value]="'On Hold'">On Hold</mat-option>
+            </mat-select>
+            @if (studentPromotionForm.get('status')?.hasError('required')) {
+            <mat-error>
+              Select Status
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+          <div class="example-button-row">
+            <button mat-flat-button class="formSubmitBtn" [disabled]="!studentPromotionForm.valid" type="submit">Save</button>
+            <button mat-flat-button mat-dialog-close class="formCancelBtn" tabindex="-1">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

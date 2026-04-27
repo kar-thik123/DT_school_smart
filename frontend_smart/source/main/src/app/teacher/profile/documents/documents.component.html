@@ -1,0 +1,16 @@
+<section class="content">
+    <div class="content-block">
+        @for (breadscrum of breadscrums; track breadscrum) {
+        <div class="block-header">
+            <!-- breadcrumb -->
+            <app-breadcrumb [title]="breadscrum.title" [items]="breadscrum.items" [active_item]="breadscrum.active">
+            </app-breadcrumb>
+        </div>
+        }
+
+        <app-master-table [title]="'My Documents'" [columnDefinitions]="columnDefinitions" [dataSource]="dataSource"
+            [isLoading]="isLoading" (refresh)="handleRefresh()" (add)="handleAdd()" (edit)="handleEdit($event)"
+            (delete)="handleDelete($event)" (bulkDelete)="handleBulkDelete($event)">
+        </app-master-table>
+    </div>
+</section>

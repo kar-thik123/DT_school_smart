@@ -1,0 +1,109 @@
+<div class="addContainer">
+  <div class="modalHeader">
+    <div class="editRowModal">
+      <div class="modalHeaderClear"></div>
+      <div class="modalHeaderTitle">
+        {{dialogTitle}}
+      </div>
+    </div>
+    <button mat-icon-button (click)="dialogRef.close()" class="modal-close-button" aria-label="Close dialog">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+  <div mat-dialog-content>
+    <form class="register-form m-4" [formGroup]="sessionForm" (ngSubmit)="submit()">
+      <div class="row">
+        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Session Name</mat-label>
+            <input matInput formControlName="sessionName" required>
+            <mat-icon matSuffix>event</mat-icon>
+            @if (sessionForm.get('sessionName')?.hasError('required')) {
+            <mat-error>
+              {{sessionForm.get('sessionName') ? getErrorMessage(sessionForm.get('sessionName')) : ''}}
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Start Date</mat-label>
+            <input matInput [matDatepicker]="picker1" formControlName="startDate" required>
+            <mat-datepicker-toggle matSuffix [for]="picker1"></mat-datepicker-toggle>
+            <mat-datepicker #picker1></mat-datepicker>
+            @if (sessionForm.get('startDate')?.hasError('required')) {
+            <mat-error>
+              {{sessionForm.get('startDate') ? getErrorMessage(sessionForm.get('startDate')) : ''}}
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>End Date</mat-label>
+            <input matInput [matDatepicker]="picker2" formControlName="endDate" required>
+            <mat-datepicker-toggle matSuffix [for]="picker2"></mat-datepicker-toggle>
+            <mat-datepicker #picker2></mat-datepicker>
+            @if (sessionForm.get('endDate')?.hasError('required')) {
+            <mat-error>
+              {{sessionForm.get('endDate') ? getErrorMessage(sessionForm.get('endDate')) : ''}}
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Instructor</mat-label>
+            <input matInput formControlName="instructor" required>
+            <mat-icon matSuffix>person</mat-icon>
+            @if (sessionForm.get('instructor')?.hasError('required')) {
+            <mat-error>
+              {{sessionForm.get('instructor') ? getErrorMessage(sessionForm.get('instructor')) : ''}}
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Room</mat-label>
+            <input matInput formControlName="room" required>
+            <mat-icon matSuffix>room</mat-icon>
+            @if (sessionForm.get('room')?.hasError('required')) {
+            <mat-error>
+              {{sessionForm.get('room') ? getErrorMessage(sessionForm.get('room')) : ''}}
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Status</mat-label>
+            <mat-select formControlName="status" required>
+              <mat-option [value]="'Active'">Active</mat-option>
+              <mat-option [value]="'Inactive'">Inactive</mat-option>
+            </mat-select>
+            @if (sessionForm.get('status')?.hasError('required')) {
+            <mat-error>
+              {{sessionForm.get('status') ? getErrorMessage(sessionForm.get('status')) : ''}}
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+          <div class="example-button-row">
+            <button mat-flat-button class="formSubmitBtn" [disabled]="!sessionForm.valid" type="submit">Save</button>
+            <button mat-flat-button mat-dialog-close class="formCancelBtn" tabindex="-1">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

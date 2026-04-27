@@ -1,0 +1,180 @@
+<div class="addContainer">
+  <div class="modalHeader">
+    <div class="avatarDetails">
+      <div class="modalTitle">
+        {{dialogTitle}}
+      </div>
+    </div>
+    <button mat-icon-button mat-dialog-close class="modal-close-button" aria-label="Close dialog" type="button">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+  <div mat-dialog-content>
+    <form class="register-form m-4" [formGroup]="hostelRoomTypeForm" (ngSubmit)="submit()">
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Room Type Name</mat-label>
+            <mat-select formControlName="roomTypeName" required>
+              <mat-option value="Single">Single</mat-option>
+              <mat-option value="Double">Double</mat-option>
+              <mat-option value="Triple">Triple</mat-option>
+              <mat-option value="Quad">Quad</mat-option>
+            </mat-select>
+            @if (hostelRoomTypeForm.get('roomTypeName')?.hasError('required')) {
+            <mat-error>
+              Room type name is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Room Category</mat-label>
+            <mat-select formControlName="roomCategory" required>
+              <mat-option value="Standard">Standard</mat-option>
+              <mat-option value="Economy">Economy</mat-option>
+              <mat-option value="Regular">Regular</mat-option>
+              <mat-option value="Premium">Premium</mat-option>
+              <mat-option value="VIP">VIP</mat-option>
+            </mat-select>
+            @if (hostelRoomTypeForm.get('roomCategory')?.hasError('required')) {
+            <mat-error>
+              Room category is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Capacity</mat-label>
+            <input matInput type="number" formControlName="capacity" required min="1">
+            @if (hostelRoomTypeForm.get('capacity')?.hasError('required')) {
+            <mat-error>Capacity is required</mat-error>
+            } @else if (hostelRoomTypeForm.get('capacity')?.hasError('min')) {
+            <mat-error>Capacity must be at least 1</mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Max Occupants</mat-label>
+            <input matInput type="number" formControlName="maxOccupants" required min="1">
+            @if (hostelRoomTypeForm.get('maxOccupants')?.hasError('required')) {
+            <mat-error>Max occupants is required</mat-error>
+            } @else if (hostelRoomTypeForm.get('maxOccupants')?.hasError('min')) {
+            <mat-error>Max occupants must be at least 1</mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Room Price</mat-label>
+            <input matInput type="number" formControlName="roomPrice" required min="0">
+            <mat-icon matSuffix>attach_money</mat-icon>
+            @if (hostelRoomTypeForm.get('roomPrice')?.hasError('required')) {
+            <mat-error>Room price is required</mat-error>
+            } @else if (hostelRoomTypeForm.get('roomPrice')?.hasError('min')) {
+            <mat-error>Room price cannot be negative</mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Room Area (sq ft)</mat-label>
+            <input matInput type="number" formControlName="roomArea" required min="0">
+            @if (hostelRoomTypeForm.get('roomArea')?.hasError('required')) {
+            <mat-error>Room area is required</mat-error>
+            } @else if (hostelRoomTypeForm.get('roomArea')?.hasError('min')) {
+            <mat-error>Room area cannot be negative</mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Room Condition</mat-label>
+            <mat-select formControlName="roomCondition">
+              <mat-option value="Good">Good</mat-option>
+              <mat-option value="Excellent">Excellent</mat-option>
+              <mat-option value="Needs Repair">Needs Repair</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Room Type Code</mat-label>
+            <input matInput formControlName="roomTypeCode" required>
+            @if (hostelRoomTypeForm.get('roomTypeCode')?.hasError('required')) {
+            <mat-error>Room type code is required</mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Status</mat-label>
+            <mat-select formControlName="status">
+              <mat-option value="Active">Active</mat-option>
+              <mat-option value="Inactive">Inactive</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Room Facilities</mat-label>
+            <input matInput formControlName="roomFacilities">
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Created At</mat-label>
+            <input matInput [matDatepicker]="createdAtPicker" formControlName="createdAt">
+            <mat-datepicker-toggle matSuffix [for]="createdAtPicker"></mat-datepicker-toggle>
+            <mat-datepicker #createdAtPicker></mat-datepicker>
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Updated At</mat-label>
+            <input matInput [matDatepicker]="updatedAtPicker" formControlName="updatedAt">
+            <mat-datepicker-toggle matSuffix [for]="updatedAtPicker"></mat-datepicker-toggle>
+            <mat-datepicker #updatedAtPicker></mat-datepicker>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Room Description</mat-label>
+            <textarea matInput formControlName="roomDescription" rows="3"></textarea>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+          <div class="example-button-row">
+            <button mat-flat-button class="formSubmitBtn" [disabled]="!hostelRoomTypeForm.valid"
+              type="submit">Save</button>
+            <button mat-flat-button mat-dialog-close class="formCancelBtn" tabindex="-1">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

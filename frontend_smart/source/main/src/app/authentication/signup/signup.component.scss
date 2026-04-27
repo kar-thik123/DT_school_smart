@@ -1,0 +1,117 @@
+@use "sass:color";
+
+.role-btn {
+  width: 100%;
+  padding: 8px 15px;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeInUp 0.5s ease-out;
+
+  i {
+    margin-right: 5px;
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.user-role-selector {
+  p {
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+}
+
+.security-tip {
+  display: flex;
+  align-items: center;
+  margin-top: 15px;
+  padding: 10px;
+  background-color: rgba(13, 110, 253, 0.05);
+  border-radius: 8px;
+  border-left: 3px solid #0d6efd;
+  animation: fadeIn 0.8s ease-out;
+
+  .security-icon {
+    color: #0d6efd;
+    margin-right: 10px;
+    font-size: 18px;
+  }
+
+  .security-text {
+    font-size: 0.8rem;
+    color: #555;
+    line-height: 1.4;
+  }
+}
+
+.forgot-link {
+  color: #0d6efd;
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: color 0.3s ease;
+
+  &:hover {
+    color: color.adjust(#0d6efd, $lightness: -10%);
+    text-decoration: underline;
+  }
+}
+
+// Override Material styles
+::ng-deep .mat-mdc-form-field-subscript-wrapper {
+  height: 0;
+}
+
+::ng-deep .mat-mdc-form-field {
+  width: 100%;
+}
+
+// Animations
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Add animation to form fields
+::ng-deep .mat-mdc-form-field {
+  animation: fadeInUp 0.5s ease-out;
+  animation-fill-mode: both;
+}
+
+// Stagger animation for form fields
+::ng-deep .mat-mdc-form-field:nth-child(1) {
+  animation-delay: 0.1s;
+}
+
+::ng-deep .mat-mdc-form-field:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+::ng-deep .mat-mdc-form-field:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+::ng-deep .mat-mdc-form-field:nth-child(4) {
+  animation-delay: 0.4s;
+}

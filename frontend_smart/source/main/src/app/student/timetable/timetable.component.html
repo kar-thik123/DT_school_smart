@@ -1,0 +1,59 @@
+<section class="content">
+  <div class="content-block">
+    @for (breadscrum of breadscrums; track breadscrum) {
+    <div class="block-header">
+      <app-breadcrumb [title]="breadscrum.title" [items]="breadscrum.items" [active_item]="breadscrum.active">
+      </app-breadcrumb>
+    </div>
+    }
+
+    <div class="timetable-container">
+      <div class="timetable-grid">
+        @for (daySchedule of timetableData; track daySchedule.day) {
+        <div class="day-column">
+          <div class="day-header">
+            <span class="day-name">{{daySchedule.day}}</span>
+            <span class="day-date">{{daySchedule.date}}</span>
+          </div>
+
+          <div class="subject-list">
+            @for (item of daySchedule.items; track item.subject) {
+            <div class="subject-card" [ngClass]="item.colorClass">
+              <div class="card-icon">
+                <i [class]="item.icon"></i>
+              </div>
+              <div class="card-content">
+                <div class="subject-info">
+                  <h4 class="subject-name">{{item.subject}}</h4>
+                  <span class="lecture-type">{{item.type}}</span>
+                </div>
+                <div class="details">
+                  <div class="detail-item">
+                    <i class="far fa-clock"></i>
+                    <span>{{item.time}}</span>
+                  </div>
+                  <div class="detail-item">
+                    <i class="fas fa-door-open"></i>
+                    <span>Room: {{item.room}}</span>
+                  </div>
+                  <div class="detail-item">
+                    <i class="far fa-user"></i>
+                    <span>{{item.teacher}}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="card-accent"></div>
+            </div>
+            } @empty {
+            <div class="no-schedule">
+              <i class="fas fa-calendar-times"></i>
+              <p>No classes scheduled</p>
+            </div>
+            }
+          </div>
+        </div>
+        }
+      </div>
+    </div>
+  </div>
+</section>

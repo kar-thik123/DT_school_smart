@@ -1,0 +1,177 @@
+<section class="content">
+    <div class="content-block">
+        <div class="block-header">
+            <!-- breadcrumb -->
+            <app-breadcrumb [title]="'Payslip'" [items]="['Payroll']" [active_item]="'Payslip'">
+            </app-breadcrumb>
+        </div>
+        <div class="row clearfix">
+            <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                <div class="card payslip-card">
+                    <div class="header d-flex justify-content-between align-items-center">
+                        <h2>Employee Payslip</h2>
+                        <div class="actions">
+                            <button class="btn btn-outline-primary btn-sm me-2" (click)="downloadPdf()">
+                                <i class="fa fa-download"></i> Download
+                            </button>
+                            <button class="btn btn-primary btn-sm" (click)="printPayslip()">
+                                <i class="fa fa-print"></i> Print
+                            </button>
+                        </div>
+                    </div>
+                    <div class="body">
+                        <div class="payslip">
+                            <div class="payslip-container">
+                                <!-- Payslip Header -->
+                                <div class="payslip-header">
+                                    <div class="company-logo">
+                                        <img src="../../../../assets/images/logo.png" alt="Company Logo"> Cliniva
+                                        Hospital
+                                    </div>
+                                    <div class="payslip-title">
+                                        <h3>Payslip</h3>
+                                        <p class="period">For the month of June 2022</p>
+                                    </div>
+                                </div>
+
+                                <!-- Payslip Info -->
+                                <div class="payslip-info">
+                                    <div class="info-item">
+                                        <span class="label">Payslip No.</span>
+                                        <span class="value">859654</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="label">Payment Date</span>
+                                        <span class="value">Jul 02, 2022</span>
+                                    </div>
+                                </div>
+
+                                <!-- Company & Employee Details -->
+                                <div class="details-container">
+                                    <div class="company-details">
+                                        <h4>Company Details</h4>
+                                        <div class="detail-content">
+                                            <h5>EInfosoft Technology</h5>
+                                            <p>52, Titanium software hub</p>
+                                            <p>Gift city, Gandinagar</p>
+                                            <p>India</p>
+                                            <p><a href="mailto:hr@einfosoft.com">hr@einfosoft.com</a></p>
+                                        </div>
+                                    </div>
+                                    <div class="employee-details">
+                                        <h4>Employee Details</h4>
+                                        <div class="detail-content">
+                                            <h5>Sarah Smith</h5>
+                                            <p>Employee ID: EMP-0025</p>
+                                            <p>A 507 Parimal Hights</p>
+                                            <p>Near Shyamal Cross, Ahmedabad</p>
+                                            <p>India</p>
+                                            <p><a href="mailto:sarah@einfosoft.com">sarah@einfosoft.com</a></p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Salary Details -->
+                                <div class="salary-container">
+                                    <div class="earnings">
+                                        <h4>Earnings</h4>
+                                        <div class="salary-table">
+                                            <div class="salary-row header">
+                                                <div class="salary-cell">Description</div>
+                                                <div class="salary-cell text-end">Amount</div>
+                                            </div>
+                                            <div class="salary-row">
+                                                <div class="salary-cell">Basic Salary</div>
+                                                <div class="salary-cell text-end">$8,568.00</div>
+                                            </div>
+                                            <div class="salary-row">
+                                                <div class="salary-cell">House Rent Allowance</div>
+                                                <div class="salary-cell text-end">$125.00</div>
+                                            </div>
+                                            <div class="salary-row">
+                                                <div class="salary-cell">Dearness Allowance</div>
+                                                <div class="salary-cell text-end">$87.00</div>
+                                            </div>
+                                            <div class="salary-row">
+                                                <div class="salary-cell">Special Allowance</div>
+                                                <div class="salary-cell text-end">$50.00</div>
+                                            </div>
+                                            <div class="salary-row">
+                                                <div class="salary-cell">Performance Bonus</div>
+                                                <div class="salary-cell text-end">$75.00</div>
+                                            </div>
+                                            <div class="salary-row total">
+                                                <div class="salary-cell">Total Earnings</div>
+                                                <div class="salary-cell text-end">$8,905.00</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="deductions">
+                                        <h4>Deductions</h4>
+                                        <div class="salary-table">
+                                            <div class="salary-row header">
+                                                <div class="salary-cell">Description</div>
+                                                <div class="salary-cell text-end">Amount</div>
+                                            </div>
+                                            <div class="salary-row">
+                                                <div class="salary-cell">Provident Fund</div>
+                                                <div class="salary-cell text-end">$10.00</div>
+                                            </div>
+                                            <div class="salary-row">
+                                                <div class="salary-cell">Professional Tax</div>
+                                                <div class="salary-cell text-end">$20.00</div>
+                                            </div>
+                                            <div class="salary-row">
+                                                <div class="salary-cell">ESI</div>
+                                                <div class="salary-cell text-end">$0.00</div>
+                                            </div>
+                                            <div class="salary-row">
+                                                <div class="salary-cell">Home Loan</div>
+                                                <div class="salary-cell text-end">$210.00</div>
+                                            </div>
+                                            <div class="salary-row">
+                                                <div class="salary-cell">TDS</div>
+                                                <div class="salary-cell text-end">$113.00</div>
+                                            </div>
+                                            <div class="salary-row total">
+                                                <div class="salary-cell">Total Deductions</div>
+                                                <div class="salary-cell text-end">$353.00</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Net Pay -->
+                                <div class="net-pay">
+                                    <div class="net-pay-amount">
+                                        <span class="label">Net Pay:</span>
+                                        <span class="value">$8,552.00</span>
+                                    </div>
+                                    <div class="net-pay-words">
+                                        Eight Thousand Five Hundred Fifty Two Dollars Only
+                                    </div>
+                                </div>
+
+                                <!-- Signature -->
+                                <div class="signature-section">
+                                    <div class="signature-box">
+                                        <img src="../../../../assets/images/signature.png" alt="Signature"
+                                            class="signature-img">
+                                        <div class="signature-name">Priya Jain</div>
+                                        <div class="signature-title">HR Manager</div>
+                                    </div>
+                                </div>
+
+                                <!-- Footer -->
+                                <div class="payslip-footer">
+                                    <p>This is a computer-generated document. No signature is required.</p>
+                                    <p>For any queries regarding this payslip, please contact HR department.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

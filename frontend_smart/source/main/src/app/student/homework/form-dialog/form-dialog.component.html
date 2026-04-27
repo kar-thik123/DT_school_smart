@@ -1,0 +1,85 @@
+<div class="addContainer">
+  <div class="contact-details">
+    <div class="modalHeader">
+      <div class="avatarDetails">
+        <div class="modalTitle">
+          <div class="contact-details-name">{{homework.homeworkTitle}}</div>
+        </div>
+      </div>
+      <button mat-icon-button mat-dialog-close class="modal-close-button" aria-label="Close dialog" type="button">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+    <div mat-dialog-content>
+      <mat-card-content>
+        <div class="d-flex m-b-20">
+          <div class="font-b-500">Homework Title: </div>
+          <div class="m-l-10 m-r-10"> {{homework.homeworkTitle}} </div>
+        </div>
+        <div class="d-flex m-b-20">
+          <div class="font-b-500">Assigned By: </div>
+          <div class="m-l-10 m-r-10 d-flex"> <mat-icon
+              class="tbl-icon material-icons-outlined col-blue">person_3</mat-icon>
+            {{homework.assignedBy}} </div>
+        </div>
+        <div class="d-flex m-b-20">
+          <div class="font-b-500">Homework Date: </div>
+          <div class="m-l-10 m-r-10 d-flex"> <mat-icon
+              class="tbl-icon material-icons-outlined col-green">calendar_month</mat-icon>
+            {{homework.homeworkDate | date: 'MMMM d, yyyy'}} </div>
+        </div>
+        <div class="d-flex m-b-20">
+          <div class="font-b-500">Submission Date: </div>
+          <div class="m-l-10 m-r-10 d-flex"><mat-icon
+              class="tbl-icon material-icons-outlined col-green">calendar_month</mat-icon>
+            {{homework.submissionDate | date: 'MMMM d, yyyy'}} </div>
+        </div>
+        <div class="d-flex m-b-20">
+          <div class="font-b-500">Evaluation Date: </div>
+          <div class="m-l-10 m-r-10 d-flex"> <mat-icon
+              class="tbl-icon material-icons-outlined col-green">calendar_month</mat-icon>
+            {{homework.evaluationDate | date: 'MMMM d, yyyy'}} </div>
+        </div>
+        <div class="d-flex m-b-20" style="align-items: center;">
+          <div class="font-b-500">Status: </div>
+          <div class="m-l-10 m-r-10">
+            <div>
+              @switch (homework.status) {
+              @case ('Complete') {
+              <div>
+                <span class="badge badge-solid-green">{{ homework.status }}</span>
+              </div>
+              }
+              @case ('Incomplete') {
+              <div>
+                <span class="badge badge-solid-orange">{{ homework.status }}</span>
+              </div>
+              }
+              }
+            </div>
+          </div>
+        </div>
+        <div class="d-flex m-b-20">
+          <div class="font-b-500">Grade: </div>
+          <div class="m-l-10 m-r-10"> {{homework.grade}} </div>
+        </div>
+        <div class="d-flex m-b-20">
+          <div class="font-b-500">Feedback: </div>
+          <div class="m-l-10 m-r-10"> {{homework.feedback}} </div>
+        </div>
+        <div class="d-flex m-b-20" style="align-items: center;">
+          <div class="font-b-500">Attachments: </div>
+          <div class="m-l-10 m-r-10">
+            <button mat-icon-button color="accent" class="tbl-action-btn" (click)="$event.stopPropagation()">
+              <mat-icon class="tbl-icon material-icons-outlined col-red">save_alt</mat-icon>
+            </button>
+          </div>
+        </div>
+        <div class="d-flex m-b-20">
+          <div class="font-b-500">Late Submission: </div>
+          <div class="m-l-10 m-r-10"> {{homework.lateSubmission ? 'Yes' : 'No'}} </div>
+        </div>
+      </mat-card-content>
+    </div>
+  </div>
+</div>

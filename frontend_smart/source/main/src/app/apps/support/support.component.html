@@ -1,0 +1,68 @@
+<section class="content">
+  <div class="content-block">
+    @for (breadscrum of breadscrums; track breadscrum) {
+    <div class="block-header">
+      <!-- breadcrumb -->
+      <app-breadcrumb [title]="breadscrum.title" [items]="breadscrum.items" [active_item]="breadscrum.active">
+      </app-breadcrumb>
+    </div>
+    }
+    <div class="row">
+      <div class="col-lg-12 col-md-12 col-sm-12">
+        <div class="card">
+          <div class="header">
+            <h2> Support Tickets
+            </h2>
+          </div>
+          <div class="body">
+            <div class="row">
+              <div class="col-lg-3 col-sm-6">
+                <div class="info-box7 bg-c-blue order-info-box7">
+                  <div class="info-box7-block">
+                    <h6 class="m-b-20">Total Tickets</h6>
+                    <h4 class="text-end"><i class="fas fa-ticket-alt float-start"></i><span>1,276</span></h4>
+                    <p class="m-b-0 font-12">18% Higher Then Last Month</p>
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-3 col-sm-6">
+                <div class="info-box7 bg-c-green order-info-box7">
+                  <div class="info-box7-block">
+                    <h6 class="m-b-20">Reply</h6>
+                    <h4 class="text-end"><i class="fas fa-reply float-start"></i><span>865</span></h4>
+                    <p class="m-b-0 font-12">21% Higher Then Last Month</p>
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-3 col-sm-6">
+                <div class="info-box7 bg-c-yellow order-info-box7">
+                  <div class="info-box7-block">
+                    <h6 class="m-b-20">Resolve</h6>
+                    <h4 class="text-end"><i class="fas fa-clipboard-check float-start"></i><span>457</span></h4>
+                    <p class="m-b-0 font-12">37% Higher Then Last Month</p>
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-3 col-sm-6">
+                <div class="info-box7 bg-c-pink order-info-box7">
+                  <div class="info-box7-block">
+                    <h6 class="m-b-20">Pending</h6>
+                    <h4 class="text-end"><i class="fas fa-clipboard-list float-start"></i><span>239</span></h4>
+                    <p class="m-b-0 font-12">10% Higher Then Last Month</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="table-responsive support-table">
+              <app-master-table [title]="'Support Tickets'" [dataSource]="dataSource"
+                [columnDefinitions]="columnDefinitions" [showCheckbox]="true" [showAdd]="false" [showEdit]="false"
+                [showDelete]="false" [showRefresh]="false" [showExport]="false" [showContextMenu]="false" (edit)="null"
+                (delete)="null">
+              </app-master-table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

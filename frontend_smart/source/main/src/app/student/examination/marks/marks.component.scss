@@ -1,0 +1,94 @@
+/* Marks Component Styles */
+
+.marks-container {
+  padding: 20px;
+}
+
+.marks-header {
+  margin-bottom: 20px;
+}
+
+.marks-card {
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.marks-header-content {
+  padding: 15px;
+  background-color: #f5f5f5;
+  border-bottom: 1px solid #ddd;
+  font-weight: bold;
+}
+
+.marks-body {
+  padding: 15px;
+}
+
+.subject-title {
+  font-weight: bold;
+  color: #1976d2;
+  margin-bottom: 10px;
+  font-size: 18px;
+}
+
+.marks-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+}
+
+.marks-table th,
+.marks-table td {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.marks-table th {
+  background-color: #f5f5f5;
+  font-weight: bold;
+}
+
+.marks-table tr:last-child td {
+  border-bottom: none;
+}
+
+.total-row {
+  font-weight: bold;
+  background-color: #f5f5f5;
+}
+
+.grade {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: bold;
+  text-align: center;
+  min-width: 50px;
+}
+
+.grade.A {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.grade.B {
+  background-color: #e8f5e9;
+  color: #388e3c;
+}
+
+.grade.C {
+  background-color: #fff3e0;
+  color: #ef6c00;
+}
+
+.grade.D {
+  background-color: #ffccbc;
+  color: #d84315;
+}
+
+.grade.F {
+  background-color: #ffcdd2;
+  color: #c62828;
+}

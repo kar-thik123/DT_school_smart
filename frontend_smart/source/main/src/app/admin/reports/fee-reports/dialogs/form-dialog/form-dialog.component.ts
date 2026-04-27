@@ -1,0 +1,91 @@
+import { MAT_DIALOG_DATA, MatDialogRef, MatDialogContent, MatDialogClose } from '@angular/material/dialog';
+import { Component, inject } from '@angular/core';
+import { FeeReportService } from '../../fee-report.service';
+import { UntypedFormControl, Validators, UntypedFormGroup, UntypedFormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { FeeReport } from '../../fee-report.model';
+import { MAT_DATE_LOCALE, MatOptionModule } from '@angular/material/core';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+
+export interface DialogData {
+  id: number;
+  action: string;
+  feeReport: FeeReport;
+}
+
+@Component({
+  selector: 'app-fee-report-form',
+  templateUrl: './form-dialog.component.html',
+  styleUrls: ['./form-dialog.component.scss'],
+  providers: [{ provide: MAT_DATE_LOCALE, useValue: 'en-GB' }],
+  imports: [MatButtonModule, MatIconModule, MatDialogContent, FormsModule, ReactiveFormsModule, MatFormFieldModule, MatSelectModule, MatOptionModule, MatInputModule, MatDialogClose],
+})
+export class FeeReportFormComponent {
+  dialogRef = inject<MatDialogRef<FeeReportFormComponent>>(MatDialogRef);
+  data = inject<DialogData>(MAT_DIALOG_DATA);
+  feeReportService = inject(FeeReportService);
+  private fb = inject(UntypedFormBuilder);
+
+  action: string;
+  dialogTitle: string;
+  feeReportForm: UntypedFormGroup;
+  feeReport: FeeReport;
+
+  constructor() {
+    const data = this.data;
+    this.action = data.action;
+    this.dialogTitle = this.action === 'edit' ? data.feeReport.reportType : 'New Fee Report';
+    this.feeReport = this.action === 'edit' ? data.feeReport : new FeeReport({} as FeeReport);
+    this.feeReportForm = this.createFeeReportForm();
+  }
+
+  createFeeReportForm(): UntypedFormGroup {
+    return this.fb.group({
+      id: [this.feeReport.id],
+      img: [this.feeReport.img],
+      reportType: [this.feeReport.reportType, [Validators.required]],
+      feeCategory: [this.feeReport.feeCategory, [Validators.required]],
+      dateFrom: [this.feeReport.dateFrom, [Validators.required]],
+      dateTo: [this.feeReport.dateTo, [Validators.required]],
+      totalAmount: [this.feeReport.totalAmount, [Validators.required]],
+      generatedBy: [this.feeReport.generatedBy, [Validators.required]],
+      date: [this.feeReport.date, [Validators.required]],
+      status: [this.feeReport.status, [Validators.required]],
+    });
+  }
+
+  getErrorMessage(control: UntypedFormControl): string {
+    if (control.hasError('required')) {
+      return 'This field is required';
+    }
+    return '';
+  }
+
+  submit(): void {
+    if (this.feeReportForm.valid) {
+      const formData = this.feeReportForm.getRawValue();
+      if (this.action === 'edit') {
+        this.feeReportService.updateFeeReport(formData).subscribe({
+          next: (response) => { this.dialogRef.close(response); },
+          error: (error) => { console.error('Update Error:', error); },
+        });
+      } else {
+        this.feeReportService.addFeeReport(formData).subscribe({
+          next: (response) => { this.dialogRef.close(response); },
+          error: (error) => { console.error('Add Error:', error); },
+        });
+      }
+    }
+  }
+
+  onNoClick(): void {
+    this.dialogRef.close();
+  }
+
+  public confirmAdd(): void {
+    this.submit();
+  }
+}

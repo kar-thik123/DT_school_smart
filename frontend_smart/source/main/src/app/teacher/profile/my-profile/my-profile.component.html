@@ -1,0 +1,306 @@
+<section class="content">
+    <div class="content-block">
+        @for (breadscrum of breadscrums; track breadscrum) {
+        <div class="block-header">
+            <!-- breadcrumb -->
+            <app-breadcrumb [title]="breadscrum.title" [items]="breadscrum.items" [active_item]="breadscrum.active">
+            </app-breadcrumb>
+        </div>
+        }
+        <div class="profile-container">
+
+            <!-- Profile Header with Cover Image -->
+            <div class="profile-header-card">
+                <div class="cover-image" [style.background-image]="'url(' + teacherProfile.coverImg + ')'">
+                    <!-- Fallback gradient if image not found -->
+                </div>
+
+                <div class="profile-info-section">
+                    <div class="profile-img-wrap">
+                        <img [src]="teacherProfile.img"
+                            alt="{{teacherProfile.firstName + ' ' + teacherProfile.lastName}}" />
+                    </div>
+                    <div class="profile-details-main">
+                        <h1 class="user-name">{{teacherProfile.firstName}} {{teacherProfile.lastName}}</h1>
+                        <p class="user-role">{{teacherProfile.role}}</p>
+                        <p class="user-location">
+                            <mat-icon>location_on</mat-icon>
+                            {{teacherProfile.department}}, {{teacherProfile.location}}
+                        </p>
+                    </div>
+                    <div class="profile-actions">
+                        <button mat-raised-button color="primary">Message</button>
+                        <button mat-stroked-button>Edit Profile</button>
+                    </div>
+                </div>
+
+                <div class="profile-stats-bar">
+                    <div class="stat-item">
+                        <h3>{{teacherProfile.experience_years || 5}}+</h3>
+                        <span>Years Exp</span>
+                    </div>
+                    <div class="stat-item">
+                        <h3>{{teacherProfile.subject_specialization || 'Mathematics'}}</h3>
+                        <span>Specialization</span>
+                    </div>
+                    <div class="stat-item">
+                        <h3>{{teacherProfile.salary || '50000'}}</h3>
+                        <span>Salary</span>
+                    </div>
+                    <div class="stat-item">
+                        <h3>{{teacherProfile.stats.students || '120'}}</h3>
+                        <span>Students</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Content -->
+            <div class="profile-content">
+                <div class="profile-sidebar">
+                    <!-- About Card -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>About</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="intro-list">
+                                <div class="info-item">
+                                    <mat-icon>email</mat-icon>
+                                    <span>{{teacherProfile.email}}</span>
+                                </div>
+                                <div class="info-item">
+                                    <mat-icon>phone</mat-icon>
+                                    <span>{{teacherProfile.mobile}}</span>
+                                </div>
+                                <div class="info-item">
+                                    <mat-icon>location_on</mat-icon>
+                                    <span>{{teacherProfile.address}}</span>
+                                </div>
+                                <div class="info-item">
+                                    <mat-icon>work</mat-icon>
+                                    <span>{{teacherProfile.department}} Department</span>
+                                </div>
+                                <div class="info-item">
+                                    <mat-icon>cake</mat-icon>
+                                    <span>{{teacherProfile.dob | date:'mediumDate'}}</span>
+                                </div>
+                            </div>
+
+                            <div class="bio-section">
+                                <h4>Bio</h4>
+                                <p>{{teacherProfile.bio}}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Skills Card -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Skills</h3>
+                        </div>
+                        <div class="card-body">
+                            @for (skill of teacherProfile.skills; track skill) {
+                            <div class="skill-item">
+                                <div class="d-flex justify-content-between">
+                                    <span class="skill-name">{{skill.name}}</span>
+                                    <span class="skill-val">{{skill.value}}%</span>
+                                </div>
+                                <div class="skill-progress-thin">
+                                    <div class="skill-progress-bar" [style.width.%]="skill.value"
+                                        [style.background-color]="getSkillColor(skill.color)">
+                                    </div>
+                                </div>
+                            </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <div class="profile-main">
+                    <!-- Tabs for Main Content -->
+                    <mat-tab-group class="modern-tabs" animationDuration="200ms">
+                        <!-- About Tab -->
+                        <mat-tab>
+                            <ng-template mat-tab-label>
+                                <mat-icon class="tab-icon">person</mat-icon>
+                                <span>About</span>
+                            </ng-template>
+
+                            <div class="tab-content">
+                                <h3 class="tab-title">Personal Information</h3>
+
+                                <div class="info-grid">
+                                    <div class="info-item">
+                                        <label>Full Name</label>
+                                        <span>{{teacherProfile.firstName}} {{teacherProfile.lastName}}</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <label>Role</label>
+                                        <span>{{teacherProfile.role}}</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <label>Department</label>
+                                        <span>{{teacherProfile.department}}</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <label>Specialization</label>
+                                        <span>{{teacherProfile.subject_specialization}}</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <label>Gender</label>
+                                        <span>{{teacherProfile.gender}}</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <label>Date of Birth</label>
+                                        <span>{{teacherProfile.dob | date:'mediumDate'}}</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <label>Email</label>
+                                        <span>{{teacherProfile.email}}</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <label>Mobile</label>
+                                        <span>{{teacherProfile.mobile}}</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <label>Address</label>
+                                        <span>{{teacherProfile.address}}</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <label>Experience</label>
+                                        <span>{{teacherProfile.experience_years || 5}} years</span>
+                                    </div>
+                                </div>
+
+                                <div class="bio-section mt-4">
+                                    <h4>Professional Summary</h4>
+                                    <p>{{teacherProfile.bio}}</p>
+                                </div>
+
+                                <div class="education-section mt-4">
+                                    <h4>Education</h4>
+                                    <ul class="timeline-list">
+                                        @for (edu of teacherProfile.education; track edu) {
+                                        <li>
+                                            <div class="timeline-badge primary">
+                                                <mat-icon>school</mat-icon>
+                                            </div>
+                                            <div class="timeline-panel">
+                                                <h5 class="timeline-title">{{edu.title}}</h5>
+                                                <p class="timeline-year">{{edu.year}}</p>
+                                            </div>
+                                        </li>
+                                        }
+                                    </ul>
+                                </div>
+                            </div>
+                        </mat-tab>
+
+                        <!-- Experience Tab -->
+                        <mat-tab>
+                            <ng-template mat-tab-label>
+                                <mat-icon class="tab-icon">work</mat-icon>
+                                <span>Experience</span>
+                            </ng-template>
+
+                            <div class="tab-content">
+                                <h3 class="tab-title">Work Experience</h3>
+                                <ul class="timeline-list">
+                                    @for (exp of teacherProfile.experience; track exp) {
+                                    <li>
+                                        <div class="timeline-badge success">
+                                            <mat-icon>work</mat-icon>
+                                        </div>
+                                        <div class="timeline-panel">
+                                            <h5 class="timeline-title">{{exp.title}}</h5>
+                                            <p class="timeline-year">{{exp.year}}</p>
+                                        </div>
+                                    </li>
+                                    }
+                                </ul>
+                            </div>
+                        </mat-tab>
+
+                        <!-- Settings Tab -->
+                        <mat-tab>
+                            <ng-template mat-tab-label>
+                                <mat-icon class="tab-icon">settings</mat-icon>
+                                <span>Settings</span>
+                            </ng-template>
+
+                            <div class="tab-content">
+                                <h3 class="tab-title">Profile Settings</h3>
+
+                                <form [formGroup]="profileForm" (ngSubmit)="onSubmit()" class="profile-form">
+                                    <div class="form-grid">
+                                        <mat-form-field appearance="outline">
+                                            <mat-label>First Name</mat-label>
+                                            <input matInput formControlName="firstName" required>
+                                            <mat-icon matSuffix>person</mat-icon>
+                                        </mat-form-field>
+
+                                        <mat-form-field appearance="outline">
+                                            <mat-label>Last Name</mat-label>
+                                            <input matInput formControlName="lastName" required>
+                                            <mat-icon matSuffix>person</mat-icon>
+                                        </mat-form-field>
+
+                                        <mat-form-field appearance="outline">
+                                            <mat-label>Department</mat-label>
+                                            <input matInput formControlName="department" required>
+                                            <mat-icon matSuffix>business</mat-icon>
+                                        </mat-form-field>
+
+                                        <mat-form-field appearance="outline">
+                                            <mat-label>Gender</mat-label>
+                                            <mat-select formControlName="gender" required>
+                                                <mat-option value="male">Male</mat-option>
+                                                <mat-option value="female">Female</mat-option>
+                                            </mat-select>
+                                        </mat-form-field>
+
+                                        <mat-form-field appearance="outline">
+                                            <mat-label>Date of Birth</mat-label>
+                                            <input matInput [matDatepicker]="picker" formControlName="dob" required>
+                                            <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                                            <mat-datepicker #picker></mat-datepicker>
+                                        </mat-form-field>
+
+                                        <mat-form-field appearance="outline">
+                                            <mat-label>Mobile</mat-label>
+                                            <input matInput formControlName="mobile" required>
+                                            <mat-icon matSuffix>phone</mat-icon>
+                                        </mat-form-field>
+
+                                        <mat-form-field appearance="outline" class="full-width">
+                                            <mat-label>Email</mat-label>
+                                            <input matInput formControlName="email" required>
+                                            <mat-icon matSuffix>email</mat-icon>
+                                        </mat-form-field>
+
+                                        <mat-form-field appearance="outline" class="full-width">
+                                            <mat-label>Address</mat-label>
+                                            <textarea matInput formControlName="address" rows="3"></textarea>
+                                            <mat-icon matSuffix>location_on</mat-icon>
+                                        </mat-form-field>
+                                    </div>
+
+                                    <div class="form-actions">
+                                        <button mat-raised-button color="primary" type="submit"
+                                            [disabled]="!profileForm.valid">
+                                            Save Changes
+                                        </button>
+                                        <button type="button" mat-stroked-button class="ms-2" type="button">
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </mat-tab>
+                    </mat-tab-group>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>

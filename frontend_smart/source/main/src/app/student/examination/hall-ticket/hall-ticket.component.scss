@@ -1,0 +1,132 @@
+/* Hall Ticket Component Styles */
+
+.hall-ticket-container {
+  padding: 20px;
+}
+
+.hall-ticket-header {
+  margin-bottom: 20px;
+}
+
+.ticket-card {
+  margin: 20px auto;
+  max-width: 800px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.ticket-header {
+  padding: 20px;
+  background-color: #f5f5f5;
+  text-align: center;
+  border-bottom: 1px solid #ddd;
+}
+
+.ticket-title {
+  font-size: 24px;
+  font-weight: bold;
+  color: #1976d2;
+  margin: 0;
+}
+
+.ticket-subtitle {
+  font-size: 16px;
+  color: #555;
+  margin-top: 5px;
+}
+
+.ticket-body {
+  padding: 20px;
+}
+
+.student-info {
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: #f9f9f9;
+  border-radius: 4px;
+}
+
+.student-info h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #1976d2;
+}
+
+.info-row {
+  display: flex;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.info-label {
+  flex: 0 0 150px;
+  font-weight: bold;
+  color: #555;
+}
+
+.info-value {
+  flex: 1;
+  color: #333;
+}
+
+.exam-schedule {
+  margin-bottom: 20px;
+}
+
+.exam-schedule h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #1976d2;
+}
+
+.exam-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.exam-table th,
+.exam-table td {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.exam-table th {
+  background-color: #f5f5f5;
+  font-weight: bold;
+}
+
+.signature-section {
+  margin-top: 30px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.signature-box {
+  text-align: center;
+  width: 200px;
+}
+
+.signature-line {
+  border-top: 1px solid #333;
+  margin-top: 40px;
+}
+
+.instructions {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #fff3e0;
+  border-left: 4px solid #ff9800;
+  border-radius: 4px;
+}
+
+.instructions h3 {
+  margin-top: 0;
+  color: #e65100;
+}
+
+.instructions ul {
+  padding-left: 20px;
+}

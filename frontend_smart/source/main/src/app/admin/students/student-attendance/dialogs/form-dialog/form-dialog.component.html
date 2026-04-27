@@ -1,0 +1,180 @@
+<div class="addContainer">
+  <div class="modalHeader">
+    <div class="avatarDetails">
+      <label class="hoverable" for="tableFileInput">
+        <img [src]='studentAttendance.img' alt="avatar">
+      </label>
+      <div class="modalTitle">
+        {{dialogTitle}}
+      </div>
+    </div>
+    <button mat-icon-button mat-dialog-close class="modal-close-button" aria-label="Close dialog" type="button">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+  <div mat-dialog-content>
+    <form class="register-form m-4" [formGroup]="studentAttendanceForm" (ngSubmit)="submit()">
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Roll No</mat-label>
+            <input matInput formControlName="rollNo" required>
+            <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>label</mat-icon>
+            @if (studentAttendanceForm.get('rollNo')?.hasError('required')) {
+            <mat-error>
+              Please enter roll no
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Student Name</mat-label>
+            <input matInput formControlName="sName" required>
+            <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>account_circle</mat-icon>
+            @if (studentAttendanceForm.get('sName')?.hasError('required')) {
+            <mat-error>
+              Please enter student name
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Class</mat-label>
+            <mat-select formControlName="class" required>
+              <mat-option [value]="'Class A'">Class A</mat-option>
+              <mat-option [value]="'Class B'">Class B</mat-option>
+              <mat-option [value]="'Class C'">Class C</mat-option>
+              <mat-option [value]="'Class D'">Class D</mat-option>
+              <mat-option [value]="'Class E'">Class E</mat-option>
+              <mat-option [value]="'Class F'">Class F</mat-option>
+            </mat-select>
+            @if (studentAttendanceForm.get('class')?.hasError('required')) {
+            <mat-error>
+              Select Student Class
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Date</mat-label>
+            <input matInput [matDatepicker]="picker1" formControlName="date" required>
+            <mat-datepicker-toggle matSuffix [for]="picker1"></mat-datepicker-toggle>
+            <mat-datepicker #picker1></mat-datepicker>
+            @if (studentAttendanceForm.get('date')?.hasError('required')) {
+            <mat-error>
+              Please select date
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Status</mat-label>
+            <mat-select formControlName="status" required>
+              <mat-option [value]="'Present'">Present</mat-option>
+              <mat-option [value]="'Absent'">Absent</mat-option>
+            </mat-select>
+            @if (studentAttendanceForm.get('status')?.hasError('required')) {
+            <mat-error>
+              Select Status
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Attendance Time</mat-label>
+            <input matInput [matTimepicker]="timepicker" formControlName="attendance_time" [placeholder]="'HH:MM'">
+            <mat-timepicker-toggle matIconSuffix [for]="timepicker" />
+            <mat-timepicker #timepicker />
+            @if (studentAttendanceForm.get('attendance_time')?.hasError('required')) {
+            <mat-error>
+              Please enter attendance time
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Semester</mat-label>
+            <input matInput formControlName="semester" required>
+            @if (studentAttendanceForm.get('semester')?.hasError('required')) {
+            <mat-error>
+              Please enter semester
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Subject</mat-label>
+            <input matInput formControlName="subject" required>
+            @if (studentAttendanceForm.get('subject')?.hasError('required')) {
+            <mat-error>
+              Please enter subject
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Present Count</mat-label>
+            <input matInput type="number" formControlName="present_count" required>
+            @if (studentAttendanceForm.get('present_count')?.hasError('required')) {
+            <mat-error>
+              Please enter present count
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Absent Count</mat-label>
+            <input matInput type="number" formControlName="absent_count" required>
+            @if (studentAttendanceForm.get('absent_count')?.hasError('required')) {
+            <mat-error>
+              Please enter absent count
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Reason for Absence</mat-label>
+            <textarea matInput formControlName="reason_for_absence"></textarea>
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Note</mat-label>
+            <textarea matInput formControlName="note"></textarea>
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+          <div class="example-button-row">
+            <button mat-flat-button class="formSubmitBtn" [disabled]="!studentAttendanceForm.valid"
+              type="submit">Save</button>
+            <button mat-flat-button mat-dialog-close class="formCancelBtn" tabindex="-1">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

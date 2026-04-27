@@ -1,0 +1,94 @@
+<section class="content">
+  <div class="content-block">
+    <div class="block-header">
+      <app-breadcrumb [title]="'Role Control Center'" [items]="['Organization']" [active_item]="'Roles'"></app-breadcrumb>
+    </div>
+
+    <mat-sidenav-container class="roles-container">
+      <!-- Main Content: Roles Inventory -->
+      <mat-sidenav-content>
+        <div class="card">
+          <div class="header">
+            <div class="d-flex justify-content-between align-items-center w-100 p-3">
+              <h2>Role Inventory</h2>
+              <button mat-flat-button color="primary" (click)="openDrawer(null)">
+                <mat-icon>add</mat-icon> CREATE CUSTOM ROLE
+              </button>
+            </div>
+          </div>
+          <div class="body">
+            <table mat-table [dataSource]="roles" class="w-100">
+              
+              <!-- Name Column -->
+              <ng-container matColumnDef="name">
+                <th mat-header-cell *matHeaderCellDef> Role Name </th>
+                <td mat-cell *matCellDef="let row" class="font-weight-bold">
+                  {{row.name}} 
+                  <mat-icon *ngIf="row.is_system" class="system-icon small" title="System Role">lock</mat-icon>
+                </td>
+              </ng-container>
+
+              <!-- Description Column -->
+              <ng-container matColumnDef="description">
+                <th mat-header-cell *matHeaderCellDef> Description </th>
+                <td mat-cell *matCellDef="let row" class="text-muted small"> {{row.description}} </td>
+              </ng-container>
+
+              <!-- User Count Column -->
+              <ng-container matColumnDef="users">
+                <th mat-header-cell *matHeaderCellDef> User Density </th>
+                <td mat-cell *matCellDef="let row"> 
+                  <span class="user-count">{{row._count?.users || 0}} Users</span>
+                </td>
+              </ng-container>
+
+              <!-- Status Column -->
+              <ng-container matColumnDef="status">
+                <th mat-header-cell *matHeaderCellDef> Source </th>
+                <td mat-cell *matCellDef="let row">
+                  <span class="badge" [ngClass]="row.is_system ? 'badge-solid-red' : 'badge-solid-blue'">
+                    {{row.is_system ? 'SYSTEM' : 'CUSTOM'}}
+                  </span>
+                </td>
+              </ng-container>
+
+              <!-- Actions Column -->
+              <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef> Actions </th>
+                <td mat-cell *matCellDef="let row">
+                  <button mat-icon-button (click)="openDrawer(row)" color="primary" title="Manage Permissions">
+                    <mat-icon>security</mat-icon>
+                  </button>
+                  <button mat-icon-button [matMenuTriggerFor]="menu">
+                    <mat-icon>more_vert</mat-icon>
+                  </button>
+                  <mat-menu #menu="matMenu">
+                    <button mat-menu-item (click)="openDrawer(row)">
+                      <mat-icon>edit</mat-icon> Edit Metadata
+                    </button>
+                    <button mat-menu-item>
+                      <mat-icon>content_copy</mat-icon> Clone Role
+                    </button>
+                    <hr class="m-0">
+                    <button mat-menu-item class="text-danger" [disabled]="row.is_system || (row._count?.users || 0) > 0">
+                      <mat-icon color="warn">delete</mat-icon> Delete Role
+                    </button>
+                  </mat-menu>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+              <tr mat-row *matHeaderRowDef="displayedColumns"></tr>
+            </table>
+          </div>
+        </div>
+      </mat-sidenav-content>
+
+      <!-- Right Drawer: Management Console -->
+      <mat-sidenav #drawer position="end" mode="over" class="role-drawer">
+        <app-role-drawer [role]="selectedRole" (onSave)="onRoleSaved()" (onClose)="drawer.close()"></app-role-drawer>
+      </mat-sidenav>
+
+    </mat-sidenav-container>
+  </div>
+</section>

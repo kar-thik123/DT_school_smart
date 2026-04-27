@@ -1,0 +1,43 @@
+.drawer-header {
+  padding: 20px;
+  border-bottom: 1px solid #eee;
+  h3 { margin: 0; font-weight: 700; color: #333; }
+}
+
+.role-meta {
+  margin-top: 10px;
+}
+
+.drawer-tabs {
+  height: calc(100vh - 100px);
+  
+  ::ng-deep .mat-mdc-tab-body-wrapper {
+    height: 100%;
+  }
+}
+
+.tab-content {
+  height: 100%;
+  overflow-y: auto;
+}
+
+.alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 15px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+  
+  &-info {
+    background: #e0f2fe;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
+  }
+}

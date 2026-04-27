@@ -1,0 +1,90 @@
+@use "@angular/material" as mat;
+@use "sass:color";
+
+:host ::ng-deep .btnStyle1 {
+  @include mat.button-overrides(
+    (
+      filled-container-color: #0b8400,
+      filled-label-text-color: #ffffff,
+    )
+  );
+}
+
+:host ::ng-deep .btnStyle2 {
+  @include mat.button-overrides(
+    (
+      filled-container-color: #fd7e14,
+      filled-label-text-color: #ffffff,
+    )
+  );
+}
+
+:host ::ng-deep .btnStyle3 {
+  @include mat.button-overrides(
+    (
+      filled-container-color: #0d6efd,
+      filled-label-text-color: #ffffff,
+    )
+  );
+}
+
+.role-btn {
+  transition: all 0.3s ease;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+}
+
+.user-role-selector {
+  background-color: rgba(0, 0, 0, 0.02);
+  border-radius: 10px;
+  padding: 15px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.security-tip {
+  background-color: rgba(13, 110, 253, 0.05);
+  border-radius: 8px;
+  padding: 10px 15px;
+  border-left: 3px solid #0d6efd;
+
+  .security-icon {
+    color: #0d6efd;
+    font-size: 20px;
+  }
+
+  .security-text {
+    font-size: 12px;
+    color: #555;
+  }
+}
+
+.forgot-link {
+  color: #0d6efd;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.3s ease;
+
+  &:hover {
+    text-decoration: underline;
+    color: color.adjust(#0d6efd, $lightness: -10%);
+  }
+}
+
+:host ::ng-deep .mat-mdc-form-field-subscript-wrapper {
+  height: 0;
+}
+
+:host ::ng-deep .mat-mdc-form-field {
+  transition: all 0.3s ease;
+
+  &:focus-within {
+    transform: translateY(-2px);
+  }
+}

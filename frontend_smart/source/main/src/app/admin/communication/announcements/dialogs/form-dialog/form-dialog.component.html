@@ -1,0 +1,122 @@
+<div class="addContainer">
+    <div class="modalHeader">
+        <div class="avatarDetails">
+            <div class="modalTitle">{{dialogTitle}}</div>
+        </div>
+        <button mat-icon-button mat-dialog-close class="modal-close-button" aria-label="Close dialog" type="button">
+            <mat-icon>close</mat-icon>
+        </button>
+    </div>
+    <div mat-dialog-content>
+        <form class="register-form m-4" [formGroup]="announcementForm" (ngSubmit)="submit()">
+            <div class="row">
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Title</mat-label>
+                        <input matInput formControlName="title" required>
+                        <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>title</mat-icon>
+                        @if (announcementForm.get('title')?.hasError('required')) {
+                        <mat-error>Title is required</mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Announcement Type</mat-label>
+                        <mat-select formControlName="announcementType" required>
+                            <mat-option [value]="'General'">General</mat-option>
+                            <mat-option [value]="'Event'">Event</mat-option>
+                            <mat-option [value]="'Urgent'">Urgent</mat-option>
+                            <mat-option [value]="'Academic'">Academic</mat-option>
+                        </mat-select>
+                        @if (announcementForm.get('announcementType')?.hasError('required')) {
+                        <mat-error>Select Type</mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Description</mat-label>
+                        <textarea matInput formControlName="description" rows="4" required></textarea>
+                        <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>description</mat-icon>
+                        @if (announcementForm.get('description')?.hasError('required')) {
+                        <mat-error>Description is required</mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Start Date</mat-label>
+                        <input matInput type="date" formControlName="startDate" required>
+                        <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>calendar_today</mat-icon>
+                        @if (announcementForm.get('startDate')?.hasError('required')) {
+                        <mat-error>Start Date is required</mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>End Date</mat-label>
+                        <input matInput type="date" formControlName="endDate" required>
+                        <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>calendar_today</mat-icon>
+                        @if (announcementForm.get('endDate')?.hasError('required')) {
+                        <mat-error>End Date is required</mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Priority</mat-label>
+                        <mat-select formControlName="priority" required>
+                            <mat-option [value]="'High'">High</mat-option>
+                            <mat-option [value]="'Medium'">Medium</mat-option>
+                            <mat-option [value]="'Low'">Low</mat-option>
+                        </mat-select>
+                        @if (announcementForm.get('priority')?.hasError('required')) {
+                        <mat-error>Select Priority</mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Posted By</mat-label>
+                        <input matInput formControlName="postedBy" required>
+                        <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>person</mat-icon>
+                        @if (announcementForm.get('postedBy')?.hasError('required')) {
+                        <mat-error>Posted By is required</mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Status</mat-label>
+                        <mat-select formControlName="status" required>
+                            <mat-option [value]="'Active'">Active</mat-option>
+                            <mat-option [value]="'Expired'">Expired</mat-option>
+                        </mat-select>
+                        @if (announcementForm.get('status')?.hasError('required')) {
+                        <mat-error>Select Status</mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+                    <div class="example-button-row">
+                        <button mat-flat-button class="formSubmitBtn" [disabled]="!announcementForm.valid"
+                            type="submit">Save</button>
+                        <button mat-flat-button mat-dialog-close class="formCancelBtn" tabindex="-1">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

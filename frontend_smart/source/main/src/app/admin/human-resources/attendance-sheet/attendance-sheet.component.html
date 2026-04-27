@@ -1,0 +1,114 @@
+<section class="content">
+  <div class="content-block">
+    <div class="block-header">
+      <app-breadcrumb [title]="'Attendance Sheet'" [items]="['Attendance']" [active_item]="'Sheet'"></app-breadcrumb>
+    </div>
+    <div class="row clearfix">
+      <div class="col-12">
+        <div class="card">
+          <div class="header">
+            <h2>Attendance Sheet</h2>
+          </div>
+
+          <div class="body overflow-auto">
+            <div class="attendance-sheet">
+              <!-- Search Form -->
+              <form [formGroup]="searchForm" (ngSubmit)="onSearch()">
+                <div class="row">
+                  <div class="col-md-4">
+                    <mat-form-field appearance="outline" class="example-full-width">
+                      <mat-label>Select Year</mat-label>
+                      <mat-select formControlName="year" placeholder="Select Year">
+                        @for (year of years; track year) {
+                        <mat-option [value]="year">{{ year }}</mat-option>
+                        }
+                      </mat-select>
+                    </mat-form-field>
+                  </div>
+                  <div class="col-md-4">
+                    <mat-form-field appearance="outline" class="example-full-width">
+                      <mat-label>Select Month</mat-label>
+                      <mat-select formControlName="month" placeholder="Select Month">
+                        @for (month of months; track month) {
+                        <mat-option [value]="month">{{ month }}</mat-option>
+                        }
+                      </mat-select>
+                    </mat-form-field>
+                  </div>
+                  <div class="col-md-4">
+                    <button mat-raised-button color="primary" class="big-button" type="submit"
+                      [disabled]="searchForm.invalid">Search</button>
+                  </div>
+                </div>
+              </form>
+
+              <!-- Filter Info and Legend -->
+              <div class="header-container">
+                <div class="filter-info">
+                  <p class="mb-0">Filtered by: Year: {{ selectedYear }} | Month: {{ selectedMonth }}</p>
+                </div>
+                <div class="legend-container">
+                  <div class="legend-item">
+                    <mat-icon class="material-icons-outlined icon-gray">do_not_disturb_on</mat-icon>
+                    <span class="fw-semibold">Weekend</span>
+                  </div>
+                  <div class="legend-item">
+                    <mat-icon class="material-icons-outlined icon-success">check_circle</mat-icon>
+                    <span class="fw-semibold">Present</span>
+                  </div>
+                  <div class="legend-item">
+                    <mat-icon class="material-icons-outlined icon-danger">cancel</mat-icon>
+                    <span class="fw-semibold">Leave</span>
+                  </div>
+                  <div class="legend-item">
+                    <mat-icon class="material-icons-outlined icon-warning">star</mat-icon>
+                    <span class="fw-semibold">Holiday</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Attendance Table -->
+              <table class="table table-bordered border-bottom">
+                <thead>
+                  <tr role="row">
+                    <th>Employee Name</th>
+                    @for (day of [].constructor(31); track $index) {
+                    <th class="cell-dimention">{{ $index + 1 }}</th>
+                    }
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (employee of filteredEmployees; track employee.name) {
+                  <tr>
+                    <td>
+                      <div class="d-flex">
+                        <span class="attnd-user">
+                          <img alt="image" class="msr-2 rounded-circle" [src]="employee.avatar" />
+                        </span>
+                        <p class="font-b-500">{{ employee.name }}</p>
+                      </div>
+                    </td>
+                    @for (status of employee.attendanceStatus; track trackByDay($index, status)) {
+                    <td>
+                      <mat-icon class="material-icons-outlined attendance-icon" [ngClass]="{
+                                'icon-success': status === 'present',
+                                'icon-danger': status === 'leave',
+                                'icon-warning': status === 'holiday',
+                                'icon-gray': status === 'weekend'
+                              }">
+                        {{ status === 'present' ? 'check_circle' : (status === 'leave' ?
+                        'cancel' : (status === 'holiday' ? 'star' : 'do_not_disturb_on')) }}
+                      </mat-icon>
+                    </td>
+                    }
+                  </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

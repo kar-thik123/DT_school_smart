@@ -1,0 +1,386 @@
+// Variables for consistent color scheme
+$primary-color: #3f51b5;
+$secondary-color: #ff4081;
+$background-color: #f5f5f5;
+$card-bg-color: #ffffff;
+$text-muted: #999999;
+$border-color: #e0e0e0;
+$shadow-color: rgba(0, 0, 0, 0.08);
+$success-color: #4caf50;
+$info-color: #03a9f4;
+$warning-color: #ff9800;
+
+// Card styles
+.teacher-card {
+  background-color: $card-bg-color;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px $shadow-color;
+  margin-bottom: 24px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+
+  &:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px);
+  }
+}
+
+// Profile header styles
+.profile-header {
+  padding: 5px 20px;
+  text-align: center;
+  background: linear-gradient(135deg, #f46a3f, #ef8c6d);
+  color: white;
+  overflow: hidden;
+
+  .user-name {
+    font-size: 24px;
+    font-weight: 500;
+    margin-bottom: 5px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .name-center {
+    font-size: 14px;
+    opacity: 0.9;
+    position: relative;
+    z-index: 1;
+  }
+}
+
+// User image styles
+.user-img {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 4px solid white;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  margin: -60px auto 15px;
+  display: block;
+  object-fit: cover;
+}
+
+// Profile details styles
+.profile-details {
+  padding: 20px;
+  text-align: center;
+
+  .address {
+    margin-bottom: 15px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    mat-icon {
+      margin-right: 6px;
+      font-size: 18px;
+      color: $text-muted;
+    }
+  }
+
+  .phone {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    margin-bottom: 20px;
+
+    mat-icon {
+      font-size: 18px;
+      line-height: 30px;
+      height: 18px;
+      width: 18px;
+      color: $primary-color;
+    }
+  }
+
+  .social-stats {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 20px;
+    border-top: 1px solid $border-color;
+    padding-top: 20px;
+
+    .stat-item {
+      padding: 0 10px;
+
+      h5 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 600;
+        color: $primary-color;
+      }
+
+      small {
+        font-size: 12px;
+        color: $text-muted;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+    }
+  }
+}
+
+// Tab styles
+
+// List styles
+.list-group {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+
+  .list-group-item {
+    padding: 12px 0;
+    border-bottom: 1px solid $border-color;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    b {
+      font-weight: 500;
+    }
+
+    .profile-desc-item {
+      font-weight: 400;
+    }
+  }
+}
+
+// Progress bar styles
+.skill-progress {
+  height: 6px;
+  border-radius: 3px;
+  background-color: #e9ecef;
+  margin-bottom: 20px;
+  overflow: hidden;
+  position: relative;
+
+  .progress-bar {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.6s ease;
+    position: relative;
+
+    &.l-bg-green {
+      background: linear-gradient(to right, #43a047, #66bb6a);
+    }
+
+    &.l-bg-orange {
+      background: linear-gradient(to right, #ff9800, #ffb74d);
+    }
+
+    &.l-bg-cyan {
+      background: linear-gradient(to right, #00bcd4, #4dd0e1);
+    }
+
+    &.l-bg-purple {
+      background: linear-gradient(to right, #9c27b0, #ba68c8);
+    }
+
+    &::after {
+      content: attr(aria-valuenow) "%";
+      position: absolute;
+      right: 5px;
+      top: -20px;
+      font-size: 12px;
+    }
+  }
+}
+
+// About me section styles
+.about-me-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 24px;
+
+  .detail-item {
+    strong {
+      display: block;
+      font-weight: 500;
+      margin-bottom: 5px;
+    }
+
+    span {
+      font-weight: 400;
+    }
+  }
+}
+
+.bio-text {
+  line-height: 1.6;
+  margin-bottom: 16px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+// Education and experience styles
+.education-item,
+.experience-item,
+.course-item,
+.publication-item {
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid $border-color;
+
+  &:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  h3 {
+    font-size: 16px;
+    font-weight: 500;
+    margin: 0 0 8px;
+  }
+
+  p {
+    margin: 0;
+    font-size: 14px;
+  }
+}
+
+// Settings form styles
+.settings-form-group,
+.settings-form-grid {
+  margin-bottom: 20px;
+}
+
+.settings-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+}
+
+.settings-checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+// Responsive adjustments
+@media (max-width: 992px) {
+  .profile-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .user-img {
+    margin-bottom: 20px;
+  }
+
+  .profile-details {
+    padding-left: 0;
+  }
+
+  .social-stats {
+    justify-content: center;
+  }
+
+  .settings-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .project-widget {
+    width: 100%;
+  }
+
+  .tab-content {
+    padding: 15px;
+  }
+
+  .education-list,
+  .experience-list,
+  .courses-list,
+  .publications-list {
+    padding-left: 0;
+  }
+
+  .education-item,
+  .experience-item,
+  .course-item,
+  .publication-item {
+    padding: 15px;
+  }
+
+  .about-me-details {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 576px) {
+  .profile-header h4 {
+    font-size: 18px;
+  }
+
+  .profile-header h6 {
+    font-size: 14px;
+  }
+
+  .social-stats .stat-item {
+    padding: 5px 10px;
+  }
+
+  .card .header h2 {
+    font-size: 18px;
+  }
+
+  .settings-checkbox-group {
+    flex-direction: column;
+  }
+}
+
+// Icon alignment fixes
+mat-icon {
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
+.location-icon {
+  display: inline-flex;
+  align-items: center;
+
+  mat-icon {
+    margin-right: 6px;
+  }
+}
+
+.education-list,
+.certificate-list {
+  list-style: none;
+  padding: 0;
+
+  li {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+
+    mat-icon {
+      margin-right: 10px;
+      color: $primary-color;
+    }
+  }
+}
+::ng-deep .dark {
+  .teacher-card {
+    background-color: #1a202e !important;
+    color: #cbd5e0 !important;
+  }
+}

@@ -1,0 +1,144 @@
+<section class="content">
+  <div class="content-block">
+    @for (breadscrum of breadscrums; track breadscrum) {
+    <div class="block-header">
+      <!-- breadcrumb -->
+      <app-breadcrumb [title]="breadscrum.title" [items]="breadscrum.items" [active_item]="breadscrum.active">
+      </app-breadcrumb>
+    </div>
+    }
+    <div class="row">
+      <div class="col-lg-12">
+        <div class="card">
+          <div class="body">
+            <div class="row align-items-center">
+              <div class="col-md-4">
+                <img src="assets/images/pages/welcome.png" alt="" class="w-100">
+              </div>
+              <div class="col-md-8">
+                <h4 class="font-18 weight-500 mb-2">
+                  Welcome back <div class="weight-600 font-25 col-blue pt-1">Ashton Cox!</div>
+                </h4>
+                <p class="font-16 max-width-600">We would like to take this opportunity to welcome you to our practice
+                  and to thank you
+                  for choosing our physicians to participate in your healthcare. We look forward to
+                  providing you with personalized, comprehensive health care focusing on wellness and
+                  prevention.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-xl-8 col-lg-8 col-md-12 col-sm-12">
+        <mat-card>
+          <mat-card-header class="header-style">
+            <mat-card-title>Average Lecture Per Month</mat-card-title>
+            <a mat-button color="primary" href="#" (click)="$event.preventDefault();">View All</a>
+          </mat-card-header>
+          <mat-card-content>
+            <h6>65 <span class="text-muted font-12">(Average)</span></h6>
+            <apx-chart [series]="avgLecChartOptions.series!" [chart]="avgLecChartOptions.chart!"
+              [xaxis]="avgLecChartOptions.xaxis!" [stroke]="avgLecChartOptions.stroke!"
+              [colors]="avgLecChartOptions.colors!" [dataLabels]="avgLecChartOptions.dataLabels!"
+              [legend]="avgLecChartOptions.legend!" [markers]="avgLecChartOptions.markers!"
+              [grid]="avgLecChartOptions.grid!" [yaxis]="avgLecChartOptions.yaxis!"
+              [tooltip]="avgLecChartOptions.tooltip!" [title]="avgLecChartOptions.title!"
+              [fill]="avgLecChartOptions.fill!">
+            </apx-chart>
+          </mat-card-content>
+        </mat-card>
+      </div>
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+        <mat-card>
+          <mat-card-header class="header-style">
+            <mat-card-title>Subject Chart</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <apx-chart [series]="pieChartOptions.series!" [chart]="pieChartOptions.chart!"
+              [labels]="pieChartOptions.labels!" [responsive]="pieChartOptions.responsive!"
+              [dataLabels]="pieChartOptions.dataLabels!" [legend]="pieChartOptions.legend!" class="apex-pie-center">
+            </apx-chart>
+            <div class="table-responsive m-t-15">
+              <table class="table align-items-center">
+                <tbody>
+                  <tr>
+                    <td><i class="fa fa-circle col-cyan msr-2"></i> Music</td>
+                    <td>23</td>
+                    <td class="col-green">+32%</td>
+                  </tr>
+                  <tr>
+                    <td><i class="fa fa-circle col-blue msr-2"></i>Science</td>
+                    <td>32</td>
+                    <td class="col-green">+12%</td>
+                  </tr>
+                  <tr>
+                    <td><i class="fa fa-circle col-orange msr-2"></i>Economics</td>
+                    <td>12</td>
+                    <td class="col-orange">-12%</td>
+                  </tr>
+                  <tr>
+                    <td><i class="fa fa-circle col-green msr-2"></i>Mathes</td>
+                    <td>32</td>
+                    <td class="col-green">+3%</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+    <div class="row clearfix">
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+        <app-class-schedule></app-class-schedule>
+      </div>
+      <div class="col-xs-12 col-sm-12 col-md-8 col-lg-8">
+        <mat-card>
+          <mat-card-header class="header-style">
+            <mat-card-title>Today's Lecture</mat-card-title>
+            <a mat-button color="primary" href="#" (click)="$event.preventDefault();">View All</a>
+          </mat-card-header>
+          <mat-card-content>
+            <ng-scrollbar style="height: 400px" visibility="hover">
+              <app-table-card [dataSource]="lectureData"
+                [columnDefinitions]="lectureColumnDefinitions"></app-table-card>
+            </ng-scrollbar>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+
+    <div class="row clearfix">
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+        <app-student-progress></app-student-progress>
+      </div>
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+        <app-attendance-overview></app-attendance-overview>
+      </div>
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+        <app-quick-notes-panel></app-quick-notes-panel>
+      </div>
+    </div>
+
+
+    <div class="row clearfix">
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+        <app-class-schedule-card></app-class-schedule-card>
+      </div>
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+        <app-student-progress-chart></app-student-progress-chart>
+      </div>
+    </div>
+
+    <div class="row clearfix">
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+        <app-top-students-card></app-top-students-card>
+      </div>
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+        <app-message-center></app-message-center>
+      </div>
+    </div>
+  </div>
+</section>

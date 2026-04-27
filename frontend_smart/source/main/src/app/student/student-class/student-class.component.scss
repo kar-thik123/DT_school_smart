@@ -1,0 +1,128 @@
+.my-classes-container {
+  padding: 20px;
+
+  .loading-spinner,
+  .error-message,
+  .no-classes-message {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    text-align: center;
+    color: #555;
+  }
+
+  .error-message mat-card,
+  .no-classes-message mat-card {
+    width: 100%;
+    max-width: 400px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  }
+
+  .error-message p,
+  .no-classes-message p {
+    margin-bottom: 15px;
+    font-size: 1.1em;
+  }
+
+  .class-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 25px;
+    padding: 20px 0;
+  }
+
+  .class-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    border-radius: 10px;
+    overflow: hidden;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    background: linear-gradient(145deg, #ffffff, #f0f0f0);
+    box-shadow: 8px 8px 16px #d9d9d9, -8px -8px 16px #ffffff;
+  }
+
+  .class-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+  }
+
+  .class-card mat-card-header {
+    background-color: #e9f7fd;
+    padding: 15px 20px;
+    border-bottom: 1px solid #dbf4ff;
+  }
+
+  .class-card mat-card-title {
+    font-size: 1.4em;
+    font-weight: 600;
+    color: #00796b;
+  }
+
+  .class-card mat-card-subtitle {
+    color: #004d40;
+  }
+
+  .class-card mat-card-content {
+    padding: 20px;
+    flex-grow: 1;
+  }
+
+  .card-detail {
+    margin-bottom: 10px;
+    font-size: 0.95em;
+    line-height: 1.5;
+  }
+
+  .card-detail strong {
+    color: #00796b;
+  }
+
+  .class-card mat-card-actions {
+    padding: 15px 20px;
+    border-top: 1px solid #eee;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .class-card mat-card-actions button {
+    font-weight: 500;
+  }
+}
+
+@media (max-width: 768px) {
+  .class-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .search-input-toolbar {
+    width: 100%;
+    margin-left: 0;
+    margin-top: 10px;
+  }
+
+  mat-toolbar-row {
+    flex-direction: column;
+    height: auto !important;
+    padding: 10px;
+  }
+}
+::ng-deep .dark {
+  .my-classes-container {
+    .class-card {
+      background: #000000 !important;
+      box-shadow: none !important;
+
+      mat-card-header {
+        background-color: #000000 !important;
+        border-bottom: 1px solid #00332b !important;
+      }
+      mat-card-actions {
+        border-top: 1px solid #00332b !important;
+      }
+    }
+  }
+}

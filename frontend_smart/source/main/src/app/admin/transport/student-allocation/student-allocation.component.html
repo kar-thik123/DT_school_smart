@@ -1,0 +1,11 @@
+<section class="content">
+  <div class="content-block">
+    <app-breadcrumb [title]="breadscrums[0].title" [items]="breadscrums[0].items" [active_item]="breadscrums[0].active">
+    </app-breadcrumb>
+
+    <app-master-table [title]="'Student Allocation'" [columnDefinitions]="columnDefinitions" [dataSource]="dataSource"
+      [isLoading]="isLoading" (refresh)="handleRefresh()" (add)="handleAdd()" (edit)="handleEdit($event)"
+      (delete)="handleDelete($event)">
+    </app-master-table>
+  </div>
+</section>

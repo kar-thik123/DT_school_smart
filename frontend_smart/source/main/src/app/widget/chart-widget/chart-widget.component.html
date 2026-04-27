@@ -1,0 +1,324 @@
+<section class="content">
+  <div class="content-block">
+    @for (breadscrum of breadscrums; track breadscrum) {
+    <div class="block-header">
+      <!-- breadcrumb -->
+      <app-breadcrumb [title]="breadscrum.title" [items]="breadscrum.items" [active_item]="breadscrum.active">
+      </app-breadcrumb>
+    </div>
+    }
+    <div class="row">
+      <div class="col-xs-12 col-sm-12 col-md-4 col-lg-4">
+        <mat-card>
+          <mat-card-header>
+            <mat-card-title>Chart Sample</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div id="chart">
+              <apx-chart [series]="circleChartOptions.series!" [chart]="circleChartOptions.chart!"
+                [plotOptions]="circleChartOptions.plotOptions!" [labels]="circleChartOptions.labels!"
+                [legend]="circleChartOptions.legend!" [colors]="circleChartOptions.colors!"
+                [responsive]="circleChartOptions.responsive!"></apx-chart>
+            </div>
+            <div class="row">
+              <div class="col-4">
+                <p class="text-muted font-15 text-truncate">Target</p>
+                <p class="font-b-600">
+                  <i class="fas fa-arrow-circle-up col-green m-r-5"></i>$15.3k
+                </p>
+              </div>
+              <div class="col-4">
+                <p class="text-muted font-15 text-truncate">Last
+                  week</p>
+                <p class="font-b-600">
+                  <i class="fas fa-arrow-circle-down col-red m-r-5"></i>$2.8k
+                </p>
+              </div>
+              <div class="col-4">
+                <p class="text-muted text-truncate">Last
+                  Month</p>
+                <p class="font-b-600">
+                  <i class="fas fa-arrow-circle-up col-green m-r-5"></i>$12.5k
+                </p>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+      <div class="col-xs-12 col-sm-12 col-md-4 col-lg-4">
+        <mat-card>
+          <mat-card-header>
+            <mat-card-title>Chart Sample</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div id="chart">
+              <apx-chart [series]="radarChartOptions.series!" [chart]="radarChartOptions.chart!"
+                [xaxis]="radarChartOptions.xaxis!" [stroke]="radarChartOptions.stroke!"
+                [markers]="radarChartOptions.markers!" [fill]="radarChartOptions.fill!"></apx-chart>
+            </div>
+            <div class="row">
+              <div class="col-4">
+                <p class="text-muted font-15 text-truncate">Target</p>
+                <p class="font-b-600">
+                  <i class="fas fa-arrow-circle-up col-green m-r-5"></i>$15.3k
+                </p>
+              </div>
+              <div class="col-4">
+                <p class="text-muted font-15 text-truncate">Last
+                  week</p>
+                <p class="font-b-600">
+                  <i class="fas fa-arrow-circle-down col-red m-r-5"></i>$2.8k
+                </p>
+              </div>
+              <div class="col-4">
+                <p class="text-muted text-truncate">Last
+                  Month</p>
+                <p class="font-b-600">
+                  <i class="fas fa-arrow-circle-up col-green m-r-5"></i>$12.5k
+                </p>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+      <div class="col-xs-12 col-sm-12 col-md-4 col-lg-4">
+        <mat-card>
+          <mat-card-header>
+            <mat-card-title>Chart Sample</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div id="chart">
+              <apx-chart [series]="areaChartOptions.series!" [chart]="areaChartOptions.chart!"
+                [xaxis]="areaChartOptions.xaxis!" [stroke]="areaChartOptions.stroke!" [grid]="areaChartOptions.grid!"
+                [tooltip]="areaChartOptions.tooltip!" [dataLabels]="areaChartOptions.dataLabels!">
+              </apx-chart>
+            </div>
+            <div class="row">
+              <div class="col-4">
+                <p class="text-muted font-15 text-truncate">Target</p>
+                <p class="font-b-600">
+                  <i class="fas fa-arrow-circle-up col-green m-r-5"></i>$15.3k
+                </p>
+              </div>
+              <div class="col-4">
+                <p class="text-muted font-15 text-truncate">Last
+                  week</p>
+                <p class="font-b-600">
+                  <i class="fas fa-arrow-circle-down col-red m-r-5"></i>$2.8k
+                </p>
+              </div>
+              <div class="col-4">
+                <p class="text-muted text-truncate">Last
+                  Month</p>
+                <p class="font-b-600">
+                  <i class="fas fa-arrow-circle-up col-green m-r-5"></i>$12.5k
+                </p>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 col-xs-12">
+        <app-statistic-card1 title="New Students" value="1,025" percentage="10" [increase]="true"
+          imageUrl="assets/images/banner/1.png">
+        </app-statistic-card1>
+      </div>
+      <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 col-xs-12">
+        <app-statistic-card1 title="Total Courses" value="47" percentage="09" [increase]="false"
+          imageUrl="assets/images/banner/2.png">
+        </app-statistic-card1>
+      </div>
+      <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 col-xs-12">
+        <app-statistic-card1 title="Awards" value="128" percentage="18" [increase]="true"
+          imageUrl="assets/images/banner/3.png">
+        </app-statistic-card1>
+      </div>
+      <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 col-xs-12">
+        <app-statistic-card1 title="Revenue" value="$48,697" percentage="42" [increase]="true"
+          imageUrl="assets/images/banner/4.png">
+        </app-statistic-card1>
+      </div>
+    </div>
+
+
+    <div class="row">
+      <div class="col-lg-3 col-md-3 col-sm-12">
+        <app-statistic-card2 title="Total Sales" value="1500" description="Total sales this month"
+          img="assets/images/banner/img1.png" arrowIcon="trending_up">
+        </app-statistic-card2>
+      </div>
+      <div class="col-lg-3 col-md-3 col-sm-12">
+        <app-statistic-card2 title="Total Courses" value="125" description="Total course this month"
+          img="assets/images/banner/img2.png" arrowIcon="trending_down">
+        </app-statistic-card2>
+      </div>
+      <div class="col-lg-3 col-md-3 col-sm-12">
+        <app-statistic-card2 title="Total Teachers" value="89" description="12% Higher Then
+        Last Month" img="assets/images/banner/img3.png" arrowIcon="trending_up">
+        </app-statistic-card2>
+      </div>
+      <div class="col-lg-3 col-md-3 col-sm-12">
+        <app-statistic-card2 title="Fees Collection" value="$48,697" description="22% Less Then
+        Last
+        Month" img="assets/images/banner/img4.png" arrowIcon="trending_down">
+        </app-statistic-card2>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-xl-8 col-lg-8 col-md-12 col-sm-12">
+        <mat-card>
+          <mat-card-header>
+            <mat-card-title>Average Lecture Per Month</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="float-start">
+              <h6>65 <span class="text-muted font-12">(Average)</span></h6>
+            </div>
+            <div class="mb-5">
+              <apx-chart [series]="avgLecChartOptions.series!" [chart]="avgLecChartOptions.chart!"
+                [xaxis]="avgLecChartOptions.xaxis!" [stroke]="avgLecChartOptions.stroke!"
+                [colors]="avgLecChartOptions.colors!" [dataLabels]="avgLecChartOptions.dataLabels!"
+                [legend]="avgLecChartOptions.legend!" [markers]="avgLecChartOptions.markers!"
+                [grid]="avgLecChartOptions.grid!" [yaxis]="avgLecChartOptions.yaxis!"
+                [tooltip]="avgLecChartOptions.tooltip!" [title]="avgLecChartOptions.title!"
+                [fill]="avgLecChartOptions.fill!">
+              </apx-chart>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+        <mat-card>
+          <mat-card-header>
+            <mat-card-title>Subject Chart</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div id="chart">
+              <apx-chart [series]="pieChartOptions.series!" [chart]="pieChartOptions.chart!"
+                [labels]="pieChartOptions.labels!" [responsive]="pieChartOptions.responsive!"
+                [dataLabels]="pieChartOptions.dataLabels!" [legend]="pieChartOptions.legend!" class="apex-pie-center">
+              </apx-chart>
+            </div>
+            <div class="table-responsive m-t-15">
+              <table class="table align-items-center">
+                <tbody>
+                  <tr>
+                    <td><i class="fa fa-circle col-cyan msr-2"></i> Music</td>
+                    <td>23</td>
+                    <td class="col-green">+32%</td>
+                  </tr>
+                  <tr>
+                    <td><i class="fa fa-circle col-blue msr-2"></i>Science</td>
+                    <td>32</td>
+                    <td class="col-green">+12%</td>
+                  </tr>
+                  <tr>
+                    <td><i class="fa fa-circle col-orange msr-2"></i>Economics</td>
+                    <td>12</td>
+                    <td class="col-orange">-12%</td>
+                  </tr>
+                  <tr>
+                    <td><i class="fa fa-circle col-green msr-2"></i>Mathes</td>
+                    <td>32</td>
+                    <td class="col-green">+3%</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-lg-3 col-sm-6">
+        <app-order-info-box title="Total Students" value="2347" percentageText="18% Higher Than Last Month"
+          iconClass="fas fa-graduation-cap" bgClass="bg-c-blue">
+        </app-order-info-box>
+      </div>
+      <div class="col-lg-3 col-sm-6">
+        <app-order-info-box title="Total Teachers" value="258" percentageText="21% Higher Than Last Month"
+          iconClass="fas fa-user-tie" bgClass="bg-c-green">
+        </app-order-info-box>
+      </div>
+      <div class="col-lg-3 col-sm-6">
+        <app-order-info-box title="Awards" value="27" percentageText="37% Higher Than Last Month"
+          iconClass="fas fa-trophy" bgClass="bg-c-yellow">
+        </app-order-info-box>
+      </div>
+      <div class="col-lg-3 col-sm-6">
+        <app-order-info-box title="Total Earning" value="$25,698" percentageText="10% Higher Than Last Month"
+          iconClass="fas fa-dollar-sign" bgClass="bg-c-pink">
+        </app-order-info-box>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-12 col-sm-6 col-md-3">
+        <app-income-info-box title="Today's Income" subtitle="Income For Today" value="$170" valueClass="text-info"
+          [progress]="75" progressClass="l-bg-purple" change="75%">
+        </app-income-info-box>
+      </div>
+      <div class="col-12 col-sm-6 col-md-3">
+        <app-income-info-box title="Total Revenue" subtitle="Total Income" value="$120" valueClass="text-success"
+          [progress]="45" progressClass="l-bg-orange" change="25%">
+        </app-income-info-box>
+      </div>
+      <div class="col-12 col-sm-6 col-md-3">
+        <app-income-info-box title="New Orders" subtitle="Fresh New Order" value="15" valueClass="text-danger"
+          [progress]="45" progressClass="l-bg-cyan" change="50%">
+        </app-income-info-box>
+      </div>
+      <div class="col-12 col-sm-6 col-md-3">
+        <app-income-info-box title="New Users" subtitle="Joined New User" value="12" valueClass="text-secondary"
+          [progress]="45" progressClass="l-bg-red" change="25%">
+        </app-income-info-box>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-xl-3 col-lg-6">
+        <app-info-box1 [cardClass]="'l-bg-green-dark'" [iconClass]="'fa fa-briefcase'" [title]="'New Projects'"
+          [value]="102" [progressValue]="40" [progressClass]="'orange-progress'" [percentageChange]="10">
+        </app-info-box1>
+      </div>
+
+      <div class="col-xl-3 col-lg-6">
+        <app-info-box1 [cardClass]="'l-bg-cyan-dark'" [iconClass]="'fas fa-users'" [title]="'New Customers'"
+          [value]="154" [progressValue]="40" [progressClass]="'purple-progress'" [percentageChange]="4">
+        </app-info-box1>
+      </div>
+
+      <div class="col-xl-3 col-lg-6">
+        <app-info-box1 [cardClass]="'l-bg-purple-dark'" [iconClass]="'fa fa-globe'" [title]="'Inquiry'" [value]="524"
+          [progressValue]="40" [progressClass]="'green-progress'" [percentageChange]="23">
+        </app-info-box1>
+      </div>
+
+      <div class="col-xl-3 col-lg-6">
+        <app-info-box1 [cardClass]="'l-bg-orange-dark'" [iconClass]="'fa fa-money-bill-alt'" [title]="'Earning'"
+          [value]="'$2,453'" [progressValue]="40" [progressClass]="'sky-progress'" [percentageChange]="-6">
+        </app-info-box1>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+        <app-attendance-chart></app-attendance-chart>
+      </div>
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+        <app-chart-card4 [maleCount]="2078" [femaleCount]="1825">
+        </app-chart-card4>
+      </div>
+      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+        <app-fee-payment-overview></app-fee-payment-overview>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+        <app-student-attendance-widget></app-student-attendance-widget>
+      </div>
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+        <app-student-performance-summary></app-student-performance-summary>
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,66 @@
+// File Upload Styles
+.file-upload-container {
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background-color: #fafafa;
+
+  &:hover {
+    border-color: #999;
+  }
+
+  &.drag-over {
+    border-color: #4285f4;
+    background-color: #f0f7ff;
+
+    .upload-text {
+      color: #4285f4;
+    }
+  }
+}
+
+.file-upload-content {
+  .upload-icon {
+    color: #777;
+    margin-bottom: 10px;
+  }
+
+  .upload-text {
+    font-size: 16px;
+    color: #555;
+    margin: 10px 0;
+  }
+
+  .upload-hint {
+    font-size: 12px;
+    color: #999;
+    margin: 0;
+  }
+}
+
+.selected-file {
+  margin-top: 15px;
+  padding: 10px;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .file-icon {
+    margin-right: 8px;
+    color: #4285f4;
+  }
+
+  .file-name {
+    margin-right: 8px;
+  }
+
+  .file-size {
+    color: #777;
+    font-size: 12px;
+  }
+}

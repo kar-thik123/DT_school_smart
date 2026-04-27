@@ -1,0 +1,111 @@
+<div class="addContainer">
+    <div class="modalHeader">
+        <div class="avatarDetails">
+            <div class="modalTitle">
+                {{dialogTitle}}
+            </div>
+        </div>
+        <button mat-icon-button mat-dialog-close class="modal-close-button" aria-label="Close dialog" type="button">
+            <mat-icon>close</mat-icon>
+        </button>
+    </div>
+    <div mat-dialog-content>
+        <form class="register-form m-4" [formGroup]="marksForm" (ngSubmit)="submit()">
+            <div class="row">
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Roll No</mat-label>
+                        <input matInput formControlName="rollNo" required>
+                        <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>badge</mat-icon>
+                        @if (marksForm.get('rollNo')?.hasError('required')) {
+                        <mat-error>
+                            Roll No is required
+                        </mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Student Name</mat-label>
+                        <input matInput formControlName="studentName" required>
+                        <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>person</mat-icon>
+                        @if (marksForm.get('studentName')?.hasError('required')) {
+                        <mat-error>
+                            Student Name is required
+                        </mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Class</mat-label>
+                        <input matInput formControlName="class" required>
+                        <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>school</mat-icon>
+                        @if (marksForm.get('class')?.hasError('required')) {
+                        <mat-error>
+                            Class name required
+                        </mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Subject</mat-label>
+                        <input matInput formControlName="subject" required>
+                        <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>book</mat-icon>
+                        @if (marksForm.get('subject')?.hasError('required')) {
+                        <mat-error>
+                            Subject is required
+                        </mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Marks Obtained</mat-label>
+                        <input matInput type="number" formControlName="marksObtained" required>
+                        @if (marksForm.get('marksObtained')?.hasError('required')) {
+                        <mat-error>
+                            Required
+                        </mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+                <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Max Marks</mat-label>
+                        <input matInput type="number" formControlName="maxMarks" required>
+                        @if (marksForm.get('maxMarks')?.hasError('required')) {
+                        <mat-error>
+                            Required
+                        </mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+                <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Status</mat-label>
+                        <mat-select formControlName="status" required>
+                            <mat-option [value]="'Submitted'">Submitted</mat-option>
+                            <mat-option [value]="'Pending'">Pending</mat-option>
+                            <mat-option [value]="'In Progress'">In Progress</mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+                    <div class="example-button-row">
+                        <button mat-flat-button class="formSubmitBtn" [disabled]="!marksForm.valid"
+                            (click)="submit()">Save</button>
+                        <button mat-flat-button mat-dialog-close class="formCancelBtn" tabindex="-1">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

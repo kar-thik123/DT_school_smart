@@ -1,0 +1,101 @@
+<div class="dialogContainer">
+  <div class="modalHeader">
+    <p class="modalTitle">{{dialogTitle}}</p>
+    <button mat-icon-button (click)="dialogRef.close()" class="modal-close-button" aria-label="Close dialog">
+      <mat-icon class="material-icons-outlined">close</mat-icon>
+    </button>
+  </div>
+  <div mat-dialog-content>
+    <form class="form-field-full m-4" (ngSubmit)="submit()">
+      <div class="row">
+        <div class="col-sm-12">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Title</mat-label>
+            <input matInput [(ngModel)]="calendar.title" name="title" required>
+            <mat-icon class="material-icons-outlined color-icon p-3" matSuffix>turned_in_not</mat-icon>
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-sm-12">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Category</mat-label>
+            <mat-select [(ngModel)]="calendar.category" name="category" required>
+              <mat-option [value]="'work'">Work</mat-option>
+              <mat-option [value]="'personal'">Personal</mat-option>
+              <mat-option [value]="'important'">Important</mat-option>
+              <mat-option [value]="'travel'">Travel</mat-option>
+              <mat-option [value]="'friends'">Friends</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-sm-6">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Start date</mat-label>
+            <input matInput [matDatepicker]="datepicker" [(ngModel)]="eventStartDateTime" name="startdate">
+            <mat-datepicker #datepicker />
+            <mat-datepicker-toggle [for]="datepicker" matSuffix />
+          </mat-form-field>
+        </div>
+        <div class="col-sm-6">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Start time</mat-label>
+            <input matInput [matTimepicker]="timepicker" [(ngModel)]="eventStartDateTime" name="starttime"
+              [ngModelOptions]="{updateOn: 'blur'}">
+            <mat-timepicker #timepicker />
+            <mat-timepicker-toggle [for]="timepicker" matSuffix />
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-sm-6">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>End date</mat-label>
+            <input matInput [matDatepicker]="datepicker2" [(ngModel)]="eventEndDateTime" name="enddate">
+            <mat-datepicker #datepicker2 />
+            <mat-datepicker-toggle [for]="datepicker2" matSuffix />
+          </mat-form-field>
+        </div>
+        <div class="col-sm-6">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>End time</mat-label>
+            <input matInput [matTimepicker]="timepicker1" [(ngModel)]="eventEndDateTime" name="endtime"
+              [ngModelOptions]="{updateOn: 'blur'}">
+            <mat-timepicker #timepicker1 />
+            <mat-timepicker-toggle [for]="timepicker1" matSuffix />
+          </mat-form-field>
+        </div>
+
+      </div>
+      <div class="row">
+        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Event Details</mat-label>
+            <textarea matInput [(ngModel)]="calendar.details" name="details"></textarea>
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xl-10 col-lg-10 col-md-12 col-sm-12">
+          <div class="example-button-row">
+            <button mat-flat-button class="formSubmitBtn"
+              [disabled]="!calendar.title || !calendar.startDate || !calendar.endDate" type="submit">Save</button>
+            <button mat-flat-button mat-dialog-close class="formCancelBtn" tabindex="-1">Cancel</button>
+          </div>
+        </div>
+        @if (showDeleteBtn) {
+        <div class="col-xl-2 col-lg-2 col-md-12 col-sm-12">
+          <div class="example-button-row">
+            <button mat-icon-button aria-label class="col-red" type="button" (click)="deleteEvent()">
+              <mat-icon>delete_outline</mat-icon>
+            </button>
+          </div>
+        </div>
+        }
+      </div>
+    </form>
+  </div>
+</div>

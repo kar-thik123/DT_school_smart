@@ -1,0 +1,69 @@
+<section class="content">
+    <div class="content-block">
+        @for (breadscrum of breadscrums; track breadscrum) {
+        <div class="block-header">
+            <!-- breadcrumb -->
+            <app-breadcrumb [title]="breadscrum.title" [items]="breadscrum.items" [active_item]="breadscrum.active">
+            </app-breadcrumb>
+        </div>
+        }
+        <div class="row clearfix">
+            <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12">
+                <div class="card">
+                    <div class="header">
+                        <h2>Send New Message</h2>
+                    </div>
+                    <div class="body">
+                        <form class="m-4" [formGroup]="messageForm" (ngSubmit)="onSend()">
+                            <div class="row">
+                                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                                    <mat-form-field class="example-full-width" appearance="outline">
+                                        <mat-label>Recipient Type</mat-label>
+                                        <mat-select formControlName="recipientType" required>
+                                            <mat-option value="student">Student</mat-option>
+                                            <mat-option value="parent">Parent</mat-option>
+                                            <mat-option value="staff">Staff</mat-option>
+                                        </mat-select>
+                                    </mat-form-field>
+                                </div>
+                                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                                    <mat-form-field class="example-full-width" appearance="outline">
+                                        <mat-label>Recipient Name</mat-label>
+                                        <input matInput formControlName="recipientName" required>
+                                        <mat-icon class="material-icons-outlined color-icon p-3"
+                                            matSuffix>person</mat-icon>
+                                    </mat-form-field>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+                                    <mat-form-field class="example-full-width" appearance="outline">
+                                        <mat-label>Subject</mat-label>
+                                        <input matInput formControlName="subject" required>
+                                        <mat-icon class="material-icons-outlined color-icon p-3"
+                                            matSuffix>subject</mat-icon>
+                                    </mat-form-field>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+                                    <mat-form-field class="example-full-width" appearance="outline">
+                                        <mat-label>Message Content</mat-label>
+                                        <textarea matInput formControlName="message" rows="5" required></textarea>
+                                    </mat-form-field>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+                                    <button class="btn-space" [disabled]="!messageForm.valid" mat-flat-button
+                                        color="accent">Send Message</button>
+                                    <button type="button" mat-flat-button class="formCancelBtn">Cancel</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

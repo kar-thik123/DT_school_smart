@@ -1,0 +1,102 @@
+<div class="addContainer">
+    <div class="modalHeader">
+        <div class="avatarDetails">
+            <div class="modalTitle">{{dialogTitle}}</div>
+        </div>
+        <button mat-icon-button mat-dialog-close class="modal-close-button" aria-label="Close dialog" type="button">
+            <mat-icon>close</mat-icon>
+        </button>
+    </div>
+    <div mat-dialog-content>
+        <form class="register-form m-4" [formGroup]="systemLogForm" (ngSubmit)="submit()">
+            <div class="row">
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Timestamp</mat-label>
+                        <input matInput formControlName="timestamp" required>
+                        @if (systemLogForm.get('timestamp')?.hasError('required')) {
+                        <mat-error>Timestamp is required</mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>User</mat-label>
+                        <input matInput formControlName="user" required>
+                        @if (systemLogForm.get('user')?.hasError('required')) {
+                        <mat-error>User is required</mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Module</mat-label>
+                        <mat-select formControlName="module" required>
+                            @for (mod of modulesList; track mod) {
+                            <mat-option [value]="mod">{{mod}}</mat-option>
+                            }
+                        </mat-select>
+                        @if (systemLogForm.get('module')?.hasError('required')) {
+                        <mat-error>Module is required</mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Severity</mat-label>
+                        <mat-select formControlName="severity" required>
+                            @for (sev of severitiesList; track sev) {
+                            <mat-option [value]="sev">{{sev}}</mat-option>
+                            }
+                        </mat-select>
+                        @if (systemLogForm.get('severity')?.hasError('required')) {
+                        <mat-error>Severity is required</mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Activity</mat-label>
+                        <textarea matInput formControlName="activity" required></textarea>
+                        @if (systemLogForm.get('activity')?.hasError('required')) {
+                        <mat-error>Activity is required</mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>IP Address</mat-label>
+                        <input matInput formControlName="ipAddress" required>
+                        @if (systemLogForm.get('ipAddress')?.hasError('required')) {
+                        <mat-error>IP Address is required</mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Status</mat-label>
+                        <input matInput formControlName="status" required>
+                        @if (systemLogForm.get('status')?.hasError('required')) {
+                        <mat-error>Status is required</mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+                    <div class="example-button-row">
+                        <button mat-flat-button class="formSubmitBtn" [disabled]="!systemLogForm.valid"
+                            type="submit">Save</button>
+                        <button mat-flat-button mat-dialog-close class="formCancelBtn" tabindex="-1">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

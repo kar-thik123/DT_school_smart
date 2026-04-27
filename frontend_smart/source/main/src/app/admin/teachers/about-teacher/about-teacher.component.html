@@ -1,0 +1,375 @@
+<section class="content">
+  <div class="content-block">
+    @for (breadscrum of breadscrums; track breadscrum) {
+    <div class="block-header">
+      <!-- breadcrumb -->
+      <app-breadcrumb [title]="breadscrum.title" [items]="breadscrum.items" [active_item]="breadscrum.active">
+      </app-breadcrumb>
+    </div>
+    }
+    <!-- Your content goes here  -->
+    <div class="row clearfix">
+      <div class="col-lg-4 col-md-12">
+        <div class="teacher-card">
+          <div class="contact-grid">
+            <div class="profile-header">
+              <div class="user-name">Sarah Smith</div>
+              <div class="name-center">Senior Teacher</div>
+            </div>
+            <img src="assets/images/user/user3.jpg" class="user-img" alt="Teacher profile image">
+            <div class="profile-details">
+              <p class="address">
+                <mat-icon>location_on</mat-icon>
+                456, Estern evenue, Courtage area,
+                <br />New York
+              </p>
+              <div class="phone">
+                <mat-icon>phone</mat-icon>264-625-2583
+              </div>
+              <div class="social-stats">
+                <div class="stat-item">
+                  <h5>564</h5>
+                  <small>Following</small>
+                </div>
+                <div class="stat-item">
+                  <h5>18k</h5>
+                  <small>Followers</small>
+                </div>
+                <div class="stat-item">
+                  <h5>565</h5>
+                  <small>Posts</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="teacher-card">
+          <mat-tab-group mat-align-tabs="start" animationDuration="300ms">
+            <mat-tab>
+              <ng-template mat-tab-label>
+                <mat-icon>person</mat-icon>
+                About
+              </ng-template>
+              <div class="p-4">
+                <p class="bio-text">Hello I am Sarah Smith, a Senior Teacher at XYZ College. I love to work
+                  with all my college staff and senior teachers to create an engaging learning environment.</p>
+                <ul class="list-group list-group-unbordered">
+                  <li class="list-group-item">
+                    <b>Gender </b>
+                    <div class="profile-desc-item float-end">Female</div>
+                  </li>
+                  <li class="list-group-item">
+                    <b>Lectures Taken </b>
+                    <div class="profile-desc-item float-end">11k+</div>
+                  </li>
+                  <li class="list-group-item">
+                    <b>Degree </b>
+                    <div class="profile-desc-item float-end">B.A., M.A., P.H.D.</div>
+                  </li>
+                  <li class="list-group-item">
+                    <b>Designation</b>
+                    <div class="profile-desc-item float-end">Sr. Teacher</div>
+                  </li>
+                </ul>
+              </div>
+            </mat-tab>
+            <mat-tab>
+              <ng-template mat-tab-label>
+                <mat-icon>code</mat-icon>
+                Skills
+              </ng-template>
+              <ul class="list-unstyled p-4">
+                <li>
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span>JAVA</span>
+                    <span>45%</span>
+                  </div>
+                  <div class="progress skill-progress m-b-20">
+                    <div class="progress-bar l-bg-green" role="progressbar" aria-valuenow="45" aria-valuemin="0"
+                      aria-valuemax="100" style="width: 45%"></div>
+                  </div>
+                </li>
+                <li>
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span>PHP</span>
+                    <span>38%</span>
+                  </div>
+                  <div class="progress skill-progress m-b-20">
+                    <div class="progress-bar l-bg-orange" role="progressbar" aria-valuenow="38" aria-valuemin="0"
+                      aria-valuemax="100" style="width: 38%"></div>
+                  </div>
+                </li>
+                <li>
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span>Angular</span>
+                    <span>39%</span>
+                  </div>
+                  <div class="progress skill-progress m-b-20">
+                    <div class="progress-bar l-bg-cyan" role="progressbar" aria-valuenow="39" aria-valuemin="0"
+                      aria-valuemax="100" style="width: 39%"></div>
+                  </div>
+                </li>
+                <li>
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span>JavaScript</span>
+                    <span>70%</span>
+                  </div>
+                  <div class="progress skill-progress m-b-20">
+                    <div class="progress-bar l-bg-purple" role="progressbar" aria-valuenow="70" aria-valuemin="0"
+                      aria-valuemax="100" style="width: 70%"></div>
+                  </div>
+                </li>
+              </ul>
+            </mat-tab>
+          </mat-tab-group>
+        </div>
+      </div>
+      <div class="col-lg-8 col-md-12">
+        <div class="card">
+          <mat-tab-group animationDuration="300ms">
+            <mat-tab>
+              <ng-template mat-tab-label>
+                <mat-icon>face</mat-icon>
+                About Me
+              </ng-template>
+              <div class="col-lg-12 col-md-12 col-sm-12">
+                <div class="card about-me-card">
+                  <div class="header">
+                    <h2><mat-icon>person_outline</mat-icon> <strong>About</strong> Me</h2>
+                  </div>
+                  <div class="body">
+                    <div class="about-me-details">
+                      <div class="detail-item">
+                        <strong>Full Name:</strong>
+                        <span>Sarah Smith</span>
+                      </div>
+                      <div class="detail-item">
+                        <strong>Mobile:</strong>
+                        <span>(123) 456 7890</span>
+                      </div>
+                      <div class="detail-item">
+                        <strong>Email:</strong>
+                        <span>sarah.smith@example.com</span>
+                      </div>
+                      <div class="detail-item">
+                        <strong>Location:</strong>
+                        <span>New York, USA</span>
+                      </div>
+                    </div>
+                    <p class="bio-text">
+                      Completed my graduation in Arts from the well known and renowned institution
+                      of India – SARDAR PATEL ARTS COLLEGE, BARODA in 2000-01, which was affiliated
+                      to M.S. University. I ranked in University exams from the same university
+                      from 1996-01.
+                    </p>
+                    <p class="bio-text">
+                      Worked as Professor and Head of the department at Sarda College, Rajkot,
+                      Gujarat from 2003-2015.
+                    </p>
+                    <p class="bio-text">
+                      I specialize in modern teaching methodologies and have been recognized for innovative
+                      classroom techniques. My research focuses on educational technology integration and
+                      student engagement strategies in higher education.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-12 col-md-12 col-sm-12">
+                <div class="card education-card">
+                  <div class="header">
+                    <h2><mat-icon>school</mat-icon> <strong>Education</strong></h2>
+                  </div>
+                  <div class="body">
+                    <div class="education-item">
+                      <h3>B.A., Gujarat University, Ahmedabad, India</h3>
+                      <p>1996-2000 • Arts and Humanities</p>
+                    </div>
+                    <div class="education-item">
+                      <h3>M.A., Gujarat University, Ahmedabad, India</h3>
+                      <p>2000-2002 • Education Studies</p>
+                    </div>
+                    <div class="education-item">
+                      <h3>P.H.D., Shaurashtra University, Rajkot</h3>
+                      <p>2002-2006 • Educational Psychology</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-12 col-md-12 col-sm-12">
+                <div class="card experience-card">
+                  <div class="header">
+                    <h2><mat-icon>work</mat-icon> <strong>Experience</strong></h2>
+                  </div>
+                  <div class="body">
+                    <div class="experience-item">
+                      <h3>Jr. Teacher at B. J. Arts College, Ahmedabad</h3>
+                      <p>April-2009 to March-2010</p>
+                    </div>
+                    <div class="experience-item">
+                      <h3>Jr. Teacher at V.S. Arts & Commerce College</h3>
+                      <p>April-2008 to April-2011</p>
+                    </div>
+                    <div class="experience-item">
+                      <h3>Associate Professor at XYZ University</h3>
+                      <p>May-2011 to June-2018</p>
+                    </div>
+                    <div class="experience-item">
+                      <h3>Senior Teacher at ABC International School</h3>
+                      <p>July-2018 to Present</p>
+                    </div>
+                    <div class="experience-item">
+                      <h3>Lorem Ipsum is simply dummy text of the printing and typesetting industry.</h3>
+                    </div>
+                    <div class="experience-item">
+                      <h3>Lorem Ipsum is simply dummy text of the printing and typesetting industry.</h3>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </mat-tab>
+            <mat-tab>
+              <ng-template mat-tab-label>
+                <mat-icon>book</mat-icon>
+                Courses & Publications
+              </ng-template>
+              <div class="col-lg-12 col-md-12 col-sm-12">
+                <div class="card courses-publications-card">
+                  <div class="header">
+                    <h2><mat-icon>school</mat-icon> <strong>Courses Taught</strong></h2>
+                  </div>
+                  <div class="body">
+                    <div class="course-item">
+                      <h3>Introduction to Programming (Python)</h3>
+                      <p>Undergraduate level • 3 credits • Fall/Spring semesters</p>
+                    </div>
+                    <div class="course-item">
+                      <h3>Data Structures and Algorithms</h3>
+                      <p>Undergraduate level • 4 credits • Spring semester</p>
+                    </div>
+                    <div class="course-item">
+                      <h3>Web Development (Angular & Node.js)</h3>
+                      <p>Graduate level • 3 credits • Fall semester</p>
+                    </div>
+                    <div class="course-item">
+                      <h3>Database Management Systems</h3>
+                      <p>Undergraduate level • 3 credits • Spring semester</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-12 col-md-12 col-sm-12">
+                <div class="card courses-publications-card">
+                  <div class="header">
+                    <h2><mat-icon>description</mat-icon> <strong>Publications</strong></h2>
+                  </div>
+                  <div class="body">
+                    <div class="publication-item">
+                      <h3>"Advanced Algorithms for Data Analysis" - Journal of Computer Science, 2022</h3>
+                      <p>Co-authored with Dr. James Wilson and Dr. Maria Rodriguez</p>
+                    </div>
+                    <div class="publication-item">
+                      <h3>"Machine Learning Applications in Education" - International Conference on AI, 2023</h3>
+                      <p>Presented at the Annual Conference on Educational Technology</p>
+                    </div>
+                    <div class="publication-item">
+                      <h3>"Optimizing Web Performance with Angular" - Web Development Journal, 2021</h3>
+                      <p>Featured in the special issue on Modern Web Frameworks</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </mat-tab>
+            <mat-tab>
+              <ng-template mat-tab-label>
+                <mat-icon>settings</mat-icon>
+                Settings
+              </ng-template>
+              <div class="card settings-card">
+                <div class="header">
+                  <h2><mat-icon>security</mat-icon> <strong>Security</strong> Settings</h2>
+                </div>
+                <div class="body">
+                  <div class="settings-form-group">
+                    <mat-form-field class="full-width" appearance="outline">
+                      <mat-label>Username</mat-label>
+                      <input matInput value="sarah.smith">
+                      <mat-icon matSuffix>account_circle</mat-icon>
+                    </mat-form-field>
+                    <mat-form-field class="full-width" appearance="outline">
+                      <mat-label>Current Password</mat-label>
+                      <input matInput type="password">
+                      <mat-icon matSuffix>lock</mat-icon>
+                    </mat-form-field>
+                    <mat-form-field class="full-width" appearance="outline">
+                      <mat-label>New Password</mat-label>
+                      <input matInput type="password">
+                      <mat-icon matSuffix>lock_open</mat-icon>
+                    </mat-form-field>
+                    <mat-form-field class="full-width" appearance="outline">
+                      <mat-label>Confirm New Password</mat-label>
+                      <input matInput type="password">
+                      <mat-icon matSuffix>lock_open</mat-icon>
+                    </mat-form-field>
+                  </div>
+                  <div class="d-flex gap-2">
+                    <button mat-flat-button color="primary">Save Changes</button>
+                    <button mat-stroked-button>Cancel</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card settings-card">
+                <div class="header">
+                  <h2><mat-icon>person_outline</mat-icon> <strong>Account</strong> Settings</h2>
+                </div>
+                <div class="body">
+                  <div class="settings-form-grid">
+                    <mat-form-field appearance="outline">
+                      <mat-label>First Name</mat-label>
+                      <input matInput value="Sarah">
+                      <mat-icon matSuffix>person</mat-icon>
+                    </mat-form-field>
+                    <mat-form-field appearance="outline">
+                      <mat-label>Last Name</mat-label>
+                      <input matInput value="Smith">
+                      <mat-icon matSuffix>person</mat-icon>
+                    </mat-form-field>
+                    <mat-form-field appearance="outline">
+                      <mat-label>City</mat-label>
+                      <input matInput value="New York">
+                      <mat-icon matSuffix>location_city</mat-icon>
+                    </mat-form-field>
+                    <mat-form-field appearance="outline">
+                      <mat-label>Email</mat-label>
+                      <input matInput value="sarah.smith@example.com">
+                      <mat-icon matSuffix>email</mat-icon>
+                    </mat-form-field>
+                    <mat-form-field appearance="outline">
+                      <mat-label>Country</mat-label>
+                      <input matInput value="USA">
+                      <mat-icon matSuffix>flag</mat-icon>
+                    </mat-form-field>
+                    <mat-form-field appearance="outline">
+                      <mat-label>Address</mat-label>
+                      <textarea matInput>456, Estern evenue, Courtage area, New York</textarea>
+                      <mat-icon matSuffix>home</mat-icon>
+                    </mat-form-field>
+                  </div>
+                  <div class="settings-checkbox-group">
+                    <mat-checkbox checked>Profile Visibility For Everyone</mat-checkbox>
+                    <mat-checkbox checked>New task notifications</mat-checkbox>
+                    <mat-checkbox>New friend request notifications</mat-checkbox>
+                  </div>
+                  <div class="d-flex gap-2">
+                    <button mat-flat-button color="primary">Save Changes</button>
+                    <button mat-stroked-button>Cancel</button>
+                  </div>
+                </div>
+              </div>
+            </mat-tab>
+          </mat-tab-group>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

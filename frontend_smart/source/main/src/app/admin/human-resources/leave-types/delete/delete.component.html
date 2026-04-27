@@ -1,0 +1,24 @@
+<div class="container">
+  <h3 mat-dialog-title>Are you sure?</h3>
+  <div mat-dialog-content>
+    <ul class="clearfix">
+      <li>
+        <p><span class="font-weight-bold">Leave Name: </span>{{data.leave_name}}</p>
+      </li>
+      <li>
+        <p><span class="font-weight-bold"> Leave Type: </span>{{ data.type }}</p>
+      </li>
+      <li>
+        <p>
+          <span class="font-weight-bold">Leave Unit: </span>{{data.leave_unit}}
+        </p>
+      </li>
+    </ul>
+  </div>
+  <div mat-dialog-actions class="mb-1">
+    <button mat-flat-button class="formCancelBtn" (click)="confirmDelete()">
+      Delete
+    </button>
+    <button mat-flat-button mat-dialog-close color="accent" tabindex="-1">Cancel</button>
+  </div>
+</div>

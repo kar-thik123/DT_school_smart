@@ -1,0 +1,138 @@
+<section class="content">
+  <div class="content-block">
+    <div class="block-header">
+      <app-breadcrumb [title]="breadscrums[0].title" [items]="breadscrums[0].items" [active_item]="breadscrums[0].active">
+      </app-breadcrumb>
+    </div>
+
+    <div class="row">
+      <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+        <div class="card">
+          <div class="materialTableHeader">
+            <div class="left">
+              <ul class="header-buttons-left ms-0">
+                <li class="tbl-title">
+                  <h2>Users List</h2>
+                </li>
+                <li class="tbl-search-box">
+                  <label for="search-input"><i class="material-icons search-icon">search</i></label>
+                  <input id="search-input" placeholder="Search Users" type="text" #filter (keyup)="applyFilter($event)"
+                    class="browser-default search-field" aria-label="Search box">
+                </li>
+              </ul>
+            </div>
+            <div class="right">
+              <div class="right-side-btn">
+                <button mat-icon-button (click)="handleAdd()" class="tbl-header-btn col-green" matTooltip="Add User">
+                  <mat-icon>add_circle_outline</mat-icon>
+                </button>
+                <button mat-icon-button (click)="handleRefresh()" class="tbl-header-btn col-brown" matTooltip="Refresh">
+                  <mat-icon>refresh</mat-icon>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="overflow-auto">
+            <div class="responsive_table">
+              <table mat-table [dataSource]="dataSource" matSort class="mat-cell advance-table">
+                
+                <!-- Name Column -->
+                <ng-container matColumnDef="name">
+                  <mat-header-cell *matHeaderCellDef mat-sort-header>Name</mat-header-cell>
+                  <mat-cell *matCellDef="let row">
+                    <span class="mobile-label">Name:</span>
+                    <img [src]="row.profile_img || 'assets/images/user/new.jpg'" class="table-img" alt="image" />
+                    <span class="truncate-text">{{row.name}}</span>
+                  </mat-cell>
+                </ng-container>
+
+                <!-- Email Column -->
+                <ng-container matColumnDef="email">
+                  <mat-header-cell *matHeaderCellDef mat-sort-header>Email</mat-header-cell>
+                  <mat-cell *matCellDef="let row">
+                    <span class="mobile-label">Email:</span>
+                    <mat-icon class="tbl-icon material-icons-outlined col-red">mail</mat-icon>
+                    <span class="truncate-text">{{row.email}}</span>
+                  </mat-cell>
+                </ng-container>
+
+                <!-- Role Column -->
+                <ng-container matColumnDef="role">
+                  <mat-header-cell *matHeaderCellDef mat-sort-header>Role</mat-header-cell>
+                  <mat-cell *matCellDef="let row">
+                    <span class="mobile-label">Role:</span>
+                    <span class="truncate-text">{{row.role}}</span>
+                  </mat-cell>
+                </ng-container>
+
+                <!-- Last Login Column -->
+                <ng-container matColumnDef="last_login">
+                  <mat-header-cell *matHeaderCellDef mat-sort-header>Last Login</mat-header-cell>
+                  <mat-cell *matCellDef="let row">
+                    <span class="mobile-label">Last Login:</span>
+                    <span class="truncate-text text-muted">{{row.last_login || 'Never'}}</span>
+                  </mat-cell>
+                </ng-container>
+
+                <!-- Status Column -->
+                <ng-container matColumnDef="status">
+                  <mat-header-cell *matHeaderCellDef mat-sort-header>Status</mat-header-cell>
+                  <mat-cell *matCellDef="let row">
+                    <span class="mobile-label">Status:</span>
+                    <span [class]="row.is_active ? 'badge badge-solid-green' : 'badge badge-solid-red'">
+                      {{ row.is_active ? 'Active' : 'Inactive' }}
+                    </span>
+                  </mat-cell>
+                </ng-container>
+
+                <!-- Actions Column -->
+                <ng-container matColumnDef="actions">
+                  <mat-header-cell *matHeaderCellDef>Actions</mat-header-cell>
+                  <mat-cell *matCellDef="let row">
+                    <button mat-icon-button [matMenuTriggerFor]="menu" (click)="$event.stopPropagation()">
+                      <mat-icon>more_vert</mat-icon>
+                    </button>
+                    <mat-menu #menu="matMenu">
+                      <button mat-menu-item (click)="handleEdit(row)">
+                        <mat-icon>edit</mat-icon>
+                        <span>Edit Details</span>
+                      </button>
+                      <button mat-menu-item (click)="handleStatusToggle(row)">
+                        <mat-icon>{{ row.is_active ? 'block' : 'check_circle' }}</mat-icon>
+                        <span>{{ row.is_active ? 'Deactivate' : 'Activate' }}</span>
+                      </button>
+                      <button mat-menu-item (click)="handleResetPassword(row)">
+                        <mat-icon>vpn_key</mat-icon>
+                        <span>Reset Password</span>
+                      </button>
+                      <mat-divider></mat-divider>
+                      <button mat-menu-item color="warn" (click)="handleDelete(row)">
+                        <mat-icon color="warn">delete</mat-icon>
+                        <span class="text-danger">Delete User</span>
+                      </button>
+                    </mat-menu>
+                  </mat-cell>
+                </ng-container>
+
+                <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+                <mat-row *matRowDef="let row; columns: displayedColumns;" (click)="handleEdit(row)" 
+                         [style.cursor]="'pointer'" matRipple></mat-row>
+              </table>
+              
+              <div *ngIf="isLoading" class="tbl-spinner">
+                <mat-progress-spinner color="primary" [diameter]="40" mode="indeterminate">
+                </mat-progress-spinner>
+              </div>
+
+              <div *ngIf="!isLoading && dataSource.data.length === 0" class="no-results">
+                No users found
+              </div>
+
+              <mat-paginator #paginator [pageSizeOptions]="[10, 25, 100]" showFirstLastButtons></mat-paginator>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

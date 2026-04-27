@@ -1,0 +1,91 @@
+<div class="addContainer">
+    <div class="modalHeader">
+        <div class="avatarDetails">
+            <div class="modalTitle">{{dialogTitle}}</div>
+        </div>
+        <button mat-icon-button mat-dialog-close class="modal-close-button" aria-label="Close dialog" type="button">
+            <mat-icon>close</mat-icon>
+        </button>
+    </div>
+    <div mat-dialog-content>
+        <form class="register-form m-4" [formGroup]="backupRestoreForm" (ngSubmit)="submit()">
+            <div class="row">
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Backup Name</mat-label>
+                        <input matInput formControlName="backupName" required>
+                        @if (backupRestoreForm.get('backupName')?.hasError('required')) {
+                        <mat-error>Name is required</mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Triggered By</mat-label>
+                        <input matInput formControlName="triggeredBy" required>
+                        @if (backupRestoreForm.get('triggeredBy')?.hasError('required')) {
+                        <mat-error>Triggered By is required</mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Backup Type</mat-label>
+                        <mat-select formControlName="backupType" required>
+                            @for (type of backupTypesList; track type) {
+                            <mat-option [value]="type">{{type}}</mat-option>
+                            }
+                        </mat-select>
+                        @if (backupRestoreForm.get('backupType')?.hasError('required')) {
+                        <mat-error>Type is required</mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Storage Location</mat-label>
+                        <input matInput formControlName="storageLocation" required>
+                        @if (backupRestoreForm.get('storageLocation')?.hasError('required')) {
+                        <mat-error>Location is required</mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Timestamp</mat-label>
+                        <input matInput formControlName="backupDate" required>
+                        @if (backupRestoreForm.get('backupDate')?.hasError('required')) {
+                        <mat-error>Timestamp is required</mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+                    <mat-form-field class="example-full-width mb-3" appearance="outline">
+                        <mat-label>Status</mat-label>
+                        <mat-select formControlName="status" required>
+                            @for (st of statusesList; track st) {
+                            <mat-option [value]="st">{{st}}</mat-option>
+                            }
+                        </mat-select>
+                        @if (backupRestoreForm.get('status')?.hasError('required')) {
+                        <mat-error>Status is required</mat-error>
+                        }
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+                    <div class="example-button-row">
+                        <button mat-flat-button class="formSubmitBtn" [disabled]="!backupRestoreForm.valid"
+                            type="submit">Save</button>
+                        <button mat-flat-button mat-dialog-close class="formCancelBtn" tabindex="-1">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

@@ -1,0 +1,20 @@
+<section class="content">
+  <div class="content-block">
+    <div class="block-header">
+      <!-- breadcrumb -->
+      <app-breadcrumb [title]="'All Holiday'" [items]="['HR']" [active_item]="'All Holiday'">
+      </app-breadcrumb>
+    </div>
+    <div class="row">
+      <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+        <div class="card">
+          <app-master-table [title]="'All Holidays'" [dataSource]="dataSource" [columnDefinitions]="columnDefinitions"
+            [isLoading]="isLoading" (add)="addNew()" (edit)="editCall($event)" (delete)="deleteItem($event)"
+            (refresh)="refresh()" (bulkDelete)="removeSelectedRows($event)" (export)="exportExcel()" [showExport]="true"
+            [showContextMenu]="true">
+          </app-master-table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

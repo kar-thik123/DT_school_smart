@@ -1,0 +1,23 @@
+<section class="content">
+    <div class="content-block">
+        <div class="block-header">
+            <app-breadcrumb [title]="breadscrums[0].title" [items]="breadscrums[0].items"
+                [active_item]="breadscrums[0].active">
+            </app-breadcrumb>
+        </div>
+        <div class="row">
+            <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                <div class="card">
+                    <div class="materialCard">
+                        <app-master-table [title]="'Assignment'" [columnDefinitions]="columnDefinitions"
+                            [dataSource]="dataSource" [isLoading]="isLoading" [showAdd]="true" [showRefresh]="true"
+                            [showExport]="true" [showDelete]="true" (add)="handleAdd()" (refresh)="handleRefresh()"
+                            (edit)="handleEdit($event)" (delete)="handleDelete($event)"
+                            (bulkDelete)="handleBulkDelete($event)">
+                        </app-master-table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

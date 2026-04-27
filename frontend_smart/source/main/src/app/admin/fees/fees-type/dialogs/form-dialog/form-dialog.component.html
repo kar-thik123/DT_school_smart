@@ -1,0 +1,156 @@
+<div class="addContainer">
+  <div class="modalHeader">
+    <div class="avatarDetails">
+      <div class="modalTitle">
+        {{dialogTitle}}
+      </div>
+    </div>
+    <button mat-icon-button mat-dialog-close class="modal-close-button" aria-label="Close dialog" type="button">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+  <div mat-dialog-content>
+    <form class="fees-type-form m-4" [formGroup]="feesTypeForm" (ngSubmit)="submit()">
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Fee Type Name</mat-label>
+            <mat-select formControlName="feeTypeName" required>
+              <mat-option value="Tuition Fee">Tuition Fee</mat-option>
+              <mat-option value="Transport Fee">Transport Fee</mat-option>
+              <mat-option value="Library Fee">Library Fee</mat-option>
+              <mat-option value="Sports Fee">Sports Fee</mat-option>
+              <mat-option value="Lab Fee">Lab Fee</mat-option>
+              <mat-option value="Examination Fee">Examination Fee</mat-option>
+              <mat-option value="Development Fee">Development Fee</mat-option>
+              <mat-option value="Hostel Fee">Hostel Fee</mat-option>
+              <mat-option value="Maintenance Fee">Maintenance Fee</mat-option>
+              <mat-option value="Cultural Activities Fee">Cultural Activities Fee</mat-option>
+              <mat-option value="Computer Lab Fee">Computer Lab Fee</mat-option>
+              <mat-option value="Workshop Fee">Workshop Fee</mat-option>
+              <mat-option value="Medical Fee">Medical Fee</mat-option>
+              <mat-option value="Uniform Fee">Uniform Fee</mat-option>
+              <mat-option value="Miscellaneous Fee">Miscellaneous Fee</mat-option>
+            </mat-select>
+            @if (feesTypeForm.get('feeTypeName')?.hasError('required')) {
+            <mat-error>
+              Fee type name is required
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Category</mat-label>
+            <mat-select formControlName="category" required>
+              <mat-option value="Academic">Academic</mat-option>
+              <mat-option value="Extracurricular">Extracurricular</mat-option>
+              <mat-option value="Miscellaneous">Miscellaneous</mat-option>
+            </mat-select>
+            @if (feesTypeForm.get('category')?.hasError('required')) {
+            <mat-error>Category is required</mat-error>
+            } @else if (feesTypeForm.get('category')?.hasError('maxlength')) {
+            <mat-error>Category cannot exceed 50 characters</mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Amount</mat-label>
+            <input matInput type="number" formControlName="amount" required min="0" max="100000">
+            @if (feesTypeForm.get('amount')?.hasError('required')) {
+            <mat-error>Amount is required</mat-error>
+            } @else if (feesTypeForm.get('amount')?.hasError('min')) {
+            <mat-error>Amount must be 0 or greater</mat-error>
+            } @else if (feesTypeForm.get('amount')?.hasError('max')) {
+            <mat-error>Amount cannot exceed 100,000</mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Frequency</mat-label>
+            <mat-select formControlName="frequency" required>
+              <mat-option value="Monthly">Monthly</mat-option>
+              <mat-option value="Quarterly">Quarterly</mat-option>
+              <mat-option value="Annually">Annually</mat-option>
+              <mat-option value="Per Event">Per Event</mat-option>
+              <mat-option value="One-time">One-time</mat-option>
+            </mat-select>
+            @if (feesTypeForm.get('frequency')?.hasError('required')) {
+            <mat-error>Frequency is required</mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Status</mat-label>
+            <mat-select formControlName="status" required>
+              <mat-option value="Active">Active</mat-option>
+              <mat-option value="Inactive">Inactive</mat-option>
+            </mat-select>
+            @if (feesTypeForm.get('status')?.hasError('required')) {
+            <mat-error>Status is required</mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Created By</mat-label>
+            <input matInput formControlName="createdBy" maxlength="100">
+            @if (feesTypeForm.get('createdBy')?.hasError('maxlength')) {
+            <mat-error>Created by cannot exceed 100 characters</mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Applicable Classes</mat-label>
+            <input matInput formControlName="applicableClasses" maxlength="200">
+            @if (feesTypeForm.get('applicableClasses')?.hasError('maxlength')) {
+            <mat-error>Applicable classes cannot exceed 200 characters</mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Created Date</mat-label>
+            <input matInput [matDatepicker]="createdDatePicker" formControlName="createdDate">
+            <mat-datepicker-toggle matSuffix [for]="createdDatePicker"></mat-datepicker-toggle>
+            <mat-datepicker #createdDatePicker></mat-datepicker>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width mb-3" appearance="outline">
+            <mat-label>Description</mat-label>
+            <textarea matInput formControlName="description" rows="3" maxlength="500"></textarea>
+            @if (feesTypeForm.get('description')?.hasError('maxlength')) {
+            <mat-error>Description cannot exceed 500 characters</mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
+          <div class="example-button-row">
+            <button mat-flat-button class="formSubmitBtn" [disabled]="!feesTypeForm.valid" type="submit">Save</button>
+            <button mat-flat-button mat-dialog-close class="formCancelBtn" tabindex="-1">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
