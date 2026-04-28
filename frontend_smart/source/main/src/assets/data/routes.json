@@ -133,55 +133,6 @@
         }
       ]
     },
-    {
-      "path": "",
-      "title": "Administration",
-      "iconType": "material-icons-outlined",
-      "icon": "settings",
-      "class": "menu-toggle",
-      "groupTitle": false,
-      "badge": "",
-      "badgeClass": "",
-      "role": ["ADMIN"],
-      "submenu": [
-        {
-          "path": "/admin/administration/users",
-          "title": "Users Management",
-          "iconType": "",
-          "icon": "",
-          "class": "ml-menu",
-          "groupTitle": false,
-          "badge": "",
-          "badgeClass": "",
-          "role": [""],
-          "submenu": []
-        },
-        {
-          "path": "/admin/administration/roles",
-          "title": "Roles & Permissions",
-          "iconType": "",
-          "icon": "",
-          "class": "ml-menu",
-          "groupTitle": false,
-          "badge": "",
-          "badgeClass": "",
-          "role": [""],
-          "submenu": []
-        },
-        {
-          "path": "/admin/administration/master-config",
-          "title": "Master Configuration",
-          "iconType": "",
-          "icon": "",
-          "class": "ml-menu",
-          "groupTitle": false,
-          "badge": "",
-          "badgeClass": "",
-          "role": [""],
-          "submenu": []
-        }
-      ]
-    },
 
     {
       "path": "",
@@ -1534,7 +1485,7 @@
       "role": ["ADMIN", "SUPER_ADMIN", "MANAGEMENT"],
       "submenu": [
         {
-          "path": "/admin/users",
+          "path": "/admin/administration/users",
           "title": "MENUITEMS.ADMINISTRATION.LIST.USERS",
           "iconType": "",
           "icon": "",
@@ -1546,7 +1497,7 @@
           "submenu": []
         },
         {
-          "path": "/admin/roles",
+          "path": "/admin/administration/roles",
           "title": "MENUITEMS.ADMINISTRATION.LIST.ROLES",
           "iconType": "",
           "icon": "",
@@ -1558,8 +1509,20 @@
           "submenu": []
         },
         {
-          "path": "/admin/master-config",
+          "path": "/admin/administration/master-config",
           "title": "MENUITEMS.ADMINISTRATION.LIST.MASTER-CONFIG",
+          "iconType": "",
+          "icon": "",
+          "class": "ml-menu",
+          "groupTitle": false,
+          "badge": "",
+          "badgeClass": "",
+          "role": [""],
+          "submenu": []
+        },
+        {
+          "path": "/admin/administration/academic-structure",
+          "title": "MENUITEMS.ADMINISTRATION.LIST.ACADEMIC-STRUCTURE",
           "iconType": "",
           "icon": "",
           "class": "ml-menu",

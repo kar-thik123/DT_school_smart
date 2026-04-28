@@ -82,8 +82,8 @@ export const requirePermission = (module: string, action: string) => {
     const userPermissions = req.user?.permissions || [];
     const requiredPermission = `${module}:${action}`;
     
-    // Only SYSTEM_ADMIN bypasses strict permission checks
-    if (req.user?.role === 'SYSTEM_ADMIN' || userPermissions.includes(requiredPermission)) {
+    // SYSTEM_ADMIN bypasses globally, SUPER_ADMIN bypasses within their tenant (tenant isolation applied upstream)
+    if (req.user?.role === 'SYSTEM_ADMIN' || req.user?.role === 'SUPER_ADMIN' || userPermissions.includes(requiredPermission)) {
       return next();
     }
     

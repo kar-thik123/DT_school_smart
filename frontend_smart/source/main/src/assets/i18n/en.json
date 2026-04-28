@@ -152,7 +152,8 @@
       "LIST": {
         "USERS": "Users",
         "ROLES": "Roles & Permissions",
-        "MASTER-CONFIG": "Master Configuration"
+        "MASTER-CONFIG": "Master Configuration",
+        "ACADEMIC-STRUCTURE": "Academic Structure"
       }
     },
     "FEES": {

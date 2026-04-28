@@ -43,7 +43,7 @@ async function main() {
   if (managementRole) {
     const mgmtPerms = await prisma.permission.findMany({
       where: {
-        module: { in: ['USERS', 'ACADEMIC', 'TEACHER_ASSIGNMENT', 'ANALYTICS'] }
+        module: { in: ['USERS', 'ACADEMIC', 'ACADEMIC_STRUCTURE', 'TEACHER_ASSIGNMENT', 'ANALYTICS'] }
       }
     });
     

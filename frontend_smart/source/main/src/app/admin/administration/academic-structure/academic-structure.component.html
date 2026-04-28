@@ -1,0 +1,244 @@
+<section class="content">
+  <div class="content-block">
+    <div class="block-header d-flex justify-content-between align-items-center">
+      <app-breadcrumb [title]="breadscrums[0].title" [items]="breadscrums[0].items" [active_item]="breadscrums[0].active">
+      </app-breadcrumb>
+      
+      <!-- Option B: Quick Setup Wizard Launch Action -->
+      <button mat-raised-button color="accent" (click)="openBulkSetupWizard()">
+        <mat-icon class="me-2">auto_fix_high</mat-icon> Quick Setup Wizard
+      </button>
+    </div>
+
+    <div *ngIf="isLoading" class="p-5 text-center">
+      <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+      <p class="mt-2 text-muted">Loading academic structure...</p>
+    </div>
+
+    <div class="row" *ngIf="!isLoading">
+      <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12">
+        <mat-tab-group animationDuration="0ms">
+          
+          <!-- Tab 1: Grades & Sections -->
+          <mat-tab>
+            <ng-template mat-tab-label>
+              <mat-icon class="me-2">account_tree</mat-icon>
+              Grades & Sections
+            </ng-template>
+            <div class="p-4">
+              <div class="row">
+                
+                <!-- Grades List (Draggable) -->
+                <div class="col-md-4">
+                  <mat-card class="h-100">
+                    <div class="card-header p-3 d-flex justify-content-between align-items-center">
+                      <h3 class="mb-0">Grades</h3>
+                    </div>
+                    <div class="px-3 pb-2 d-flex">
+                      <mat-form-field class="w-100" appearance="outline">
+                        <mat-label>Quick Add Grade</mat-label>
+                        <input matInput #newGrade placeholder="e.g. Grade 1">
+                      </mat-form-field>
+                      <button mat-icon-button color="primary" class="mt-2" (click)="addGrade(newGrade.value); newGrade.value=''">
+                        <mat-icon>add_circle</mat-icon>
+                      </button>
+                    </div>
+                    <mat-divider></mat-divider>
+                    
+                    <div class="card-body p-0" cdkDropList (cdkDropListDropped)="dropGrade($event)">
+                      <div class="list-group list-group-flush">
+                        <div *ngFor="let grade of grades" 
+                             cdkDrag
+                             class="list-group-item list-group-item-action d-flex justify-content-between align-items-center cursor-pointer transition"
+                             [class.active]="selectedGrade?.id === grade.id"
+                             [class.bg-light]="!grade.is_active"
+                             (click)="selectGrade(grade)">
+                             
+                          <div class="d-flex align-items-center">
+                            <mat-icon cdkDragHandle class="cursor-move text-muted me-2" style="font-size: 18px; width: 18px; height: 18px;">drag_indicator</mat-icon>
+                            <span [class.text-decoration-line-through]="!grade.is_active">{{ grade.name }}</span>
+                            <span *ngIf="!grade.is_active" class="badge bg-secondary ms-2" style="font-size: 0.65em;">Archived</span>
+                          </div>
+                          
+                          <button mat-icon-button [matMenuTriggerFor]="gradeMenu" (click)="$event.stopPropagation()">
+                            <mat-icon>more_vert</mat-icon>
+                          </button>
+                          <mat-menu #gradeMenu="matMenu">
+                            <button mat-menu-item (click)="toggleGradeStatus(grade)">
+                              <mat-icon>{{ grade.is_active ? 'archive' : 'unarchive' }}</mat-icon>
+                              <span>{{ grade.is_active ? 'Archive' : 'Activate' }}</span>
+                            </button>
+                            <button mat-menu-item class="text-danger" (click)="deleteGrade(grade)">
+                              <mat-icon class="text-danger">delete</mat-icon>
+                              <span>Delete</span>
+                            </button>
+                          </mat-menu>
+                        </div>
+                        <div *ngIf="grades.length === 0" class="p-4 text-center text-muted">
+                          No grades found.
+                        </div>
+                      </div>
+                    </div>
+                  </mat-card>
+                </div>
+
+                <!-- Sections List for Selected Grade (Draggable) -->
+                <div class="col-md-8">
+                  <mat-card class="h-100" *ngIf="selectedGrade">
+                    <div class="card-header p-3 d-flex justify-content-between align-items-center">
+                      <h3 class="mb-0">Sections for <span class="text-primary">{{ selectedGrade.name }}</span></h3>
+                    </div>
+                    <div class="px-3 pb-2 d-flex">
+                      <mat-form-field class="w-100" appearance="outline">
+                        <mat-label>Quick Add Section</mat-label>
+                        <input matInput #newSection placeholder="e.g. A">
+                      </mat-form-field>
+                      <button mat-icon-button color="primary" class="mt-2" (click)="addSection(newSection.value); newSection.value=''">
+                        <mat-icon>add_circle</mat-icon>
+                      </button>
+                    </div>
+                    <mat-divider></mat-divider>
+                    
+                    <div class="card-body p-0" cdkDropList (cdkDropListDropped)="dropSection($event)">
+                      <table class="table mb-0 table-hover">
+                        <thead>
+                          <tr>
+                            <th width="40"></th>
+                            <th>Section Name</th>
+                            <th>Status</th>
+                            <th class="text-end">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr *ngFor="let section of sectionsForSelectedGrade" cdkDrag [class.bg-light]="!section.is_active">
+                            <td class="align-middle">
+                              <mat-icon cdkDragHandle class="cursor-move text-muted mt-1" style="font-size: 18px; width: 18px; height: 18px;">drag_indicator</mat-icon>
+                            </td>
+                            <td class="align-middle" [class.text-decoration-line-through]="!section.is_active">{{ section.name }}</td>
+                            <td class="align-middle">
+                              <span [class]="section.is_active ? 'badge badge-solid-green' : 'badge badge-solid-red'">
+                                {{ section.is_active ? 'Active' : 'Archived' }}
+                              </span>
+                            </td>
+                            <td class="text-end align-middle">
+                              <button mat-icon-button [matMenuTriggerFor]="sectionMenu">
+                                <mat-icon>more_vert</mat-icon>
+                              </button>
+                              <mat-menu #sectionMenu="matMenu">
+                                <button mat-menu-item (click)="toggleSectionStatus(section)">
+                                  <mat-icon>{{ section.is_active ? 'archive' : 'unarchive' }}</mat-icon>
+                                  <span>{{ section.is_active ? 'Archive' : 'Activate' }}</span>
+                                </button>
+                                <button mat-menu-item class="text-danger" (click)="deleteSection(section)">
+                                  <mat-icon class="text-danger">delete</mat-icon>
+                                  <span>Delete</span>
+                                </button>
+                              </mat-menu>
+                            </td>
+                          </tr>
+                          <tr *ngIf="sectionsForSelectedGrade.length === 0">
+                            <td colspan="4" class="text-center p-4 text-muted">No sections found for this grade.</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </mat-card>
+                  <div *ngIf="!selectedGrade" class="d-flex align-items-center justify-content-center h-100 text-muted p-5 bg-white border rounded">
+                    Select a grade to view its sections.
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </mat-tab>
+
+          <!-- Tab 2: Subjects -->
+          <mat-tab>
+            <ng-template mat-tab-label>
+              <mat-icon class="me-2">menu_book</mat-icon>
+              Subjects
+            </ng-template>
+            <div class="p-4">
+              <mat-card>
+                <div class="card-header p-3">
+                  <div class="row align-items-center">
+                    <div class="col-md-4">
+                      <mat-form-field appearance="outline" class="w-100 mb-0">
+                        <mat-label>Filter by Grade</mat-label>
+                        <mat-select [(ngModel)]="subjectFilterGradeId" (selectionChange)="loadSubjects()">
+                          <mat-option *ngFor="let grade of grades" [value]="grade.id">{{ grade.name }}</mat-option>
+                        </mat-select>
+                      </mat-form-field>
+                    </div>
+                    <div class="col-md-8 text-end" *ngIf="subjectFilterGradeId">
+                      <div class="d-flex justify-content-end align-items-center">
+                         <mat-form-field appearance="outline" class="mb-0 me-2" style="max-width: 300px;">
+                            <mat-label>Quick Add Subject</mat-label>
+                            <input matInput #newSubject placeholder="e.g. Mathematics">
+                         </mat-form-field>
+                         <button mat-raised-button color="primary" (click)="addSubject(newSubject.value); newSubject.value=''">
+                            Add
+                         </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="card-body p-0" *ngIf="subjectFilterGradeId">
+                  <div cdkDropList (cdkDropListDropped)="dropSubject($event)">
+                    <table class="table mb-0 table-hover">
+                      <thead>
+                        <tr>
+                          <th width="40"></th>
+                          <th>Subject Name</th>
+                          <th>Status</th>
+                          <th class="text-end">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let subject of subjects" cdkDrag [class.bg-light]="!subject.is_active">
+                          <td class="align-middle">
+                            <mat-icon cdkDragHandle class="cursor-move text-muted mt-1" style="font-size: 18px; width: 18px; height: 18px;">drag_indicator</mat-icon>
+                          </td>
+                          <td class="align-middle" [class.text-decoration-line-through]="!subject.is_active">{{ subject.name }}</td>
+                          <td class="align-middle">
+                            <span [class]="subject.is_active ? 'badge badge-solid-green' : 'badge badge-solid-red'">
+                              {{ subject.is_active ? 'Active' : 'Archived' }}
+                            </span>
+                          </td>
+                          <td class="text-end align-middle">
+                            <button mat-icon-button [matMenuTriggerFor]="subMenu">
+                              <mat-icon>more_vert</mat-icon>
+                            </button>
+                            <mat-menu #subMenu="matMenu">
+                              <button mat-menu-item (click)="toggleSubjectStatus(subject)">
+                                <mat-icon>{{ subject.is_active ? 'archive' : 'unarchive' }}</mat-icon>
+                                <span>{{ subject.is_active ? 'Archive' : 'Activate' }}</span>
+                              </button>
+                              <button mat-menu-item class="text-danger" (click)="deleteSubject(subject)">
+                                <mat-icon class="text-danger">delete</mat-icon>
+                                <span>Delete</span>
+                              </button>
+                            </mat-menu>
+                          </td>
+                        </tr>
+                        <tr *ngIf="subjects.length === 0">
+                          <td colspan="4" class="text-center p-4 text-muted">No subjects found for this grade.</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                <div *ngIf="!subjectFilterGradeId" class="p-5 text-center text-muted">
+                  <mat-icon class="display-4 text-light mb-3">filter_alt</mat-icon>
+                  <p>Please select a Grade to manage its Subjects.</p>
+                </div>
+              </mat-card>
+            </div>
+          </mat-tab>
+
+        </mat-tab-group>
+      </div>
+    </div>
+  </div>
+</section>

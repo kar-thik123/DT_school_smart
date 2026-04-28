@@ -12,7 +12,11 @@ const createCrudHandlers = (modelName: string, prismaModel: any) => {
   // Read
   modelRouter.get('/', requirePermission('ACADEMIC_STRUCTURE', 'READ'), async (req: any, res: Response) => {
     try {
-      const data = await prismaModel.findMany({ where: { organization_id: req.user.organization_id } });
+      const hasSortOrder = ['Section', 'Unit', 'Topic'].includes(modelName);
+      const data = await prismaModel.findMany({ 
+        where: { organization_id: req.user.organization_id },
+        ...(hasSortOrder ? { orderBy: { sort_order: 'asc' } } : {})
+      });
       res.json(data);
     } catch (error) {
       res.status(500).json({ message: `Error fetching ${modelName}` });
@@ -79,6 +83,40 @@ router.use('/mediums', createCrudHandlers('Medium', prisma.medium));
 router.use('/organization-types', createCrudHandlers('OrganizationType', prisma.organizationType));
 router.use('/academic-years', createCrudHandlers('AcademicYear', prisma.academicYear));
 
+// ── Generic Reorder Endpoint ────────────────────────────────────────────────
+router.put('/reorder/:model', requirePermission('ACADEMIC_STRUCTURE', 'EDIT'), async (req: any, res: Response) => {
+  try {
+    const { model } = req.params;
+    const { items } = req.body; // Array of { id, sort_order }
+
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ message: 'Invalid payload: items array required' });
+    }
+
+    const validModels: Record<string, any> = {
+      grades: prisma.grade,
+      sections: prisma.section,
+      subjects: prisma.subject
+    };
+
+    const prismaModel = validModels[model.toLowerCase()];
+    if (!prismaModel) return res.status(400).json({ message: 'Invalid model for reordering' });
+
+    await prisma.$transaction(
+      items.map((item: any) => 
+        prismaModel.update({
+          where: { id: item.id },
+          data: { sort_order: item.sort_order }
+        })
+      )
+    );
+
+    res.json({ message: 'Reordered successfully' });
+  } catch (error: any) {
+    res.status(400).json({ message: 'Error reordering items', error: error.message });
+  }
+});
+
 // ── Grades: custom handler — auto-resolves academic_year_id ──────────────────
 const gradeRouter = Router();
 
@@ -86,7 +124,8 @@ gradeRouter.get('/', requirePermission('ACADEMIC_STRUCTURE', 'READ'), async (req
   try {
     const data = await prisma.grade.findMany({
       where: { organization_id: req.user.organization_id },
-      include: { academic_year: true }
+      include: { academic_year: true },
+      orderBy: { sort_order: 'asc' }
     });
     res.json(data);
   } catch (error) {
@@ -100,7 +139,8 @@ gradeRouter.get('/assigned', async (req: any, res: Response) => {
     if (isGlobalAdmin) {
       const data = await prisma.grade.findMany({
         where: { organization_id: req.user.organization_id },
-        include: { academic_year: true }
+        include: { academic_year: true },
+        orderBy: { sort_order: 'asc' }
       });
       return res.json(data);
     }
@@ -315,7 +355,8 @@ subjectRouter.get('/', requirePermission('ACADEMIC_STRUCTURE', 'READ'), async (r
             }
           }
         }
-      }
+      },
+      orderBy: { sort_order: 'asc' }
     });
 
     const mappedData = data.map((sub: any) => {

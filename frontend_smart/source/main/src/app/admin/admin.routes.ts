@@ -139,6 +139,13 @@ export const ADMIN_ROUTE: Route[] = [
             (m) => m.MasterConfigComponent
           ),
       },
+      {
+        path: 'academic-structure',
+        loadComponent: () =>
+          import('./administration/academic-structure/academic-structure.component').then(
+            (m) => m.AcademicStructureComponent
+          ),
+      },
     ]
   },
 

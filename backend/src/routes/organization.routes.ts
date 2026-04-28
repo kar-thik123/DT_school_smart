@@ -37,9 +37,6 @@ router.get('/debug-db', async (req, res) => {
   res.json({ orgs });
 });
 
-router.use(authMiddleware);
-router.use(authorizeRoles('SYSTEM_ADMIN'));
-
 // 1. Check Subdomain Availability
 router.get('/check-subdomain', async (req, res) => {
   const { q } = req.query;
@@ -96,6 +93,10 @@ router.get('/me/profile', authMiddleware, async (req: any, res: Response) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+
+router.use(authMiddleware);
+router.use(authorizeRoles('SYSTEM_ADMIN'));
+
 
 // 4. Get Platform Statistics
 router.get('/stats', async (req, res) => {
