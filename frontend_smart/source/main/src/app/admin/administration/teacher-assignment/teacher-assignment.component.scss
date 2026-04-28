@@ -1,0 +1,13 @@
+.custom-table {
+  min-width: 600px;
+  
+  th {
+    background-color: #f8f9fa;
+    padding: 15px !important;
+    font-weight: 600;
+  }
+  td {
+    padding: 15px !important;
+    vertical-align: middle;
+  }
+}

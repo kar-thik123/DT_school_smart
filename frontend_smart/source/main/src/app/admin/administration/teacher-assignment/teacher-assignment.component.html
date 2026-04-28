@@ -1,0 +1,170 @@
+<section class="content">
+  <div class="content-block">
+    <div class="block-header">
+      <app-breadcrumb [title]="breadscrums[0].title" [items]="breadscrums[0].items" [active_item]="breadscrums[0].active"></app-breadcrumb>
+    </div>
+
+    <!-- Active Academic Year Banner -->
+    <div class="row">
+      <div class="col-12">
+        <div class="alert alert-info d-flex align-items-center" *ngIf="activeAcademicYear">
+          <mat-icon class="me-2">calendar_today</mat-icon>
+          <strong>Active Academic Year:</strong> &nbsp; {{ activeAcademicYear.academicYear }}
+          <span class="ms-auto small">Assignments are scoped to this academic year</span>
+        </div>
+        <div class="alert alert-danger d-flex align-items-center" *ngIf="!activeAcademicYear">
+          <mat-icon class="me-2">warning</mat-icon>
+          <strong>Warning: No Active Academic Year Configured.</strong> &nbsp; Please set an active academic year in settings before proceeding.
+          <span class="ms-auto small">Assignments cannot be saved</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Header Filters (Section Centric) -->
+    <div class="row">
+      <div class="col-12">
+        <div class="card card-box">
+          <div class="body pb-0">
+            <div class="row align-items-center">
+              <div class="col-xl-4 col-lg-4 col-md-6 col-sm-12 mb-3">
+                <mat-form-field appearance="outline" class="w-100 mb-0">
+                  <mat-label>Grade</mat-label>
+                  <mat-select [(ngModel)]="selectedGradeId" (selectionChange)="onGradeChange()">
+                    <mat-option *ngFor="let grade of grades" [value]="grade.id">{{ grade.name }}</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+              <div class="col-xl-4 col-lg-4 col-md-6 col-sm-12 mb-3">
+                <mat-form-field appearance="outline" class="w-100 mb-0">
+                  <mat-label>Section</mat-label>
+                  <mat-select [(ngModel)]="selectedSectionId" (selectionChange)="onSectionChange()" [disabled]="!selectedGradeId">
+                    <mat-option *ngFor="let sec of filteredSections" [value]="sec.id">{{ sec.name }}</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content Tabs -->
+    <div class="row" *ngIf="selectedGradeId && selectedSectionId">
+      <div class="col-12">
+        <div class="card card-box">
+          <div class="body p-0">
+            <mat-tab-group animationDuration="0ms">
+              
+              <!-- Tab 1: Class Teachers -->
+              <mat-tab>
+                <ng-template mat-tab-label>
+                  <mat-icon class="me-2">person</mat-icon>
+                  Class Teacher
+                </ng-template>
+
+                <div class="p-4">
+                  <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                      <h4 class="mb-1">Primary Class Teacher</h4>
+                      <p class="text-muted mb-0">Select the primary instructor responsible for this section.</p>
+                    </div>
+                  </div>
+
+                  <div class="row">
+                    <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+                      <div class="d-flex align-items-center">
+                        <mat-form-field appearance="outline" class="w-100">
+                          <mat-label>Assign Class Teacher</mat-label>
+                          <mat-select [(ngModel)]="currentClassTeacherId">
+                            <mat-option [value]="null">-- No Class Teacher --</mat-option>
+                            <mat-option *ngFor="let t of teachers" [value]="t.id">{{ t.name }}</mat-option>
+                          </mat-select>
+                        </mat-form-field>
+                        <button mat-raised-button color="primary" class="ms-3 mb-4" [disabled]="isSaving || !activeAcademicYear" (click)="saveClassTeacher()">
+                          <mat-icon class="me-1">save</mat-icon> Save
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </mat-tab>
+
+              <!-- Tab 2: Subject Teachers -->
+              <mat-tab>
+                <ng-template mat-tab-label>
+                  <mat-icon class="me-2">local_library</mat-icon>
+                  Subject Teachers
+                </ng-template>
+
+                <div class="p-4">
+                  <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                      <h4 class="mb-1">Subject Instructors</h4>
+                      <p class="text-muted mb-0">Map instructional staff to the subjects taught in this section.</p>
+                    </div>
+                    <button mat-raised-button color="primary" (click)="saveSubjectTeachers()" [disabled]="isSaving || sectionSubjects.length === 0 || !activeAcademicYear">
+                      <mat-icon class="me-1">save</mat-icon> Save All Mappings
+                    </button>
+                  </div>
+
+                  <div *ngIf="isLoadingSubjects" class="text-center p-4">
+                    <mat-spinner diameter="40" class="mx-auto"></mat-spinner>
+                  </div>
+
+                  <div *ngIf="!isLoadingSubjects && sectionSubjects.length === 0" class="alert alert-warning">
+                    No subjects are mapped to this Grade/Section/Group yet. Please configure the Academic Structure first.
+                  </div>
+
+                  <div class="table-responsive" *ngIf="!isLoadingSubjects && sectionSubjects.length > 0">
+                    <table class="table table-hover align-middle custom-table">
+                      <thead>
+                        <tr>
+                          <th width="30%">Subject Name</th>
+                          <th width="20%">Subject Type</th>
+                          <th width="50%">Assigned Teacher</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let sub of sectionSubjects">
+                          <td><strong>{{ sub.subject.name }}</strong></td>
+                          <td>
+                            <span class="badge" [ngClass]="sub.is_elective ? 'badge-solid-orange' : 'badge-solid-blue'">
+                              {{ sub.is_elective ? 'Elective' : 'Core' }}
+                            </span>
+                          </td>
+                          <td>
+                            <mat-form-field appearance="outline" class="w-100 mb-0">
+                              <mat-label>Select Teacher</mat-label>
+                              <mat-select [(ngModel)]="subjectTeacherMap[sub.subject.id]">
+                                <mat-option [value]="null">-- Unassigned --</mat-option>
+                                <mat-option *ngFor="let t of teachers" [value]="t.id">{{ t.name }}</mat-option>
+                              </mat-select>
+                            </mat-form-field>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                </div>
+              </mat-tab>
+
+            </mat-tab-group>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Empty State when Grade/Section not selected -->
+    <div class="row" *ngIf="!selectedGradeId || !selectedSectionId">
+      <div class="col-12">
+        <div class="card card-box py-5 text-center">
+          <mat-icon class="display-1 text-light mb-4" style="font-size: 64px; height: 64px; width: 64px;">assignment_ind</mat-icon>
+          <h3>Select Grade & Section</h3>
+          <p class="text-muted">Please select a Grade and Section above to manage teacher assignments.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>

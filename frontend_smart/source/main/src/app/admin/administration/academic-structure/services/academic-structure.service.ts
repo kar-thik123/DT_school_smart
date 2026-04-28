@@ -31,6 +31,20 @@ export interface ISubject {
   section_ids?: string[];
 }
 
+export interface ISubjectGroupSubject {
+  id: string;
+  name: string;
+  subject_type: 'MANDATORY' | 'OPTIONAL' | 'ELECTIVE';
+}
+
+export interface ISubjectGroup {
+  id: string;
+  name: string;
+  grade_id: string;
+  section_id: string;
+  subjects: ISubjectGroupSubject[];
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -101,5 +115,25 @@ export class AcademicStructureService {
 
   bulkSetup(payload: any): Observable<any> {
     return this.http.post(`${this.API_URL}/bulk-setup`, payload);
+  }
+
+  // --- Subject Groups / Streams ---
+  getSubjectGroups(grade_id?: string, section_id?: string, exclude_default: boolean = true): Observable<ISubjectGroup[]> {
+    let url = `${this.API_URL}/subject-groups?exclude_default=${exclude_default}`;
+    if (grade_id) url += `&grade_id=${grade_id}`;
+    if (section_id) url += `&section_id=${section_id}`;
+    return this.http.get<ISubjectGroup[]>(url);
+  }
+
+  createSubjectGroup(payload: { name: string; grade_id: string; section_id: string; subjects: { subject_id: string; subject_type: string }[] }): Observable<any> {
+    return this.http.post(`${this.API_URL}/subject-groups`, payload);
+  }
+
+  updateSubjectGroup(id: string, payload: { name?: string; subjects?: { subject_id: string; subject_type: string }[] }): Observable<any> {
+    return this.http.put(`${this.API_URL}/subject-groups/${id}`, payload);
+  }
+
+  deleteSubjectGroup(id: string): Observable<any> {
+    return this.http.delete(`${this.API_URL}/subject-groups/${id}`);
   }
 }

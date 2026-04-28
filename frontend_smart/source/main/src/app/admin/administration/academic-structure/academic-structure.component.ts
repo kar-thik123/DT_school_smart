@@ -57,6 +57,12 @@ export class AcademicStructureComponent implements OnInit {
   subjectFilterGradeId: string = '';
   subjects: ISubject[] = [];
 
+  // Groups / Streams
+  groupFilterGradeId: string = '';
+  groupFilterSectionId: string = '';
+  groupsForSelectedSection: import('./services/academic-structure.service').ISubjectGroup[] = [];
+  sectionsForGroupFilter: ISection[] = [];
+
   ngOnInit() {
     this.loadInitialData();
   }
@@ -234,6 +240,77 @@ export class AcademicStructureComponent implements OnInit {
     moveItemInArray(this.subjects, event.previousIndex, event.currentIndex);
     const updates = this.subjects.map((s, index) => ({ id: s.id, sort_order: index }));
     this.academicService.reorderItems('subjects', updates).subscribe();
+  }
+
+  // --- Groups / Streams Actions ---
+  getSubjectCount(group: import('./services/academic-structure.service').ISubjectGroup, type: string): number {
+    return group.subjects.filter(s => s.subject_type === type).length;
+  }
+
+  onGroupGradeChange() {
+    this.groupFilterSectionId = '';
+    this.groupsForSelectedSection = [];
+    if (!this.groupFilterGradeId) {
+      this.sectionsForGroupFilter = [];
+      return;
+    }
+    this.academicService.getSections().subscribe(sections => {
+      this.sectionsForGroupFilter = sections.filter(s => s.grade_id === this.groupFilterGradeId);
+    });
+  }
+
+  loadGroups() {
+    if (!this.groupFilterGradeId || !this.groupFilterSectionId) {
+      this.groupsForSelectedSection = [];
+      return;
+    }
+    this.academicService.getSubjectGroups(this.groupFilterGradeId, this.groupFilterSectionId).subscribe({
+      next: (groups) => this.groupsForSelectedSection = groups,
+      error: () => this.showNotification('error', 'Failed to load Groups / Streams')
+    });
+  }
+
+  addGroup(name: string) {
+    if (!name.trim() || !this.groupFilterGradeId || !this.groupFilterSectionId) return;
+    this.academicService.createSubjectGroup({
+      name,
+      grade_id: this.groupFilterGradeId,
+      section_id: this.groupFilterSectionId,
+      subjects: []
+    }).subscribe({
+      next: () => {
+        this.showNotification('success', 'Group created successfully');
+        this.loadGroups();
+      },
+      error: () => this.showNotification('error', 'Failed to create group')
+    });
+  }
+
+  deleteGroup(groupId: string) {
+    if (confirm('Are you sure you want to delete this Group/Stream?')) {
+      this.academicService.deleteSubjectGroup(groupId).subscribe({
+        next: () => {
+          this.showNotification('success', 'Group deleted');
+          this.loadGroups();
+        },
+        error: () => this.showNotification('error', 'Failed to delete group')
+      });
+    }
+  }
+
+  openGroupMappingDialog(group: import('./services/academic-structure.service').ISubjectGroup) {
+    // We will dynamically import the dialog or use a created component
+    // For now we will create the component file and reference it.
+    import('./dialogs/subject-group-dialog.component').then(m => {
+      const dialogRef = this.dialog.open(m.SubjectGroupDialogComponent, {
+        width: '600px',
+        data: { group, gradeId: this.groupFilterGradeId }
+      });
+
+      dialogRef.afterClosed().subscribe(result => {
+        if (result) this.loadGroups();
+      });
+    });
   }
 
   // --- Bulk Wizard ---

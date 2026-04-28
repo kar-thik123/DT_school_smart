@@ -36,6 +36,16 @@
               </div>
             </div>
             <div class="row">
+              <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-3">
+                <mat-slide-toggle formControlName="is_teaching_role" color="primary">
+                  Teaching Role (Instructional Staff)
+                </mat-slide-toggle>
+                <div class="text-muted small mt-1 ms-1">
+                  Enable this to allow users with this role to be assigned as Class/Subject Teachers.
+                </div>
+              </div>
+            </div>
+            <div class="row">
               <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mt-4">
                 <button mat-raised-button color="primary" [disabled]="roleForm.invalid || isSaving" type="submit">
                   <mat-icon class="col-white me-2">{{ isSaving ? 'hourglass_empty' : 'save' }}</mat-icon>
@@ -66,43 +76,48 @@
 
                 <!-- System Roles -->
                 <div class="inventory-section mt-2">
-                  <h6>System Roles</h6>
-                  <mat-nav-list>
-                    <mat-list-item *ngFor="let role of systemRoles" 
-                                   [class.active-role]="selectedRole?.id === role.id"
-                                   (click)="selectRole(role)" 
-                                   class="role-item transition cursor-pointer">
+                  <h6 class="px-3 text-muted text-uppercase" style="font-size: 12px; font-weight: 600; letter-spacing: 0.5px;">System Roles</h6>
+                  <div class="list-group list-group-flush">
+                    <div *ngFor="let role of systemRoles" 
+                         [class.active-role]="selectedRole?.id === role.id"
+                         (click)="selectRole(role)" 
+                         class="list-group-item list-group-item-action role-item transition cursor-pointer border-0 py-3 px-4">
                       <div class="d-flex justify-content-between align-items-center w-100">
                         <div class="d-flex flex-column">
-                          <span class="fw-bold">{{ role.name }}</span>
-                          <small class="text-muted">{{ role._count?.users || 0 }} Users</small>
+                          <div class="d-flex align-items-center">
+                            <span class="fw-bold text-dark me-2" style="font-size: 14px;">{{ role.name }}</span>
+                            <span class="badge badge-solid-blue" style="font-size: 10px; padding: 2px 6px;" *ngIf="role.is_teaching_role">Instructional Staff</span>
+                          </div>
+                          <small class="text-muted mt-1" style="font-size: 12px;">{{ role._count?.users || 0 }} {{ (role._count?.users === 1) ? 'User' : 'Users' }}</small>
                         </div>
-                        <span class="system-badge">System</span>
                       </div>
-                    </mat-list-item>
-                  </mat-nav-list>
+                    </div>
+                  </div>
                 </div>
 
                 <mat-divider></mat-divider>
 
                 <!-- Custom Roles -->
-                <div class="inventory-section">
-                  <h6>Custom Roles</h6>
-                  <div *ngIf="customRoles.length === 0 && !isLoading" class="p-3 text-center text-muted">
+                <div class="inventory-section mt-3">
+                  <h6 class="px-3 text-muted text-uppercase" style="font-size: 12px; font-weight: 600; letter-spacing: 0.5px;">Custom Roles</h6>
+                  <div *ngIf="customRoles.length === 0 && !isLoading" class="p-4 text-center text-muted">
                     <small>No custom roles created yet.</small>
                   </div>
-                  <mat-nav-list>
-                    <mat-list-item *ngFor="let role of customRoles" 
-                                   [class.active-role]="selectedRole?.id === role.id"
-                                   (click)="selectRole(role)" 
-                                   class="role-item transition cursor-pointer">
+                  <div class="list-group list-group-flush">
+                    <div *ngFor="let role of customRoles" 
+                         [class.active-role]="selectedRole?.id === role.id"
+                         (click)="selectRole(role)" 
+                         class="list-group-item list-group-item-action role-item transition cursor-pointer border-0 py-3 px-4">
                       <div class="d-flex justify-content-between align-items-center w-100">
                         <div class="d-flex flex-column">
-                          <span class="fw-bold">{{ role.name }}</span>
-                          <small class="text-muted">{{ role._count?.users || 0 }} Users</small>
+                          <div class="d-flex align-items-center">
+                            <span class="fw-bold text-dark me-2" style="font-size: 14px;">{{ role.name }}</span>
+                            <span class="badge badge-solid-blue" style="font-size: 10px; padding: 2px 6px;" *ngIf="role.is_teaching_role">Instructional Staff</span>
+                          </div>
+                          <small class="text-muted mt-1" style="font-size: 12px;">{{ role._count?.users || 0 }} {{ (role._count?.users === 1) ? 'User' : 'Users' }}</small>
                         </div>
                         <div class="role-actions">
-                          <button mat-icon-button [matMenuTriggerFor]="menu" (click)="$event.stopPropagation()">
+                          <button mat-icon-button [matMenuTriggerFor]="menu" (click)="$event.stopPropagation()" class="text-muted">
                             <mat-icon>more_vert</mat-icon>
                           </button>
                           <mat-menu #menu="matMenu">
@@ -122,8 +137,8 @@
                           </mat-menu>
                         </div>
                       </div>
-                    </mat-list-item>
-                  </mat-nav-list>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -138,8 +153,11 @@
                     <mat-icon color="primary">{{ selectedRole.is_system ? 'verified_user' : 'person_outline' }}</mat-icon>
                   </div>
                   <div>
-                    <h2 class="mb-0">{{ selectedRole.name }}</h2>
-                    <small class="text-muted">{{ selectedRole.description || 'No description provided' }}</small>
+                    <div class="d-flex align-items-center">
+                      <h2 class="mb-0 me-2">{{ selectedRole.name }}</h2>
+                      <span class="badge badge-solid-blue" *ngIf="selectedRole.is_teaching_role">Instructional Staff</span>
+                    </div>
+                    <p class="text-muted mb-0 mt-1">{{ selectedRole.description || 'No description provided' }}</p>
                   </div>
                 </div>
                 <div class="actions">

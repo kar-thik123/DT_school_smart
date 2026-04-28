@@ -35,7 +35,7 @@ export class AcademicYearDeleteComponent {
     this.dialogRef.close();
   }
   confirmDelete(): void {
-    this.academicYearService.deleteAcademicYear(this.data.id).subscribe({
+    this.academicYearService.deleteAcademicYear(String(this.data.id)).subscribe({
       next: (response) => {
         this.dialogRef.close(response);
       },

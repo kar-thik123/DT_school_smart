@@ -146,6 +146,13 @@ export const ADMIN_ROUTE: Route[] = [
             (m) => m.AcademicStructureComponent
           ),
       },
+      {
+        path: 'teacher-assignment',
+        loadComponent: () =>
+          import('./administration/teacher-assignment/teacher-assignment.component').then(
+            (m) => m.TeacherAssignmentComponent
+          ),
+      },
     ]
   },
 

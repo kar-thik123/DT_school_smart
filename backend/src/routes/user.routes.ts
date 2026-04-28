@@ -24,7 +24,7 @@ router.get('/teachers', async (req: any, res: Response) => {
     const teachers = await prisma.user.findMany({
       where: { 
         organization_id: req.user.organization_id,
-        role: { name: 'TEACHER' },
+        role: { is_teaching_role: true },
         is_active: true
       },
       select: { id: true, name: true, email: true },
@@ -48,7 +48,9 @@ router.get('/', async (req: any, res: Response) => {
     }
     if (req.query.role) {
       // Look up the role_id for direct filtering (avoids nested relation filter issues)
-      const roleRecord = await prisma.role.findFirst({ where: { name: String(req.query.role), is_system: true } });
+      const roleRecord = await prisma.role.findFirst({ 
+        where: { name: String(req.query.role), is_system: true, organization_id: req.user.organization_id } 
+      });
       if (roleRecord) {
         filter.role_id = roleRecord.id;
       }
@@ -91,7 +93,9 @@ router.post('/', async (req: any, res: Response) => {
     if (existing) return res.status(400).json({ message: `Email '${parsed.email}' is already registered in the platform. Each email can only belong to one account.` });
 
     const password_hash = await bcrypt.hash(parsed.password, 10);
-    const roleDb = await prisma.role.findFirst({ where: { name: parsed.role, is_system: true } });
+    const roleDb = await prisma.role.findFirst({ 
+      where: { name: parsed.role, is_system: true, organization_id: req.user.organization_id } 
+    });
     if (!roleDb) return res.status(400).json({ message: 'Role not found' });
 
     // Validate section belongs to grade if both provided
@@ -155,7 +159,9 @@ router.post('/bulk', async (req: any, res: Response) => {
         const validRoles = ['SUPER_ADMIN', 'TEACHER', 'STUDENT', 'MANAGEMENT'];
         const role = validRoles.includes(u.role?.toUpperCase()) ? u.role.toUpperCase() : 'STUDENT';
         const password_hash = await bcrypt.hash(u.password || 'changeme123', 10);
-        const roleDb = await prisma.role.findFirst({ where: { name: role, is_system: true } });
+        const roleDb = await prisma.role.findFirst({ 
+          where: { name: role, is_system: true, organization_id: req.user.organization_id } 
+        });
         if (!roleDb) { results.skipped++; continue; }
 
         await prisma.user.create({
@@ -181,7 +187,9 @@ router.put('/:id', async (req: any, res: Response) => {
     
     let updateData: any = { name: req.body.name, is_active: req.body.is_active };
     if (req.body.role) {
-      const roleDb = await prisma.role.findFirst({ where: { name: req.body.role, is_system: true } });
+      const roleDb = await prisma.role.findFirst({ 
+        where: { name: req.body.role, is_system: true, organization_id: req.user.organization_id } 
+      });
       if (roleDb) updateData.role_id = roleDb.id;
     }
 

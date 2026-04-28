@@ -793,7 +793,7 @@ router.get('/subject-groups', requirePermission('ACADEMIC_STRUCTURE', 'READ'), a
 router.post('/subject-groups', requirePermission('ACADEMIC_STRUCTURE', 'CREATE'), async (req: any, res: Response) => {
   try {
     const org_id = req.user.organization_id;
-    const { name, grade_id, section_id, subject_ids } = req.body;
+    const { name, grade_id, section_id, subjects } = req.body;
 
     if (!name || !grade_id || !section_id) {
       return res.status(400).json({ message: 'Missing required fields: name, grade_id, section_id' });
@@ -811,11 +811,11 @@ router.post('/subject-groups', requirePermission('ACADEMIC_STRUCTURE', 'CREATE')
       });
 
       // Link subjects
-      if (Array.isArray(subject_ids) && subject_ids.length > 0) {
-        const payload = subject_ids.map((s_id: string) => ({
+      if (Array.isArray(subjects) && subjects.length > 0) {
+        const payload = subjects.map((s: any) => ({
           group_id: group.id,
-          subject_id: s_id,
-          subject_type: 'MANDATORY' // Default for now
+          subject_id: s.subject_id,
+          subject_type: s.subject_type || 'MANDATORY'
         }));
         await (tx as any).subjectGroupSubject.createMany({
           data: payload
@@ -836,7 +836,7 @@ router.put('/subject-groups/:id', requirePermission('ACADEMIC_STRUCTURE', 'EDIT'
   try {
     const { id } = req.params;
     const org_id = req.user.organization_id;
-    const { name, subject_ids } = req.body;
+    const { name, subjects } = req.body;
 
     const group = await prisma.subjectGroup.findFirst({ where: { id, organization_id: org_id } });
     if (!group) return res.status(404).json({ message: 'Subject Group not found' });
@@ -846,15 +846,15 @@ router.put('/subject-groups/:id', requirePermission('ACADEMIC_STRUCTURE', 'EDIT'
         await tx.subjectGroup.update({ where: { id }, data: { name } });
       }
       
-      if (Array.isArray(subject_ids)) {
+      if (Array.isArray(subjects)) {
         // Clear old ones
         await (tx as any).subjectGroupSubject.deleteMany({ where: { group_id: id } });
         // Insert new ones
-        if (subject_ids.length > 0) {
-          const payload = subject_ids.map((s_id: string) => ({
+        if (subjects.length > 0) {
+          const payload = subjects.map((s: any) => ({
             group_id: id,
-            subject_id: s_id,
-            subject_type: 'MANDATORY'
+            subject_id: s.subject_id,
+            subject_type: s.subject_type || 'MANDATORY'
           }));
           await (tx as any).subjectGroupSubject.createMany({ data: payload });
         }

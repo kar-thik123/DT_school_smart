@@ -1531,6 +1531,18 @@
           "badgeClass": "",
           "role": [""],
           "submenu": []
+        },
+        {
+          "path": "/admin/administration/teacher-assignment",
+          "title": "MENUITEMS.ADMINISTRATION.LIST.TEACHER-ASSIGNMENT",
+          "iconType": "",
+          "icon": "",
+          "class": "ml-menu",
+          "groupTitle": false,
+          "badge": "",
+          "badgeClass": "",
+          "role": [""],
+          "submenu": []
         }
       ]
     },

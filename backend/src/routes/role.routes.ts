@@ -12,7 +12,8 @@ router.use(authorizeRoles('SYSTEM_ADMIN', 'SUPER_ADMIN'));
 
 const roleSchema = z.object({
   name: z.string().min(2),
-  description: z.string().optional()
+  description: z.string().optional(),
+  is_teaching_role: z.boolean().optional().default(false)
 });
 
 const permissionSyncSchema = z.object({
@@ -102,6 +103,7 @@ router.post('/', async (req: any, res: Response) => {
       data: {
         name: parsed.name,
         description: parsed.description,
+        is_teaching_role: parsed.is_teaching_role,
         organization_id: req.user.organization_id,
         is_system: false
       }
@@ -168,7 +170,7 @@ router.put('/:id', async (req: any, res: Response) => {
 
     const updated = await prisma.role.update({
       where: { id: req.params.id },
-      data: { name: parsed.name, description: parsed.description }
+      data: { name: parsed.name, description: parsed.description, is_teaching_role: parsed.is_teaching_role }
     });
 
     res.json(updated);
@@ -233,6 +235,7 @@ router.post('/:id/clone', async (req: any, res: Response) => {
         data: {
           name,
           description,
+          is_teaching_role: sourceRole.is_teaching_role,
           organization_id: req.user.organization_id,
           is_system: false
         }

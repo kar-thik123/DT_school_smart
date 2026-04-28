@@ -128,14 +128,15 @@ model PasswordReset {
 }
 
 model Role {
-  id              String           @id @default(uuid()) @db.Uuid
-  name            String
-  description     String?
-  organization_id String?          @db.Uuid
-  is_system       Boolean          @default(false)
-  users           User[]
-  permissions     RolePermission[]
-  organization    Organization?    @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  id               String           @id @default(uuid()) @db.Uuid
+  name             String
+  description      String?
+  organization_id  String?          @db.Uuid
+  is_system        Boolean          @default(false)
+  is_teaching_role Boolean          @default(false)
+  users            User[]
+  permissions      RolePermission[]
+  organization     Organization?    @relation(fields: [organization_id], references: [id], onDelete: Cascade)
 
   @@unique([name, organization_id])
   @@index([organization_id])
@@ -205,6 +206,7 @@ model AcademicYear {
   organization_id String       @db.Uuid
   organization    Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
   grades          Grade[]
+  teacher_assignments TeacherAssignment[]
 
   @@unique([name, organization_id])
   @@map("academic_years")
@@ -325,27 +327,29 @@ model Topic {
 }
 
 enum AssignmentType {
-  CLASS_INCHARGE
+  CLASS_TEACHER
   SUBJECT_TEACHER
 }
 
 model TeacherAssignment {
-  id              String         @id @default(uuid()) @db.Uuid
-  organization_id String         @db.Uuid
-  teacher_id      String         @db.Uuid
-  assignment_type AssignmentType
-  grade_id        String         @db.Uuid
-  section_id      String?        @db.Uuid
-  subject_id      String?        @db.Uuid
-  created_at      DateTime       @default(now())
+  id               String         @id @default(uuid()) @db.Uuid
+  organization_id  String         @db.Uuid
+  academic_year_id String         @db.Uuid
+  teacher_id       String         @db.Uuid
+  assignment_type  AssignmentType
+  grade_id         String         @db.Uuid
+  section_id       String?        @db.Uuid
+  subject_id       String?        @db.Uuid
+  created_at       DateTime       @default(now())
 
-  organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
-  teacher      User         @relation(fields: [teacher_id], references: [id], onDelete: Cascade)
-  grade        Grade        @relation(fields: [grade_id], references: [id], onDelete: Cascade)
-  section      Section?     @relation(fields: [section_id], references: [id], onDelete: Cascade)
-  subject      Subject?     @relation(fields: [subject_id], references: [id], onDelete: Cascade)
+  organization  Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  academic_year AcademicYear @relation(fields: [academic_year_id], references: [id], onDelete: Cascade)
+  teacher       User         @relation(fields: [teacher_id], references: [id], onDelete: Cascade)
+  grade         Grade        @relation(fields: [grade_id], references: [id], onDelete: Cascade)
+  section       Section?     @relation(fields: [section_id], references: [id], onDelete: Cascade)
+  subject       Subject?     @relation(fields: [subject_id], references: [id], onDelete: Cascade)
 
-  @@unique([teacher_id, assignment_type, grade_id, section_id, subject_id, organization_id], name: "unique_assignment")
+  @@unique([teacher_id, assignment_type, grade_id, section_id, subject_id, academic_year_id, organization_id], name: "unique_assignment")
   @@map("teacher_assignments")
 }
 

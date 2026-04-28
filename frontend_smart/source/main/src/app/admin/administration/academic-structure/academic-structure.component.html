@@ -5,7 +5,7 @@
       </app-breadcrumb>
       
       <!-- Option B: Quick Setup Wizard Launch Action -->
-      <button mat-raised-button color="accent" (click)="openBulkSetupWizard()">
+      <button mat-stroked-button color="primary" class="border-dashed" (click)="openBulkSetupWizard()">
         <mat-icon class="me-2">auto_fix_high</mat-icon> Quick Setup Wizard
       </button>
     </div>
@@ -17,7 +17,7 @@
 
     <div class="row" *ngIf="!isLoading">
       <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12">
-        <mat-tab-group animationDuration="0ms">
+        <mat-tab-group animationDuration="0ms" color="primary">
           
           <!-- Tab 1: Grades & Sections -->
           <mat-tab>
@@ -232,6 +232,123 @@
                 <div *ngIf="!subjectFilterGradeId" class="p-5 text-center text-muted">
                   <mat-icon class="display-4 text-light mb-3">filter_alt</mat-icon>
                   <p>Please select a Grade to manage its Subjects.</p>
+                </div>
+              </mat-card>
+            </div>
+        </mat-tab>
+
+          <!-- Tab 3: Groups / Streams -->
+          <mat-tab>
+            <ng-template mat-tab-label>
+              <mat-icon class="me-2">category</mat-icon>
+              Groups / Streams
+            </ng-template>
+            <div class="p-4">
+              <mat-card>
+                <div class="card-header p-3">
+                  <div class="row align-items-center">
+                    <div class="col-md-3">
+                      <mat-form-field appearance="outline" class="w-100 mb-0">
+                        <mat-label>Select Grade</mat-label>
+                        <mat-select [(ngModel)]="groupFilterGradeId" (selectionChange)="onGroupGradeChange()">
+                          <mat-option *ngFor="let grade of grades" [value]="grade.id">{{ grade.name }}</mat-option>
+                        </mat-select>
+                      </mat-form-field>
+                    </div>
+                    <div class="col-md-3">
+                      <mat-form-field appearance="outline" class="w-100 mb-0" *ngIf="groupFilterGradeId">
+                        <mat-label>Select Section</mat-label>
+                        <mat-select [(ngModel)]="groupFilterSectionId" (selectionChange)="loadGroups()">
+                          <mat-option *ngFor="let section of sectionsForGroupFilter" [value]="section.id">{{ section.name }}</mat-option>
+                        </mat-select>
+                      </mat-form-field>
+                    </div>
+                    <div class="col-md-6 text-end" *ngIf="groupFilterGradeId && groupFilterSectionId">
+                      <div class="d-flex justify-content-end align-items-center">
+                         <mat-form-field appearance="outline" class="mb-0 me-2" style="width: 250px;">
+                            <mat-label>New Group / Stream Name</mat-label>
+                            <input matInput #newGroup placeholder="e.g. Pure Science">
+                         </mat-form-field>
+                         <button mat-flat-button color="primary" class="py-1" style="height: 50px;" (click)="addGroup(newGroup.value); newGroup.value=''">
+                            <mat-icon>add</mat-icon> Create
+                         </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="card-body bg-light" *ngIf="groupFilterGradeId && groupFilterSectionId">
+                  <div class="row">
+                    <div class="col-md-6 col-lg-4 mb-4" *ngFor="let group of groupsForSelectedSection">
+                      <mat-card class="h-100 shadow-sm border-0">
+                        <div class="card-header bg-transparent border-bottom d-flex justify-content-between align-items-center py-2 px-3">
+                          <h4 class="mb-0 fw-bold text-dark">{{ group.name }}</h4>
+                          <button mat-icon-button [matMenuTriggerFor]="groupMenu" class="text-muted">
+                            <mat-icon>more_vert</mat-icon>
+                          </button>
+                          <mat-menu #groupMenu="matMenu">
+                            <button mat-menu-item (click)="openGroupMappingDialog(group)">
+                              <mat-icon>edit_note</mat-icon>
+                              <span>Manage Mapping</span>
+                            </button>
+                            <button mat-menu-item class="text-danger" (click)="deleteGroup(group.id)">
+                              <mat-icon class="text-danger">delete</mat-icon>
+                              <span>Delete Group</span>
+                            </button>
+                          </mat-menu>
+                        </div>
+                        <div class="card-body p-3">
+                          <div class="d-flex justify-content-between mb-3 bg-light p-2 rounded border">
+                            <div class="text-center px-2">
+                              <div class="h5 mb-0 fw-bold text-dark">{{ group.subjects.length }}</div>
+                              <small class="text-muted" style="font-size: 11px; text-transform: uppercase;">Total</small>
+                            </div>
+                            <div class="text-center px-2 border-start">
+                              <div class="h5 mb-0 fw-bold text-primary">{{ getSubjectCount(group, 'MANDATORY') }}</div>
+                              <small class="text-muted" style="font-size: 11px; text-transform: uppercase;">Core</small>
+                            </div>
+                            <div class="text-center px-2 border-start">
+                              <div class="h5 mb-0 fw-bold text-info">{{ getSubjectCount(group, 'ELECTIVE') }}</div>
+                              <small class="text-muted" style="font-size: 11px; text-transform: uppercase;">Elective</small>
+                            </div>
+                          </div>
+                          
+                          <div class="d-flex flex-wrap gap-2 mt-2">
+                            <span *ngFor="let s of group.subjects" 
+                                  class="badge shadow-sm"
+                                  [ngClass]="{
+                                    'bg-primary text-white': s.subject_type === 'MANDATORY',
+                                    'bg-info text-dark': s.subject_type === 'ELECTIVE',
+                                    'bg-secondary text-white': s.subject_type === 'OPTIONAL'
+                                  }" style="font-size: 12px; font-weight: 500; padding: 6px 12px; letter-spacing: 0.3px;">
+                              {{ s.name }} <span class="fw-normal opacity-75 ms-1">({{ s.subject_type === 'MANDATORY' ? 'Core' : (s.subject_type | titlecase) }})</span>
+                            </span>
+                            <span *ngIf="group.subjects.length === 0" class="text-muted fst-italic small">
+                              No subjects mapped yet.
+                            </span>
+                          </div>
+                        </div>
+                        <div class="card-footer bg-transparent border-top-0 pt-0 pb-3 px-3">
+                          <button mat-flat-button color="primary" class="w-100" (click)="openGroupMappingDialog(group)">
+                            <mat-icon class="me-1">edit_note</mat-icon> Manage Mapping
+                          </button>
+                        </div>
+                      </mat-card>
+                    </div>
+                    
+                    <div class="col-12" *ngIf="groupsForSelectedSection.length === 0">
+                      <div class="p-5 text-center text-muted bg-white border rounded border-dashed">
+                        <mat-icon class="display-4 text-light mb-3">category</mat-icon>
+                        <p class="mb-0">No Groups / Streams found for this Section.</p>
+                        <p class="small">Use the quick add bar above to create one.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div *ngIf="!groupFilterGradeId || !groupFilterSectionId" class="p-5 text-center text-muted">
+                  <mat-icon class="display-4 text-light mb-3">filter_alt</mat-icon>
+                  <p>Please select a Grade and Section to manage its Groups / Streams.</p>
                 </div>
               </mat-card>
             </div>

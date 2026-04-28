@@ -20,6 +20,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { RouterModule } from '@angular/router';
 import { lastValueFrom } from 'rxjs';
 
@@ -48,6 +49,7 @@ import { lastValueFrom } from 'rxjs';
     MatProgressBarModule,
     MatSidenavModule,
     MatMenuModule,
+    MatSlideToggleModule,
     RouterModule
   ],
 })
@@ -87,7 +89,8 @@ export class RolePermissionsComponent implements OnInit {
     this.roleForm = this.fb.group({
       id: [role?.id || ''],
       name: [role?.name || '', [Validators.required, Validators.minLength(2)]],
-      description: [role?.description || '']
+      description: [role?.description || ''],
+      is_teaching_role: [role?.is_teaching_role || false]
     });
   }
 
