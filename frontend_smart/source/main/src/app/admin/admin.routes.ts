@@ -153,6 +153,13 @@ export const ADMIN_ROUTE: Route[] = [
             (m) => m.TeacherAssignmentComponent
           ),
       },
+      {
+        path: 'student-mapping',
+        loadComponent: () =>
+          import('./administration/student-mapping/student-mapping.component').then(
+            (m) => m.StudentMappingComponent
+          ),
+      },
     ]
   },
 

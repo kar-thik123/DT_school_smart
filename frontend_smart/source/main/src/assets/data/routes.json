@@ -1543,6 +1543,18 @@
           "badgeClass": "",
           "role": [""],
           "submenu": []
+        },
+        {
+          "path": "/admin/administration/student-mapping",
+          "title": "MENUITEMS.ADMINISTRATION.LIST.STUDENT-ENROLLMENT",
+          "iconType": "",
+          "icon": "",
+          "class": "ml-menu",
+          "groupTitle": false,
+          "badge": "",
+          "badgeClass": "",
+          "role": [""],
+          "submenu": []
         }
       ]
     },

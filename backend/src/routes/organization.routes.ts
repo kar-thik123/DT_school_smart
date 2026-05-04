@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import prisma from '../prisma';
 import { Prisma } from '@prisma/client';
 import { z } from 'zod';
-import { authMiddleware, authorizeRoles } from '../middlewares/auth.middleware';
+import { authMiddleware, requirePermission } from '../middlewares/auth.middleware';
 import multer from 'multer';
 import path from 'path';
 import jwt from 'jsonwebtoken';
@@ -41,17 +41,17 @@ router.get('/debug-db', async (req, res) => {
 router.get('/check-subdomain', async (req, res) => {
   const { q } = req.query;
   if (!q) return res.status(400).json({ message: 'Query required' });
-  
+
   const existing = await prisma.organization.findUnique({ where: { subdomain: q as string } });
   res.json({ available: !existing });
 });
 
 // 3.5 Get My Organization License (For Super Admin Dashboard)
-router.get('/me/license', authMiddleware, authorizeRoles('SUPER_ADMIN', 'SYSTEM_ADMIN'), async (req: any, res: Response) => {
+router.get('/me/license', authMiddleware, requirePermission('IDENTITY', 'IS_SUPER_ADMIN'), async (req: any, res: Response) => {
   try {
     const org = await prisma.organization.findUnique({
       where: { id: req.user.organization_id },
-      include: { 
+      include: {
         license: true,
         _count: { select: { users: { where: { is_active: true } } } }
       }
@@ -95,7 +95,7 @@ router.get('/me/profile', authMiddleware, async (req: any, res: Response) => {
 });
 
 router.use(authMiddleware);
-router.use(authorizeRoles('SYSTEM_ADMIN'));
+router.use(requirePermission('IDENTITY', 'IS_SYSTEM_ADMIN'));
 
 
 // 4. Get Platform Statistics
@@ -139,7 +139,7 @@ router.get('/:id', async (req, res) => {
 router.patch('/:id/status', async (req, res) => {
   try {
     const { status } = req.body; // Expecting OrganizationStatus enum value
-    
+
     // Safety check: Prevent suspending/archiving platform core
     const target = await prisma.organization.findUnique({ where: { id: req.params.id } });
     if (target?.subdomain === 'sys' && (status === 'SUSPENDED' || status === 'ARCHIVED')) {
@@ -150,10 +150,10 @@ router.patch('/:id/status', async (req, res) => {
       where: { id: req.params.id },
       data: { status: status }
     });
-    
-    res.json({ 
+
+    res.json({
       message: `Organization status updated to ${status}`,
-      status: updated.status 
+      status: updated.status
     });
   } catch (error) {
     res.status(500).json({ message: 'Failed to update status' });
@@ -165,10 +165,10 @@ router.post('/:id/impersonate', async (req: any, res: Response) => {
   try {
     const orgId = req.params.id;
     const adminUserId = req.user.user_id; // The System Admin's ID
-    
+
     // Find the first Super Admin for this organization
     const adminUser = await prisma.user.findFirst({
-      where: { 
+      where: {
         organization_id: orgId,
         role: { name: 'SUPER_ADMIN' },
         is_active: true
@@ -193,8 +193,8 @@ router.post('/:id/impersonate', async (req: any, res: Response) => {
 
     // Generate impersonation token with return context
     const token = jwt.sign(
-      { 
-        user_id: adminUser.id, 
+      {
+        user_id: adminUser.id,
         organization_id: adminUser.organization_id,
         is_impersonation: true,
         original_user_id: adminUserId, // Context for returning
@@ -336,7 +336,7 @@ function cleanInput(data: any): any {
 router.post('/', async (req: any, res: Response) => {
   try {
     console.log('[ORG CREATE RAW BODY]', req.body);
-    
+
     // Clean strings before schema parse and db insertion
     const cleanedBody = cleanInput(req.body);
     const parsed = orgSchema.parse(cleanedBody);
@@ -358,22 +358,22 @@ router.post('/', async (req: any, res: Response) => {
       // 1. Create the organization
       const org = await tx.organization.create({
         data: {
-          school_name:   parsed.school_name   || 'Unnamed School',
-          school_type:   parsed.school_type   || null,
-          medium:        parsed.medium        || null,
+          school_name: parsed.school_name || 'Unnamed School',
+          school_type: parsed.school_type || null,
+          medium: parsed.medium || null,
           contact_email: parsed.contact_email || null,
           contact_phone: parsed.contact_phone || null,
-          address:       parsed.address       || null,
-          logo_url:      parsed.logo_url      || null,
-          domain_type:   parsed.domain_type   || 'subdomain',
-          subdomain:     parsed.subdomain     || null,
+          address: parsed.address || null,
+          logo_url: parsed.logo_url || null,
+          domain_type: parsed.domain_type || 'subdomain',
+          subdomain: parsed.subdomain || null,
           custom_domain: parsed.custom_domain || null,
-          smtp_host:     parsed.smtp_host     || null,
-          smtp_port:     parsed.smtp_port     ? Number(parsed.smtp_port) : null,
-          smtp_email:    parsed.smtp_email    || null,
+          smtp_host: parsed.smtp_host || null,
+          smtp_port: parsed.smtp_port ? Number(parsed.smtp_port) : null,
+          smtp_email: parsed.smtp_email || null,
           smtp_password: parsed.smtp_password || null,
           backup_enabled: parsed.backup_enabled === true,
-          login_limit:   Number(parsed.licensed_seats) || 100, // Legacy support
+          login_limit: Number(parsed.licensed_seats) || 100, // Legacy support
         }
       });
 
@@ -381,11 +381,11 @@ router.post('/', async (req: any, res: Response) => {
       await tx.organizationLicense.create({
         data: {
           organization_id: org.id,
-          licensed_seats:  Number(parsed.licensed_seats)  || 100,
-          renewal_date:    parsed.renewal_date ? new Date(parsed.renewal_date) : null,
+          licensed_seats: Number(parsed.licensed_seats) || 100,
+          renewal_date: parsed.renewal_date ? new Date(parsed.renewal_date) : null,
           grace_period_days: Number(parsed.grace_period_days) || 7,
           warning_threshold: Number(parsed.warning_threshold) || 80,
-          internal_notes:  parsed.internal_notes || null,
+          internal_notes: parsed.internal_notes || null,
           status: 'ACTIVE'
         }
       });
@@ -410,12 +410,12 @@ router.post('/', async (req: any, res: Response) => {
 
         adminUser = await tx.user.create({
           data: {
-            name:            parsed.admin_name || 'School Admin',
-            email:           parsed.admin_email,
+            name: parsed.admin_name || 'School Admin',
+            email: parsed.admin_email,
             password_hash,
-            role_id:         superAdminRole.id,
+            role_id: superAdminRole.id,
             organization_id: org.id,
-            is_active:       true,
+            is_active: true,
           }
         });
       }
@@ -423,7 +423,16 @@ router.post('/', async (req: any, res: Response) => {
       return { org, adminUser };
     });
 
-    res.status(201).json({
+    // 4. Fire Async Hooks (e.g. Emails/Provisioning) safely WITHOUT blocking the API response
+    if (result.adminUser) {
+      // simulate background email dispatch
+      Promise.resolve().then(() => {
+        console.log(`[Background Job] Dispatching welcome email to ${result.adminUser.email}`);
+      }).catch(err => console.error('[Background Job Error]', err));
+    }
+
+    // 5. Explicit return to end execution context
+    return res.status(201).json({
       message: 'Organization provisioned successfully',
       organizationId: result.org.id,
       adminCreated: !!result.adminUser,
@@ -445,8 +454,8 @@ router.post('/', async (req: any, res: Response) => {
 
     // Handle Zod validation errors
     if (error?.errors) {
-      return res.status(400).json({ 
-        message: 'Validation failed', 
+      return res.status(400).json({
+        message: 'Validation failed',
         errors: error.errors,
         details: error.errors.map((e: any) => `${e.path.join('.')}: ${e.message}`).join(', ')
       });
@@ -457,7 +466,7 @@ router.post('/', async (req: any, res: Response) => {
       return res.status(400).json({ message: `A conflict occurred: The ${error.meta?.target?.join(', ') || 'field'} is already in use. Choose another.` });
     }
 
-    res.status(500).json({ message: error?.message || 'Internal server error' });
+    return res.status(500).json({ message: error?.message || 'Internal server error' });
   }
 });
 
@@ -471,7 +480,7 @@ router.get('/', async (req: any, res: Response) => {
     const where: any = {
       subdomain: { not: 'sys' } // Hide Management Tenant from general inventory
     };
-    
+
     if (search) {
       where.AND = [
         { subdomain: { not: 'sys' } },

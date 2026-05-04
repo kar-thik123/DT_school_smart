@@ -81,7 +81,7 @@ export class UserManagementFormComponent implements OnInit {
       name: [this.user.name, [Validators.required, Validators.minLength(3)]],
       email: [this.user.email, [Validators.required, Validators.email]],
       password: ['', this.action === 'add' ? [Validators.required, Validators.minLength(6)] : []],
-      role: [this.user.role, [Validators.required]],
+      role_id: [this.user.role_id, [Validators.required]],
       is_active: [this.user.is_active ?? true]
     });
   }

@@ -1,13 +1,13 @@
 import { Router, Request, Response } from 'express';
 import prisma from '../prisma';
-import { authMiddleware, authorizeRoles, requirePermission } from '../middlewares/auth.middleware';
+import { authMiddleware, requirePermission } from '../middlewares/auth.middleware';
 
 const router = Router();
 router.use(authMiddleware);
 
 // --- MANAGEMENT TOPIC ANALYTICS ---
 // View performance and Validation Engine labels
-router.get('/topic', authorizeRoles('MANAGEMENT', 'SYSTEM_ADMIN'), async (req: any, res: Response) => {
+router.get('/topic', requirePermission('IDENTITY', 'IS_MANAGEMENT'), async (req: any, res: Response) => {
   try {
     const org_id = req.user.organization_id;
     const { grade_id, section_id, subject_id } = req.query;
@@ -107,7 +107,7 @@ router.get('/topic', authorizeRoles('MANAGEMENT', 'SYSTEM_ADMIN'), async (req: a
 
 // --- TEACHER CLASS/SUBJECT ANALYTICS ---
 // NO validation labels allowed
-router.get('/teacher', authorizeRoles('TEACHER', 'SYSTEM_ADMIN'), async (req: any, res: Response) => {
+router.get('/teacher', requirePermission('IDENTITY', 'IS_TEACHER'), async (req: any, res: Response) => {
   try {
     const org_id = req.user.organization_id;
     const teacher_id = req.user.user_id;
@@ -172,7 +172,7 @@ router.get('/teacher', authorizeRoles('TEACHER', 'SYSTEM_ADMIN'), async (req: an
 
 // --- MANAGEMENT CONSOLIDATED OVERVIEW ---
 // Used for the management dashboard to see teachers, risk students, and general health
-router.get('/management/overview', authorizeRoles('MANAGEMENT', 'SYSTEM_ADMIN'), async (req: any, res: Response) => {
+router.get('/management/overview', requirePermission('IDENTITY', 'IS_MANAGEMENT'), async (req: any, res: Response) => {
   try {
     const org_id = req.user.organization_id;
 
@@ -292,7 +292,7 @@ router.get('/management/overview', authorizeRoles('MANAGEMENT', 'SYSTEM_ADMIN'),
 
 
 // --- STUDENT SELF ANALYTICS ---
-router.get('/student', authorizeRoles('STUDENT'), async (req: any, res: Response) => {
+router.get('/student', requirePermission('IDENTITY', 'IS_STUDENT'), async (req: any, res: Response) => {
   try {
     const org_id = req.user.organization_id;
     const student_id = req.user.user_id;

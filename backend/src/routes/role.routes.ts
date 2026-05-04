@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import prisma from '../prisma';
-import { authMiddleware, authorizeRoles } from '../middlewares/auth.middleware';
+import { authMiddleware, requirePermission } from '../middlewares/auth.middleware';
 import { SecurityLogService } from '../services/security-log.service';
 import { z } from 'zod';
 
@@ -8,7 +8,7 @@ const router = Router();
 
 // Middleware: Only Admins can manage roles
 router.use(authMiddleware);
-router.use(authorizeRoles('SYSTEM_ADMIN', 'SUPER_ADMIN'));
+router.use(requirePermission('IDENTITY', 'IS_SYSTEM_ADMIN'));
 
 const roleSchema = z.object({
   name: z.string().min(2),
@@ -103,7 +103,6 @@ router.post('/', async (req: any, res: Response) => {
       data: {
         name: parsed.name,
         description: parsed.description,
-        is_teaching_role: parsed.is_teaching_role,
         organization_id: req.user.organization_id,
         is_system: false
       }
@@ -170,7 +169,7 @@ router.put('/:id', async (req: any, res: Response) => {
 
     const updated = await prisma.role.update({
       where: { id: req.params.id },
-      data: { name: parsed.name, description: parsed.description, is_teaching_role: parsed.is_teaching_role }
+      data: { name: parsed.name, description: parsed.description }
     });
 
     res.json(updated);

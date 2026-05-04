@@ -122,20 +122,12 @@ export class AuthService {
     return of({ success: true });
   }
 
-  getDefaultRoute(role: string): string {
-    switch (role) {
-      case 'SYSTEM_ADMIN':
-        return '/organization/list';
-      case 'SUPER_ADMIN':
-        return '/admin/dashboard/main';
-      case 'MANAGEMENT':
-        return '/admin/dashboard/main';
-      case 'TEACHER':
-        return '/teacher/dashboard';
-      case 'STUDENT':
-        return '/student/dashboard';
-      default:
-        return '/authentication/signin';
-    }
+  getDefaultRoute(): string {
+    if (this.hasPermission('IDENTITY', 'IS_SYSTEM_ADMIN')) return '/organization/list';
+    if (this.hasPermission('IDENTITY', 'IS_SUPER_ADMIN')) return '/admin/dashboard/main';
+    if (this.hasPermission('IDENTITY', 'IS_MANAGEMENT')) return '/admin/dashboard/main';
+    if (this.hasPermission('IDENTITY', 'IS_TEACHER')) return '/teacher/dashboard';
+    if (this.hasPermission('IDENTITY', 'IS_STUDENT')) return '/student/dashboard';
+    return '/authentication/signin';
   }
 }

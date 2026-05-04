@@ -24,7 +24,7 @@ export class TeacherAssignmentProcessor implements BulkImportProcessor {
         where: {
           organization_id: this.organizationId,
           email: { in: emails },
-          role: { name: { in: ['TEACHER', 'HOD', 'PRINCIPAL'] } }
+          role: { permissions: { some: { permission: { module: 'IDENTITY', action: 'IS_TEACHER' } } } }
         },
         select: { id: true, email: true, name: true }
       }),

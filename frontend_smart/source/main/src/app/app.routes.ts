@@ -3,7 +3,7 @@ import { MainLayoutComponent } from './layout/app-layout/main-layout/main-layout
 import { AuthGuard } from '@core/guard/auth.guard';
 import { AuthLayoutComponent } from './layout/app-layout/auth-layout/auth-layout.component';
 import { Page404Component } from './authentication/page404/page404.component';
-import { Role } from '@core';
+// Roles removed in favor of permissions
 
 export const APP_ROUTE: Route[] = [
   {
@@ -16,27 +16,21 @@ export const APP_ROUTE: Route[] = [
       {
         path: 'admin',
         canActivate: [AuthGuard],
-        data: {
-          role: [Role.SuperAdmin, Role.Admin, Role.Management],
-        },
+        data: { permission: 'IDENTITY:IS_MANAGEMENT' },
         loadChildren: () =>
           import('./admin/admin.routes').then((m) => m.ADMIN_ROUTE),
       },
       {
         path: 'teacher',
         canActivate: [AuthGuard],
-        data: {
-          role: Role.Teacher,
-        },
+        data: { permission: 'IDENTITY:IS_TEACHER' },
         loadChildren: () =>
           import('./teacher/teacher.routes').then((m) => m.TEACHER_ROUTE),
       },
       {
         path: 'student',
         canActivate: [AuthGuard],
-        data: {
-          role: Role.Student,
-        },
+        data: { permission: 'IDENTITY:IS_STUDENT' },
         loadChildren: () =>
           import('./student/student.routes').then((m) => m.STUDENT_ROUTE),
       },
@@ -116,9 +110,7 @@ export const APP_ROUTE: Route[] = [
       {
         path: 'organization',
         canActivate: [AuthGuard],
-        data: {
-          role: Role.SystemAdmin,
-        },
+        data: { permission: 'IDENTITY:IS_SYSTEM_ADMIN' },
         loadChildren: () =>
           import('./organization/organization.routes').then((m) => m.ORGANIZATION_ROUTE),
       },
@@ -132,3 +124,4 @@ export const APP_ROUTE: Route[] = [
   },
   { path: '**', component: Page404Component },
 ];
+// Triggering file watcher rebuild

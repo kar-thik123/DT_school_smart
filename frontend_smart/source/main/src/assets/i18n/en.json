@@ -154,7 +154,8 @@
         "ROLES": "Roles & Permissions",
         "MASTER-CONFIG": "Master Configuration",
         "ACADEMIC-STRUCTURE": "Academic Structure",
-        "TEACHER-ASSIGNMENT": "Teacher Assignment"
+        "TEACHER-ASSIGNMENT": "Teacher Assignment",
+        "STUDENT-ENROLLMENT": "Student Enrollment"
       }
     },
     "FEES": {

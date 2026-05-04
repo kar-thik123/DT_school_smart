@@ -7,8 +7,7 @@ import {
   AuthService,
   InConfiguration,
   LanguageService,
-  RightSidebarService,
-  Role,
+  RightSidebarService
 } from '@core';
 import { UnsubscribeOnDestroyAdapter } from '@shared';
 import { LocalStorageService } from '@shared/services';
@@ -138,16 +137,15 @@ export class HeaderComponent
   ];
   ngOnInit() {
     this.config = this.configService.configData;
-    const userRole = this.authService.currentUserValue.roles?.[0]?.name;
     this.userImg =
       './assets/images/user/' + this.authService.currentUserValue.avatar;
     this.docElement = document.documentElement;
 
-    if (userRole === Role.Admin) {
+    if (this.authService.hasPermission('IDENTITY', 'IS_SUPER_ADMIN') || this.authService.hasPermission('IDENTITY', 'IS_MANAGEMENT') || this.authService.hasPermission('IDENTITY', 'IS_SYSTEM_ADMIN')) {
       this.homePage = 'admin/dashboard/main';
-    } else if (userRole === Role.Teacher) {
+    } else if (this.authService.hasPermission('IDENTITY', 'IS_TEACHER')) {
       this.homePage = 'teacher/dashboard';
-    } else if (userRole === Role.Student) {
+    } else if (this.authService.hasPermission('IDENTITY', 'IS_STUDENT')) {
       this.homePage = 'student/dashboard';
     } else {
       this.homePage = 'admin/dashboard/main';

@@ -6,7 +6,7 @@ import {
 } from '@angular/router';
 import { NgClass } from '@angular/common';
 import { Component, ElementRef, OnInit, Renderer2, HostListener, DOCUMENT, inject } from '@angular/core';
-import { AuthService, Role } from '@core';
+import { AuthService } from '@core';
 import { RouteInfo } from './sidebar.metadata';
 import { TranslateModule } from '@ngx-translate/core';
 import { NgScrollbar } from 'ngx-scrollbar';
@@ -83,7 +83,6 @@ export class SidebarComponent
   }
   ngOnInit() {
     if (this.authService.currentUserValue) {
-      const userRole = this.authService.currentUserValue.roles?.[0]?.name;
       this.userFullName = this.authService.currentUserValue.name;
       this.userImg =
         './assets/images/user/' + this.authService.currentUserValue.avatar;
@@ -93,14 +92,19 @@ export class SidebarComponent
         .subscribe((routes: RouteInfo[]) => {
           this.sidebarItems = routes;
         });
-      if (userRole === Role.Admin) {
-        this.userType = this.capitalizeString(Role.Admin);
-      } else if (userRole === Role.Teacher) {
-        this.userType = this.capitalizeString(Role.Teacher);
-      } else if (userRole === Role.Student) {
-        this.userType = this.capitalizeString(Role.Student);
+
+      if (this.authService.hasPermission('IDENTITY', 'IS_SUPER_ADMIN')) {
+        this.userType = 'Super Admin';
+      } else if (this.authService.hasPermission('IDENTITY', 'IS_MANAGEMENT')) {
+        this.userType = 'Management';
+      } else if (this.authService.hasPermission('IDENTITY', 'IS_TEACHER')) {
+        this.userType = 'Teacher';
+      } else if (this.authService.hasPermission('IDENTITY', 'IS_STUDENT')) {
+        this.userType = 'Student';
+      } else if (this.authService.hasPermission('IDENTITY', 'IS_SYSTEM_ADMIN')) {
+        this.userType = 'System Admin';
       } else {
-        this.userType = this.capitalizeString(Role.Admin);
+        this.userType = 'User';
       }
     }
 

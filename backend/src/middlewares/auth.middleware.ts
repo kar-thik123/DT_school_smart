@@ -65,18 +65,6 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
   }
 };
 
-export const authorizeRoles = (...roles: string[]) => {
-  return (req: AuthRequest, res: Response, next: NextFunction) => {
-    if (!req.user) {
-      return res.status(401).json({ message: 'Unauthorized' });
-    }
-    if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ message: 'Forbidden: Insufficient permissions' });
-    }
-    next();
-  };
-};
-
 export const requirePermission = (module: string, action: string) => {
   return (req: AuthRequest, res: Response, next: NextFunction) => {
     const userPermissions = req.user?.permissions || [];

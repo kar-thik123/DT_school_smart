@@ -35,12 +35,12 @@
         <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
           <mat-form-field class="example-full-width" appearance="outline">
             <mat-label>Assign Role</mat-label>
-            <mat-select formControlName="role" required>
-              <mat-option *ngFor="let role of roles" [value]="role.name">
+            <mat-select formControlName="role_id" required>
+              <mat-option *ngFor="let role of roles" [value]="role.id">
                 {{role.name}}
               </mat-option>
             </mat-select>
-            <mat-error *ngIf="userForm.get('role')?.invalid">{{getErrorMessage('role')}}</mat-error>
+            <mat-error *ngIf="userForm.get('role_id')?.invalid">{{getErrorMessage('role_id')}}</mat-error>
           </mat-form-field>
         </div>
         <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">

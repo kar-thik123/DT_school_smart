@@ -1,0 +1,181 @@
+<section class="content">
+  <div class="content-block">
+    <app-breadcrumb [title]="breadscrums[0].title" [items]="breadscrums[0].items" [active_item]="breadscrums[0].active"></app-breadcrumb>
+
+    <div class="row">
+      <div class="col-md-12">
+        <mat-card>
+          <mat-card-content>
+            <div class="d-flex justify-content-between align-items-center mb-4">
+              <h5 class="m-0">Academic Year: {{ activeAcademicYear?.name || 'Not Set' }}</h5>
+            </div>
+
+            <mat-tab-group>
+              <!-- TAB 1: Enrolled Students -->
+              <mat-tab label="Enrollment List">
+                <div class="p-4">
+                  <div class="row mb-3">
+                    <div class="col-md-4">
+                      <mat-form-field appearance="outline" class="w-100">
+                        <mat-label>Filter by Grade</mat-label>
+                        <mat-select [(ngModel)]="selectedGradeId" (selectionChange)="onFilterChange()">
+                          <mat-option [value]="null">All Grades</mat-option>
+                          <mat-option *ngFor="let g of grades" [value]="g.id">{{ g.name }}</mat-option>
+                        </mat-select>
+                      </mat-form-field>
+                    </div>
+                    <div class="col-md-4">
+                      <mat-form-field appearance="outline" class="w-100">
+                        <mat-label>Filter by Section</mat-label>
+                        <mat-select [(ngModel)]="selectedSectionId" (selectionChange)="onFilterChange()" [disabled]="!selectedGradeId">
+                          <mat-option [value]="null">All Sections</mat-option>
+                          <mat-option *ngFor="let s of getFilteredSections(selectedGradeId)" [value]="s.id">{{ s.name }}</mat-option>
+                        </mat-select>
+                      </mat-form-field>
+                    </div>
+                  </div>
+
+                  <div *ngIf="isLoading" class="d-flex justify-content-center p-4">
+                    <mat-spinner diameter="40"></mat-spinner>
+                  </div>
+
+                  <div *ngIf="!isLoading">
+                    <div *ngIf="groupedEnrollments.length === 0" class="text-center text-muted p-4">
+                      No enrollments found for selected criteria.
+                    </div>
+                    
+                    <div *ngFor="let g of groupedEnrollments" class="mb-4">
+                      <h4 class="border-bottom pb-2 text-primary">{{ g.gradeName }}</h4>
+                      
+                      <div *ngFor="let s of g.sections" class="ms-3 mb-3">
+                        <h5 class="text-secondary">{{ s.sectionName }}</h5>
+                        
+                        <div class="table-responsive">
+                          <table class="table table-hover table-sm">
+                            <thead class="table-light">
+                              <tr>
+                                <th>Student Name</th>
+                                <th>Email</th>
+                                <th>Admission No</th>
+                                <th>Mobile</th>
+                                <th>Status</th>
+                                <th class="text-end">Actions</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr *ngFor="let e of s.enrollments">
+                                <td>{{ e.student?.name }}</td>
+                                <td>{{ e.student?.email }}</td>
+                                <td>{{ e.student?.student_profile?.admission_number || 'N/A' }}</td>
+                                <td>{{ e.student?.student_profile?.mobile_number || 'N/A' }}</td>
+                                <td><span class="badge bg-success">{{ e.status }}</span></td>
+                                <td class="text-end">
+                                  <button mat-icon-button color="warn" (click)="unassignStudent(e)" matTooltip="Unassign">
+                                    <mat-icon>person_remove</mat-icon>
+                                  </button>
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </mat-tab>
+
+              <!-- TAB 2: Bulk Enrollment -->
+              <mat-tab label="Bulk Enrollment">
+                <div class="p-4">
+                  <div class="row">
+                    <!-- Target Structure -->
+                    <div class="col-md-4 border-end">
+                      <h6 class="mb-3">Target Assignment</h6>
+                      <mat-form-field appearance="outline" class="w-100 mb-2">
+                        <mat-label>Target Grade *</mat-label>
+                        <mat-select [(ngModel)]="bulkGradeId" (selectionChange)="onBulkGradeChange()">
+                          <mat-option *ngFor="let g of grades" [value]="g.id">{{ g.name }}</mat-option>
+                        </mat-select>
+                      </mat-form-field>
+
+                      <mat-form-field appearance="outline" class="w-100 mb-2">
+                        <mat-label>Target Section</mat-label>
+                        <mat-select [(ngModel)]="bulkSectionId" (selectionChange)="onBulkSectionChange()" [disabled]="!bulkGradeId">
+                          <mat-option [value]="null">None</mat-option>
+                          <mat-option *ngFor="let s of getFilteredSections(bulkGradeId)" [value]="s.id">{{ s.name }}</mat-option>
+                        </mat-select>
+                      </mat-form-field>
+
+                      <mat-form-field appearance="outline" class="w-100 mb-3" *ngIf="subjectGroups.length > 1">
+                        <mat-label>Subject Group</mat-label>
+                        <mat-select [(ngModel)]="bulkGroupId">
+                          <mat-option *ngFor="let sg of subjectGroups" [value]="sg.id">{{ sg.name }}</mat-option>
+                        </mat-select>
+                      </mat-form-field>
+
+                      <button mat-raised-button color="primary" class="w-100" 
+                              [disabled]="!bulkGradeId || selectedBulkStudentIds.length === 0 || isBulkSaving || (subjectGroups.length > 0 && !bulkGroupId)" 
+                              (click)="bulkEnroll()">
+                        <span *ngIf="!isBulkSaving">Enroll {{ selectedBulkStudentIds.length }} Students</span>
+                        <mat-spinner *ngIf="isBulkSaving" diameter="20"></mat-spinner>
+                      </button>
+                    </div>
+
+                    <!-- Student Selection -->
+                    <div class="col-md-8">
+                      <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="m-0">Select Unenrolled Students</h6>
+                        <mat-form-field appearance="outline" style="width: 250px;">
+                          <mat-label>Search</mat-label>
+                          <input matInput [(ngModel)]="bulkSearchQuery" (keyup.enter)="onBulkSearch()" placeholder="Name, Email, Adm No...">
+                          <mat-icon matSuffix (click)="onBulkSearch()" style="cursor: pointer;">search</mat-icon>
+                        </mat-form-field>
+                      </div>
+                      <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-hover table-sm">
+                          <thead class="table-light">
+                            <tr>
+                              <th>
+                                <mat-checkbox
+                                  color="primary"
+                                  (change)="toggleAllStudents($event)"
+                                  [checked]="unenrolledStudents.length > 0 && selectedBulkStudentIds.length === unenrolledStudents.length">
+                                </mat-checkbox>
+                              </th>
+                              <th>Name</th>
+                              <th>Admission No</th>
+                              <th>Mobile No</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr *ngFor="let s of unenrolledStudents">
+                              <td>
+                                <mat-checkbox
+                                  color="primary"
+                                  [value]="s.id" 
+                                  [checked]="selectedBulkStudentIds.includes(s.id)"
+                                  (change)="onBulkStudentSelect($event, s.id)">
+                                </mat-checkbox>
+                              </td>
+                              <td>{{ s.name }}<br><small class="text-muted">{{ s.email }}</small></td>
+                              <td>{{ s.student_profile?.admission_number || 'N/A' }}</td>
+                              <td>{{ s.student_profile?.mobile_number || 'N/A' }}</td>
+                            </tr>
+                            <tr *ngIf="unenrolledStudents.length === 0">
+                              <td colspan="3" class="text-center text-muted">All students are already enrolled.</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </mat-tab>
+
+            </mat-tab-group>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+  </div>
+</section>

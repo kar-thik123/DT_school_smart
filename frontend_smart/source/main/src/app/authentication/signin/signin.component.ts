@@ -98,9 +98,8 @@ export class SigninComponent
       )
       .subscribe({
         next: (response) => {
-          const role = response.user.role;
           this.loading = false;
-          this.router.navigate([this.authService.getDefaultRoute(role)]);
+          this.router.navigate([this.authService.getDefaultRoute()]);
         },
         error: (error) => {
           this.error = error;
