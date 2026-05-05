@@ -19,7 +19,6 @@ async function main() {
           name,
           description: `System ${name} role`,
           is_system: true,
-          is_teaching_role: name === 'TEACHER',
           organization_id: org.id
         }
       });

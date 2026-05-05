@@ -2,6 +2,7 @@ export interface IPermission {
   id: string;
   module: string;
   action: string;
+  description?: string;
 }
 
 export interface IRole {
@@ -9,11 +10,8 @@ export interface IRole {
   name: string;
   description?: string;
   is_system: boolean;
-  organization_id?: string;
-  is_teaching_role?: boolean;
   _count?: {
     users: number;
-    permissions: number;
   };
 }
 
@@ -24,22 +22,17 @@ export interface IRoleWithPermissions extends IRole {
 export class Role implements IRole {
   id: string;
   name: string;
-  description: string;
+  description?: string;
   is_system: boolean;
-  organization_id?: string;
-  is_teaching_role?: boolean;
   _count?: {
     users: number;
-    permissions: number;
   };
 
-  constructor(role: Partial<IRole>) {
-    this.id = role.id || '';
-    this.name = role.name || '';
-    this.description = role.description || '';
+  constructor(role: IRole) {
+    this.id = role.id;
+    this.name = role.name;
+    this.description = role.description;
     this.is_system = role.is_system || false;
-    this.is_teaching_role = role.is_teaching_role || false;
-    this.organization_id = role.organization_id;
     this._count = role._count;
   }
 }

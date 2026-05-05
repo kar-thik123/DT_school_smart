@@ -89,8 +89,7 @@ export class RolePermissionsComponent implements OnInit {
     this.roleForm = this.fb.group({
       id: [role?.id || ''],
       name: [role?.name || '', [Validators.required, Validators.minLength(2)]],
-      description: [role?.description || ''],
-      is_teaching_role: [role?.is_teaching_role || false]
+      description: [role?.description || '']
     });
   }
 
@@ -168,12 +167,12 @@ export class RolePermissionsComponent implements OnInit {
   }
 
   togglePermission(action: any) {
-    if (this.selectedRole?.is_system) return;
+    if (this.selectedRole?.name === 'SUPER_ADMIN') return;
     action.selected = !action.selected;
   }
 
   toggleModule(group: PermissionGroup, checked: boolean) {
-    if (this.selectedRole?.is_system) return;
+    if (this.selectedRole?.name === 'SUPER_ADMIN') return;
     group.actions.forEach(a => a.selected = checked);
   }
 
@@ -187,7 +186,7 @@ export class RolePermissionsComponent implements OnInit {
   }
 
   async syncPermissions() {
-    if (!this.selectedRole || this.selectedRole.is_system) return;
+    if (!this.selectedRole || this.selectedRole.name === 'SUPER_ADMIN') return;
     
     this.isSaving = true;
     const selectedIds = this.permissionGroups

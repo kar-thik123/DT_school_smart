@@ -12,8 +12,7 @@ router.use(requirePermission('IDENTITY', 'IS_SYSTEM_ADMIN'));
 
 const roleSchema = z.object({
   name: z.string().min(2),
-  description: z.string().optional(),
-  is_teaching_role: z.boolean().optional().default(false)
+  description: z.string().optional()
 });
 
 const permissionSyncSchema = z.object({
@@ -124,9 +123,19 @@ router.post('/:id/sync-permissions', async (req: any, res: Response) => {
     const role = await prisma.role.findUnique({ where: { id: req.params.id } });
     if (!role) return res.status(404).json({ message: 'Role not found' });
     
-    // Security check: cannot modify system roles unless SYSTEM_ADMIN
-    if (role.is_system && req.user.role !== 'SYSTEM_ADMIN') {
-        return res.status(403).json({ message: 'Cannot modify system roles' });
+    // Security check: tenant isolation
+    if (role.organization_id && role.organization_id !== req.user.organization_id && req.user.role !== 'SYSTEM_ADMIN') {
+        return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    // Security check: Global platform roles (org=null) can only be modified by SYSTEM_ADMIN
+    if (role.is_system && !role.organization_id && req.user.role !== 'SYSTEM_ADMIN') {
+        return res.status(403).json({ message: 'Cannot modify global platform roles' });
+    }
+
+    // Security check: Prevent locking out SUPER_ADMIN role
+    if (role.name === 'SUPER_ADMIN' && req.user.role !== 'SYSTEM_ADMIN') {
+        return res.status(403).json({ message: 'The SUPER_ADMIN role permissions are locked for safety.' });
     }
 
     // Transactional sync
@@ -234,7 +243,6 @@ router.post('/:id/clone', async (req: any, res: Response) => {
         data: {
           name,
           description,
-          is_teaching_role: sourceRole.is_teaching_role,
           organization_id: req.user.organization_id,
           is_system: false
         }

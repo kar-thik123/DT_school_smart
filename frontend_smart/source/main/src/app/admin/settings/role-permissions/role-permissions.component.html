@@ -35,16 +35,7 @@
                 </mat-form-field>
               </div>
             </div>
-            <div class="row">
-              <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-3">
-                <mat-slide-toggle formControlName="is_teaching_role" color="primary">
-                  Teaching Role (Instructional Staff)
-                </mat-slide-toggle>
-                <div class="text-muted small mt-1 ms-1">
-                  Enable this to allow users with this role to be assigned as Class/Subject Teachers.
-                </div>
-              </div>
-            </div>
+
             <div class="row">
               <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mt-4">
                 <button mat-raised-button color="primary" [disabled]="roleForm.invalid || isSaving" type="submit">
@@ -86,7 +77,6 @@
                         <div class="d-flex flex-column">
                           <div class="d-flex align-items-center">
                             <span class="fw-bold text-dark me-2" style="font-size: 14px;">{{ role.name }}</span>
-                            <span class="badge badge-solid-blue" style="font-size: 10px; padding: 2px 6px;" *ngIf="role.is_teaching_role">Instructional Staff</span>
                           </div>
                           <small class="text-muted mt-1" style="font-size: 12px;">{{ role._count?.users || 0 }} {{ (role._count?.users === 1) ? 'User' : 'Users' }}</small>
                         </div>
@@ -112,7 +102,6 @@
                         <div class="d-flex flex-column">
                           <div class="d-flex align-items-center">
                             <span class="fw-bold text-dark me-2" style="font-size: 14px;">{{ role.name }}</span>
-                            <span class="badge badge-solid-blue" style="font-size: 10px; padding: 2px 6px;" *ngIf="role.is_teaching_role">Instructional Staff</span>
                           </div>
                           <small class="text-muted mt-1" style="font-size: 12px;">{{ role._count?.users || 0 }} {{ (role._count?.users === 1) ? 'User' : 'Users' }}</small>
                         </div>
@@ -155,7 +144,6 @@
                   <div>
                     <div class="d-flex align-items-center">
                       <h2 class="mb-0 me-2">{{ selectedRole.name }}</h2>
-                      <span class="badge badge-solid-blue" *ngIf="selectedRole.is_teaching_role">Instructional Staff</span>
                     </div>
                     <p class="text-muted mb-0 mt-1">{{ selectedRole.description || 'No description provided' }}</p>
                   </div>
@@ -182,7 +170,7 @@
                           <span class="text-muted small">Manage module-level access for this role.</span>
                         </div>
                         <button mat-raised-button color="primary" 
-                                [disabled]="selectedRole.is_system || isSaving" 
+                                [disabled]="selectedRole.name === 'SUPER_ADMIN' || isSaving" 
                                 (click)="syncPermissions()">
                           <mat-icon class="me-2">{{ isSaving ? 'hourglass_empty' : 'sync' }}</mat-icon>
                           Update Permissions
@@ -204,7 +192,7 @@
                                   <mat-checkbox 
                                     [checked]="isModuleAllSelected(group)"
                                     [indeterminate]="isModulePartialSelected(group)"
-                                    [disabled]="selectedRole.is_system"
+                                    [disabled]="selectedRole.name === 'SUPER_ADMIN'"
                                     (change)="toggleModule(group, $event.checked)"
                                     class="me-3">
                                   </mat-checkbox>
@@ -215,7 +203,7 @@
                                 <div class="action-checkboxes">
                                   <mat-checkbox *ngFor="let action of group.actions"
                                                 [(ngModel)]="action.selected"
-                                                [disabled]="selectedRole.is_system"
+                                                [disabled]="selectedRole.name === 'SUPER_ADMIN'"
                                                 (change)="togglePermission(action)"
                                                 class="me-3">
                                     {{ action.action }}
@@ -227,9 +215,9 @@
                         </table>
                       </div>
                       
-                      <div *ngIf="selectedRole.is_system" class="alert alert-info m-4">
+                      <div *ngIf="selectedRole.name === 'SUPER_ADMIN'" class="alert alert-info m-4">
                         <mat-icon class="me-2">lock</mat-icon>
-                        System roles have predefined permissions and cannot be modified.
+                        The SUPER_ADMIN role permissions are locked for safety.
                       </div>
                     </div>
                   </mat-tab>

@@ -7,11 +7,11 @@
     <!-- Active Academic Year Banner -->
     <div class="row">
       <div class="col-12">
-        <div class="alert alert-info d-flex align-items-center" *ngIf="activeAcademicYear">
+        <!-- <div class="alert alert-info d-flex align-items-center" *ngIf="activeAcademicYear">
           <mat-icon class="me-2">calendar_today</mat-icon>
           <strong>Active Academic Year:</strong> &nbsp; {{ activeAcademicYear.academicYear }}
           <span class="ms-auto small">Assignments are scoped to this academic year</span>
-        </div>
+        </div> -->
         <div class="alert alert-danger d-flex align-items-center" *ngIf="!activeAcademicYear">
           <mat-icon class="me-2">warning</mat-icon>
           <strong>Warning: No Active Academic Year Configured.</strong> &nbsp; Please set an active academic year in settings before proceeding.

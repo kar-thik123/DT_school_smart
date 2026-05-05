@@ -32,6 +32,8 @@ async function main() {
   const [permStudent, permTeacher, permParent, permManagement] = createdPermissions;
 
   // 2. Map IS_TEACHER to roles with is_teaching_role = true
+  // Note: is_teaching_role was removed from schema.prisma after this script ran successfully.
+  /*
   const teachingRoles = await prisma.role.findMany({
     where: { is_teaching_role: true }
   });
@@ -50,6 +52,7 @@ async function main() {
       console.log(`Mapped IDENTITY:IS_TEACHER to role: ${role.name}`);
     }
   }
+  */
 
   // 3. Map IS_STUDENT to roles with name = 'STUDENT'
   const studentRoles = await prisma.role.findMany({
