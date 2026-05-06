@@ -6,6 +6,25 @@
       <div class="col-md-12">
         <mat-card>
           <mat-card-content>
+            <!-- SHARED ACTION MENU MOVED TO TOP FOR BETTER SCOPING -->
+            <mat-menu #sharedRowMenu="matMenu">
+              <ng-template matMenuContent let-enrollment="enrollment">
+                <button mat-menu-item (click)="openTransferDialog(enrollment)" *ngIf="enrollment.status === 'ACTIVE'">
+                  <mat-icon color="accent">swap_horiz</mat-icon>
+                  <span>Transfer Student</span>
+                </button>
+                <button mat-menu-item (click)="activateStudent(enrollment)" *ngIf="enrollment.status === 'WITHDRAWN'">
+                  <mat-icon color="primary">person_add</mat-icon>
+                  <span>Activate Student</span>
+                </button>
+                <mat-divider></mat-divider>
+                <button mat-menu-item (click)="openWithdrawDialog(enrollment)" *ngIf="enrollment.status === 'ACTIVE'">
+                  <mat-icon color="warn">person_off</mat-icon>
+                  <span>Withdraw Student</span>
+                </button>
+              </ng-template>
+            </mat-menu>
+
             <div class="d-flex justify-content-between align-items-center mb-4">
               <h5 class="m-0">Academic Year: {{ activeAcademicYear?.name || 'Not Set' }}</h5>
             </div>
@@ -44,40 +63,46 @@
                       No enrollments found for selected criteria.
                     </div>
                     
-                    <div *ngFor="let g of groupedEnrollments" class="mb-4">
+                    <div *ngFor="let g of groupedEnrollments; trackBy: trackByGrade" class="mb-4">
                       <h4 class="border-bottom pb-2 text-primary">{{ g.gradeName }}</h4>
                       
-                      <div *ngFor="let s of g.sections" class="ms-3 mb-3">
+                      <div *ngFor="let s of g.sections; trackBy: trackBySection" class="ms-3 mb-3">
                         <h5 class="text-secondary">{{ s.sectionName }}</h5>
                         
                         <div class="table-responsive">
-                          <table class="table table-hover table-sm">
-                            <thead class="table-light">
-                              <tr>
-                                <th>Student Name</th>
-                                <th>Email</th>
-                                <th>Admission No</th>
-                                <th>Mobile</th>
-                                <th>Status</th>
-                                <th class="text-end">Actions</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              <tr *ngFor="let e of s.enrollments">
-                                <td>{{ e.student?.name }}</td>
-                                <td>{{ e.student?.email }}</td>
-                                <td>{{ e.student?.student_profile?.admission_number || 'N/A' }}</td>
-                                <td>{{ e.student?.student_profile?.mobile_number || 'N/A' }}</td>
-                                <td><span class="badge bg-success">{{ e.status }}</span></td>
-                                <td class="text-end">
-                                  <button mat-icon-button color="warn" (click)="unassignStudent(e)" matTooltip="Unassign">
-                                    <mat-icon>person_remove</mat-icon>
-                                  </button>
-                                </td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </div>
+                            <table class="table table-hover table-custom align-middle">
+                              <thead>
+                                <tr>
+                                  <th>Student Name</th>
+                                  <th>Email</th>
+                                  <th>Admission No.</th>
+                                  <th>Mobile</th>
+                                  <th>Status</th>
+                                  <th class="text-end">Actions</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                <tr *ngFor="let e of s.enrollments; trackBy: trackByEnrollment">
+                                  <td>{{ e.student?.name }}</td>
+                                  <td>{{ e.student?.email }}</td>
+                                  <td>{{ e.student?.student_profile?.admission_number || 'N/A' }}</td>
+                                  <td>{{ e.student?.student_profile?.mobile_number || 'N/A' }}</td>
+                                  <td>
+                                    <span class="badge" [ngClass]="{
+                                      'bg-success': e.status === 'ACTIVE',
+                                      'bg-danger': e.status === 'WITHDRAWN',
+                                      'bg-warning text-dark': e.status === 'TRANSFERRED'
+                                    }">{{ e.status }}</span>
+                                  </td>
+                                  <td class="text-end">
+                                    <button mat-icon-button [matMenuTriggerFor]="sharedRowMenu" [matMenuTriggerData]="{ enrollment: e }">
+                                      <mat-icon>more_vert</mat-icon>
+                                    </button>
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
                       </div>
                     </div>
                   </div>
@@ -178,4 +203,6 @@
       </div>
     </div>
   </div>
+
+
 </section>

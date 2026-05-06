@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, Inject, ViewChild, ViewChildren, QueryList } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -16,6 +16,21 @@ import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.co
 import { AcademicStructureService, IGrade, ISection } from '../academic-structure/services/academic-structure.service';
 import { AcademicYearService } from '../../academics/academic-year/academic-year.service';
 import { StudentEnrollmentService } from './services/student-enrollment.service';
+import { MatMenuModule, MatMenuTrigger, MatMenu } from '@angular/material/menu';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
+import { MatDividerModule } from '@angular/material/divider';
+import { OverlayContainer } from '@angular/cdk/overlay';
+
+@Component({
+  selector: 'app-simple-test-dialog',
+  standalone: true,
+  imports: [MatDialogModule],
+  template: `<div class="p-4"><h3>Test Dialog Works!</h3><button mat-dialog-close>Close</button></div>`
+})
+export class SimpleTestDialogComponent {}
+
+import { TransferStudentDialogComponent } from './dialogs/transfer-student-dialog.component';
+import { WithdrawStudentDialogComponent } from './dialogs/withdraw-student-dialog.component';
 
 @Component({
   selector: 'app-student-mapping',
@@ -32,6 +47,9 @@ import { StudentEnrollmentService } from './services/student-enrollment.service'
     MatProgressSpinnerModule,
     MatCheckboxModule,
     MatInputModule,
+    MatMenuModule,
+    MatDialogModule,
+    MatDividerModule,
     BreadcrumbComponent
   ],
   templateUrl: './student-mapping.component.html',
@@ -42,6 +60,11 @@ export class StudentMappingComponent implements OnInit {
   private academicService = inject(AcademicStructureService);
   private academicYearService = inject(AcademicYearService);
   private snackBar = inject(MatSnackBar);
+  private dialog = inject(MatDialog);
+  private overlayContainer = inject(OverlayContainer);
+
+  @ViewChildren(MatMenuTrigger) menuTriggers!: QueryList<MatMenuTrigger>;
+  @ViewChild('sharedRowMenu') sharedMenu!: MatMenu;
 
   breadscrums = [
     { title: 'Student Enrollment & Mapping', items: ['Administration'], active: 'Student Enrollment' }
@@ -55,6 +78,7 @@ export class StudentMappingComponent implements OnInit {
 
   // Tab 1: Single/List
   enrollments: any[] = [];
+  _groupedEnrollments: any[] = [];
   selectedGradeId: string | null = null;
   selectedSectionId: string | null = null;
   isLoading = false;
@@ -96,6 +120,7 @@ export class StudentMappingComponent implements OnInit {
     this.enrollmentService.getEnrollments(params).subscribe({
       next: (data) => {
         this.enrollments = data;
+        this.groupEnrollments();
         this.isLoading = false;
       },
       error: () => {
@@ -103,6 +128,38 @@ export class StudentMappingComponent implements OnInit {
         this.showNotification('error', 'Failed to load enrollments');
       }
     });
+  }
+
+  groupEnrollments() {
+    const groups: any[] = [];
+    
+    // Group by Grade
+    const grades = new Set(this.enrollments.map(e => e.grade.id));
+    grades.forEach(gId => {
+      const gEnrollments = this.enrollments.filter(e => e.grade.id === gId);
+      if (gEnrollments.length === 0) return;
+      const gName = gEnrollments[0].grade.name;
+
+      const sectionGroups: any[] = [];
+      const sections = new Set(gEnrollments.map(e => e.section?.id || 'none'));
+      
+      sections.forEach(sId => {
+        const sEnrollments = gEnrollments.filter(e => (e.section?.id || 'none') === sId);
+        const sName = sId === 'none' ? 'No Section' : sEnrollments[0].section?.name;
+        
+        sectionGroups.push({
+          sectionName: sName,
+          enrollments: sEnrollments
+        });
+      });
+
+      groups.push({
+        gradeName: gName,
+        sections: sectionGroups
+      });
+    });
+
+    this._groupedEnrollments = groups;
   }
 
   loadUnenrolledStudents() {
@@ -190,35 +247,88 @@ export class StudentMappingComponent implements OnInit {
 
   // Get grouped enrollments
   get groupedEnrollments() {
-    const groups: any[] = [];
-    
-    // Group by Grade
-    const grades = new Set(this.enrollments.map(e => e.grade.id));
-    grades.forEach(gId => {
-      const gEnrollments = this.enrollments.filter(e => e.grade.id === gId);
-      if (gEnrollments.length === 0) return;
-      const gName = gEnrollments[0].grade.name;
+    return this._groupedEnrollments;
+  }
 
-      const sectionGroups: any[] = [];
-      const sections = new Set(gEnrollments.map(e => e.section?.id || 'none'));
-      
-      sections.forEach(sId => {
-        const sEnrollments = gEnrollments.filter(e => (e.section?.id || 'none') === sId);
-        const sName = sId === 'none' ? 'No Section' : sEnrollments[0].section?.name;
-        
-        sectionGroups.push({
-          sectionName: sName,
-          enrollments: sEnrollments
-        });
-      });
+  trackByGrade(index: number, item: any) {
+    return item.gradeName;
+  }
 
-      groups.push({
-        gradeName: gName,
-        sections: sectionGroups
-      });
+  trackBySection(index: number, item: any) {
+    return item.sectionName;
+  }
+
+  trackByEnrollment(index: number, item: any) {
+    return item.id;
+  }
+
+  openTransferDialog(enrollment: any) {
+    const dialogRef = this.dialog.open(TransferStudentDialogComponent, {
+      width: '500px',
+      data: {
+        enrollment,
+        grades: this.grades,
+        sections: this.sections,
+        payload: {
+          to_grade_id: enrollment.grade.id,
+          to_section_id: enrollment.section?.id || null,
+          to_subject_group_id: enrollment.subject_group?.id || null,
+          reason: ''
+        }
+      }
     });
 
-    return groups;
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.enrollmentService.transferStudent(enrollment.id, result).subscribe({
+          next: () => {
+            this.showNotification('success', 'Student transferred successfully');
+            this.loadEnrollments();
+          },
+          error: (err) => {
+            this.showNotification('error', err.error?.message || 'Failed to transfer student');
+          }
+        });
+      }
+    });
+  }
+
+  openWithdrawDialog(enrollment: any) {
+    const dialogRef = this.dialog.open(WithdrawStudentDialogComponent, {
+      width: '500px',
+      data: {
+        enrollment,
+        payload: { reason: '' }
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.enrollmentService.withdrawStudent(enrollment.id, result).subscribe({
+          next: () => {
+            this.showNotification('success', 'Student withdrawn successfully');
+            this.loadEnrollments();
+          },
+          error: (err) => {
+            this.showNotification('error', err.error?.message || 'Failed to withdraw student');
+          }
+        });
+      }
+    });
+  }
+
+  activateStudent(enrollment: any) {
+    if (!confirm(`Are you sure you want to activate ${enrollment.student.name}?`)) return;
+    
+    this.enrollmentService.activateStudent(enrollment.id).subscribe({
+      next: () => {
+        this.showNotification('success', 'Student activated successfully');
+        this.loadEnrollments();
+      },
+      error: (err) => {
+        this.showNotification('error', err.error?.message || 'Failed to activate student');
+      }
+    });
   }
 
   unassignStudent(enrollment: any) {

@@ -38,4 +38,20 @@ export class StudentEnrollmentService {
   unassignStudent(student_id: string, academic_year_id: string): Observable<any> {
     return this.http.delete<any>(`${this.apiUrl}/${student_id}/${academic_year_id}`);
   }
+
+  updateEnrollment(id: string, payload: any): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/${id}`, payload);
+  }
+
+  transferStudent(id: string, payload: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/${id}/transfer`, payload);
+  }
+
+  withdrawStudent(id: string, payload: any): Observable<any> {
+    return this.http.patch<any>(`${this.apiUrl}/${id}/withdraw`, payload);
+  }
+
+  activateStudent(id: string): Observable<any> {
+    return this.http.patch<any>(`${this.apiUrl}/${id}/activate`, {});
+  }
 }

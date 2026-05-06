@@ -69,12 +69,13 @@ model Organization {
   topic_activations   TopicActivation[]
   practice_attempts   PracticeAttempt[]
 
-  subject_groups           SubjectGroup[]
-  student_group_mappings   StudentGroupMapping[]
-  student_enrollments      StudentEnrollment[]
-  promotion_history        PromotionHistory[]
-  student_profiles         StudentProfile[]
-  license                  OrganizationLicense?
+  subject_groups         SubjectGroup[]
+  student_group_mappings StudentGroupMapping[]
+  student_enrollments    StudentEnrollment[]
+  promotion_history      PromotionHistory[]
+  student_profiles       StudentProfile[]
+  license                OrganizationLicense?
+  StudentTransferHistory StudentTransferHistory[]
 
   @@index([subdomain])
   @@map("organizations")
@@ -110,9 +111,9 @@ model User {
   is_active       Boolean  @default(true)
   created_at      DateTime @default(now())
 
-  organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
-  grade        Grade?       @relation(fields: [grade_id], references: [id])
-  section      Section?     @relation(fields: [section_id], references: [id])
+  organization    Organization    @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  grade           Grade?          @relation(fields: [grade_id], references: [id])
+  section         Section?        @relation(fields: [section_id], references: [id])
   student_profile StudentProfile?
 
   password_resets     PasswordReset[]
@@ -120,10 +121,12 @@ model User {
   questions           Question[]
   practice_attempts   PracticeAttempt[]
 
-  student_group_mappings StudentGroupMapping[]
-  enrollments            StudentEnrollment[]
-  promotion_history      PromotionHistory[] @relation("PromotionStudent")
-  promotions_made        PromotionHistory[] @relation("PromotedBy")
+  student_group_mappings      StudentGroupMapping[]
+  enrollments                 StudentEnrollment[]
+  promotion_history           PromotionHistory[]       @relation("PromotionStudent")
+  promotions_made             PromotionHistory[]       @relation("PromotedBy")
+  transfer_history_as_student StudentTransferHistory[] @relation("TransferStudent")
+  transfer_history_as_creator StudentTransferHistory[] @relation("TransferCreator")
 
   @@index([organization_id])
   @@index([email])
@@ -131,14 +134,14 @@ model User {
 }
 
 model StudentProfile {
-  id               String   @id @default(uuid()) @db.Uuid
-  user_id          String   @unique @db.Uuid
-  organization_id  String   @db.Uuid
+  id               String  @id @default(uuid()) @db.Uuid
+  user_id          String  @unique @db.Uuid
+  organization_id  String  @db.Uuid
   admission_number String?
   mobile_number    String?
-  
-  user             User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  organization     Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+
+  user         User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
 
   @@unique([organization_id, admission_number])
   @@map("student_profiles")
@@ -158,14 +161,14 @@ model PasswordReset {
 }
 
 model Role {
-  id               String           @id @default(uuid()) @db.Uuid
-  name             String
-  description      String?
-  organization_id  String?          @db.Uuid
-  is_system        Boolean          @default(false)
-  users            User[]
-  permissions      RolePermission[]
-  organization     Organization?    @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  id              String           @id @default(uuid()) @db.Uuid
+  name            String
+  description     String?
+  organization_id String?          @db.Uuid
+  is_system       Boolean          @default(false)
+  users           User[]
+  permissions     RolePermission[]
+  organization    Organization?    @relation(fields: [organization_id], references: [id], onDelete: Cascade)
 
   @@unique([name, organization_id])
   @@index([organization_id])
@@ -227,18 +230,19 @@ model OrganizationType {
 }
 
 model AcademicYear {
-  id              String       @id @default(uuid()) @db.Uuid
-  name            String // e.g. "2025-2026"
-  start_date      DateTime?
-  end_date        DateTime?
-  is_active       Boolean      @default(true)
-  organization_id String       @db.Uuid
-  organization    Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
-  grades          Grade[]
-  teacher_assignments TeacherAssignment[]
-  enrollments         StudentEnrollment[]
-  promotion_from      PromotionHistory[] @relation("FromAcademicYear")
-  promotion_to        PromotionHistory[] @relation("ToAcademicYear")
+  id                       String                   @id @default(uuid()) @db.Uuid
+  name                     String // e.g. "2025-2026"
+  start_date               DateTime?
+  end_date                 DateTime?
+  is_active                Boolean                  @default(true)
+  organization_id          String                   @db.Uuid
+  organization             Organization             @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  grades                   Grade[]
+  teacher_assignments      TeacherAssignment[]
+  enrollments              StudentEnrollment[]
+  promotion_from           PromotionHistory[]       @relation("FromAcademicYear")
+  promotion_to             PromotionHistory[]       @relation("ToAcademicYear")
+  student_transfer_history StudentTransferHistory[] @relation("TransferAcademicYear")
 
   @@unique([name, organization_id])
   @@map("academic_years")
@@ -262,31 +266,35 @@ model Grade {
   teacher_assignments TeacherAssignment[]
   users               User[]
 
-  subject_groups  SubjectGroup[]
-  enrollments     StudentEnrollment[]
-  promotion_from  PromotionHistory[] @relation("FromGrade")
-  promotion_to    PromotionHistory[] @relation("ToGrade")
+  subject_groups        SubjectGroup[]
+  enrollments           StudentEnrollment[]
+  promotion_from        PromotionHistory[]       @relation("FromGrade")
+  promotion_to          PromotionHistory[]       @relation("ToGrade")
+  transfer_history_from StudentTransferHistory[] @relation("TransferFromGrade")
+  transfer_history_to   StudentTransferHistory[] @relation("TransferToGrade")
 
   @@unique([name, academic_year_id, organization_id])
   @@map("grades")
 }
 
 model Section {
-  id              String  @id @default(uuid()) @db.Uuid
-  name            String
-  grade_id        String  @db.Uuid
-  organization_id String  @db.Uuid
-  sort_order      Int     @default(0)
-  is_active       Boolean @default(true)
-  capacity        Int?
+  id                String  @id @default(uuid()) @db.Uuid
+  name              String
+  grade_id          String  @db.Uuid
+  organization_id   String  @db.Uuid
+  sort_order        Int     @default(0)
+  is_active         Boolean @default(true)
+  capacity          Int?
   warning_threshold Int?
 
-  grade               Grade               @relation(fields: [grade_id], references: [id], onDelete: Cascade)
-  organization        Organization        @relation(fields: [organization_id], references: [id], onDelete: Cascade)
-  teacher_assignments TeacherAssignment[]
-  users               User[]
-  subject_groups      SubjectGroup[]
-  enrollments         StudentEnrollment[]
+  grade                 Grade                    @relation(fields: [grade_id], references: [id], onDelete: Cascade)
+  organization          Organization             @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  teacher_assignments   TeacherAssignment[]
+  users                 User[]
+  subject_groups        SubjectGroup[]
+  enrollments           StudentEnrollment[]
+  transfer_history_from StudentTransferHistory[] @relation("TransferFromSection")
+  transfer_history_to   StudentTransferHistory[] @relation("TransferToSection")
 
   @@unique([name, grade_id, organization_id])
   @@map("sections")
@@ -309,7 +317,7 @@ model Subject {
   questions           Question[]
   practice_attempts   PracticeAttempt[]
 
-  subject_groups           SubjectGroupSubject[]
+  subject_groups SubjectGroupSubject[]
 
   @@unique([name, grade_id, organization_id])
   @@map("subjects")
@@ -440,14 +448,14 @@ model Question {
 }
 
 model TopicActivation {
-  id               String       @id @default(uuid()) @db.Uuid
-  organization_id  String       @db.Uuid
-  topic_id         String       @db.Uuid
-  subject_group_id String       @db.Uuid
-  is_active        Boolean      @default(true)
-  is_completed     Boolean      @default(false)
+  id               String    @id @default(uuid()) @db.Uuid
+  organization_id  String    @db.Uuid
+  topic_id         String    @db.Uuid
+  subject_group_id String    @db.Uuid
+  is_active        Boolean   @default(true)
+  is_completed     Boolean   @default(false)
   completed_at     DateTime?
-  created_at       DateTime     @default(now())
+  created_at       DateTime  @default(now())
 
   organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
   topic        Topic        @relation(fields: [topic_id], references: [id], onDelete: Cascade)
@@ -509,10 +517,12 @@ model SubjectGroup {
   grade        Grade        @relation(fields: [grade_id], references: [id], onDelete: Cascade)
   section      Section      @relation(fields: [section_id], references: [id], onDelete: Cascade)
 
-  subjects        SubjectGroupSubject[]
-  students        StudentGroupMapping[]
-  activations     TopicActivation[]
-  enrollments     StudentEnrollment[]
+  subjects              SubjectGroupSubject[]
+  students              StudentGroupMapping[]
+  activations           TopicActivation[]
+  enrollments           StudentEnrollment[]
+  transfer_history_from StudentTransferHistory[] @relation("TransferFromGroup")
+  transfer_history_to   StudentTransferHistory[] @relation("TransferToGroup")
 
   @@unique([name, grade_id, section_id, organization_id])
   @@index([organization_id])
@@ -593,4 +603,35 @@ model PromotionHistory {
 
   @@index([organization_id])
   @@map("promotion_history")
+}
+
+model StudentTransferHistory {
+  id                    String   @id @default(uuid()) @db.Uuid
+  organization_id       String   @db.Uuid
+  student_id            String   @db.Uuid
+  academic_year_id      String   @db.Uuid
+  from_grade_id         String   @db.Uuid
+  from_section_id       String?  @db.Uuid
+  from_subject_group_id String?  @db.Uuid
+  to_grade_id           String   @db.Uuid
+  to_section_id         String?  @db.Uuid
+  to_subject_group_id   String?  @db.Uuid
+  reason                String?
+  created_by            String   @db.Uuid
+  transfer_date         DateTime @default(now())
+
+  organization       Organization  @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  student            User          @relation("TransferStudent", fields: [student_id], references: [id], onDelete: Cascade)
+  creator            User          @relation("TransferCreator", fields: [created_by], references: [id], onDelete: Cascade)
+  academic_year      AcademicYear  @relation("TransferAcademicYear", fields: [academic_year_id], references: [id], onDelete: Cascade)
+  from_grade         Grade         @relation("TransferFromGrade", fields: [from_grade_id], references: [id], onDelete: Cascade)
+  from_section       Section?      @relation("TransferFromSection", fields: [from_section_id], references: [id], onDelete: SetNull)
+  from_subject_group SubjectGroup? @relation("TransferFromGroup", fields: [from_subject_group_id], references: [id], onDelete: SetNull)
+  to_grade           Grade         @relation("TransferToGrade", fields: [to_grade_id], references: [id], onDelete: Cascade)
+  to_section         Section?      @relation("TransferToSection", fields: [to_section_id], references: [id], onDelete: SetNull)
+  to_subject_group   SubjectGroup? @relation("TransferToGroup", fields: [to_subject_group_id], references: [id], onDelete: SetNull)
+
+  @@index([organization_id])
+  @@index([student_id])
+  @@map("student_transfer_history")
 }

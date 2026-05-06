@@ -71,7 +71,7 @@ router.get('/', async (req: any, res: Response) => {
     const users = await prisma.user.findMany({
       where: filter,
       select: { 
-        id: true, name: true, email: true, section_id: true, grade_id: true, 
+        id: true, name: true, email: true, section_id: true, grade_id: true, role_id: true,
         role: { select: { name: true } }, 
         grade: { select: { name: true } },
         section: { select: { name: true } },
@@ -299,18 +299,111 @@ router.put('/:id', async (req: any, res: Response) => {
   }
 });
 
-// PATCH deactivate
-router.patch('/:id/deactivate', async (req: any, res: Response) => {
+// PATCH status
+router.patch('/:id/status', async (req: any, res: Response) => {
   try {
+    const { is_active } = req.body;
+    if (typeof is_active !== 'boolean') {
+      return res.status(400).json({ message: 'is_active must be a boolean' });
+    }
     const user = await prisma.user.findFirst({ where: { id: req.params.id, organization_id: req.user.organization_id } });
     if (!user) return res.status(404).json({ message: 'User not found' });
-    await prisma.user.update({ where: { id: req.params.id }, data: { is_active: false } });
-    res.json({ message: 'User deactivated' });
+    await prisma.user.update({ where: { id: req.params.id }, data: { is_active } });
+    res.json({ message: `User ${is_active ? 'activated' : 'deactivated'}` });
   } catch (error: any) {
     if (error.code === 'P2025' || error.name === 'PrismaClientKnownRequestError') {
        return res.status(404).json({ message: 'User not found' });
     }
-    console.error('User deactivate error:', error);
+    console.error('User status error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// DELETE user
+router.delete('/:id', async (req: any, res: Response) => {
+  try {
+    const user = await prisma.user.findFirst({ where: { id: req.params.id, organization_id: req.user.organization_id } });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    
+    await prisma.user.delete({ where: { id: req.params.id } });
+    res.json({ message: 'User deleted' });
+  } catch (error: any) {
+    if (error.code === 'P2025' || error.name === 'PrismaClientKnownRequestError') {
+       return res.status(404).json({ message: 'User not found' });
+    }
+    console.error('User delete error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// POST admin-triggered reset password link
+router.post('/:id/reset-password', async (req: any, res: Response) => {
+  try {
+    const targetUser = await prisma.user.findFirst({ 
+      where: { id: req.params.id, organization_id: req.user.organization_id },
+      include: { role: true }
+    });
+    
+    if (!targetUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Role restriction check: Protect SYSTEM_ADMIN from being reset by standard tenant admins
+    if (targetUser.role?.name === 'SYSTEM_ADMIN' && req.user.role !== 'SYSTEM_ADMIN') {
+      return res.status(403).json({ message: 'Cannot reset password for SYSTEM_ADMIN' });
+    }
+    
+    const { randomBytes } = require('crypto');
+    const nodemailer = require('nodemailer');
+    
+    const token = randomBytes(32).toString('hex');
+    const expires_at = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+
+    // Existing token cleanup
+    await prisma.passwordReset.deleteMany({
+      where: { user_id: targetUser.id, used: false }
+    });
+
+    await prisma.passwordReset.create({
+      data: { user_id: targetUser.id, token, expires_at }
+    });
+
+    const resetUrl = `http://localhost:4200/auth/reset-password?token=${token}`;
+
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.SMTP_EMAIL || 'sam21cs1188@gmail.com',
+        pass: process.env.SMTP_PASSWORD || 'mggc wifs yaas yika'
+      }
+    });
+
+    try {
+      await transporter.sendMail({
+        from: `"School Support" <${process.env.SMTP_EMAIL || 'sam21cs1188@gmail.com'}>`,
+        to: targetUser.email,
+        subject: 'Password Reset Request',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; color: #333;">
+            <h2 style="color: #059669;">Reset Your Password</h2>
+            <p>Hello ${targetUser.name},</p>
+            <p>Your administrator has requested a password reset for your account. Click the secure link below to proceed:</p>
+            <div style="margin: 30px 0;">
+              <a href="${resetUrl}" style="display:inline-block; padding:12px 24px; color:#ffffff; background-color:#10b981; border-radius:8px; text-decoration:none; font-weight:bold;">Set New Password</a>
+            </div>
+            <p style="font-size:14px; color:#666;">This link is valid for 15 minutes. If you did not request a password reset, you can safely ignore this email.</p>
+          </div>
+        `
+      });
+      res.json({ message: 'Password reset link sent to user email' });
+    } catch (emailError: any) {
+      console.error('[SMTP Error] Failed to send email:', emailError.message);
+      // Even if email fails, we might want to return 500 so the frontend knows it failed
+      return res.status(500).json({ message: 'Failed to dispatch email. Check SMTP configuration.' });
+    }
+
+  } catch (error: any) {
+    console.error('Password reset error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

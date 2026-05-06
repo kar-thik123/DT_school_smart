@@ -270,4 +270,147 @@ router.delete('/:student_id/:academic_year_id', requirePermission('ACADEMIC_STRU
   }
 });
 
+// PUT edit enrollment (Correction only, no history)
+router.put('/:id', requirePermission('ACADEMIC_STRUCTURE', 'EDIT'), async (req: any, res: Response) => {
+  try {
+    const { grade_id, section_id, subject_group_id } = req.body;
+    const orgId = req.user.organization_id;
+
+    const existing = await prisma.studentEnrollment.findUnique({ where: { id: req.params.id } });
+    if (!existing || existing.organization_id !== orgId) {
+      return res.status(404).json({ message: 'Enrollment not found' });
+    }
+
+    if (section_id && section_id !== existing.section_id) {
+       const cap = await checkSectionCapacity(section_id, orgId, 1);
+       if (!cap.allowed) return res.status(400).json({ message: cap.message });
+    }
+
+    const updated = await prisma.$transaction(async (tx: any) => {
+      const enr = await tx.studentEnrollment.update({
+        where: { id: req.params.id },
+        data: { grade_id, section_id, subject_group_id }
+      });
+      
+      await tx.user.update({
+        where: { id: existing.student_id },
+        data: { grade_id, section_id }
+      });
+      return enr;
+    });
+
+    return res.json(updated);
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+// POST transfer student
+router.post('/:id/transfer', requirePermission('ACADEMIC_STRUCTURE', 'EDIT'), async (req: any, res: Response) => {
+  try {
+    const { to_grade_id, to_section_id, to_subject_group_id, reason } = req.body;
+    const orgId = req.user.organization_id;
+
+    const existing = await prisma.studentEnrollment.findUnique({ where: { id: req.params.id } });
+    if (!existing || existing.organization_id !== orgId) {
+      return res.status(404).json({ message: 'Enrollment not found' });
+    }
+
+    if (to_section_id && to_section_id !== existing.section_id) {
+       const cap = await checkSectionCapacity(to_section_id, orgId, 1);
+       if (!cap.allowed) return res.status(400).json({ message: cap.message });
+    }
+
+    await prisma.$transaction(async (tx: any) => {
+      // @ts-ignore - Prisma client needs regeneration by user later
+      await tx.studentTransferHistory.create({
+        data: {
+          organization_id: orgId,
+          student_id: existing.student_id,
+          academic_year_id: existing.academic_year_id,
+          from_grade_id: existing.grade_id,
+          from_section_id: existing.section_id,
+          from_subject_group_id: existing.subject_group_id,
+          to_grade_id,
+          to_section_id,
+          to_subject_group_id,
+          reason,
+          created_by: req.user.user_id
+        }
+      });
+
+      await tx.studentEnrollment.update({
+        where: { id: req.params.id },
+        data: { grade_id: to_grade_id, section_id: to_section_id, subject_group_id: to_subject_group_id }
+      });
+
+      await tx.user.update({
+        where: { id: existing.student_id },
+        data: { grade_id: to_grade_id, section_id: to_section_id }
+      });
+    });
+
+    return res.json({ message: 'Transfer successful' });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+// PATCH activate student
+router.patch('/:id/activate', requirePermission('ACADEMIC_STRUCTURE', 'EDIT'), async (req: any, res: Response) => {
+  try {
+    const orgId = req.user.organization_id;
+
+    const existing = await prisma.studentEnrollment.findUnique({ where: { id: req.params.id } });
+    if (!existing || existing.organization_id !== orgId) {
+      return res.status(404).json({ message: 'Enrollment not found' });
+    }
+
+    await prisma.$transaction(async (tx: any) => {
+      await tx.studentEnrollment.update({
+        where: { id: req.params.id },
+        data: { status: EnrollmentStatus.ACTIVE }
+      });
+      
+      await tx.user.update({
+        where: { id: existing.student_id },
+        data: { grade_id: existing.grade_id, section_id: existing.section_id }
+      });
+    });
+
+    return res.json({ message: 'Student activated successfully' });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+// PATCH withdraw student
+router.patch('/:id/withdraw', requirePermission('ACADEMIC_STRUCTURE', 'EDIT'), async (req: any, res: Response) => {
+  try {
+    const { reason } = req.body;
+    const orgId = req.user.organization_id;
+
+    const existing = await prisma.studentEnrollment.findUnique({ where: { id: req.params.id } });
+    if (!existing || existing.organization_id !== orgId) {
+      return res.status(404).json({ message: 'Enrollment not found' });
+    }
+
+    await prisma.$transaction(async (tx: any) => {
+      await tx.studentEnrollment.update({
+        where: { id: req.params.id },
+        data: { status: EnrollmentStatus.WITHDRAWN }
+      });
+      
+      await tx.user.update({
+        where: { id: existing.student_id },
+        data: { grade_id: null, section_id: null }
+      });
+    });
+
+    return res.json({ message: 'Student withdrawn successfully' });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;
