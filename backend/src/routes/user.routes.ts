@@ -265,9 +265,20 @@ router.post('/bulk', async (req: any, res: Response) => {
 // PUT update user by id
 router.put('/:id', async (req: any, res: Response) => {
   try {
-    const user = await prisma.user.findFirst({ where: { id: req.params.id, organization_id: req.user.organization_id } });
+    const user = await prisma.user.findFirst({
+      where: { id: req.params.id, organization_id: req.user.organization_id },
+      include: { role: true }
+    });
     if (!user) return res.status(404).json({ message: 'User not found' });
-    
+
+    // Self-protection: SUPER_ADMIN cannot demote or mutate their own owner account
+    if (user.role?.name === 'SUPER_ADMIN' && user.id === req.user.user_id) {
+      // Allow safe edits (name) but block role changes or deactivation
+      if (req.body.role_id || req.body.role || req.body.is_active === false) {
+        return res.status(403).json({ message: 'Tenant owner account cannot perform self-destructive actions.' });
+      }
+    }
+
     let updateData: any = { name: req.body.name, is_active: req.body.is_active };
     if (req.body.role_id) {
       const roleDb = await prisma.role.findFirst({ 
@@ -306,8 +317,17 @@ router.patch('/:id/status', async (req: any, res: Response) => {
     if (typeof is_active !== 'boolean') {
       return res.status(400).json({ message: 'is_active must be a boolean' });
     }
-    const user = await prisma.user.findFirst({ where: { id: req.params.id, organization_id: req.user.organization_id } });
+    const user = await prisma.user.findFirst({
+      where: { id: req.params.id, organization_id: req.user.organization_id },
+      include: { role: true }
+    });
     if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // Self-protection: SUPER_ADMIN cannot deactivate themselves
+    if (user.role?.name === 'SUPER_ADMIN' && user.id === req.user.user_id) {
+      return res.status(403).json({ message: 'Tenant owner account cannot perform self-destructive actions.' });
+    }
+
     await prisma.user.update({ where: { id: req.params.id }, data: { is_active } });
     res.json({ message: `User ${is_active ? 'activated' : 'deactivated'}` });
   } catch (error: any) {
@@ -322,9 +342,17 @@ router.patch('/:id/status', async (req: any, res: Response) => {
 // DELETE user
 router.delete('/:id', async (req: any, res: Response) => {
   try {
-    const user = await prisma.user.findFirst({ where: { id: req.params.id, organization_id: req.user.organization_id } });
+    const user = await prisma.user.findFirst({
+      where: { id: req.params.id, organization_id: req.user.organization_id },
+      include: { role: true }
+    });
     if (!user) return res.status(404).json({ message: 'User not found' });
-    
+
+    // Self-protection: SUPER_ADMIN cannot delete themselves — would orphan the tenant
+    if (user.role?.name === 'SUPER_ADMIN' && user.id === req.user.user_id) {
+      return res.status(403).json({ message: 'Tenant owner account cannot perform self-destructive actions.' });
+    }
+
     await prisma.user.delete({ where: { id: req.params.id } });
     res.json({ message: 'User deleted' });
   } catch (error: any) {
@@ -352,6 +380,12 @@ router.post('/:id/reset-password', async (req: any, res: Response) => {
     if (targetUser.role?.name === 'SYSTEM_ADMIN' && req.user.role !== 'SYSTEM_ADMIN') {
       return res.status(403).json({ message: 'Cannot reset password for SYSTEM_ADMIN' });
     }
+
+    // Self-protection: SUPER_ADMIN cannot admin-reset their own password via user management
+    // (they should use the standard forgot-password flow instead)
+    if (targetUser.role?.name === 'SUPER_ADMIN' && targetUser.id === req.user.user_id) {
+      return res.status(403).json({ message: 'Tenant owner account cannot perform self-destructive actions.' });
+    }
     
     const { randomBytes } = require('crypto');
     const nodemailer = require('nodemailer');
@@ -368,8 +402,7 @@ router.post('/:id/reset-password', async (req: any, res: Response) => {
       data: { user_id: targetUser.id, token, expires_at }
     });
 
-    const resetUrl = `http://localhost:4200/auth/reset-password?token=${token}`;
-
+    const resetUrl = `http://localhost:4200/#/authentication/reset-password?token=${token}`;
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {

@@ -97,19 +97,29 @@
                         <mat-icon>edit</mat-icon>
                         <span>Edit Details</span>
                       </button>
-                      <button mat-menu-item (click)="handleStatusToggle(row)">
-                        <mat-icon>{{ row.is_active ? 'block' : 'check_circle' }}</mat-icon>
-                        <span>{{ row.is_active ? 'Deactivate' : 'Activate' }}</span>
-                      </button>
-                      <button mat-menu-item (click)="handleResetPassword(row)">
-                        <mat-icon>vpn_key</mat-icon>
-                        <span>Reset Password</span>
-                      </button>
-                      <mat-divider></mat-divider>
-                      <button mat-menu-item color="warn" (click)="handleDelete(row)">
-                        <mat-icon color="warn">delete</mat-icon>
-                        <span class="text-danger">Delete User</span>
-                      </button>
+                      <!-- Dangerous actions hidden for the tenant owner (SUPER_ADMIN self-row) -->
+                      @if (!isSuperAdminSelf(row)) {
+                        <button mat-menu-item (click)="handleStatusToggle(row)">
+                          <mat-icon>{{ row.is_active ? 'block' : 'check_circle' }}</mat-icon>
+                          <span>{{ row.is_active ? 'Deactivate' : 'Activate' }}</span>
+                        </button>
+                        <button mat-menu-item (click)="handleResetPassword(row)">
+                          <mat-icon>vpn_key</mat-icon>
+                          <span>Reset Password</span>
+                        </button>
+                        <mat-divider></mat-divider>
+                        <button mat-menu-item color="warn" (click)="handleDelete(row)">
+                          <mat-icon color="warn">delete</mat-icon>
+                          <span class="text-danger">Delete User</span>
+                        </button>
+                      }
+                      @if (isSuperAdminSelf(row)) {
+                        <mat-divider></mat-divider>
+                        <button mat-menu-item disabled>
+                          <mat-icon>lock</mat-icon>
+                          <span>Tenant Owner — Protected</span>
+                        </button>
+                      }
                     </mat-menu>
                   </mat-cell>
                 </ng-container>

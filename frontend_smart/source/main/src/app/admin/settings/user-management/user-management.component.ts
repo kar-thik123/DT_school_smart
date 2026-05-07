@@ -20,6 +20,7 @@ import { IUser } from './user-management.model';
 import { rowsAnimation } from '@shared';
 import { Direction } from '@angular/cdk/bidi';
 import { LocalStorageService } from '@shared/services';
+import { AuthService } from '@core';
 import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.component';
 import { CommonModule } from '@angular/common';
 
@@ -49,6 +50,10 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   userManagementService = inject(UserManagementService);
   private snackBar = inject(MatSnackBar);
   private localStorageService = inject(LocalStorageService);
+  private authService = inject(AuthService);
+
+  // ID of the currently logged-in user — used for self-protection checks
+  readonly currentUserId: string = this.authService.currentUserValue?.id;
 
   displayedColumns: string[] = ['name', 'email', 'role', 'last_login', 'status', 'actions'];
   dataSource = new MatTableDataSource<IUser>([]);
@@ -126,7 +131,19 @@ export class UserManagementComponent implements OnInit, OnDestroy {
     this.openDialog('edit', row);
   }
 
+  /**
+   * Returns true when the row is the currently-logged-in SUPER_ADMIN.
+   * Used to hide destructive actions that would orphan the tenant.
+   */
+  isSuperAdminSelf(row: IUser): boolean {
+    return row.role === 'SUPER_ADMIN' && row.id === this.currentUserId;
+  }
+
   handleStatusToggle(row: IUser) {
+    if (this.isSuperAdminSelf(row)) {
+      this.showNotification('snackbar-danger', 'Tenant owner account cannot be deactivated.', 'bottom', 'center');
+      return;
+    }
     const newStatus = !row.is_active;
     this.userManagementService.updateUserStatus(row.id, newStatus).subscribe({
       next: () => {
@@ -139,6 +156,10 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   }
 
   handleResetPassword(row: IUser) {
+    if (this.isSuperAdminSelf(row)) {
+      this.showNotification('snackbar-danger', 'Use Forgot Password to reset your own credentials.', 'bottom', 'center');
+      return;
+    }
     this.userManagementService.sendResetPasswordLink(row.id).subscribe({
       next: () => this.showNotification('snackbar-success', 'Password reset link sent to user email', 'bottom', 'center'),
       error: (err: any) => this.showNotification('snackbar-danger', err.message, 'bottom', 'center')
@@ -164,6 +185,10 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   }
 
   handleDelete(row: IUser) {
+    if (this.isSuperAdminSelf(row)) {
+      this.showNotification('snackbar-danger', 'Tenant owner account cannot be deleted.', 'bottom', 'center');
+      return;
+    }
     const dialogRef = this.dialog.open(UserManagementDeleteComponent, { data: row });
     dialogRef.afterClosed().subscribe((result) => {
       if (result) {

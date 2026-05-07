@@ -60,7 +60,7 @@ router.post('/login', loginLimiter, async (req: any, res: Response) => {
         user_id: user.id, 
         organization_id: user.organization_id
       },
-      process.env.JWT_SECRET || 'dev_secret',
+      process.env.JWT_SECRET || 'supersecret_jwt_key_for_dev_only',
       { expiresIn: '1d' }
     );
 
@@ -170,7 +170,7 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
       data: { user_id: user.id, token, expires_at }
     });
 
-    const resetUrl = `http://localhost:4200/auth/reset-password?token=${token}`;
+    const resetUrl = `http://localhost:4200/#/authentication/reset-password?token=${token}`;
 
     const transporter = nodemailer.createTransport({
       service: 'gmail',

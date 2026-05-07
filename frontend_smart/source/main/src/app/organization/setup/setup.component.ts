@@ -74,6 +74,10 @@ export class SetupComponent implements OnInit {
     localStorage.setItem('provisioning_draft', JSON.stringify(this.provisioningForm.value));
   }
 
+  clearDraft() {
+    localStorage.removeItem('provisioning_draft');
+  }
+
   loadDraft() {
     const draft = localStorage.getItem('provisioning_draft');
     if (draft) {
@@ -235,18 +239,20 @@ export class SetupComponent implements OnInit {
         };
         this.isProvisioned = true;
         this.isSubmitting = false;
-        localStorage.removeItem('provisioning_draft');
+        this.clearDraft(); // Clear draft on success — prevents retry with stale data
         this.snackBar.open('Tenant Launched Successfully!', 'Success', { duration: 5000 });
       },
       error: (err) => {
         this.snackBar.open(err.error?.message || 'Launch failed', 'Close', { duration: 5000 });
         this.isSubmitting = false;
+        this.clearDraft(); // Clear draft on failure — forces clean retry
       }
     });
   }
 
   resetConsole() {
     this.isProvisioned = false;
+    this.clearDraft(); // Clear draft on reset — prevents stale data on next session
     this.provisioningForm.reset();
     this.initForm();
     this.currentStep = 1;
