@@ -11,7 +11,7 @@ import { LocalStorageService } from '@shared/services';
 export class AuthService {
   private http = inject(HttpClient);
   private storage = inject(LocalStorageService);
-  
+
   user$ = new BehaviorSubject<any>({});
 
   constructor() {
@@ -96,6 +96,20 @@ export class AuthService {
     return this.storage.has('token');
   }
 
+  // hasPermission(moduleOrPermission: string, action?: string): boolean {
+  //   const user = this.user$.value;
+  //   if (!user || Object.keys(user).length === 0) return false;
+
+  //   // SYSTEM_ADMIN bypasses all checks
+  //   const role = user.role || user.roles?.[0]?.name;
+  //   if (role === 'SYSTEM_ADMIN') return true;
+
+  //   const permissions = this.getPermissions();
+  //   const permissionToCheck = action ? `${moduleOrPermission}:${action}` : moduleOrPermission;
+
+  //   return permissions.includes(permissionToCheck);
+  // }
+
   hasPermission(moduleOrPermission: string, action?: string): boolean {
     const user = this.user$.value;
     if (!user || Object.keys(user).length === 0) return false;
@@ -108,8 +122,15 @@ export class AuthService {
 
     const permissions = this.getPermissions();
     const permissionToCheck = action ? `${moduleOrPermission}:${action}` : moduleOrPermission;
-    
-    return permissions.includes(permissionToCheck);
+
+    if (permissions.includes(permissionToCheck)) return true;
+
+    // Fallback: If DB permissions are empty, check the base role string
+    if (role === 'MANAGEMENT' && permissionToCheck === 'IDENTITY:IS_MANAGEMENT') return true;
+    if (role === 'TEACHER' && permissionToCheck === 'IDENTITY:IS_TEACHER') return true;
+    if (role === 'STUDENT' && permissionToCheck === 'IDENTITY:IS_STUDENT') return true;
+
+    return false;
   }
 
   logout(): Observable<any> {
@@ -132,14 +153,14 @@ export class AuthService {
     // be transiently empty (e.g. before ngx-permissions loads from storage).
     // Role name is always present in the stored currentUser object.
     if (role === 'SYSTEM_ADMIN') return '/organization/list';
-    if (role === 'SUPER_ADMIN')  return '/admin/dashboard/main';
+    if (role === 'SUPER_ADMIN') return '/admin/dashboard/main';
 
     // Permission-driven routing for all other roles
     if (this.hasPermission('IDENTITY', 'IS_SYSTEM_ADMIN')) return '/organization/list';
-    if (this.hasPermission('IDENTITY', 'IS_SUPER_ADMIN'))  return '/admin/dashboard/main';
-    if (this.hasPermission('IDENTITY', 'IS_MANAGEMENT'))   return '/admin/dashboard/main';
-    if (this.hasPermission('IDENTITY', 'IS_TEACHER'))      return '/teacher/dashboard';
-    if (this.hasPermission('IDENTITY', 'IS_STUDENT'))      return '/student/dashboard';
+    if (this.hasPermission('IDENTITY', 'IS_SUPER_ADMIN')) return '/admin/dashboard/main';
+    if (this.hasPermission('IDENTITY', 'IS_MANAGEMENT')) return '/admin/dashboard/main';
+    if (this.hasPermission('IDENTITY', 'IS_TEACHER')) return '/teacher/dashboard';
+    if (this.hasPermission('IDENTITY', 'IS_STUDENT')) return '/student/dashboard';
     return '/authentication/signin';
   }
 }

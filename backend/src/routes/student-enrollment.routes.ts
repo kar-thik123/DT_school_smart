@@ -34,13 +34,13 @@ router.get('/', requirePermission('ACADEMIC_STRUCTURE', 'READ'), async (req: any
     const enrollments = await prisma.studentEnrollment.findMany({
       where: filter,
       include: {
-        student: { 
-          select: { 
-            id: true, 
-            name: true, 
+        student: {
+          select: {
+            id: true,
+            name: true,
             email: true,
             student_profile: true
-          } 
+          }
         },
         academic_year: true,
         grade: true,
@@ -71,15 +71,15 @@ router.get('/unenrolled', requirePermission('ACADEMIC_STRUCTURE', 'READ'), async
 
     // Find all active students matching the search
     const students = await prisma.user.findMany({
-      where: { 
-        organization_id: req.user.organization_id, 
-        role: { permissions: { some: { permission: { module: 'IDENTITY', action: 'IS_STUDENT' } } } }, 
+      where: {
+        organization_id: req.user.organization_id,
+        role: { permissions: { some: { permission: { module: 'IDENTITY', action: 'IS_STUDENT' } } } },
         is_active: true,
         ...searchFilter
       },
-      select: { 
-        id: true, 
-        name: true, 
+      select: {
+        id: true,
+        name: true,
         email: true,
         student_profile: true
       }
@@ -135,9 +135,9 @@ router.post('/map', requirePermission('ACADEMIC_STRUCTURE', 'EDIT'), async (req:
       }
     });
 
-    // Update the transitional fields on User model
-    await prisma.user.update({
-      where: { id: student_id },
+    // Update the transitional fields on User model safely within tenant scope
+    await prisma.user.updateMany({
+      where: { id: student_id, organization_id: orgId },
       data: { grade_id, section_id }
     });
 
@@ -158,8 +158,8 @@ router.post('/bulk-enroll', requirePermission('ACADEMIC_STRUCTURE', 'EDIT'), asy
     }
 
     if (section_id) {
-       const cap = await checkSectionCapacity(section_id, orgId, student_ids.length);
-       if (!cap.allowed) return res.status(400).json({ message: cap.message });
+      const cap = await checkSectionCapacity(section_id, orgId, student_ids.length);
+      if (!cap.allowed) return res.status(400).json({ message: cap.message });
     }
 
     await prisma.$transaction(async (tx: any) => {
@@ -170,8 +170,8 @@ router.post('/bulk-enroll', requirePermission('ACADEMIC_STRUCTURE', 'EDIT'), asy
           create: { organization_id: orgId, student_id, academic_year_id, grade_id, section_id: section_id || null, subject_group_id: subject_group_id || null, status: EnrollmentStatus.ACTIVE }
         });
 
-        await tx.user.update({
-          where: { id: student_id },
+        await tx.user.updateMany({
+          where: { id: student_id, organization_id: orgId },
           data: { grade_id, section_id: section_id || null }
         });
       }
@@ -222,9 +222,9 @@ router.post('/promote', requirePermission('ACADEMIC_STRUCTURE', 'EDIT'), async (
           }
         });
 
-        // Update User cache
-        await tx.user.update({
-          where: { id: promo.student_id },
+        // Update User cache safely within tenant scope
+        await tx.user.updateMany({
+          where: { id: promo.student_id, organization_id: orgId },
           data: { grade_id: promo.to_grade_id, section_id: promo.to_section_id }
         });
       }
@@ -254,9 +254,9 @@ router.delete('/:student_id/:academic_year_id', requirePermission('ACADEMIC_STRU
         }
       });
 
-      // Nullify the current grade and section on the User
-      await tx.user.update({
-        where: { id: student_id },
+      // Nullify the current grade and section on the User safely within tenant scope
+      await tx.user.updateMany({
+        where: { id: student_id, organization_id: orgId },
         data: { grade_id: null, section_id: null }
       });
     });

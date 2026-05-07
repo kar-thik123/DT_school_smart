@@ -12,21 +12,20 @@
         <div class="card">
           <div class="body">
             <div id="mail-nav">
-              <button type="button" class="btn btn-success waves-effect m-b-15">COMPOSE</button>
+              <button type="button" class="btn btn-success waves-effect m-b-15" routerLink="/email/compose"
+                title="Compose">COMPOSE</button>
               <ul class="" id="mail-folders">
-                <li class="active">
-                  <a href="inbox.html" title="Inbox">Inbox
-                    <span class="badge bg-orange">6</span>
-                  </a>
+                <li [class.active]="folder === 'inbox'">
+                  <a [routerLink]="['/email/inbox']" [state]="{folder: 'inbox'}" title="Inbox">Inbox</a>
                 </li>
-                <li>
-                  <a href="javascript:;" title="Sent">Sent</a>
+                <li [class.active]="folder === 'sent'">
+                  <a [routerLink]="['/email/inbox']" [state]="{folder: 'sent'}" title="Sent">Sent</a>
                 </li>
-                <li>
-                  <a href="javascript:;" title="Draft">Draft</a>
+                <li [class.active]="folder === 'drafts'">
+                  <a [routerLink]="['/email/inbox']" [state]="{folder: 'drafts'}" title="Draft">Draft</a>
                 </li>
-                <li>
-                  <a href="javascript:;" title="Bin">Bin</a>
+                <li [class.active]="folder === 'trash'">
+                  <a [routerLink]="['/email/inbox']" [state]="{folder: 'trash'}" title="Bin">Bin</a>
                 </li>
                 <li>
                   <a href="javascript:;" title="Important">Important</a>
@@ -92,98 +91,59 @@
           <div class="boxs mail_listing">
             <div class="inbox-body no-pad">
               <section class="mail-list">
+                @if (mail) {
                 <div class="mail-sender">
                   <div class="mail-heading">
                     <h4 class="vew-mail-header">
-                      <b>Hi Dear, How are you?</b>
+                      <b>{{ mail.subject }}</b>
                     </h4>
                   </div>
                   <hr>
                   <div class="d-flex mb-4">
-                    <a href="#" class="table-img m-r-15">
+                    <a href="javascript:;" class="table-img m-r-15">
                       <img alt="" style="height: 30px;" src="assets/images/user/user2.jpg">
                     </a>
                     <div class="flex-grow-1">
-                      <span class="date float-end">4:15AM 04 April 2017</span>
-                      <h4 class="text-primary">Sarah Smith</h4>
-                      <small class="text-muted">From: sarah&#64;example.com</small>
+                      <span class="date float-end">{{ mail.created_at | date:'shortTime' }} {{ mail.created_at |
+                        date:'dd MMMM yyyy' }}</span>
+                      <h4 class="text-primary">{{ getDisplayName() }}</h4>
+                      <small class="text-muted">From: {{ getDisplayEmail() }}</small>
                     </div>
                   </div>
                 </div>
                 <div class="view-mail">
-                  <p>Donec ultrices faucibus rutrum. Phasellus sodales vulputate urna, vel
-                    accumsan augue
-                    egestas ac. Donec vitae leo at sem lobortis porttitor eu consequat risus.
-                    Mauris
-                    sed congue orci. Donec ultrices faucibus rutrum. Phasellus sodales
-                    vulputate urna,
-                    vel accumsan augue egestas ac. Donec vitae leo at sem lobortis porttitor eu
-                    consequat
-                    risus. Mauris sed congue orci. Donec ultrices faucibus rutrum. Phasellus
-                    sodales
-                    vulputate urna, vel accumsan augue egestas ac. Donec vitae leo at sem
-                    lobortis porttitor
-                    eu consequat risus. Mauris sed congue orci.</p>
-                  <p>
-                    Porttitor eu consequat risus.
-                    <a href="#">Mauris sed congue orci. Donec ultrices faucibus rutrum</a>.
-                    Phasellus sodales vulputate
-                    urna, vel accumsan augue egestas ac. Donec vitae leo at sem lobortis
-                    porttitor eu
-                    consequat risus. Mauris sed congue orci. Donec ultrices faucibus rutrum.
-                    Phasellus
-                    sodales vulputate urna, vel accumsan augue egestas ac. Donec vitae leo at
-                    sem lobortis
-                    porttitor eu consequat risus. Mauris sed congue orci.
-                  </p>
-                  <p>
-                    Sodales
-                    <a href="#">vulputate urna, vel accumsan augue egestas ac</a>. Donec vitae
-                    leo at sem lobortis
-                    porttitor eu consequat risus. Mauris sed congue orci. Donec ultrices
-                    faucibus rutrum.
-                    Phasellus sodales vulputate urna, vel accumsan augue egestas ac. Donec
-                    vitae leo
-                    at sem lobortis porttitor eu consequat risus. Mauris sed congue orci.
-                  </p>
+                  <p>{{ mail.body }}</p>
                 </div>
+                }
+                @if (mail.attachments && mail.attachments.length > 0) {
                 <div class="attachment-mail">
                   <p>
                     <span>
-                      <i class="fa fa-paperclip"></i> 3 attachments — </span>
-                    <a href="#">Download all attachments</a> |
-                    <a href="#">View all images</a>
+                      <i class="fa fa-paperclip"></i> {{ mail.attachments.length }} attachments — </span>
                   </p>
                   <div class="row">
-                    <div class="col-md-2">
-                      <a href="#">
-                        <img class="img-thumbnail img-responsive" alt="attachment" src="assets/images/user/user2.jpg">
+                    @for (attachment of mail.attachments; track attachment.id) {
+                    <div class="col-md-2" style="margin-bottom: 15px;">
+                      @if (isImage(attachment.mimetype)) {
+                      <a [href]="'http://localhost:3000' + attachment.url" target="_blank">
+                        <img class="img-thumbnail img-responsive" alt="attachment" [src]="'http://localhost:3000' + attachment.url" style="max-height: 100px; object-fit: cover;">
                       </a>
-                      <a class="name" href="#"> IMG_001.jpg
-                        <span>20KB</span>
+                      } @else {
+                      <a [href]="'http://localhost:3000' + attachment.url" target="_blank" class="d-block text-center p-t-20 p-b-20 bg-light" style="border: 1px solid #ddd; border-radius: 4px;">
+                        <i class="material-icons text-muted" style="font-size: 36px;">insert_drive_file</i>
                       </a>
-                    </div>
-                    <div class="col-md-2">
-                      <a href="#">
-                        <img class="img-thumbnail img-responsive" alt="attachment" src="assets/images/user/user1.jpg">
-                      </a>
-                      <a class="name" href="#"> IMG_002.jpg
-                        <span>22KB</span>
-                      </a>
-                    </div>
-                    <div class="col-md-2">
-                      <a href="#">
-                        <img class="img-thumbnail img-responsive" alt="attachment" src="assets/images/user/user3.jpg">
-                      </a>
-                      <a class="name" href="#"> IMG_003.jpg
-                        <span>28KB</span>
+                      }
+                      <a class="name" [href]="'http://localhost:3000' + attachment.url" target="_blank" style="display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" [title]="attachment.filename"> {{ attachment.filename }}
+                        <span>{{ formatBytes(attachment.size) }}</span>
                       </a>
                     </div>
+                    }
                   </div>
                 </div>
+                }
                 <div class="replyBox m-t-20">
                   <p class="p-b-20">click here to
-                    <a href="#">Reply</a> or
+                    <a href="javascript:;" (click)="replyToMail()">Reply</a> or
                     <a href="#">Forward</a>
                   </p>
                 </div>
