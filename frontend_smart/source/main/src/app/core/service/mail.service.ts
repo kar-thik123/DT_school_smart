@@ -60,7 +60,11 @@ export class MailService {
     return this.http.post(`${this.apiUrl}/send`, payload);
   }
 
-  updateMailAction(id: string, action: 'read' | 'delete' | 'restore' | 'star' | 'archive', value?: boolean): Observable<any> {
-    return this.http.patch(`${this.apiUrl}/${id}/action`, { action, value });
+  getMailById(id: string): Observable<Mail> {
+    return this.http.get<Mail>(`${this.apiUrl}/${id}`);
+  }
+
+  updateMailAction(id: string, action: 'read' | 'delete' | 'restore' | 'star' | 'archive', value?: any, folder?: string): Observable<any> {
+    return this.http.patch(`${this.apiUrl}/${id}/action`, { action, value, folder });
   }
 }

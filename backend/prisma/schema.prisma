@@ -54,6 +54,7 @@ model Organization {
   created_at          DateTime            @default(now())
   users               User[]
   roles               Role[]
+  notifications       Notification[]
   boards              Board[]
   mediums             Medium[]
   organization_types  OrganizationType[]
@@ -130,6 +131,7 @@ model User {
   transfer_history_as_creator StudentTransferHistory[] @relation("TransferCreator")
   mails_sent             InternalMail[]        @relation("MailSender")
   mails_received         InternalMail[]        @relation("MailReceiver")
+  notifications          Notification[]
 
   @@index([organization_id])
   @@index([email])
@@ -688,4 +690,27 @@ model InternalMail {
   @@index([senderId])
   @@index([receiverId])
   @@map("internal_mails")
+}
+
+// --- Notification System ---
+
+model Notification {
+  id              String   @id @default(uuid()) @db.Uuid
+  organization_id String   @db.Uuid
+  userId          String   @db.Uuid
+  type            String   @default("email")
+  title           String
+  message         String
+  icon            String?
+  color           String   @default("notification-blue")
+  referenceId     String?  @db.Uuid
+  isRead          Boolean  @default(false)
+  created_at      DateTime @default(now())
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([organization_id])
+  @@map("notifications")
 }

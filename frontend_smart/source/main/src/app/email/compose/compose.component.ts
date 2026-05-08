@@ -131,7 +131,7 @@ export class ComposeComponent implements OnInit, OnDestroy {
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
   }
 
-  sendMail() {
+  sendMail(status: 'SENT' | 'DRAFT' = 'SENT') {
     const selectedUser = this.receiverControl.value;
     if (!selectedUser || typeof selectedUser === 'string') {
       this.snackBar.open('Please select a valid recipient from the suggestions.', 'Close', { duration: 3000 });
@@ -148,7 +148,7 @@ export class ComposeComponent implements OnInit, OnDestroy {
     formData.append('receiverId', selectedUser.id);
     formData.append('subject', this.subject);
     formData.append('body', plainTextBody);
-    formData.append('status', 'SENT');
+    formData.append('status', status);
     if (this.replyToId) {
       formData.append('replyToId', this.replyToId);
     }
@@ -160,23 +160,19 @@ export class ComposeComponent implements OnInit, OnDestroy {
     this.mailService.sendMail(formData).subscribe({
       next: () => {
         this.isUploading = false;
-        this.snackBar.open('Email sent successfully!', 'Close', { duration: 3000, panelClass: 'bg-green' });
+        this.snackBar.open(`Email ${status === 'DRAFT' ? 'saved to drafts' : 'sent'} successfully!`, 'Close', { duration: 3000, panelClass: 'bg-green' });
         this.router.navigate(['/email/inbox']);
       },
       error: (err) => {
         this.isUploading = false;
-        console.error('Error sending mail:', err);
-        this.snackBar.open('Failed to send email. Please try again.', 'Close', { duration: 3000, panelClass: 'bg-red' });
+        console.error(`Error ${status === 'DRAFT' ? 'saving draft' : 'sending mail'}:`, err);
+        this.snackBar.open(`Failed to ${status === 'DRAFT' ? 'save draft' : 'send email'}. Please try again.`, 'Close', { duration: 3000, panelClass: 'bg-red' });
       }
     });
   }
 
   discard() {
-    this.receiverControl.reset();
-    this.subject = '';
-    this.html = '';
-    this.selectedFiles = [];
-    this.router.navigate(['/email/inbox']);
+    this.sendMail('DRAFT');
   }
 
   // make sure to destroy the editor

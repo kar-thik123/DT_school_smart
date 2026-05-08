@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { AuthService } from '@core';
 import { RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -34,7 +35,11 @@ export class InboxComponent implements OnInit {
   currentFolder: string = 'inbox';
   isLoading = false;
 
-  constructor(private mailService: MailService) { }
+  currentUserId: string;
+
+  constructor(private mailService: MailService, private authService: AuthService) {
+    this.currentUserId = this.authService.currentUserValue?.id;
+  }
 
   ngOnInit() {
     const folder = history.state?.folder || 'inbox';
@@ -58,6 +63,36 @@ export class InboxComponent implements OnInit {
     });
   }
 
+  selectedMails = new Set<string>();
+
+  toggleSelection(mail: Mail) {
+    if (this.selectedMails.has(mail.id)) {
+      this.selectedMails.delete(mail.id);
+    } else {
+      this.selectedMails.add(mail.id);
+    }
+  }
+
+  isAllSelected() {
+    return this.mails.length > 0 && this.selectedMails.size === this.mails.length;
+  }
+
+  toggleAll() {
+    if (this.isAllSelected()) {
+      this.selectedMails.clear();
+    } else {
+      this.mails.forEach(m => this.selectedMails.add(m.id));
+    }
+  }
+
+  deleteSelected() {
+    this.selectedMails.forEach(id => {
+      const mail = this.mails.find(m => m.id === id);
+      if (mail) this.deleteMail(mail);
+    });
+    this.selectedMails.clear();
+  }
+
   toggleStar(mail: Mail) {
     const newValue = !mail.isStarred;
     mail.isStarred = newValue; // optimistic update
@@ -70,7 +105,7 @@ export class InboxComponent implements OnInit {
   }
 
   deleteMail(mail: Mail) {
-    this.mailService.updateMailAction(mail.id, 'delete').subscribe({
+    this.mailService.updateMailAction(mail.id, 'delete', undefined, this.currentFolder).subscribe({
       next: () => {
         this.mails = this.mails.filter(m => m.id !== mail.id);
       },
@@ -88,14 +123,16 @@ export class InboxComponent implements OnInit {
     });
   }
 
-  getBadgeClass(index: number): string {
-    const classes = ['col-blue', 'col-red', 'col-cyan', 'col-orange', 'col-purple', 'col-green'];
-    return classes[index % classes.length];
-  }
 
-  getBadgeText(index: number): string {
-    const texts = ['Work', 'Shopping', 'Family', 'Office'];
-    return texts[index % texts.length];
+
+  getDisplayName(mail: Mail): string {
+    if (this.currentFolder === 'sent' || this.currentFolder === 'drafts') {
+      return mail.receiver.name;
+    }
+    if (this.currentFolder === 'trash' && mail.senderId === this.currentUserId) {
+      return mail.receiver.name;
+    }
+    return mail.sender.name;
   }
 
   stripHtml(html: string): string {

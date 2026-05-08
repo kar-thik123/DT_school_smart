@@ -158,12 +158,70 @@ router.post('/send', upload.array('attachments'), async (req: any, res: Response
 
     const mailWithAttachments = await prisma.internalMail.findUnique({
       where: { id: mail.id },
-      include: { attachments: true }
+      include: {
+        attachments: true,
+        sender: { select: { id: true, name: true, email: true } }
+      }
     });
+
+    // Create a notification for the receiver when mail is actually sent (not drafted)
+    if (status !== 'DRAFT') {
+      const senderName = mailWithAttachments?.sender?.name || 'Someone';
+      const notification = await prisma.notification.create({
+        data: {
+          organization_id: orgId,
+          userId: receiverId,
+          type: 'email',
+          title: `New email from ${senderName}`,
+          message: subject,
+          icon: 'mail',
+          color: 'notification-green',
+          referenceId: mail.id,
+        }
+      });
+
+      // Push real-time notification via Socket.io
+      try {
+        const { io } = require('../server');
+        io.to(`user:${receiverId}`).emit('new-notification', notification);
+      } catch (e) {
+        console.warn('Socket.io emit failed (non-critical):', e);
+      }
+    }
 
     res.status(201).json({ message: `Mail ${status === 'DRAFT' ? 'saved to drafts' : 'sent'} successfully`, mail: mailWithAttachments });
   } catch (error) {
     res.status(500).json({ message: 'Error sending mail' });
+  }
+});
+
+// GET single mail by ID
+router.get('/:id', async (req: any, res: Response) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.user_id;
+    const orgId = req.user.organization_id;
+
+    const mail = await prisma.internalMail.findUnique({
+      where: { id },
+      include: {
+        sender: { select: { id: true, name: true, email: true } },
+        receiver: { select: { id: true, name: true, email: true } },
+        attachments: true
+      }
+    });
+
+    if (!mail || mail.organization_id !== orgId) {
+      return res.status(404).json({ message: 'Mail not found' });
+    }
+
+    if (mail.senderId !== userId && mail.receiverId !== userId) {
+      return res.status(403).json({ message: 'Unauthorized to view this mail' });
+    }
+
+    res.json(mail);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching mail details' });
   }
 });
 
@@ -194,15 +252,61 @@ router.patch('/:id/action', async (req: any, res: Response) => {
         return res.status(403).json({ message: 'Unauthorized action on this mail' });
       }
       updateData.isArchived = true;
-    } else if (mail.receiverId === userId) {
-      if (action === 'read') updateData.isRead = value;
-      if (action === 'delete') updateData.deletedByReceiver = true;
-      if (action === 'restore') updateData.deletedByReceiver = false;
-    } else if (mail.senderId === userId) {
-      if (action === 'delete') updateData.deletedBySender = true;
-      if (action === 'restore') updateData.deletedBySender = false;
+    } else if (action === 'read') {
+      if (mail.receiverId !== userId) return res.status(403).json({ message: 'Unauthorized action on this mail' });
+      updateData.isRead = value;
+    } else if (action === 'delete' || action === 'restore') {
+      const isDelete = action === 'delete';
+      const folder = req.body.folder;
+      
+      // If deleting from trash, permanently delete from DB
+      if (isDelete && folder === 'trash') {
+        // Optional: delete attachments from filesystem
+        const attachments = await prisma.internalMailAttachment.findMany({ where: { mailId: id } });
+        for (const att of attachments) {
+          try {
+            const filePath = path.join(__dirname, '../../', att.url);
+            if (fs.existsSync(filePath)) {
+              fs.unlinkSync(filePath);
+            }
+          } catch (e) {
+            console.error('Failed to delete attachment file', e);
+          }
+        }
+        
+        await prisma.internalMail.delete({ where: { id } });
+        return res.json({ message: 'Mail permanently deleted from database' });
+      }
+
+      if (mail.senderId === userId && mail.receiverId === userId) {
+         if (folder === 'sent' || folder === 'drafts') {
+            updateData.deletedBySender = isDelete;
+         } else {
+            updateData.deletedByReceiver = isDelete;
+         }
+      } else if (mail.receiverId === userId) {
+         updateData.deletedByReceiver = isDelete;
+      } else if (mail.senderId === userId) {
+         updateData.deletedBySender = isDelete;
+      } else {
+         return res.status(403).json({ message: 'Unauthorized action on this mail' });
+      }
+      if (isDelete) {
+        try {
+          await prisma.notification.deleteMany({
+            where: {
+              referenceId: id,
+              userId: userId
+            }
+          });
+          const { io } = require('../server');
+          io.to(`user:${userId}`).emit('remove-notification', { referenceId: id });
+        } catch (e) {
+          console.error('Failed to delete notification', e);
+        }
+      }
     } else {
-      return res.status(403).json({ message: 'Unauthorized action on this mail' });
+      return res.status(400).json({ message: 'Invalid action' });
     }
 
     if (Object.keys(updateData).length === 0) {

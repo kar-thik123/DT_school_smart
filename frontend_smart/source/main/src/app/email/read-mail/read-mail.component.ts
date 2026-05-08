@@ -1,6 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
+import { AuthService } from '@core';
 import { CommonModule, DatePipe } from '@angular/common';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.component';
 import { Mail, MailService } from '../../core/service/mail.service';
 
@@ -8,7 +12,7 @@ import { Mail, MailService } from '../../core/service/mail.service';
   selector: 'app-read-mail',
   templateUrl: './read-mail.component.html',
   styleUrls: ['./read-mail.component.scss'],
-  imports: [BreadcrumbComponent, CommonModule, DatePipe, RouterLink]
+  imports: [BreadcrumbComponent, CommonModule, DatePipe, RouterLink, MatIconModule, MatButtonModule, MatCheckboxModule]
 })
 export class ReadMailComponent implements OnInit {
   breadcrumbs = [
@@ -22,20 +26,46 @@ export class ReadMailComponent implements OnInit {
   mail: Mail | null = null;
   folder: string = 'inbox';
 
-  constructor(private router: Router, private mailService: MailService) {
+  currentUserId: string;
+
+  constructor(private router: Router, private mailService: MailService, private authService: AuthService) {
+    this.currentUserId = this.authService.currentUserValue?.id;
     const navigation = this.router.getCurrentNavigation();
     if (navigation?.extras.state) {
-      this.mail = navigation.extras.state['mail'];
-      this.folder = navigation.extras.state['folder'];
+      if (navigation.extras.state['mail']) {
+        this.mail = navigation.extras.state['mail'];
+        this.folder = navigation.extras.state['folder'] || 'inbox';
+      } else if (navigation.extras.state['mailId']) {
+        // We only have the ID (e.g. from a notification), we'll fetch it in ngOnInit
+        this.folder = navigation.extras.state['folder'] || 'inbox';
+      }
     }
   }
 
   ngOnInit() {
     if (!this.mail) {
+      const state = history.state;
+      if (state && state.mailId) {
+        this.mailService.getMailById(state.mailId).subscribe({
+          next: (mail) => {
+            this.mail = mail;
+            this.processReadState();
+          },
+          error: () => this.router.navigate(['/email/inbox'])
+        });
+        return;
+      }
+
       // Fallback: If page is refreshed, state is lost, redirect to inbox
       this.router.navigate(['/email/inbox']);
       return;
     }
+    
+    this.processReadState();
+  }
+
+  private processReadState() {
+    if (!this.mail) return;
     // Auto-mark as read when opening the email
     if (!this.mail.isRead && this.folder === 'inbox') {
       this.mailService.updateMailAction(this.mail.id, 'read', true).subscribe({
@@ -46,12 +76,16 @@ export class ReadMailComponent implements OnInit {
 
   getDisplayName(): string {
     if (!this.mail) return '';
-    return this.folder === 'sent' || this.folder === 'drafts' ? this.mail.receiver.name : this.mail.sender.name;
+    if (this.folder === 'sent' || this.folder === 'drafts') return this.mail.receiver.name;
+    if (this.folder === 'trash' && this.mail.senderId === this.currentUserId) return this.mail.receiver.name;
+    return this.mail.sender.name;
   }
 
   getDisplayEmail(): string {
     if (!this.mail) return '';
-    return this.folder === 'sent' || this.folder === 'drafts' ? this.mail.receiver.email : this.mail.sender.email;
+    if (this.folder === 'sent' || this.folder === 'drafts') return this.mail.receiver.email;
+    if (this.folder === 'trash' && this.mail.senderId === this.currentUserId) return this.mail.receiver.email;
+    return this.mail.sender.email;
   }
 
   toggleStar() {
@@ -65,7 +99,7 @@ export class ReadMailComponent implements OnInit {
 
   deleteMail() {
     if (!this.mail) return;
-    this.mailService.updateMailAction(this.mail.id, 'delete').subscribe({
+    this.mailService.updateMailAction(this.mail.id, 'delete', undefined, this.folder).subscribe({
       next: () => this.router.navigate(['/email/inbox']),
       error: (err) => console.error(err)
     });
