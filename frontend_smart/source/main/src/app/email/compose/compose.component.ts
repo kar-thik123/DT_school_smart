@@ -11,6 +11,7 @@ import { Router, RouterLink } from '@angular/router';
 import { Observable, debounceTime, distinctUntilChanged, switchMap, of, filter } from 'rxjs';
 import { MailService, MailUser } from '../../core/service/mail.service';
 import { CommonModule } from '@angular/common';
+import { MatIconModule } from '@angular/material/icon';
 
 @Component({
   selector: 'app-compose',
@@ -28,7 +29,8 @@ import { CommonModule } from '@angular/common';
     MatAutocompleteModule,
     MatSnackBarModule,
     RouterLink,
-    CommonModule
+    CommonModule,
+    MatIconModule,
   ]
 })
 export class ComposeComponent implements OnInit, OnDestroy {

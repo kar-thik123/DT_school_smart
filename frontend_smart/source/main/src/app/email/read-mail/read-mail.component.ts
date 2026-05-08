@@ -5,13 +5,13 @@ import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.co
 import { Mail, MailService } from '../../core/service/mail.service';
 
 @Component({
-    selector: 'app-read-mail',
-    templateUrl: './read-mail.component.html',
-    styleUrls: ['./read-mail.component.scss'],
-    imports: [BreadcrumbComponent, CommonModule, DatePipe, RouterLink]
+  selector: 'app-read-mail',
+  templateUrl: './read-mail.component.html',
+  styleUrls: ['./read-mail.component.scss'],
+  imports: [BreadcrumbComponent, CommonModule, DatePipe, RouterLink]
 })
 export class ReadMailComponent implements OnInit {
-  breadscrums = [
+  breadcrumbs = [
     {
       title: 'Read',
       items: ['Email'],

@@ -154,15 +154,13 @@
                       </div>
                     }
                   </div>
+                  <div class="m-l-25 m-b-20">
+                    <button type="submit" mat-flat-button color="primary" class="msr-2" [disabled]="isUploading">
+                      {{ isUploading ? 'Sending...' : 'Send' }}
+                    </button>
+                    <button type="button" mat-flat-button color="warn" (click)="discard()" [disabled]="isUploading">Discard</button>
+                  </div>
                 </form>
-              </div>
-              <div class="col-lg-12">
-                <div class="m-l-25 m-b-20">
-                  <button type="submit" mat-flat-button color="primary" class="msr-2" [disabled]="isUploading">
-                    {{ isUploading ? 'Sending...' : 'Send' }}
-                  </button>
-                  <button type="button" mat-flat-button color="warn" (click)="discard()" [disabled]="isUploading">Discard</button>
-                </div>
               </div>
             </div>
           </div>

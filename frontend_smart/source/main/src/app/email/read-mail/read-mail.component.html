@@ -1,9 +1,9 @@
 <section class="content">
   <div class="content-block">
-    @for (breadscrum of breadscrums; track breadscrum) {
+    @for (breadcrumb of breadcrumbs; track breadcrumb) {
     <div class="block-header">
       <!-- breadcrumb -->
-      <app-breadcrumb [title]="breadscrum.title" [items]="breadscrum.items" [active_item]="breadscrum.active">
+      <app-breadcrumb [title]="breadcrumb.title" [items]="breadcrumb.items" [active_item]="breadcrumb.active">
       </app-breadcrumb>
     </div>
     }
@@ -95,7 +95,7 @@
                 <div class="mail-sender">
                   <div class="mail-heading">
                     <h4 class="vew-mail-header">
-                      <b>{{ mail.subject }}</b>
+                      <b>{{ mail!.subject }}</b>
                     </h4>
                   </div>
                   <hr>
@@ -104,7 +104,7 @@
                       <img alt="" style="height: 30px;" src="assets/images/user/user2.jpg">
                     </a>
                     <div class="flex-grow-1">
-                      <span class="date float-end">{{ mail.created_at | date:'shortTime' }} {{ mail.created_at |
+                      <span class="date float-end">{{ mail!.created_at | date:'shortTime' }} {{ mail!.created_at |
                         date:'dd MMMM yyyy' }}</span>
                       <h4 class="text-primary">{{ getDisplayName() }}</h4>
                       <small class="text-muted">From: {{ getDisplayEmail() }}</small>
@@ -112,28 +112,35 @@
                   </div>
                 </div>
                 <div class="view-mail">
-                  <p>{{ mail.body }}</p>
+                  <p>{{ mail!.body }}</p>
                 </div>
                 }
-                @if (mail.attachments && mail.attachments.length > 0) {
+
+                @if (mail?.attachments && mail!.attachments!.length > 0) {
                 <div class="attachment-mail">
                   <p>
                     <span>
-                      <i class="fa fa-paperclip"></i> {{ mail.attachments.length }} attachments — </span>
+                      <i class="fa fa-paperclip"></i>{{ mail!.attachments!.length }} attachments</span>
                   </p>
                   <div class="row">
-                    @for (attachment of mail.attachments; track attachment.id) {
+                    @for (attachment of mail!.attachments!; track attachment.id) {
                     <div class="col-md-2" style="margin-bottom: 15px;">
                       @if (isImage(attachment.mimetype)) {
                       <a [href]="'http://localhost:3000' + attachment.url" target="_blank">
-                        <img class="img-thumbnail img-responsive" alt="attachment" [src]="'http://localhost:3000' + attachment.url" style="max-height: 100px; object-fit: cover;">
+                        <img class="img-thumbnail img-responsive" alt="attachment"
+                          [src]="'http://localhost:3000' + attachment.url"
+                          style="max-height: 100px; object-fit: cover;">
                       </a>
                       } @else {
-                      <a [href]="'http://localhost:3000' + attachment.url" target="_blank" class="d-block text-center p-t-20 p-b-20 bg-light" style="border: 1px solid #ddd; border-radius: 4px;">
+                      <a [href]="'http://localhost:3000' + attachment.url" target="_blank"
+                        class="d-block text-center p-t-20 p-b-20 bg-light"
+                        style="border: 1px solid #ddd; border-radius: 4px;">
                         <i class="material-icons text-muted" style="font-size: 36px;">insert_drive_file</i>
                       </a>
                       }
-                      <a class="name" [href]="'http://localhost:3000' + attachment.url" target="_blank" style="display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" [title]="attachment.filename"> {{ attachment.filename }}
+                      <a class="name" [href]="'http://localhost:3000' + attachment.url" target="_blank"
+                        style="display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+                        [title]="attachment.filename"> {{ attachment.filename }}
                         <span>{{ formatBytes(attachment.size) }}</span>
                       </a>
                     </div>

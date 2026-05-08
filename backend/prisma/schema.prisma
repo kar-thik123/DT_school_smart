@@ -76,6 +76,7 @@ model Organization {
   student_profiles       StudentProfile[]
   license                OrganizationLicense?
   StudentTransferHistory StudentTransferHistory[]
+  internal_mails         InternalMail[]
 
   @@index([subdomain])
   @@map("organizations")
@@ -127,6 +128,8 @@ model User {
   promotions_made             PromotionHistory[]       @relation("PromotedBy")
   transfer_history_as_student StudentTransferHistory[] @relation("TransferStudent")
   transfer_history_as_creator StudentTransferHistory[] @relation("TransferCreator")
+  mails_sent             InternalMail[]        @relation("MailSender")
+  mails_received         InternalMail[]        @relation("MailReceiver")
 
   @@index([organization_id])
   @@index([email])
@@ -634,4 +637,55 @@ model StudentTransferHistory {
   @@index([organization_id])
   @@index([student_id])
   @@map("student_transfer_history")
+}
+
+// --- Internal Mail System ---
+
+enum MailStatus {
+  DRAFT
+  SENT
+}
+
+model InternalMailAttachment {
+  id        String       @id @default(uuid()) @db.Uuid
+  mailId    String       @db.Uuid
+  filename  String
+  url       String
+  mimetype  String
+  size      Int
+  createdAt DateTime     @default(now())
+
+  mail      InternalMail @relation(fields: [mailId], references: [id], onDelete: Cascade)
+
+  @@index([mailId])
+  @@map("internal_mail_attachments")
+}
+
+model InternalMail {
+  id                String     @id @default(uuid()) @db.Uuid
+  organization_id   String     @db.Uuid
+  senderId          String     @db.Uuid
+  receiverId        String     @db.Uuid
+  subject           String
+  body              String
+  status            MailStatus @default(DRAFT)
+  isRead            Boolean    @default(false)
+  isStarred         Boolean    @default(false)
+  isArchived        Boolean    @default(false)
+  deletedBySender   Boolean    @default(false)
+  deletedByReceiver Boolean    @default(false)
+  replyToId         String?    @db.Uuid
+  created_at        DateTime   @default(now())
+
+  organization Organization   @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  sender       User           @relation("MailSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver     User           @relation("MailReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  replyTo      InternalMail?  @relation("MailThread", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies      InternalMail[] @relation("MailThread")
+  attachments  InternalMailAttachment[]
+
+  @@index([organization_id])
+  @@index([senderId])
+  @@index([receiverId])
+  @@map("internal_mails")
 }

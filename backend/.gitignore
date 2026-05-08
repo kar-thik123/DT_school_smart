@@ -1,25 +1,12 @@
-# Dependencies
 node_modules/
-
-# Environment
-.env
-.env.local
-
-# Build output
 dist/
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-
-# IDE
+.env
+.env.local
 .vscode/
 .idea/
-
-# OS
 .DS_Store
 Thumbs.db
-
-# Misc
-.cache/
-uploads/
