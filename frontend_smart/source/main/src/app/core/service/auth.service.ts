@@ -96,20 +96,6 @@ export class AuthService {
     return this.storage.has('token');
   }
 
-  // hasPermission(moduleOrPermission: string, action?: string): boolean {
-  //   const user = this.user$.value;
-  //   if (!user || Object.keys(user).length === 0) return false;
-
-  //   // SYSTEM_ADMIN bypasses all checks
-  //   const role = user.role || user.roles?.[0]?.name;
-  //   if (role === 'SYSTEM_ADMIN') return true;
-
-  //   const permissions = this.getPermissions();
-  //   const permissionToCheck = action ? `${moduleOrPermission}:${action}` : moduleOrPermission;
-
-  //   return permissions.includes(permissionToCheck);
-  // }
-
   hasPermission(moduleOrPermission: string, action?: string): boolean {
     const user = this.user$.value;
     if (!user || Object.keys(user).length === 0) return false;
