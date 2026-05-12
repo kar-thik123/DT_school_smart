@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.requirePermission = exports.authorizeRoles = exports.authMiddleware = void 0;
+exports.requirePermission = exports.authMiddleware = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const prisma_1 = __importDefault(require("../prisma"));
 const authMiddleware = async (req, res, next) => {
@@ -51,18 +51,6 @@ const authMiddleware = async (req, res, next) => {
     }
 };
 exports.authMiddleware = authMiddleware;
-const authorizeRoles = (...roles) => {
-    return (req, res, next) => {
-        if (!req.user) {
-            return res.status(401).json({ message: 'Unauthorized' });
-        }
-        if (!roles.includes(req.user.role)) {
-            return res.status(403).json({ message: 'Forbidden: Insufficient permissions' });
-        }
-        next();
-    };
-};
-exports.authorizeRoles = authorizeRoles;
 const requirePermission = (module, action) => {
     return (req, res, next) => {
         const userPermissions = req.user?.permissions || [];

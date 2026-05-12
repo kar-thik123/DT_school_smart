@@ -16,7 +16,8 @@ exports.PERMISSION_REGISTRY = {
     PRACTICE: ['VIEW_OWN', 'VIEW_ALL', 'ASSIGN'],
     ANALYTICS: ['VIEW_OWN', 'VIEW_SCHOOL', 'VIEW_PLATFORM'],
     ROLES: ['VIEW', 'MANAGE'],
-    ACADEMIC_STRUCTURE: ['READ', 'CREATE', 'EDIT', 'DELETE']
+    ACADEMIC_STRUCTURE: ['READ', 'CREATE', 'EDIT', 'DELETE'],
+    IDENTITY: ['IS_TEACHER', 'IS_STUDENT', 'IS_PARENT', 'IS_MANAGEMENT']
 };
 /**
  * Transforms the registry into a flat array of { module, action } for database seeding.

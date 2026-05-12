@@ -26,7 +26,11 @@ class StudentMappingProcessor {
         // Fetch all structural records for this org to allow case-insensitive memory mapping
         const [users, grades, sections, groups] = await Promise.all([
             prisma_1.default.user.findMany({
-                where: { organization_id: this.organizationId, email: { in: emails }, role: { name: 'STUDENT' } }
+                where: {
+                    organization_id: this.organizationId,
+                    email: { in: emails },
+                    role: { permissions: { some: { permission: { module: 'IDENTITY', action: 'IS_STUDENT' } } } }
+                }
             }),
             prisma_1.default.grade.findMany({
                 where: { organization_id: this.organizationId }

@@ -25,7 +25,11 @@ class StudentEnrollmentProcessor {
         const emails = Array.from(new Set(rows.map((r) => r.student_email?.trim().toLowerCase()).filter(Boolean)));
         const [users, academicYears, grades, sections, groups] = await Promise.all([
             prisma_1.default.user.findMany({
-                where: { organization_id: this.organizationId, email: { in: emails }, role: { name: 'STUDENT' } }
+                where: {
+                    organization_id: this.organizationId,
+                    email: { in: emails },
+                    role: { permissions: { some: { permission: { module: 'IDENTITY', action: 'IS_STUDENT' } } } }
+                }
             }),
             prisma_1.default.academicYear.findMany({
                 where: { organization_id: this.organizationId }

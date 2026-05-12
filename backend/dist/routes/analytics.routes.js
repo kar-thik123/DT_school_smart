@@ -10,7 +10,7 @@ const router = (0, express_1.Router)();
 router.use(auth_middleware_1.authMiddleware);
 // --- MANAGEMENT TOPIC ANALYTICS ---
 // View performance and Validation Engine labels
-router.get('/topic', (0, auth_middleware_1.authorizeRoles)('MANAGEMENT', 'SYSTEM_ADMIN'), async (req, res) => {
+router.get('/topic', (0, auth_middleware_1.requirePermission)('IDENTITY', 'IS_MANAGEMENT'), async (req, res) => {
     try {
         const org_id = req.user.organization_id;
         const { grade_id, section_id, subject_id } = req.query;
@@ -102,7 +102,7 @@ router.get('/topic', (0, auth_middleware_1.authorizeRoles)('MANAGEMENT', 'SYSTEM
 });
 // --- TEACHER CLASS/SUBJECT ANALYTICS ---
 // NO validation labels allowed
-router.get('/teacher', (0, auth_middleware_1.authorizeRoles)('TEACHER', 'SYSTEM_ADMIN'), async (req, res) => {
+router.get('/teacher', (0, auth_middleware_1.requirePermission)('IDENTITY', 'IS_TEACHER'), async (req, res) => {
     try {
         const org_id = req.user.organization_id;
         const teacher_id = req.user.user_id;
@@ -159,7 +159,7 @@ router.get('/teacher', (0, auth_middleware_1.authorizeRoles)('TEACHER', 'SYSTEM_
 });
 // --- MANAGEMENT CONSOLIDATED OVERVIEW ---
 // Used for the management dashboard to see teachers, risk students, and general health
-router.get('/management/overview', (0, auth_middleware_1.authorizeRoles)('MANAGEMENT', 'SYSTEM_ADMIN'), async (req, res) => {
+router.get('/management/overview', (0, auth_middleware_1.requirePermission)('IDENTITY', 'IS_MANAGEMENT'), async (req, res) => {
     try {
         const org_id = req.user.organization_id;
         // 1. Overview Stats (Topics and Performance)
@@ -262,7 +262,7 @@ router.get('/management/overview', (0, auth_middleware_1.authorizeRoles)('MANAGE
     }
 });
 // --- STUDENT SELF ANALYTICS ---
-router.get('/student', (0, auth_middleware_1.authorizeRoles)('STUDENT'), async (req, res) => {
+router.get('/student', (0, auth_middleware_1.requirePermission)('IDENTITY', 'IS_STUDENT'), async (req, res) => {
     try {
         const org_id = req.user.organization_id;
         const student_id = req.user.user_id;

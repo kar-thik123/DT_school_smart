@@ -8,7 +8,14 @@ const router = Router();
 
 // Middleware: Only Admins can manage roles
 router.use(authMiddleware);
-router.use(requirePermission('IDENTITY', 'IS_SYSTEM_ADMIN'));
+router.use((req: any, res: Response, next: any) => {
+  // Allow SUPER_ADMIN or anyone with ROLES:VIEW to access these routes
+  const userPermissions = req.user?.permissions || [];
+  if (req.user.role === 'SYSTEM_ADMIN' || req.user.role === 'SUPER_ADMIN' || userPermissions.includes('ROLES:VIEW') || userPermissions.includes('ROLES:MANAGE')) {
+    return next();
+  }
+  return res.status(403).json({ message: 'Forbidden: Requires role management permissions' });
+});
 
 const roleSchema = z.object({
   name: z.string().min(2),
