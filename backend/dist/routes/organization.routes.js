@@ -10,6 +10,7 @@ const auth_middleware_1 = require("../middlewares/auth.middleware");
 const multer_1 = __importDefault(require("multer"));
 const path_1 = __importDefault(require("path"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const bcrypt_1 = __importDefault(require("bcrypt"));
 const router = (0, express_1.Router)();
 // Configure Multer for Logo Uploads
 const storage = multer_1.default.diskStorage({
@@ -44,7 +45,7 @@ router.get('/check-subdomain', async (req, res) => {
     res.json({ available: !existing });
 });
 // 3.5 Get My Organization License (For Super Admin Dashboard)
-router.get('/me/license', auth_middleware_1.authMiddleware, (0, auth_middleware_1.authorizeRoles)('SUPER_ADMIN', 'SYSTEM_ADMIN'), async (req, res) => {
+router.get('/me/license', auth_middleware_1.authMiddleware, (0, auth_middleware_1.requirePermission)('IDENTITY', 'IS_SUPER_ADMIN'), async (req, res) => {
     try {
         const org = await prisma_1.default.organization.findUnique({
             where: { id: req.user.organization_id },
@@ -91,7 +92,7 @@ router.get('/me/profile', auth_middleware_1.authMiddleware, async (req, res) => 
     }
 });
 router.use(auth_middleware_1.authMiddleware);
-router.use((0, auth_middleware_1.authorizeRoles)('SYSTEM_ADMIN'));
+router.use((0, auth_middleware_1.requirePermission)('IDENTITY', 'IS_SYSTEM_ADMIN'));
 // 4. Get Platform Statistics
 router.get('/stats', async (req, res) => {
     try {
@@ -328,7 +329,7 @@ router.post('/', async (req, res) => {
         console.log('[DEBUG] Proceeding to create organization and admin user...');
         // Wrap org + admin user creation in a transaction
         const result = await prisma_1.default.$transaction(async (tx) => {
-            // 1. Create the organization
+            // STEP 1: Create the organization
             const org = await tx.organization.create({
                 data: {
                     school_name: parsed.school_name || 'Unnamed School',
@@ -346,10 +347,11 @@ router.post('/', async (req, res) => {
                     smtp_email: parsed.smtp_email || null,
                     smtp_password: parsed.smtp_password || null,
                     backup_enabled: parsed.backup_enabled === true,
-                    login_limit: Number(parsed.licensed_seats) || 100, // Legacy support
+                    login_limit: Number(parsed.licensed_seats) || 100,
                 }
             });
-            // 1.5 Create the Organization License
+            console.log(`[TX STEP 1] Organization created: id=${org.id}, name=${org.school_name}`);
+            // STEP 1.5: Create the Organization License
             await tx.organizationLicense.create({
                 data: {
                     organization_id: org.id,
@@ -361,21 +363,57 @@ router.post('/', async (req, res) => {
                     status: 'ACTIVE'
                 }
             });
-            // 2. Create SUPER_ADMIN user if admin credentials were provided
+            console.log(`[TX STEP 1.5] License created for org: ${org.id}`);
+            // STEP 2: Create SUPER_ADMIN user if admin credentials were provided
             let adminUser = null;
             if (parsed.admin_email && parsed.admin_password) {
-                // Check email is not already taken globally
+                // STEP 2.1: Check email is not already taken globally
                 const emailTaken = await tx.user.findFirst({ where: { email: parsed.admin_email } });
                 if (emailTaken) {
                     throw new Error(`ADMIN_EMAIL_CONFLICT:The email '${parsed.admin_email}' is already registered in the platform. Use a different email for this school's admin.`);
                 }
-                // Find the system-wide SUPER_ADMIN role
-                const superAdminRole = await tx.role.findFirst({ where: { name: 'SUPER_ADMIN', is_system: true } });
-                if (!superAdminRole) {
-                    throw new Error('ROLE_MISSING:SUPER_ADMIN role not found in system. Please contact support.');
+                console.log(`[TX STEP 2.1] Admin email '${parsed.admin_email}' is available.`);
+                // STEP 2.2: Create a tenant-owned SUPER_ADMIN role for this organization.
+                // IMPORTANT: Never reuse a role from the sys org or any other tenant.
+                // Each tenant gets its own SUPER_ADMIN role scoped to organization_id = org.id.
+                // This preserves strict multi-tenant isolation and permission-driven identity.
+                const superAdminRole = await tx.role.create({
+                    data: {
+                        name: 'SUPER_ADMIN',
+                        description: 'School Owner — full access to this school tenant',
+                        organization_id: org.id, // Scoped exclusively to this new tenant
+                        is_system: true, // System-managed, not user-editable
+                    }
+                });
+                console.log(`[TX STEP 2.2] Tenant SUPER_ADMIN role created: id=${superAdminRole.id}, org=${org.id}`);
+                // STEP 2.2.5: Bootstrap IDENTITY:IS_SUPER_ADMIN permission for the new role.
+                // This ensures permissions[] is never empty after login, so getDefaultRoute()
+                // can correctly resolve to /admin/dashboard/main for this tenant owner.
+                let superAdminPermission = await tx.permission.findUnique({
+                    where: { module_action: { module: 'IDENTITY', action: 'IS_SUPER_ADMIN' } }
+                });
+                if (!superAdminPermission) {
+                    // Seed the permission record if it doesn't exist in the platform registry
+                    superAdminPermission = await tx.permission.create({
+                        data: {
+                            module: 'IDENTITY',
+                            action: 'IS_SUPER_ADMIN',
+                            description: 'Identifies user as a tenant owner (school SUPER_ADMIN)'
+                        }
+                    });
+                    console.log(`[TX STEP 2.2.5] Seeded IDENTITY:IS_SUPER_ADMIN permission: ${superAdminPermission.id}`);
                 }
-                const bcrypt = require('bcrypt');
-                const password_hash = await bcrypt.hash(parsed.admin_password, 10);
+                else {
+                    console.log(`[TX STEP 2.2.5] Found IDENTITY:IS_SUPER_ADMIN permission: ${superAdminPermission.id}`);
+                }
+                await tx.rolePermission.create({
+                    data: { role_id: superAdminRole.id, permission_id: superAdminPermission.id }
+                });
+                console.log(`[TX STEP 2.2.5] Mapped IDENTITY:IS_SUPER_ADMIN → SUPER_ADMIN role (org: ${org.id})`);
+                // STEP 2.3: Hash the admin password
+                const password_hash = await bcrypt_1.default.hash(parsed.admin_password, 10);
+                console.log(`[TX STEP 2.3] Password hashed for admin: ${parsed.admin_email}`);
+                // STEP 2.4: Create the super admin user assigned to the tenant-owned role
                 adminUser = await tx.user.create({
                     data: {
                         name: parsed.admin_name || 'School Admin',
@@ -386,10 +424,20 @@ router.post('/', async (req, res) => {
                         is_active: true,
                     }
                 });
+                console.log(`[TX STEP 2.4] Super admin user created: id=${adminUser.id}, email=${adminUser.email}, role=${superAdminRole.id}`);
             }
+            console.log(`[TX COMMITTED] Provisioning complete for org: ${org.id}`);
             return { org, adminUser };
         });
-        res.status(201).json({
+        // 4. Fire Async Hooks (e.g. Emails/Provisioning) safely WITHOUT blocking the API response
+        if (result.adminUser) {
+            // simulate background email dispatch
+            Promise.resolve().then(() => {
+                console.log(`[Background Job] Dispatching welcome email to ${result.adminUser.email}`);
+            }).catch(err => console.error('[Background Job Error]', err));
+        }
+        // 5. Explicit return to end execution context
+        return res.status(201).json({
             message: 'Organization provisioned successfully',
             organizationId: result.org.id,
             adminCreated: !!result.adminUser,
@@ -420,7 +468,7 @@ router.post('/', async (req, res) => {
         if (error?.code === 'P2002') {
             return res.status(400).json({ message: `A conflict occurred: The ${error.meta?.target?.join(', ') || 'field'} is already in use. Choose another.` });
         }
-        res.status(500).json({ message: error?.message || 'Internal server error' });
+        return res.status(500).json({ message: error?.message || 'Internal server error' });
     }
 });
 // GET all organizations (IT Setup only)
@@ -428,12 +476,19 @@ router.get('/', async (req, res) => {
     try {
         const { page = 1, limit = 10, search = '', status } = req.query;
         const skip = (Number(page) - 1) * Number(limit);
-        const where = {
-            subdomain: { not: 'sys' } // Hide Management Tenant from general inventory
+        // Exclude the platform core 'sys' tenant.
+        // Must also include orgs where subdomain IS NULL (on-premise / custom-domain tenants)
+        // because PostgreSQL's != operator does not match NULL rows.
+        const sysExcludeClause = {
+            OR: [
+                { subdomain: null },
+                { subdomain: { not: 'sys' } }
+            ]
         };
+        const where = { ...sysExcludeClause };
         if (search) {
             where.AND = [
-                { subdomain: { not: 'sys' } },
+                sysExcludeClause,
                 {
                     OR: [
                         { school_name: { contains: search, mode: 'insensitive' } },

@@ -52,7 +52,7 @@ router.post('/login', loginLimiter, async (req, res) => {
         const token = jsonwebtoken_1.default.sign({
             user_id: user.id,
             organization_id: user.organization_id
-        }, process.env.JWT_SECRET || 'dev_secret', { expiresIn: '1d' });
+        }, process.env.JWT_SECRET || 'supersecret_jwt_key_for_dev_only', { expiresIn: '1d' });
         res.json({
             token,
             user: {
@@ -150,7 +150,7 @@ router.post('/forgot-password', async (req, res) => {
         await prisma_1.default.passwordReset.create({
             data: { user_id: user.id, token, expires_at }
         });
-        const resetUrl = `http://localhost:4200/auth/reset-password?token=${token}`;
+        const resetUrl = `http://localhost:4200/#/authentication/reset-password?token=${token}`;
         const transporter = nodemailer_1.default.createTransport({
             service: 'gmail',
             auth: {

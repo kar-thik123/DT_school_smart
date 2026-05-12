@@ -11,11 +11,10 @@ const zod_1 = require("zod");
 const router = (0, express_1.Router)();
 // Middleware: Only Admins can manage roles
 router.use(auth_middleware_1.authMiddleware);
-router.use((0, auth_middleware_1.authorizeRoles)('SYSTEM_ADMIN', 'SUPER_ADMIN'));
+router.use((0, auth_middleware_1.requirePermission)('IDENTITY', 'IS_SYSTEM_ADMIN'));
 const roleSchema = zod_1.z.object({
     name: zod_1.z.string().min(2),
-    description: zod_1.z.string().optional(),
-    is_teaching_role: zod_1.z.boolean().optional().default(false)
+    description: zod_1.z.string().optional()
 });
 const permissionSyncSchema = zod_1.z.object({
     permissionIds: zod_1.z.array(zod_1.z.string().uuid())
@@ -100,7 +99,6 @@ router.post('/', async (req, res) => {
             data: {
                 name: parsed.name,
                 description: parsed.description,
-                is_teaching_role: parsed.is_teaching_role,
                 organization_id: req.user.organization_id,
                 is_system: false
             }
@@ -121,9 +119,17 @@ router.post('/:id/sync-permissions', async (req, res) => {
         const role = await prisma_1.default.role.findUnique({ where: { id: req.params.id } });
         if (!role)
             return res.status(404).json({ message: 'Role not found' });
-        // Security check: cannot modify system roles unless SYSTEM_ADMIN
-        if (role.is_system && req.user.role !== 'SYSTEM_ADMIN') {
-            return res.status(403).json({ message: 'Cannot modify system roles' });
+        // Security check: tenant isolation
+        if (role.organization_id && role.organization_id !== req.user.organization_id && req.user.role !== 'SYSTEM_ADMIN') {
+            return res.status(403).json({ message: 'Forbidden' });
+        }
+        // Security check: Global platform roles (org=null) can only be modified by SYSTEM_ADMIN
+        if (role.is_system && !role.organization_id && req.user.role !== 'SYSTEM_ADMIN') {
+            return res.status(403).json({ message: 'Cannot modify global platform roles' });
+        }
+        // Security check: Prevent locking out SUPER_ADMIN role
+        if (role.name === 'SUPER_ADMIN' && req.user.role !== 'SYSTEM_ADMIN') {
+            return res.status(403).json({ message: 'The SUPER_ADMIN role permissions are locked for safety.' });
         }
         // Transactional sync
         await prisma_1.default.$transaction([
@@ -164,7 +170,7 @@ router.put('/:id', async (req, res) => {
             return res.status(403).json({ message: 'Forbidden' });
         const updated = await prisma_1.default.role.update({
             where: { id: req.params.id },
-            data: { name: parsed.name, description: parsed.description, is_teaching_role: parsed.is_teaching_role }
+            data: { name: parsed.name, description: parsed.description }
         });
         res.json(updated);
     }
@@ -226,7 +232,6 @@ router.post('/:id/clone', async (req, res) => {
                 data: {
                     name,
                     description,
-                    is_teaching_role: sourceRole.is_teaching_role,
                     organization_id: req.user.organization_id,
                     is_system: false
                 }
