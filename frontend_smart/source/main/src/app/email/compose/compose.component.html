@@ -12,21 +12,20 @@
         <div class="card">
           <div class="body">
             <div id="mail-nav">
-              <button type="button" class="btn btn-success waves-effect m-b-15">COMPOSE</button>
+              <button type="button" class="btn btn-success waves-effect m-b-15" routerLink="/email/compose"
+                title="Compose">COMPOSE</button>
               <ul class="" id="mail-folders">
                 <li class="active">
-                  <a href="inbox.html" title="Inbox">Inbox
-                    <span class="badge bg-orange">6</span>
-                  </a>
+                  <a [routerLink]="['/email/inbox']" [state]="{folder: 'inbox'}" title="Inbox">Inbox</a>
                 </li>
                 <li>
-                  <a href="javascript:;" title="Sent">Sent</a>
+                  <a [routerLink]="['/email/inbox']" [state]="{folder: 'sent'}" title="Sent">Sent</a>
                 </li>
                 <li>
-                  <a href="javascript:;" title="Draft">Draft</a>
+                  <a [routerLink]="['/email/inbox']" [state]="{folder: 'drafts'}" title="Draft">Draft</a>
                 </li>
                 <li>
-                  <a href="javascript:;" title="Bin">Bin</a>
+                  <a [routerLink]="['/email/inbox']" [state]="{folder: 'trash'}" title="Bin">Bin</a>
                 </li>
                 <li>
                   <a href="javascript:;" title="Important">Important</a>
@@ -105,34 +104,64 @@
             </div>
             <div class="row">
               <div class="col-lg-12">
-                <form class="composeForm">
+                <form class="composeForm" (ngSubmit)="sendMail('SENT')">
                   <div class="form-line">
                     <mat-form-field class="example-full-width" appearance="outline">
                       <mat-label>TO</mat-label>
-                      <input matInput id="email_address">
+                      <input matInput type="text" [formControl]="receiverControl" [matAutocomplete]="auto"
+                        id="email_address">
+                      <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayUser">
+                        @for (user of filteredUsers$ | async; track user.id) {
+                        <mat-option [value]="user">
+                          {{ user.name }} ({{ user.email }})
+                        </mat-option>
+                        }
+                      </mat-autocomplete>
                     </mat-form-field>
                   </div>
                   <div class="form-line">
                     <mat-form-field class="example-full-width" appearance="outline">
                       <mat-label>Subject</mat-label>
-                      <input matInput id="subject">
+                      <input matInput id="subject" name="subject" [(ngModel)]="subject">
                     </mat-form-field>
                   </div>
                   <div class="NgxEditor__Wrapper">
                     <ngx-editor-menu [editor]="editor!" [toolbar]="toolbar!"> </ngx-editor-menu>
-                    <ngx-editor [editor]="editor!" [placeholder]="'Type here...'" class="NgxEditorStyles"></ngx-editor>
+                    <ngx-editor [editor]="editor!" [(ngModel)]="html" name="html" [placeholder]="'Type here...'"
+                      class="NgxEditorStyles"></ngx-editor>
                   </div>
                   <div class="compose-editor m-t-20">
                     <div id="summernote"></div>
-                    <input type="file" class="default" multiple>
+                    <div class="m-b-10">
+                      <input type="file" class="default" multiple (change)="onFilesSelected($event)">
+                    </div>
+                    @if (selectedFiles.length > 0) {
+                      <div class="attachments-preview">
+                        <ul class="list-group">
+                          @for (file of selectedFiles; track file.name; let i = $index) {
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                              <span>
+                                <i class="material-icons text-muted" style="vertical-align: middle; font-size: 18px;">insert_drive_file</i>
+                                {{ file.name }}
+                                <span class="text-muted" style="font-size: 12px; margin-left: 5px;">({{ formatBytes(file.size) }})</span>
+                              </span>
+                              <button mat-icon-button color="warn" (click)="removeFile(i)" title="Remove attachment" [disabled]="isUploading">
+                                <mat-icon style="font-size: 18px;">close</mat-icon>
+                              </button>
+                            </li>
+                          }
+                        </ul>
+                      </div>
+                    }
+                  </div>
+                  <div class="m-l-25 m-b-20">
+                    <button type="submit" mat-flat-button color="primary" class="msr-2" [disabled]="isUploading">
+                      {{ isUploading ? 'Sending...' : 'Send' }}
+                    </button>
+
+                    <button type="button" mat-flat-button color="warn" (click)="discard()" [disabled]="isUploading">Discard</button>
                   </div>
                 </form>
-              </div>
-              <div class="col-lg-12">
-                <div class="m-l-25 m-b-20">
-                  <button mat-flat-button color="primary" class="msr-2">Send</button>
-                  <button mat-flat-button color="warn">Discard</button>
-                </div>
               </div>
             </div>
           </div>

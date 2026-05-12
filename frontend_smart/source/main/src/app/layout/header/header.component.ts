@@ -18,16 +18,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { LanguageListComponent } from '../components/language-list/language-list.component';
 import { UserProfileMenuComponent } from '../components/user-profile-menu/user-profile-menu.component';
 
-interface Notifications {
-  message: string;
-  time: string;
-  userImg?: string;
-  actionLabel?: string;
-  actionType?: string;
-  icon?: string;
-  color: string;
-  status: string;
-}
+import { Notification, NotificationService } from '@core/service/notification.service';
 
 @Component({
   selector: 'app-header',
@@ -76,65 +67,9 @@ export class HeaderComponent
     { text: 'Spanish', flag: 'assets/images/flags/spain.svg', lang: 'es' },
     { text: 'German', flag: 'assets/images/flags/germany.svg', lang: 'de' },
   ];
-  notifications: Notifications[] = [
-    {
-      message: 'Please check your mail',
-      time: '14 mins ago',
-      icon: 'mail',
-      color: 'notification-green',
-      status: 'msg-unread',
-      actionLabel: 'View',
-      actionType: 'view',
-    },
-    {
-      message: 'New Patient Added..',
-      time: '22 mins ago',
-      userImg: 'assets/images/user/user1.jpg',
-      color: 'notification-blue',
-      status: 'msg-unread',
-    },
-    {
-      message: 'Your leave is approved!! ',
-      time: '3 hours ago',
-      icon: 'event_available',
-      color: 'notification-orange',
-      status: 'msg-read',
-    },
-    {
-      message: 'Lets break for lunch...',
-      time: '5 hours ago',
-      userImg: 'assets/images/user/user2.jpg',
-      color: 'notification-blue',
-      status: 'msg-unread',
-      actionLabel: 'Reply',
-      actionType: 'reply',
-    },
-    {
-      message: 'Patient report generated',
-      time: '14 mins ago',
-      icon: 'description',
-      color: 'notification-green',
-      status: 'msg-read',
-      actionLabel: 'Download',
-      actionType: 'download',
-    },
-    {
-      message: 'Please check your mail',
-      time: '22 mins ago',
-      icon: 'mail',
-      color: 'notification-red',
-      status: 'msg-read',
-    },
-    {
-      message: 'Salary credited...',
-      time: '3 hours ago',
-      userImg: 'assets/images/user/user3.jpg',
-      color: 'notification-purple',
-      status: 'msg-read',
-      actionLabel: 'Important',
-      actionType: 'mark-important',
-    },
-  ];
+  private notificationService = inject(NotificationService);
+
+  notifications: Notification[] = [];
   ngOnInit() {
     this.config = this.configService.configData;
     this.userImg =
@@ -161,53 +96,46 @@ export class HeaderComponent
     } else {
       this.flagvalue = val.map((element) => element.flag);
     }
+
+    // Connect to notification socket & fetch initial data
+    this.notificationService.connectSocket();
+    this.notificationService.loadNotifications();
+    this.subs.sink = this.notificationService.notifications$.subscribe(
+      (notifs) => (this.notifications = notifs)
+    );
   }
 
   onMarkAllNotificationsRead() {
-    this.notifications = this.notifications.map((n) => ({
-      ...n,
-      status: 'msg-read',
-    }));
+    this.subs.sink = this.notificationService.markAllAsRead().subscribe();
   }
 
   onReadAllNotifications() {
-    alert('Navigating to notifications page to read all'); // Replace with router if needed
+    // We could navigate to a dedicated notifications page here if needed
   }
 
-  onRemoveNotification(notification: Notifications) {
-    this.notifications = this.notifications.filter((n) => n !== notification);
+  onRemoveNotification(notification: Notification) {
+    this.subs.sink = this.notificationService.deleteNotification(notification.id).subscribe();
   }
 
   onNotificationActionClick(event: {
-    notification: Notifications;
+    notification: Notification;
     actionType: string;
   }) {
     const { notification, actionType } = event;
 
-    // Handle different action types
-    switch (actionType) {
-      case 'view':
-        console.log('Viewing notification:', notification);
-        // Implement view logic
-        break;
-      case 'profile':
-        console.log('Opening profile from notification:', notification);
-        // Implement profile navigation
-        break;
-      case 'reply':
-        console.log('Replying to notification:', notification);
-        // Implement reply logic
-        break;
-      case 'download':
-        console.log('Downloading from notification:', notification);
-        // Implement download logic
-        break;
-      case 'mark-important':
-        console.log('Marking notification as important:', notification);
-        // Implement importance marking
-        break;
-      default:
-        console.log('Default action for notification:', notification);
+    if (actionType === 'mark-read') {
+      this.subs.sink = this.notificationService.markAsRead(notification.id).subscribe();
+    } else if (actionType === 'view' && notification.type === 'email') {
+      // Mark as read and open email
+      if (!notification.isRead) {
+        this.subs.sink = this.notificationService.markAsRead(notification.id).subscribe();
+      }
+      // Force reload by navigating away and back quickly
+      this.router.navigateByUrl('/email/inbox', { skipLocationChange: true }).then(() => {
+        this.router.navigate(['/email/read-mail'], {
+          state: { mailId: notification.referenceId }
+        });
+      });
     }
   }
 

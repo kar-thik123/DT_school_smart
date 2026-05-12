@@ -11,6 +11,8 @@ import questionBankRoutes from './routes/question-bank.routes';
 import practiceRoutes from './routes/practice.routes';
 import analyticsRoutes from './routes/analytics.routes';
 import bulkImportRoutes from './routes/bulk-import.routes';
+import mailRoutes from './routes/mail.routes';
+import notificationRoutes from './routes/notification.routes';
 
 const app = express();
 console.log('Starting application, mounting routes...');
@@ -30,6 +32,8 @@ app.use('/api/question-bank', questionBankRoutes);
 app.use('/api/practice', practiceRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/bulk-import', bulkImportRoutes);
+app.use('/api/mails', mailRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });

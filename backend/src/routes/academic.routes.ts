@@ -8,12 +8,12 @@ router.use(authMiddleware);
 // A helper function to create generic CRUD handlers
 const createCrudHandlers = (modelName: string, prismaModel: any) => {
   const modelRouter = Router();
-  
+
   // Read
   modelRouter.get('/', requirePermission('ACADEMIC_STRUCTURE', 'READ'), async (req: any, res: Response) => {
     try {
       const hasSortOrder = ['Section', 'Unit', 'Topic'].includes(modelName);
-      const data = await prismaModel.findMany({ 
+      const data = await prismaModel.findMany({
         where: { organization_id: req.user.organization_id },
         ...(hasSortOrder ? { orderBy: { sort_order: 'asc' } } : {})
       });
@@ -42,15 +42,23 @@ const createCrudHandlers = (modelName: string, prismaModel: any) => {
       const existing = await prismaModel.findFirst({ where: { id: req.params.id, organization_id: req.user.organization_id } });
       if (!existing) return res.status(404).json({ message: 'Not found' });
 
+      // const data = await prismaModel.update({
+      //   where: { id: req.params.id },
+      //   data: req.body
+
+      // Security Fix: Prevent cross-tenant data leakage by ensuring organization_id cannot be overwritten
+      const { id, organization_id, ...safeData } = req.body;
+
       const data = await prismaModel.update({
         where: { id: req.params.id },
-        data: req.body
+        data: safeData
+
       });
       res.json({ message: `${modelName} updated`, data });
     } catch (error: any) {
       // Prisma error for invalid ID format or record not found
       if (error.code === 'P2023' || error.code === 'P2025' || error.message?.includes('invalid input syntax for type uuid')) {
-         return res.status(404).json({ message: 'Not found' });
+        return res.status(404).json({ message: 'Not found' });
       }
       console.error(`Error updating ${modelName}:`, error);
       res.status(400).json({ message: `Error updating ${modelName}`, error: error.message });
@@ -66,8 +74,8 @@ const createCrudHandlers = (modelName: string, prismaModel: any) => {
       await prismaModel.delete({ where: { id: req.params.id } });
       res.json({ message: `${modelName} deleted` });
     } catch (error: any) {
-       if (error.code === 'P2023' || error.code === 'P2025' || error.message?.includes('invalid input syntax for type uuid')) {
-         return res.status(404).json({ message: 'Not found' });
+      if (error.code === 'P2023' || error.code === 'P2025' || error.message?.includes('invalid input syntax for type uuid')) {
+        return res.status(404).json({ message: 'Not found' });
       }
       console.error(`Error deleting ${modelName}:`, error);
       res.status(400).json({ message: `Error deleting ${modelName}`, error: error.message });
@@ -103,7 +111,7 @@ router.put('/reorder/:model', requirePermission('ACADEMIC_STRUCTURE', 'EDIT'), a
     if (!prismaModel) return res.status(400).json({ message: 'Invalid model for reordering' });
 
     await prisma.$transaction(
-      items.map((item: any) => 
+      items.map((item: any) =>
         prismaModel.update({
           where: { id: item.id },
           data: { sort_order: item.sort_order }
@@ -144,16 +152,16 @@ gradeRouter.get('/assigned', async (req: any, res: Response) => {
       });
       return res.json(data);
     }
-    
+
     // For teachers
     const assignments = await prisma.teacherAssignment.findMany({
-      where: { 
+      where: {
         teacher_id: req.user.user_id,
-        organization_id: req.user.organization_id 
+        organization_id: req.user.organization_id
       },
       include: { grade: { include: { academic_year: true } } }
     });
-    
+
     // Deduplicate grades
     const gradesMap = new Map();
     assignments.forEach((a: any) => {
@@ -161,7 +169,7 @@ gradeRouter.get('/assigned', async (req: any, res: Response) => {
         gradesMap.set(a.grade_id, a.grade);
       }
     });
-    
+
     res.json(Array.from(gradesMap.values()));
   } catch (error) {
     res.status(500).json({ message: 'Error fetching assigned Grades' });
@@ -229,7 +237,7 @@ gradeRouter.delete('/:id', requirePermission('ACADEMIC_STRUCTURE', 'DELETE'), as
         where: { grade_id: req.params.id, organization_id: req.user.organization_id },
         data: { grade_id: null, section_id: null }
       });
-      
+
       await tx.grade.delete({ where: { id: req.params.id } });
     });
 
@@ -244,7 +252,7 @@ router.use('/grades', gradeRouter);
 router.put('/sections/allocate', requirePermission('ACADEMIC_STRUCTURE', 'EDIT'), async (req: any, res: Response) => {
   try {
     const { grade_id, allocations } = req.body;
-    
+
     if (!grade_id || !Array.isArray(allocations)) {
       return res.status(400).json({ message: 'Invalid payload: grade_id and allocations array required' });
     }
@@ -256,21 +264,21 @@ router.put('/sections/allocate', requirePermission('ACADEMIC_STRUCTURE', 'EDIT')
     // Wrap in robust transaction
     const result = await prisma.$transaction(async (tx: any) => {
       let updatedCount = 0;
-      
+
       // We process sequentially inside the transaction to cleanly catch logical mismatch validation errors
       for (const al of allocations) {
         if (!al.student_id || !al.section_id) throw new Error('Missing student_id or section_id in allocation block');
-        
+
         // Ensure student exists and belongs to this exact grade
         const student = await tx.user.findFirst({
-           where: { id: al.student_id, organization_id: req.user.organization_id }
+          where: { id: al.student_id, organization_id: req.user.organization_id }
         });
         if (!student) throw new Error(`Student ${al.student_id} not found`);
         if (student.grade_id !== grade_id) throw new Error(`Invalid section assignment for selected grade: Student ${student.name} does not belong to grade ${grade_id}`);
 
         // Ensure section exists and belongs to the specified grade
         const section = await tx.section.findFirst({
-            where: { id: al.section_id, organization_id: req.user.organization_id }
+          where: { id: al.section_id, organization_id: req.user.organization_id }
         });
         if (!section) throw new Error(`Section ${al.section_id} not found`);
         if (section.grade_id !== grade_id) throw new Error(`Invalid section assignment for selected grade: Section ${section.name} does not belong to grade ${grade_id}`);
@@ -282,7 +290,7 @@ router.put('/sections/allocate', requirePermission('ACADEMIC_STRUCTURE', 'EDIT')
         });
         updatedCount++;
       }
-      
+
       return updatedCount;
     });
 
@@ -330,11 +338,11 @@ subjectRouter.get('/', requirePermission('ACADEMIC_STRUCTURE', 'READ'), async (r
       const assignments = await prisma.teacherAssignment.findMany({
         where: { teacher_id: req.user.user_id, organization_id: req.user.organization_id }
       });
-      
+
       const inchargeGradeIds = assignments
         .filter((a: any) => a.assignment_type === 'CLASS_INCHARGE')
         .map((a: any) => a.grade_id);
-        
+
       const specificSubjectIds = assignments
         .filter((a: any) => a.subject_id)
         .map((a: any) => a.subject_id);
@@ -345,7 +353,7 @@ subjectRouter.get('/', requirePermission('ACADEMIC_STRUCTURE', 'READ'), async (r
       ];
     }
 
-    const data = await prisma.subject.findMany({ 
+    const data = await prisma.subject.findMany({
       where: filter,
       include: {
         subject_groups: {
@@ -364,7 +372,7 @@ subjectRouter.get('/', requirePermission('ACADEMIC_STRUCTURE', 'READ'), async (r
       const section_ids = subject_groups
         .filter((sg: any) => sg.group && sg.group.section_id)
         .map((sg: any) => sg.group.section_id);
-      
+
       return { ...rest, section_ids: Array.from(new Set(section_ids)) };
     });
 
@@ -377,7 +385,7 @@ subjectRouter.get('/', requirePermission('ACADEMIC_STRUCTURE', 'READ'), async (r
 subjectRouter.post('/', requirePermission('ACADEMIC_STRUCTURE', 'CREATE'), async (req: any, res: Response) => {
   try {
     const { name, grade_id: req_grade_id } = req.body;
-    
+
     if (!name || !req_grade_id) {
       return res.status(400).json({ message: 'Subject name and grade_id are required' });
     }
@@ -760,17 +768,17 @@ router.get('/subject-groups', requirePermission('ACADEMIC_STRUCTURE', 'READ'), a
         }
       }
     });
-    
+
     // Exclude internal default/placeholder groups when requested 
     // (used by student-mapping UI to prevent assigning students to technical groups)
     const excludeDefault = req.query.exclude_default === 'true';
     const filtered = excludeDefault
       ? groups.filter((g: any) => {
-          const lower = g.name.toLowerCase().trim();
-          return !lower.endsWith('(default)') && lower !== 'default curriculum';
-        })
+        const lower = g.name.toLowerCase().trim();
+        return !lower.endsWith('(default)') && lower !== 'default curriculum';
+      })
       : groups;
-    
+
     // Map response for frontend consumption
     const mapped = filtered.map((g: any) => ({
       id: g.id,
@@ -783,7 +791,7 @@ router.get('/subject-groups', requirePermission('ACADEMIC_STRUCTURE', 'READ'), a
         subject_type: sg.subject_type
       }))
     }));
-    
+
     res.json(mapped);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -845,7 +853,7 @@ router.put('/subject-groups/:id', requirePermission('ACADEMIC_STRUCTURE', 'EDIT'
       if (name) {
         await tx.subjectGroup.update({ where: { id }, data: { name } });
       }
-      
+
       if (Array.isArray(subjects)) {
         // Clear old ones
         await (tx as any).subjectGroupSubject.deleteMany({ where: { group_id: id } });
@@ -887,14 +895,14 @@ router.get('/student-group-mappings', requirePermission('ACADEMIC_STRUCTURE', 'R
   try {
     const org_id = req.user.organization_id;
     const { grade_id, section_id } = req.query;
-    
+
     let filter: any = { organization_id: org_id };
-    
+
     // Filter mappings by nested relations
     if (grade_id || section_id) {
-       filter.group = {};
-       if (grade_id) filter.group.grade_id = String(grade_id);
-       if (section_id) filter.group.section_id = String(section_id);
+      filter.group = {};
+      if (grade_id) filter.group.grade_id = String(grade_id);
+      if (section_id) filter.group.section_id = String(section_id);
     }
 
     const mappings = await (prisma as any).studentGroupMapping.findMany({
@@ -916,7 +924,7 @@ router.post('/student-group-mapping', requirePermission('ACADEMIC_STRUCTURE', 'C
   try {
     const org_id = req.user.organization_id;
     const { student_id, group_id } = req.body;
-    
+
     if (!student_id || !group_id) {
       return res.status(400).json({ message: 'Missing student_id or group_id' });
     }
@@ -963,7 +971,7 @@ router.delete('/student-group-mapping/:id', requirePermission('ACADEMIC_STRUCTUR
   try {
     const { id } = req.params;
     const org_id = req.user.organization_id;
-    
+
     const mapping = await (prisma as any).studentGroupMapping.findFirst({ where: { id, organization_id: org_id } });
     if (!mapping) return res.status(404).json({ message: 'Mapping not found' });
 
