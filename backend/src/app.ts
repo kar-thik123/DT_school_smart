@@ -13,11 +13,19 @@ import analyticsRoutes from './routes/analytics.routes';
 import bulkImportRoutes from './routes/bulk-import.routes';
 import mailRoutes from './routes/mail.routes';
 import notificationRoutes from './routes/notification.routes';
+import curriculumRoutes from './routes/curriculum.routes';
 
 const app = express();
 console.log('Starting application, mounting routes...');
 
-app.use(cors());
+// app.use(cors());
+app.use(cors({
+  origin: [
+    'http://localhost:4200',
+    'http://[IP_ADDRESS]'
+  ],
+  credentials: true,
+}));
 app.use(express.json());
 app.use('/uploads', express.static('uploads'));
 
@@ -34,6 +42,7 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/bulk-import', bulkImportRoutes);
 app.use('/api/mails', mailRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/curriculum', curriculumRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });

@@ -11,7 +11,14 @@ const zod_1 = require("zod");
 const router = (0, express_1.Router)();
 // Middleware: Only Admins can manage roles
 router.use(auth_middleware_1.authMiddleware);
-router.use((0, auth_middleware_1.requirePermission)('IDENTITY', 'IS_SYSTEM_ADMIN'));
+router.use((req, res, next) => {
+    // Allow SUPER_ADMIN or anyone with ROLES:VIEW to access these routes
+    const userPermissions = req.user?.permissions || [];
+    if (req.user.role === 'SYSTEM_ADMIN' || req.user.role === 'SUPER_ADMIN' || userPermissions.includes('ROLES:VIEW') || userPermissions.includes('ROLES:MANAGE')) {
+        return next();
+    }
+    return res.status(403).json({ message: 'Forbidden: Requires role management permissions' });
+});
 const roleSchema = zod_1.z.object({
     name: zod_1.z.string().min(2),
     description: zod_1.z.string().optional()

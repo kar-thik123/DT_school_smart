@@ -132,9 +132,9 @@ router.post('/map', (0, auth_middleware_1.requirePermission)('ACADEMIC_STRUCTURE
                 student_id, academic_year_id, grade_id, section_id, subject_group_id, status: status || client_1.EnrollmentStatus.ACTIVE
             }
         });
-        // Update the transitional fields on User model
-        await prisma_1.default.user.update({
-            where: { id: student_id },
+        // Update the transitional fields on User model safely within tenant scope
+        await prisma_1.default.user.updateMany({
+            where: { id: student_id, organization_id: orgId },
             data: { grade_id, section_id }
         });
         return res.json(enrollment);
@@ -163,8 +163,8 @@ router.post('/bulk-enroll', (0, auth_middleware_1.requirePermission)('ACADEMIC_S
                     update: { grade_id, section_id: section_id || null, subject_group_id: subject_group_id || null, status: client_1.EnrollmentStatus.ACTIVE },
                     create: { organization_id: orgId, student_id, academic_year_id, grade_id, section_id: section_id || null, subject_group_id: subject_group_id || null, status: client_1.EnrollmentStatus.ACTIVE }
                 });
-                await tx.user.update({
-                    where: { id: student_id },
+                await tx.user.updateMany({
+                    where: { id: student_id, organization_id: orgId },
                     data: { grade_id, section_id: section_id || null }
                 });
             }
@@ -209,9 +209,9 @@ router.post('/promote', (0, auth_middleware_1.requirePermission)('ACADEMIC_STRUC
                         promoted_by: req.user.user_id
                     }
                 });
-                // Update User cache
-                await tx.user.update({
-                    where: { id: promo.student_id },
+                // Update User cache safely within tenant scope
+                await tx.user.updateMany({
+                    where: { id: promo.student_id, organization_id: orgId },
                     data: { grade_id: promo.to_grade_id, section_id: promo.to_section_id }
                 });
             }
@@ -238,9 +238,9 @@ router.delete('/:student_id/:academic_year_id', (0, auth_middleware_1.requirePer
                     }
                 }
             });
-            // Nullify the current grade and section on the User
-            await tx.user.update({
-                where: { id: student_id },
+            // Nullify the current grade and section on the User safely within tenant scope
+            await tx.user.updateMany({
+                where: { id: student_id, organization_id: orgId },
                 data: { grade_id: null, section_id: null }
             });
         });
