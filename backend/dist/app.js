@@ -16,9 +16,19 @@ const question_bank_routes_1 = __importDefault(require("./routes/question-bank.r
 const practice_routes_1 = __importDefault(require("./routes/practice.routes"));
 const analytics_routes_1 = __importDefault(require("./routes/analytics.routes"));
 const bulk_import_routes_1 = __importDefault(require("./routes/bulk-import.routes"));
+const mail_routes_1 = __importDefault(require("./routes/mail.routes"));
+const notification_routes_1 = __importDefault(require("./routes/notification.routes"));
+const curriculum_routes_1 = __importDefault(require("./routes/curriculum.routes"));
 const app = (0, express_1.default)();
 console.log('Starting application, mounting routes...');
-app.use((0, cors_1.default)());
+// app.use(cors());
+app.use((0, cors_1.default)({
+    origin: [
+        'http://localhost:4200',
+        'http://[IP_ADDRESS]'
+    ],
+    credentials: true,
+}));
 app.use(express_1.default.json());
 app.use('/uploads', express_1.default.static('uploads'));
 app.use('/api/organizations', organization_routes_1.default);
@@ -32,6 +42,9 @@ app.use('/api/question-bank', question_bank_routes_1.default);
 app.use('/api/practice', practice_routes_1.default);
 app.use('/api/analytics', analytics_routes_1.default);
 app.use('/api/bulk-import', bulk_import_routes_1.default);
+app.use('/api/mails', mail_routes_1.default);
+app.use('/api/notifications', notification_routes_1.default);
+app.use('/api/curriculum', curriculum_routes_1.default);
 app.get('/health', (req, res) => {
     res.json({ status: 'ok' });
 });

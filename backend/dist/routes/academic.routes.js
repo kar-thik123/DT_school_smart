@@ -44,9 +44,14 @@ const createCrudHandlers = (modelName, prismaModel) => {
             const existing = await prismaModel.findFirst({ where: { id: req.params.id, organization_id: req.user.organization_id } });
             if (!existing)
                 return res.status(404).json({ message: 'Not found' });
+            // const data = await prismaModel.update({
+            //   where: { id: req.params.id },
+            //   data: req.body
+            // Security Fix: Prevent cross-tenant data leakage by ensuring organization_id cannot be overwritten
+            const { id, organization_id, ...safeData } = req.body;
             const data = await prismaModel.update({
                 where: { id: req.params.id },
-                data: req.body
+                data: safeData
             });
             res.json({ message: `${modelName} updated`, data });
         }

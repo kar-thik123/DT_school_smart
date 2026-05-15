@@ -147,6 +147,13 @@ export const ADMIN_ROUTE: Route[] = [
           ),
       },
       {
+        path: 'units-list',
+        loadComponent: () =>
+          import('./administration/units-list/units.component').then(
+            (m) => m.UnitsListComponent
+          ),
+      },
+      {
         path: 'teacher-assignment',
         loadComponent: () =>
           import('./administration/teacher-assignment/teacher-assignment.component').then(
