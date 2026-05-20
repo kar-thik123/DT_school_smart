@@ -19,16 +19,20 @@ const questionTypeEnum = z.enum([
 ]);
 
 const questionSchema = z.object({
-  subject_id: z.string().uuid(),
-  unit_id: z.string().uuid(),
-  topic_id: z.string().uuid(),
+  subject_id: z.string().uuid().nullable().optional(),
+  unit_id: z.string().uuid().nullable().optional(),
+  topic_id: z.string().uuid().nullable().optional(),
+  sub_topic_id: z.string().uuid().nullable().optional(),
+  grade_id: z.string().uuid().nullable().optional(),
+  section_id: z.string().uuid().nullable().optional(),
   question_text: z.string().min(1),
   type: questionTypeEnum.default('MCQ_SINGLE'),
   answer: z.string().optional(),
   answer_config: z.any(), // Will be validated based on type
   marks: z.number().min(1),
   difficulty: z.enum(['EASY', 'MEDIUM', 'HARD']),
-  is_important: z.boolean().default(false)
+  is_important: z.boolean().default(false),
+  is_repeated: z.boolean().default(false)
 });
 
 // Type-specific validators
@@ -56,16 +60,31 @@ const hasSubjectAccess = async (teacher_id: string, subject_id: string, org_id: 
 };
 
 // Helper: Validate Hierarchy
-const validateHierarchy = async (subject_id: string, unit_id: string, topic_id: string, org_id: string) => {
-  const unit = await prisma.unit.findFirst({
-    where: { id: unit_id, organization_id: org_id, OR: [{ subject_id }, { syllabus: { subject_id } }] }
-  });
-  if (!unit) return false;
+const validateHierarchy = async (subject_id: string | null | undefined, unit_id: string | null | undefined, topic_id: string | null | undefined, sub_topic_id: string | null | undefined, org_id: string) => {
+  if (unit_id) {
+    if (!subject_id) return false;
+    const unit = await prisma.unit.findFirst({
+      where: { id: unit_id, organization_id: org_id, OR: [{ subject_id }, { syllabus: { subject_id } }] }
+    });
+    if (!unit) return false;
+  }
 
-  const topic = await prisma.topic.findFirst({
-    where: { id: topic_id, unit_id, organization_id: org_id }
-  });
-  return !!topic;
+  if (topic_id) {
+    if (!unit_id) return false;
+    const topic = await prisma.topic.findFirst({
+      where: { id: topic_id, unit_id, organization_id: org_id }
+    });
+    if (!topic) return false;
+  }
+
+  if (sub_topic_id) {
+    if (!topic_id) return false;
+    const subTopic = await prisma.subTopic.findFirst({
+      where: { id: sub_topic_id, topic_id, organization_id: org_id }
+    });
+    return !!subTopic;
+  }
+  return true;
 };
 
 // CREATE SINGLE QUESTION
@@ -76,12 +95,14 @@ router.post('/', requirePermission('QUESTION_BANK', 'CREATE'), async (req: any, 
     const isGlobalAdmin = ['SYSTEM_ADMIN', 'SUPER_ADMIN', 'MANAGEMENT'].includes(req.user.role);
 
     if (!isGlobalAdmin) {
-      const canAccess = await hasSubjectAccess(req.user.user_id, parsed.subject_id, org_id);
-      if (!canAccess) return res.status(403).json({ message: 'Teacher is not assigned to this subject or grade' });
+      if (parsed.subject_id) {
+        const canAccess = await hasSubjectAccess(req.user.user_id, parsed.subject_id, org_id);
+        if (!canAccess) return res.status(403).json({ message: 'Teacher is not assigned to this subject or grade' });
+      }
     }
 
-    const isValidHierarchy = await validateHierarchy(parsed.subject_id, parsed.unit_id, parsed.topic_id, org_id);
-    if (!isValidHierarchy) return res.status(400).json({ message: 'Invalid hierarchy: subject -> unit -> topic mismatch' });
+    const isValidHierarchy = await validateHierarchy(parsed.subject_id, parsed.unit_id, parsed.topic_id, parsed.sub_topic_id, org_id);
+    if (!isValidHierarchy) return res.status(400).json({ message: 'Invalid hierarchy: subject -> unit -> topic -> sub_topic mismatch' });
 
     // Validate type-specific config
     try {
@@ -96,6 +117,9 @@ router.post('/', requirePermission('QUESTION_BANK', 'CREATE'), async (req: any, 
         organization_id: org_id,
         created_by: req.user.user_id,
         answer_config: parsed.answer_config as any
+      },
+      include: {
+        creator: { select: { id: true, name: true } }
       }
     });
 
@@ -114,7 +138,10 @@ router.get('/', requirePermission('QUESTION_BANK', 'READ'), async (req: any, res
     if (subject_id) filter.subject_id = String(subject_id);
     if (difficulty) filter.difficulty = String(difficulty);
     if (grade_id) {
-       filter.subject = { grade_id: String(grade_id) };
+       filter.OR = [
+         { grade_id: String(grade_id) },
+         { subject: { grade_id: String(grade_id) } }
+       ];
     }
 
     const isGlobalAdmin = ['SYSTEM_ADMIN', 'SUPER_ADMIN', 'MANAGEMENT'].includes(req.user.role);
@@ -148,7 +175,22 @@ router.get('/', requirePermission('QUESTION_BANK', 'READ'), async (req: any, res
             return res.status(403).json({ message: 'Unauthorized access to this subject' });
          }
       } else {
-         filter.subject_id = { in: allowedSubjectIds };
+         const authFilter = {
+           OR: [
+             { subject_id: { in: allowedSubjectIds } },
+             { subject_id: null, grade_id: { in: inchargeGradeIds } }
+           ]
+         };
+         
+         if (filter.OR) {
+           filter.AND = [
+             { OR: filter.OR },
+             authFilter
+           ];
+           delete filter.OR;
+         } else {
+           filter.OR = authFilter.OR;
+         }
       }
     }
 
@@ -158,6 +200,7 @@ router.get('/', requirePermission('QUESTION_BANK', 'READ'), async (req: any, res
         subject: { select: { id: true, name: true, grade_id: true } },
         unit: { select: { id: true, name: true } },
         topic: { select: { id: true, name: true } },
+        sub_topic: { select: { id: true, name: true } },
         creator: { select: { id: true, name: true } }
       },
       orderBy: { created_at: 'desc' },
@@ -182,7 +225,7 @@ router.put('/:id', requirePermission('QUESTION_BANK', 'EDIT'), async (req: any, 
     }
 
     const parsed = questionSchema.parse(req.body);
-    const isValidHierarchy = await validateHierarchy(parsed.subject_id, parsed.unit_id, parsed.topic_id, org_id);
+    const isValidHierarchy = await validateHierarchy(parsed.subject_id, parsed.unit_id, parsed.topic_id, parsed.sub_topic_id, org_id);
     if (!isValidHierarchy) return res.status(400).json({ message: 'Invalid hierarchy' });
 
     const updated = await prisma.question.update({
@@ -211,49 +254,45 @@ router.delete('/:id', requirePermission('QUESTION_BANK', 'DELETE'), async (req: 
 // CSV TEMPLATE DOWNLOAD
 router.get('/bulk/template', requirePermission('QUESTION_BANK', 'IMPORT'), (req: any, res: Response) => {
   const header = [
-    'grade_name',
-    'subject_name',
-    'unit_name',
-    'topic_name',
+    'board',
+    'medium',
+    'grade',
+    'subject',
+    'unit_lesson',
+    'topic',
     'question_type',
-    'question_text',
-    'option_a',
-    'option_b',
-    'option_c',
-    'option_d',
-    'correct_option',
-    'correct_options',
-    'true_false_answer',
-    'yes_no_answer',
-    'fill_blank_sentence',
-    'fill_blank_answers',
+    'question',
+    'option1',
+    'option2',
+    'option3',
+    'option4',
     'answer',
     'marks',
-    'difficulty',
-    'is_important'
+    'difficulty_level',
+    'important_question',
+    'repeated_question',
+    'prepared_by'
   ].join(',');
 
   const example = [
-    'Grade 1',
-    'Mathematics',
-    'Unit 1 - Numbers',
-    'Addition',
-    'MCQ_SINGLE',
-    'What is 2 + 2?',
+    'State',
+    'English',
+    '6',
+    'Math',
+    'Algebra',
+    'Linear Eq',
+    'mcq',
+    '2x+4=10 x=?',
+    '2',
     '3',
     '4',
     '5',
-    '6',
-    'B',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
+    '3',
     '1',
-    'EASY',
-    'false'
+    'easy',
+    'TRUE',
+    'FALSE',
+    'Admin'
   ].join(',');
 
   const csv = `${header}\n${example}`;
@@ -297,13 +336,18 @@ const fuzzyMatch = (dbName: string, csvName: string): boolean => {
 // Helper: build answer_config from CSV row based on question type
 const buildAnswerConfig = (type: string, row: any): any => {
   switch (type) {
-    case 'MCQ_SINGLE': {
-      const opts = ['option_a', 'option_b', 'option_c', 'option_d']
+    case 'MCQ_SINGLE':
+    case 'MCQ': {
+      const opts = ['option1', 'option2', 'option3', 'option4']
         .map(k => row[k])
         .filter(Boolean);
-      const letter = String(row.correct_option || '').trim().toUpperCase();
-      const idx = ['A', 'B', 'C', 'D'].indexOf(letter);
-      return { options: opts, correct_answer: idx >= 0 ? idx : 0 };
+      // Let's assume correct answer might be index or value
+      const ans = String(row.answer || '').trim();
+      let idx = parseInt(ans, 10);
+      if (isNaN(idx) || idx < 1 || idx > 4) {
+         idx = opts.indexOf(ans) + 1; // Try matching text
+      }
+      return { options: opts, correct_answer: (idx > 0) ? (idx - 1) : 0 };
     }
     case 'MCQ_MULTI': {
       const opts = ['option_a', 'option_b', 'option_c', 'option_d']
@@ -440,15 +484,15 @@ router.post('/bulk', requirePermission('QUESTION_BANK', 'IMPORT'), upload.single
 
       try {
         // ── Required field checks ────────────────────────────────────────────
-        const requiredFields = ['grade_name', 'subject_name', 'unit_name', 'topic_name', 'question_text', 'marks', 'difficulty'];
+        const requiredFields = ['grade', 'subject', 'unit_lesson', 'topic', 'question', 'marks', 'difficulty_level'];
         for (const f of requiredFields) {
           if (!row[f] || String(row[f]).trim() === '') throw new Error(`Missing required field: "${f}"`);
         }
 
-        const gradeName   = String(row.grade_name).trim();
-        const subjectName = String(row.subject_name).trim();
-        const unitName    = String(row.unit_name).trim();
-        const topicName   = String(row.topic_name).trim();
+        const gradeName   = String(row.grade).trim();
+        const subjectName = String(row.subject).trim();
+        const unitName    = String(row.unit_lesson).trim();
+        const topicName   = String(row.topic).trim();
 
         // ── Auto-resolve or auto-create academic hierarchy ───────────────────
         const grade   = await findOrCreateGrade(gradeName);
@@ -457,18 +501,22 @@ router.post('/bulk', requirePermission('QUESTION_BANK', 'IMPORT'), upload.single
         const topic   = await findOrCreateTopic(topicName, unit.id);
 
         // ── Type & Config ────────────────────────────────────────────────────
-        const rawType = String(row.question_type || 'MCQ_SINGLE').trim().toUpperCase();
+        let rawType = String(row.question_type || 'MCQ_SINGLE').trim().toUpperCase();
+        if (rawType === 'MCQ') rawType = 'MCQ_SINGLE';
         const validTypes = ['MCQ_SINGLE','MCQ_MULTI','TRUE_FALSE','YES_NO','FILL_BLANK','DRAG_DROP_FILL','MATCH_FOLLOWING','DRAG_DROP_MATCH','SENTENCE_ORDER','STRUCTURED_2MARK','STRUCTURED_5MARK','LONG_ANSWER'];
         if (!validTypes.includes(rawType)) throw new Error(`Invalid question_type: "${rawType}". Valid: ${validTypes.join(', ')}`);
 
         const answer_config = buildAnswerConfig(rawType, row);
         try { validateConfig(rawType, answer_config); } catch {
-          throw new Error(`Invalid answer config for type "${rawType}". Check option_a/b/c/d and correct_option columns.`);
+          throw new Error(`Invalid answer config for type "${rawType}". Check option1-4 and answer columns.`);
         }
 
         // ── Difficulty & Marks ───────────────────────────────────────────────
-        const diff = String(row.difficulty || '').trim().toUpperCase();
-        if (!['EASY', 'MEDIUM', 'HARD'].includes(diff)) throw new Error(`Invalid difficulty: "${diff}". Must be EASY, MEDIUM, or HARD`);
+        let diff = String(row.difficulty_level || '').trim().toUpperCase();
+        if (diff === 'HARD LEVEL') diff = 'HARD';
+        else if (diff === 'EASY LEVEL') diff = 'EASY';
+        else if (diff === 'MEDIUM LEVEL') diff = 'MEDIUM';
+        if (!['EASY', 'MEDIUM', 'HARD'].includes(diff)) diff = 'MEDIUM';
 
         const marks = parseInt(row.marks, 10);
         if (isNaN(marks) || marks < 1) throw new Error(`Invalid marks: "${row.marks}". Must be a positive integer.`);
@@ -481,16 +529,18 @@ router.post('/bulk', requirePermission('QUESTION_BANK', 'IMPORT'), upload.single
 
         await prisma.question.create({
           data: {
+            grade_id:        grade.id,
             subject_id:      subject.id,
             unit_id:         unit.id,
             topic_id:        topic.id,
-            question_text:   String(row.question_text).trim(),
+            question_text:   String(row.question).trim(),
             type:            rawType as any,
             answer:          row.answer ? String(row.answer).trim() : undefined,
             answer_config,
             marks,
             difficulty:      diff as any,
-            is_important:    String(row.is_important || 'false').toLowerCase() === 'true',
+            is_important:    String(row.important_question || 'false').toLowerCase() === 'true',
+            is_repeated:     String(row.repeated_question || 'false').toLowerCase() === 'true',
             organization_id: org_id,
             created_by:      req.user.user_id
           }

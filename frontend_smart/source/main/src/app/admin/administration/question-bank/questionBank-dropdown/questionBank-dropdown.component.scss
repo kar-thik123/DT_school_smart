@@ -371,3 +371,261 @@ $themes: (
     right: -8px; // Slight adjustment for mobile edges
   }
 }
+
+// Section Chevron
+.section-chevron {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  margin-right: 6px;
+  color: $text-muted;
+  transition: transform 0.2s ease;
+}
+
+// Subjects Container
+.subjects-container {
+  overflow: hidden;
+}
+
+.subjects-tree {
+  position: relative;
+  margin-left: 20px;
+  margin-top: 2px;
+  padding-left: 12px;
+  border-left: 1px solid $border-color;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+// Group Item
+.group-item {
+  margin-bottom: 2px;
+}
+
+// Group Row
+.group-row {
+  display: flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: $radius-item;
+  cursor: pointer;
+  transition: $transition-smooth;
+  color: $text-main;
+
+  .group-chevron {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    margin-right: 6px;
+    color: $text-muted;
+  }
+
+  .group-name {
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  &:hover {
+    background-color: $bg-hover;
+  }
+
+  &.expanded {
+    color: #4f46e5;
+    .group-chevron {
+      color: #4f46e5;
+    }
+  }
+}
+
+// Group Subjects
+.group-subjects-container {
+  overflow: hidden;
+}
+
+.group-subjects-tree {
+  position: relative;
+  margin-left: 16px;
+  margin-top: 2px;
+  padding-left: 12px;
+  border-left: 1px solid $border-color;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+// Subject Row
+.subject-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: $radius-item;
+  cursor: pointer;
+  transition: $transition-smooth;
+  color: $text-muted;
+
+  .tree-line {
+    position: absolute;
+    left: -13px;
+    top: 50%;
+    width: 12px;
+    height: 1px;
+    background-color: $border-color;
+  }
+
+  .subject-name {
+    font-size: 12px;
+    font-weight: 400;
+  }
+
+  &:hover {
+    background-color: $bg-hover;
+    color: $text-main;
+  }
+
+  &.active {
+    background-color: $accent-green-light;
+    color: $accent-green;
+    .subject-name {
+      font-weight: 600;
+    }
+  }
+
+  &.empty {
+    cursor: default;
+    &:hover {
+      background-color: transparent;
+    }
+  }
+}
+
+.subject-val {
+  color: #10b981;
+  font-weight: 600;
+  margin-left: 4px;
+}
+
+// Units, Topics, Subtopics Styling
+.units-container, .topics-container, .subtopics-container {
+  overflow: hidden;
+}
+
+.units-tree, .topics-tree, .subtopics-tree {
+  position: relative;
+  margin-left: 20px;
+  margin-top: 2px;
+  padding-left: 12px;
+  border-left: 1px solid $border-color;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.unit-row, .topic-row, .subtopic-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: $radius-item;
+  cursor: pointer;
+  transition: $transition-smooth;
+  color: $text-muted;
+
+  .tree-line {
+    position: absolute;
+    left: -13px;
+    top: 50%;
+    width: 12px;
+    height: 1px;
+    background-color: $border-color;
+  }
+
+  .unit-name, .topic-name, .subtopic-name {
+    font-size: 12px;
+    font-weight: 400;
+  }
+
+  &:hover {
+    background-color: $bg-hover;
+    color: $text-main;
+  }
+
+  &.active {
+    background-color: $accent-green-light;
+    color: $accent-green;
+    
+    .unit-name, .topic-name, .subtopic-name {
+      font-weight: 600;
+    }
+  }
+
+  &.empty {
+    cursor: default;
+    &:hover {
+      background-color: transparent;
+    }
+  }
+}
+
+// Expand Chevron inside rows
+.expand-chevron {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  margin-right: 6px;
+  color: $text-muted;
+  transition: transform 0.2s ease;
+  cursor: pointer;
+  
+  &:hover {
+    color: $text-main;
+  }
+}
+
+// Muted breadcrumb labels in trigger
+.unit-val, .topic-val, .subtopic-val {
+  color: #6366f1;
+  font-weight: 500;
+  margin-left: 4px;
+}
+
+// Dark Mode Support for new elements
+:host-context(.dark) {
+  .subject-val {
+    color: #10b981 !important;
+  }
+  
+  .unit-val, .topic-val, .subtopic-val {
+    color: #818cf8 !important;
+  }
+  
+  .section-row, .group-row, .subject-row, .unit-row, .topic-row, .subtopic-row {
+    color: #96a2b4 !important;
+    
+    .section-chevron, .group-chevron, .expand-chevron {
+      color: #6c757d !important;
+    }
+    
+    .tree-line {
+      background-color: #404755 !important;
+    }
+    
+    &:hover {
+      background-color: #232b3e !important;
+      color: #fff !important;
+    }
+  }
+
+  .group-row.expanded {
+    color: #909de4 !important;
+    .group-chevron {
+      color: #909de4 !important;
+    }
+  }
+
+  .subject-row.active, .unit-row.active, .topic-row.active, .subtopic-row.active {
+    background-color: rgba(#10b981, 0.15) !important;
+    color: #10b981 !important;
+  }
+}

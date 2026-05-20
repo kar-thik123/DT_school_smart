@@ -1,0 +1,87 @@
+<div class="modal fade show" style="display: block; background: rgba(0,0,0,0.5); z-index: 1050;">
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header border-bottom-0">
+        <h5 class="modal-title d-flex align-items-center">
+          <mat-icon class="text-primary me-2">visibility</mat-icon> Preview Import Data
+        </h5>
+        <button type="button" class="btn-close" (click)="discard.emit()" aria-label="Close"></button>
+      </div>
+      <div class="modal-body bg-light p-4">
+        <div class="alert alert-info d-flex align-items-center">
+          <mat-icon class="me-2">info</mat-icon>
+          <span>Found <strong>{{previewData.length}}</strong> records to import. Please review the sample
+            below.</span>
+        </div>
+        <div class="card border-0 shadow-sm">
+          <div class="card-body p-0 table-responsive" style="max-height: 400px;">
+            <table class="table table-hover mb-0 text-nowrap">
+              <thead class="table-light position-sticky top-0 shadow-sm" style="z-index: 1;">
+                <tr>
+                  <th>Board</th>
+                  <th>Medium</th>
+                  <th>Grade</th>
+                  <th>Section</th>
+                  <th>Group</th>
+                  <th>Subject</th>
+                  <th>Unit/Lesson</th>
+                  <th>Topic</th>
+                  <th>Sub Topic</th>
+                  <th>Type</th>
+                  <th>Question Preview</th>
+                  <th>Options</th>
+                  <th>Answer</th>
+                  <th>Marks</th>
+                  <th>Difficulty</th>
+                  <th>Important</th>
+                  <th>Repeated</th>
+                  <th>Prepared By</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let row of previewData | slice:0:10">
+                  <td>{{ row.board || 'null' }}</td>
+                  <td>{{ row.medium || 'null' }}</td>
+                  <td>{{ row.grade || row.Grade || 'null' }}</td>
+                  <td>{{ row.section || 'null' }}</td>
+                  <td>{{ row.group || 'null' }}</td>
+                  <td>{{ row.subject || row.Subject || 'null' }}</td>
+                  <td>{{ row.unit_lesson || row.Unit || 'null' }}</td>
+                  <td>{{ row.topic || row.Topic || 'null' }}</td>
+                  <td>{{ row.sub_topic || 'null' }}</td>
+                  <td><span class="badge bg-secondary">{{ row.question_type || row.QuestionType || 'null' }}</span></td>
+                  <td class="text-truncate" style="max-width: 250px;" title="{{ row.question || row.Question }}">
+                    {{ row.question || row.Question || 'null' }}
+                  </td>
+                  <td style="max-width: 150px;">
+                    <ul class="list-unstyled mb-0" style="font-size: 0.85rem; line-height: 1.2;">
+                      <li class="text-truncate" title="Option 1: {{ row.option1 || 'null' }}">1) {{ row.option1 || 'null' }}</li>
+                      <li class="text-truncate" title="Option 2: {{ row.option2 || 'null' }}">2) {{ row.option2 || 'null' }}</li>
+                      <li class="text-truncate" title="Option 3: {{ row.option3 || 'null' }}">3) {{ row.option3 || 'null' }}</li>
+                      <li class="text-truncate" title="Option 4: {{ row.option4 || 'null' }}">4) {{ row.option4 || 'null' }}</li>
+                    </ul>
+                  </td>
+                  <td><span class="badge bg-success">{{ row.answer || row.Answer || 'null' }}</span></td>
+                  <td>{{ row.marks || 'null' }}</td>
+                  <td>{{ row.difficulty_level || 'null' }}</td>
+                  <td>{{ row.important_question || 'null' }}</td>
+                  <td>{{ row.repeated_question || 'null' }}</td>
+                  <td>{{ row.prepared_by || 'null' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="text-center text-muted mt-3" *ngIf="previewData.length > 10">
+          <small>Showing first 10 of {{previewData.length}} records</small>
+        </div>
+      </div>
+      <div class="modal-footer border-top-0 bg-light">
+        <button mat-button color="warn" (click)="discard.emit()">Discard</button>
+        <button mat-raised-button color="primary" (click)="confirm.emit()">
+          <mat-icon>check_circle</mat-icon> Confirm & Import
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

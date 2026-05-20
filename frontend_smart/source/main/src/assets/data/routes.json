@@ -1786,7 +1786,21 @@
         },
         {
           "path": "/admin/administration/units-list",
-          "title": "Units List",
+          "title": "MENUITEMS.ADMINISTRATION.LIST.UNITS-LIST",
+          "iconType": "",
+          "icon": "",
+          "class": "ml-menu",
+          "groupTitle": false,
+          "badge": "",
+          "badgeClass": "",
+          "role": [
+            ""
+          ],
+          "submenu": []
+        },
+        {
+          "path": "/admin/administration/question-bank",
+          "title": "MENUITEMS.ADMINISTRATION.LIST.QUESTION-BANK",
           "iconType": "",
           "icon": "",
           "class": "ml-menu",
