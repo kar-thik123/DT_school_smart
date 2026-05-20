@@ -154,6 +154,8 @@
         "ROLES": "Roles & Permissions",
         "MASTER-CONFIG": "Master Configuration",
         "ACADEMIC-STRUCTURE": "Academic Structure",
+        "UNITS-LIST": "Units List",
+        "QUESTION-BANK": "Question Bank",
         "TEACHER-ASSIGNMENT": "Teacher Assignment",
         "STUDENT-ENROLLMENT": "Student Enrollment"
       }

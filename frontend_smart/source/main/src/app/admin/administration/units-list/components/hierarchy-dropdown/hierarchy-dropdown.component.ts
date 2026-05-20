@@ -40,6 +40,7 @@ export class HierarchyDropdownComponent {
   @Input() selectedSectionId: string | null = null;
   @Input() selectedGradeName: string = '';
   @Input() selectedSectionName: string = '';
+  @Input() labelName: string = 'Curriculum';
 
   @Output() selectionChange = new EventEmitter<{ grade: IGrade, section: ISection | 'ALL' }>();
 
@@ -56,7 +57,12 @@ export class HierarchyDropdownComponent {
   }
 
   toggleDropdown() {
-    this.isHierarchyOpen = !this.isHierarchyOpen;
+    if (!this.isHierarchyOpen) {
+      this.expandedGrade = null;
+      this.isHierarchyOpen = true;
+    } else {
+      this.isHierarchyOpen = false;
+    }
   }
 
   toggleGrade(gradeId: string, event: Event) {

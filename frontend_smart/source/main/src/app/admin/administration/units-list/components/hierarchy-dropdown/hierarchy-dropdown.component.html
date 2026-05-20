@@ -5,11 +5,11 @@
     <div class="trigger-content">
       <!-- <mat-icon class="trigger-icon-left">inventory_2</mat-icon> -->
       <span class="trigger-text" *ngIf="selectedGradeId; else emptyState">
-        <span class="label">Curriculum:</span>
+        <span class="label">{{ labelName }}:</span>
         <span class="value">{{ selectedGradeName }} - Section {{ selectedSectionName }}</span>
       </span>
       <ng-template #emptyState>
-        <span class="trigger-text empty" style="font-size: medium;">Select Curriculum</span>
+        <span class="trigger-text empty" style="font-size: medium;">Select {{ labelName }}</span>
       </ng-template>
     </div>
     <mat-icon class="trigger-icon-right"

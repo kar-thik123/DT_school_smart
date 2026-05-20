@@ -154,6 +154,13 @@ export const ADMIN_ROUTE: Route[] = [
           ),
       },
       {
+        path: 'question-bank',
+        loadComponent: () =>
+          import('./administration/question-bank/question-bank.component').then(
+            (m) => m.QuestionBankComponent
+          ),
+      },
+      {
         path: 'teacher-assignment',
         loadComponent: () =>
           import('./administration/teacher-assignment/teacher-assignment.component').then(
