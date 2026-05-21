@@ -1,7 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import * as XLSX from 'xlsx';
-import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormGroupDirective } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormGroupDirective, FormArray } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -11,6 +11,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatTabsModule } from '@angular/material/tabs';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.component';
 
 import { QuestionBankService, IQuestion } from './services/question-bank.service';
@@ -27,7 +29,7 @@ import Swal from 'sweetalert2';
     CommonModule, FormsModule, ReactiveFormsModule, BreadcrumbComponent,
     MatIconModule, MatButtonModule, MatCardModule,
     MatMenuModule, MatFormFieldModule, MatInputModule,
-    MatSelectModule, MatSnackBarModule, MatProgressBarModule,
+    MatSelectModule, MatSnackBarModule, MatProgressBarModule, MatTabsModule, MatCheckboxModule,
     QuestionBankDropdownComponent, QuestionBankPreviewComponent
   ],
   templateUrl: './question-bank.component.html',
@@ -55,7 +57,7 @@ export class QuestionBankComponent implements OnInit {
   grades: IGrade[] = [];
   allSections: ISection[] = [];
   subjects: ISubject[] = [];
-  
+
   // Curriculum Data (Cached for selected Subject)
   // Removed local arrays in favor of backend API parameters
 
@@ -79,7 +81,7 @@ export class QuestionBankComponent implements OnInit {
   selectedTopicName: string = '';
   selectedSubTopicId: string | null = null;
   selectedSubTopicName: string = '';
-  
+
   editingQuestionId: string | null = null;
 
   ngOnInit() {
@@ -100,10 +102,7 @@ export class QuestionBankComponent implements OnInit {
       difficulty: ['MEDIUM', Validators.required],
       is_important: [false],
       // Options and Answers
-      optionA: [''],
-      optionB: [''],
-      optionC: [''],
-      optionD: [''],
+      options: this.fb.array([]),
       correct_answer_mcq: [0],
       correct_answers_multi: [[]],
       correct_answer_tf: [true],
@@ -125,47 +124,62 @@ export class QuestionBankComponent implements OnInit {
 
     // Dynamic Option and Answer validation logic
     this.questionForm.get('type')?.valueChanges.subscribe(type => {
-      const optionA = this.questionForm.get('optionA');
-      const optionB = this.questionForm.get('optionB');
       const correctMcq = this.questionForm.get('correct_answer_mcq');
       const correctMulti = this.questionForm.get('correct_answers_multi');
       const correctTF = this.questionForm.get('correct_answer_tf');
 
-      if (type === 'MCQ_SINGLE' || type === 'MCQ_MULTI') {
-        optionA?.setValidators([Validators.required]);
-        optionB?.setValidators([Validators.required]);
-      } else {
-        optionA?.clearValidators();
-        optionB?.clearValidators();
-      }
+      correctMcq?.clearValidators();
+      correctMulti?.clearValidators();
+      correctTF?.clearValidators();
 
-      if (type === 'MCQ_SINGLE') {
-        correctMcq?.setValidators([Validators.required]);
-      } else {
-        correctMcq?.clearValidators();
-      }
-
-      if (type === 'MCQ_MULTI') {
-        correctMulti?.setValidators([Validators.required]);
-      } else {
-        correctMulti?.clearValidators();
-      }
-
-      if (type === 'TRUE_FALSE') {
-        correctTF?.setValidators([Validators.required]);
-      } else {
-        correctTF?.clearValidators();
-      }
-
-      optionA?.updateValueAndValidity();
-      optionB?.updateValueAndValidity();
-      correctMcq?.updateValueAndValidity();
-      correctMulti?.updateValueAndValidity();
-      correctTF?.updateValueAndValidity();
+      correctMcq?.updateValueAndValidity({ emitEvent: false });
+      correctMulti?.updateValueAndValidity({ emitEvent: false });
+      correctTF?.updateValueAndValidity({ emitEvent: false });
     });
 
     // Run type changes once to set default validators
     this.questionForm.get('type')?.updateValueAndValidity();
+  }
+
+  get options(): FormArray {
+    return this.questionForm.get('options') as FormArray;
+  }
+
+  addOption() {
+    this.options.push(this.fb.group({
+      text: ['', Validators.required],
+      isCorrect: [false]
+    }));
+  }
+
+  removeOption(index: number) {
+    this.options.removeAt(index);
+  }
+
+  onCheckboxChange(event: any, index: number) {
+    if (this.questionForm.get('type')?.value === 'MCQ_SINGLE' && event.checked) {
+      this.options.controls.forEach((control, i) => {
+        if (i !== index) {
+          control.get('isCorrect')?.setValue(false, { emitEvent: false });
+        }
+      });
+    }
+  }
+
+  hasCorrectOption(): boolean {
+    const type = this.questionForm.get('type')?.value;
+    if (type !== 'MCQ_SINGLE' && type !== 'MCQ_MULTI') return true;
+    return this.options.controls.some(ctrl => ctrl.get('isCorrect')?.value === true);
+  }
+
+  hasMinimumOptions(): boolean {
+    const type = this.questionForm.get('type')?.value;
+    if (type !== 'MCQ_SINGLE' && type !== 'MCQ_MULTI') return true;
+    return this.options.length >= 2;
+  }
+
+  getOptionLetter(index: number): string {
+    return String.fromCharCode(65 + index);
   }
 
   // --- Academic Structure Loading ---
@@ -216,7 +230,7 @@ export class QuestionBankComponent implements OnInit {
         const csv = XLSX.utils.sheet_to_csv(ws);
         const csvBlob = new Blob([csv], { type: 'text/csv' });
         this.previewCsvFile = new File([csvBlob], 'import.csv', { type: 'text/csv' });
-        
+
         // Show modal
         this.showPreviewModal = true;
       } catch (err) {
@@ -270,7 +284,7 @@ export class QuestionBankComponent implements OnInit {
     this.selectedSectionName = section === 'ALL' ? 'All Sections' : section?.name || '';
     this.selectedSubjectId = subject?.id || null;
     this.selectedSubjectName = subject?.name || '';
-    
+
     this.selectedUnitId = unit?.id || null;
     this.selectedUnitName = unit?.name || '';
     this.selectedTopicId = topic?.id || null;
@@ -280,12 +294,12 @@ export class QuestionBankComponent implements OnInit {
 
     // Reset Form
     this.cancelEdit(null as any);
-    
+
     // Load subjects for grade, then patch form selection
     if (grade?.id) {
       this.academicService.getSubjects(grade.id).subscribe(subjects => {
         this.subjects = subjects;
-        
+
         this.questionForm.patchValue({
           subject_id: subject?.id || '',
           unit_id: unit?.id || '',
@@ -300,7 +314,7 @@ export class QuestionBankComponent implements OnInit {
 
   loadCurriculumAndQuestions() {
     this.isLoading = true;
-    
+
     // Efficient Backend Fetching: Only fetch exactly the questions that match the selected hierarchy context.
     const params: any = {};
     if (this.selectedGradeId) params.grade_id = this.selectedGradeId;
@@ -328,24 +342,30 @@ export class QuestionBankComponent implements OnInit {
     if (this.questionForm.invalid) return;
 
     const formValue = this.questionForm.value;
-    
+
     let answer_config: any = {};
     let answer: string | undefined = undefined;
 
     if (formValue.type === 'MCQ_SINGLE') {
-      const opts = [formValue.optionA, formValue.optionB, formValue.optionC, formValue.optionD].filter(o => o && o.trim() !== '');
+      const opts = formValue.options || [];
+      const optTexts = opts.map((o: any) => o.text).filter((t: string) => t && t.trim() !== '');
+      const correctIndex = opts.findIndex((o: any) => o.isCorrect === true);
+
       answer_config = {
-        options: opts.length >= 2 ? opts : ['Option A', 'Option B'],
-        correct_answer: Number(formValue.correct_answer_mcq)
+        options: optTexts.length > 0 ? optTexts : ['Option A', 'Option B'],
+        correct_answer: correctIndex >= 0 ? correctIndex : 0
       };
       answer = String(answer_config.correct_answer);
     } else if (formValue.type === 'MCQ_MULTI') {
-      const opts = [formValue.optionA, formValue.optionB, formValue.optionC, formValue.optionD].filter(o => o && o.trim() !== '');
+      const opts = formValue.options || [];
+      const optTexts = opts.map((o: any) => o.text).filter((t: string) => t && t.trim() !== '');
+      const correctIndices = opts.map((o: any, i: number) => o.isCorrect ? i : -1).filter((i: number) => i !== -1);
+
       answer_config = {
-        options: opts.length >= 2 ? opts : ['Option A', 'Option B'],
-        correct_answers: formValue.correct_answers_multi || []
+        options: optTexts.length > 0 ? optTexts : ['Option A', 'Option B'],
+        correct_answers: correctIndices
       };
-      answer = (formValue.correct_answers_multi || []).join(',');
+      answer = correctIndices.join(',');
     } else if (formValue.type === 'TRUE_FALSE') {
       answer_config = {
         correct_answer: formValue.correct_answer_tf === true || String(formValue.correct_answer_tf) === 'true'
@@ -356,21 +376,21 @@ export class QuestionBankComponent implements OnInit {
       answer_config = {};
       answer = formValue.answer_text;
     }
-    
+
     const payload = {
-       subject_id: formValue.subject_id || null,
-       unit_id: formValue.unit_id || null,
-       topic_id: formValue.topic_id || null,
-       sub_topic_id: formValue.sub_topic_id || null,
-       grade_id: this.selectedGradeId,
-       section_id: this.selectedSectionId === 'ALL' ? null : this.selectedSectionId,
-       question_text: formValue.question_text,
-       type: formValue.type,
-       marks: Number(formValue.marks),
-       difficulty: formValue.difficulty,
-       is_important: formValue.is_important === true,
-       answer_config,
-       answer
+      subject_id: formValue.subject_id || null,
+      unit_id: formValue.unit_id || null,
+      topic_id: formValue.topic_id || null,
+      sub_topic_id: formValue.sub_topic_id || null,
+      grade_id: this.selectedGradeId,
+      section_id: this.selectedSectionId === 'ALL' ? null : this.selectedSectionId,
+      question_text: formValue.question_text,
+      type: formValue.type,
+      marks: Number(formValue.marks),
+      difficulty: formValue.difficulty,
+      is_important: formValue.is_important === true,
+      answer_config,
+      answer
     };
 
     if (this.editingQuestionId) {
@@ -411,64 +431,62 @@ export class QuestionBankComponent implements OnInit {
     setTimeout(() => {
       this.questionForm.patchValue({ unit_id: question.unit_id });
       setTimeout(() => {
-         this.questionForm.patchValue({ topic_id: question.topic_id });
-         setTimeout(() => {
-            // Extract options and correct answers
-            let optA = '';
-            let optB = '';
-            let optC = '';
-            let optD = '';
-            let correctMcq = 0;
-            let correctMulti: number[] = [];
-            let correctTF = true;
-            let answerText = question.answer || '';
+        this.questionForm.patchValue({ topic_id: question.topic_id });
+        setTimeout(() => {
+          this.options.clear();
+          let correctMcq = 0;
+          let correctMulti: number[] = [];
+          let correctTF = true;
+          let answerText = question.answer || '';
 
-            if (question.answer_config) {
-              const config = question.answer_config as any;
-              if (config.options) {
-                optA = config.options[0] || '';
-                optB = config.options[1] || '';
-                optC = config.options[2] || '';
-                optD = config.options[3] || '';
-              }
-              if (config.correct_answer !== undefined) {
-                if (question.type === 'TRUE_FALSE') {
-                  correctTF = config.correct_answer === true || String(config.correct_answer) === 'true';
-                } else {
-                  correctMcq = Number(config.correct_answer);
+          if (question.answer_config) {
+            const config = question.answer_config as any;
+            if (config.options && Array.isArray(config.options)) {
+              config.options.forEach((optText: string, i: number) => {
+                let isCorrect = false;
+                if (question.type === 'MCQ_SINGLE') {
+                  isCorrect = (Number(config.correct_answer) === i);
+                } else if (question.type === 'MCQ_MULTI') {
+                  isCorrect = (Array.isArray(config.correct_answers) && config.correct_answers.includes(i));
                 }
-              }
-              if (config.correct_answers) {
-                correctMulti = config.correct_answers;
+                this.options.push(this.fb.group({ text: [optText, Validators.required], isCorrect: [isCorrect] }));
+              });
+            }
+            if (config.correct_answer !== undefined) {
+              if (question.type === 'TRUE_FALSE') {
+                correctTF = config.correct_answer === true || String(config.correct_answer) === 'true';
+              } else {
+                correctMcq = Number(config.correct_answer);
               }
             }
+            if (config.correct_answers) {
+              correctMulti = config.correct_answers;
+            }
+          }
 
-            this.questionForm.patchValue({
-               sub_topic_id: question.sub_topic_id || null,
-               question_text: question.question_text,
-               type: question.type,
-               marks: question.marks,
-               difficulty: question.difficulty,
-               is_important: question.is_important,
-               optionA: optA,
-               optionB: optB,
-               optionC: optC,
-               optionD: optD,
-               correct_answer_mcq: correctMcq,
-               correct_answers_multi: correctMulti,
-               correct_answer_tf: correctTF,
-               answer_text: answerText
-            });
-         }, 50);
+          this.questionForm.patchValue({
+            sub_topic_id: question.sub_topic_id || null,
+            question_text: question.question_text,
+            type: question.type,
+            marks: question.marks,
+            difficulty: question.difficulty,
+            is_important: question.is_important,
+            correct_answer_mcq: correctMcq,
+            correct_answers_multi: correctMulti,
+            correct_answer_tf: correctTF,
+            answer_text: answerText
+          });
+        }, 50);
       }, 50);
     }, 50);
-    
+
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   cancelEdit(formDirective: FormGroupDirective | null) {
     this.editingQuestionId = null;
-    
+    this.options.clear();
+
     // Remember current context selections before clearing
     const subject_id = this.questionForm?.value.subject_id || this.selectedSubjectId;
     const unit_id = this.questionForm?.value.unit_id || this.selectedUnitId;
@@ -481,11 +499,78 @@ export class QuestionBankComponent implements OnInit {
         type: 'MCQ_SINGLE', marks: 1, difficulty: 'MEDIUM', is_important: false
       });
     } else if (this.questionForm) {
-       this.questionForm.reset({
+      this.questionForm.reset({
         subject_id, unit_id, topic_id, sub_topic_id,
         type: 'MCQ_SINGLE', marks: 1, difficulty: 'MEDIUM', is_important: false
       });
     }
+  }
+
+  downloadTemplate(): void {
+    const fileUrl = 'assets/Global_questionBank_template/Question_Bank_Template.xlsx';
+
+    const a = document.createElement('a');
+    a.href = fileUrl;
+    a.download = 'Question_Bank_Template.xlsx';
+
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
+  exportExcel(): void {
+    if (!this.filteredQuestions || this.filteredQuestions.length === 0) {
+      this.showNotification('error', 'No data to export');
+      return;
+    }
+
+    const data = this.filteredQuestions.map((q: any, index: number) => {
+      let optionsStr = '';
+      let correctAnsStr = '';
+      if (q.type === 'MCQ_SINGLE' || q.type === 'MCQ_MULTI') {
+        const config = q.answer_config as any;
+        optionsStr = config?.options?.join(' | ') || '';
+
+        if (q.type === 'MCQ_SINGLE' && config?.correct_answer !== undefined) {
+          correctAnsStr = config.options[config.correct_answer] || '';
+        } else if (q.type === 'MCQ_MULTI' && config?.correct_answers) {
+          correctAnsStr = config.correct_answers.map((i: number) => config.options[i]).join(', ');
+        }
+      } else if (q.type === 'TRUE_FALSE') {
+        correctAnsStr = q.answer_config?.correct_answer ? 'True' : 'False';
+      } else {
+        correctAnsStr = q.answer || '';
+      }
+
+      return {
+        'S.No': index + 1,
+        'Grade': q.grade?.name || '',
+        'Section': q.section?.name || '',
+        'Subject': q.subject?.name || '',
+        'Unit': q.unit?.name || '',
+        'Topic': q.topic?.name || '',
+        'Sub Topic': q.sub_topic?.name || '',
+        'Question Type': q.type,
+        'Question': q.question_text,
+        'Options (separated by |)': optionsStr,
+        'Correct Answer': correctAnsStr,
+        'Marks': q.marks,
+        'Difficulty': q.difficulty,
+        'Important': q.is_important ? 'Yes' : 'No'
+      };
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = { Sheets: { 'Questions': worksheet }, SheetNames: ['Questions'] };
+    const excelBuffer: any = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+
+    const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Question_Bank_${new Date().getTime()}.xlsx`;
+    a.click();
+    window.URL.revokeObjectURL(url);
   }
 
   deleteQuestion(question: IQuestion) {
@@ -498,18 +583,18 @@ export class QuestionBankComponent implements OnInit {
       confirmButtonText: 'Delete'
     }).then((result) => {
       if (result.isConfirmed) {
-         // Optimistic delete
-         this.allQuestions = this.allQuestions.filter(q => q.id !== question.id);
-         this.filteredQuestions = [...this.allQuestions];
-         
-         this.questionService.deleteQuestion(question.id).subscribe({
-            next: () => this.showNotification('success', 'Question deleted'),
-            error: () => {
-               this.showNotification('error', 'Failed to delete question');
-               this.allQuestions.push(question); // rollback
-               this.filteredQuestions = [...this.allQuestions];
-            }
-         });
+        // Optimistic delete
+        this.allQuestions = this.allQuestions.filter(q => q.id !== question.id);
+        this.filteredQuestions = [...this.allQuestions];
+
+        this.questionService.deleteQuestion(question.id).subscribe({
+          next: () => this.showNotification('success', 'Question deleted'),
+          error: () => {
+            this.showNotification('error', 'Failed to delete question');
+            this.allQuestions.push(question); // rollback
+            this.filteredQuestions = [...this.allQuestions];
+          }
+        });
       }
     });
   }
@@ -517,16 +602,16 @@ export class QuestionBankComponent implements OnInit {
   // --- Helpers for Table Display ---
   getContextHierarchy(q: any): string {
     const parts: string[] = [];
-    
+
     if (q.grade_id && q.grade?.name) parts.push(q.grade.name);
     if (q.section_id && q.section?.name) parts.push(q.section.name);
     if (q.subject_id && q.subject?.name) parts.push(q.subject.name);
     if (q.unit_id && q.unit?.name) parts.push(q.unit.name);
     if (q.topic_id && q.topic?.name) parts.push(q.topic.name);
     if (q.sub_topic_id && q.sub_topic?.name) parts.push(q.sub_topic.name);
-    
+
     if (parts.length === 0) return 'Generic Grade Level';
-    
+
     return parts.slice(-3).join(' > ');
   }
 
@@ -540,13 +625,14 @@ export class QuestionBankComponent implements OnInit {
         else if (name === 'unit_id') label = 'Unit';
         else if (name === 'topic_id') label = 'Topic';
         else if (name === 'question_text') label = 'Question Text';
-        else if (name === 'optionA') label = 'Option A';
-        else if (name === 'optionB') label = 'Option B';
-        else if (name === 'correct_answer_mcq') label = 'Correct MCQ Option';
-        else if (name === 'correct_answers_multi') label = 'Correct Multi Options';
-        else if (name === 'correct_answer_tf') label = 'Correct True/False Answer';
         invalid.push(label);
       }
+    }
+    if (!this.hasCorrectOption()) {
+      invalid.push('Correct Option (check a box)');
+    }
+    if (!this.hasMinimumOptions()) {
+      invalid.push('Minimum 2 Options Required');
     }
     return invalid;
   }
