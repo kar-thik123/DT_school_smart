@@ -7,6 +7,7 @@ export interface AuthRequest extends Request {
 
   user?: {
     user_id: string;
+    name?: string;
     role: string;
     organization_id: string;
     permissions?: string[];
@@ -44,6 +45,7 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
 
     req.user = {
       user_id: dbUser.id,
+      name: dbUser.name,
       role: dbUser.role?.name || '',
       organization_id: dbUser.organization_id,
       permissions: freshPermissions

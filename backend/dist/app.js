@@ -25,7 +25,7 @@ console.log('Starting application, mounting routes...');
 app.use((0, cors_1.default)({
     origin: [
         'http://localhost:4200',
-        'http://[IP_ADDRESS]'
+        'http://144.91.71.246:4200'
     ],
     credentials: true,
 }));

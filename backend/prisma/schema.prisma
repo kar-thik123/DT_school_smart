@@ -704,3 +704,18 @@ model Notification {
   @@index([referenceId])
   @@map("notifications")
 }
+
+model PreviewQuestion {
+  id              String   @id @default(uuid()) @db.Uuid
+  session_id      String
+  organization_id String   @db.Uuid
+  created_by      String   @db.Uuid
+  row_number      Int      @default(0)
+  raw_data        Json
+  match_status    String   @default("PENDING")  // EXACT_MATCH, CLOSEST_MATCH, NEW_HIERARCHY, VALIDATION_ERROR
+  resolved_data   Json     @default("{}")        // resolved IDs, errors, suggestions
+  created_at      DateTime @default(now())
+
+  @@index([session_id])
+  @@map("preview_questions")
+}
