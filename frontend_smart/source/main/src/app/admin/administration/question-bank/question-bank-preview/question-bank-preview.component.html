@@ -1,85 +1,246 @@
-<div class="modal fade show" style="display: block; background: rgba(0,0,0,0.5); z-index: 1050;">
-  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
-    <div class="modal-content">
-      <div class="modal-header border-bottom-0">
+<div class="modal fade show" style="display: block; background: rgba(0,0,0,0.6); z-index: 1050;">
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable preview-dialog">
+    <div class="modal-content preview-modal">
+      <!-- Header -->
+      <div class="modal-header border-bottom-0 d-flex align-items-center justify-content-between">
         <h5 class="modal-title d-flex align-items-center">
           <mat-icon class="text-primary me-2">visibility</mat-icon> Preview Import Data
         </h5>
-        <button type="button" class="btn-close" (click)="discard.emit()" aria-label="Close"></button>
-      </div>
-      <div class="modal-body bg-light p-4">
-        <div class="alert alert-info d-flex align-items-center">
-          <mat-icon class="me-2">info</mat-icon>
-          <span>Found <strong>{{previewData.length}}</strong> records to import. Please review the sample
-            below.</span>
+        <div class="d-flex align-items-center gap-2">
+          <div class="summary-bar">
+            <div class="summary-item">
+              <span class="summary-count">{{previewSummary.total || previewData.length}}</span>
+              <span class="summary-label">Total Rows</span>
+            </div>
+            <div class="summary-item exact" *ngIf="previewSummary.valid > 0">
+              <mat-icon class="me-1">check_circle</mat-icon>
+              <span class="summary-count">{{previewSummary.valid}}</span>
+              <span class="summary-label">Valid Rows</span>
+            </div>
+            <div class="summary-item error-h" *ngIf="hasErrors">
+              <mat-icon class="me-1">error</mat-icon>
+              <div class="d-flex flex-column align-items-start ms-1">
+                <span class="summary-label fw-bold text-danger mb-0" style="font-size: 13px;"
+                  *ngIf="previewSummary.validation_error > 0">
+                  {{previewSummary.validation_error}} Non-Valid Rows
+                </span>
+                <span class="summary-label fw-bold text-danger mb-0" style="font-size: 13px;"
+                  *ngIf="previewSummary.duplicate > 0">
+                  {{previewSummary.duplicate}} Duplicates
+                </span>
+              </div>
+            </div>
+          </div>
+          <button type="button" class="btn-close" (click)="discard.emit()" aria-label="Close"></button>
         </div>
+      </div>
+
+      <!-- Body -->
+      <div class="modal-body bg-light p-4">
+        <!-- Summary Bar -->
+
+
+        <!-- Error Banner -->
+        <div class="alert alert-danger d-flex align-items-center mb-3" *ngIf="hasErrors">
+          <mat-icon class="me-2">warning</mat-icon>
+          <span>
+            <ng-container *ngIf="previewSummary.validation_error > 0">
+              <strong>{{previewSummary.validation_error}}</strong> row(s) have validation errors.
+            </ng-container>
+            <ng-container *ngIf="previewSummary.duplicate > 0">
+              <strong>{{previewSummary.duplicate}}</strong> row(s) are duplicates.
+            </ng-container>
+            Fix these issues in your Excel file and re-import. These rows will be <strong>skipped</strong> during
+            import.
+          </span>
+        </div>
+
+        <!-- Data Table -->
         <div class="card border-0 shadow-sm">
-          <div class="card-body p-0 table-responsive" style="max-height: 400px;">
-            <table class="table table-hover mb-0 text-nowrap">
+          <div class="card-body p-0 table-responsive" style="max-height: 450px;">
+            <table class="table table-hover mb-0 text-nowrap preview-table">
               <thead class="table-light position-sticky top-0 shadow-sm" style="z-index: 1;">
                 <tr>
-                  <th>Board</th>
-                  <th>Medium</th>
+                  <th class="th-status">Status</th>
+                  <th>S.No</th>
                   <th>Grade</th>
                   <th>Section</th>
-                  <th>Group</th>
                   <th>Subject</th>
                   <th>Unit/Lesson</th>
                   <th>Topic</th>
                   <th>Sub Topic</th>
-                  <th>Type</th>
                   <th>Question Preview</th>
                   <th>Options</th>
                   <th>Answer</th>
                   <th>Marks</th>
                   <th>Difficulty</th>
-                  <th>Important</th>
-                  <th>Repeated</th>
-                  <th>Prepared By</th>
+                  <!-- <th>Matched Path</th> -->
+                  <th>Created By</th>
+                  <th>Created Date</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let row of previewData | slice:0:10">
-                  <td>{{ row.board || 'null' }}</td>
-                  <td>{{ row.medium || 'null' }}</td>
-                  <td>{{ row.grade || row.Grade || 'null' }}</td>
-                  <td>{{ row.section || 'null' }}</td>
-                  <td>{{ row.group || 'null' }}</td>
-                  <td>{{ row.subject || row.Subject || 'null' }}</td>
-                  <td>{{ row.unit_lesson || row.Unit || 'null' }}</td>
-                  <td>{{ row.topic || row.Topic || 'null' }}</td>
-                  <td>{{ row.sub_topic || 'null' }}</td>
-                  <td><span class="badge bg-secondary">{{ row.question_type || row.QuestionType || 'null' }}</span></td>
-                  <td class="text-truncate" style="max-width: 250px;" title="{{ row.question || row.Question }}">
-                    {{ row.question || row.Question || 'null' }}
+                <tr *ngFor="let row of previewData; let i = index" [class]="getRowClass(row.match_status)">
+                  <!-- Status Badge -->
+                  <td>
+                    <span class="status-badge" [class]="getStatusClass(row.match_status)"
+                      [matTooltip]="getStatusLabel(row.match_status)">
+                      <mat-icon class="status-icon">{{getStatusIcon(row.match_status)}}</mat-icon>
+                      <span class="status-text">{{getStatusLabel(row.match_status)}}</span>
+                    </span>
                   </td>
-                  <td style="max-width: 150px;">
-                    <ul class="list-unstyled mb-0" style="font-size: 0.85rem; line-height: 1.2;">
-                      <li class="text-truncate" title="Option 1: {{ row.option1 || 'null' }}">1) {{ row.option1 || 'null' }}</li>
-                      <li class="text-truncate" title="Option 2: {{ row.option2 || 'null' }}">2) {{ row.option2 || 'null' }}</li>
-                      <li class="text-truncate" title="Option 3: {{ row.option3 || 'null' }}">3) {{ row.option3 || 'null' }}</li>
-                      <li class="text-truncate" title="Option 4: {{ row.option4 || 'null' }}">4) {{ row.option4 || 'null' }}</li>
-                    </ul>
+
+                  <!-- Row Number -->
+                  <td>{{i + 1}}</td>
+
+                  <!-- Hierarchy Fields -->
+                  <td [class.cell-error]="getFieldError(row, ['grade']) || getSpecialCharError(row, 'grade')"
+                    [matTooltip]="getFieldError(row, ['grade']) || getSpecialCharError(row, 'grade') || ''">
+                    <span *ngIf="!row.isEditing">{{row.raw_data?.grade || '—'}}</span>
+                    <input *ngIf="row.isEditing" type="text" [(ngModel)]="row.raw_data.grade"
+                      class="form-control form-control-sm" style="min-width:70px;">
                   </td>
-                  <td><span class="badge bg-success">{{ row.answer || row.Answer || 'null' }}</span></td>
-                  <td>{{ row.marks || 'null' }}</td>
-                  <td>{{ row.difficulty_level || 'null' }}</td>
-                  <td>{{ row.important_question || 'null' }}</td>
-                  <td>{{ row.repeated_question || 'null' }}</td>
-                  <td>{{ row.prepared_by || 'null' }}</td>
+                  <td [class.cell-error]="getFieldError(row, ['section']) || getSpecialCharError(row, 'section')"
+                    [matTooltip]="getFieldError(row, ['section']) || getSpecialCharError(row, 'section') || ''">
+                    <span *ngIf="!row.isEditing">{{row.raw_data?.section || '—'}}</span>
+                    <input *ngIf="row.isEditing" type="text" [(ngModel)]="row.raw_data.section"
+                      class="form-control form-control-sm" style="min-width:70px;">
+                  </td>
+                  <td [class.cell-error]="getFieldError(row, ['subject']) || getSpecialCharError(row, 'subject')"
+                    [matTooltip]="getFieldError(row, ['subject']) || getSpecialCharError(row, 'subject') || ''">
+                    <span *ngIf="!row.isEditing">{{row.raw_data?.subject || '—'}}</span>
+                    <input *ngIf="row.isEditing" type="text" [(ngModel)]="row.raw_data.subject"
+                      class="form-control form-control-sm" style="min-width:90px;">
+                  </td>
+                  <td
+                    [class.cell-error]="getFieldError(row, ['unit_lesson']) || getSpecialCharError(row, 'unit_lesson')"
+                    [matTooltip]="getFieldError(row, ['unit_lesson']) || getSpecialCharError(row, 'unit_lesson') || ''">
+                    <span *ngIf="!row.isEditing">{{row.raw_data?.unit_lesson || '—'}}</span>
+                    <input *ngIf="row.isEditing" type="text" [(ngModel)]="row.raw_data.unit_lesson"
+                      class="form-control form-control-sm" style="min-width:90px;">
+                  </td>
+                  <td [class.cell-error]="getFieldError(row, ['topic']) || getSpecialCharError(row, 'topic')"
+                    [matTooltip]="getFieldError(row, ['topic']) || getSpecialCharError(row, 'topic') || ''">
+                    <span *ngIf="!row.isEditing">{{row.raw_data?.topic || '—'}}</span>
+                    <input *ngIf="row.isEditing" type="text" [(ngModel)]="row.raw_data.topic"
+                      class="form-control form-control-sm" style="min-width:90px;">
+                  </td>
+                  <td [class.cell-error]="getSpecialCharError(row, 'sub_topic')"
+                    [matTooltip]="getSpecialCharError(row, 'sub_topic') || ''">
+                    <span *ngIf="!row.isEditing">{{row.raw_data?.sub_topic || '—'}}</span>
+                    <input *ngIf="row.isEditing" type="text" [(ngModel)]="row.raw_data.sub_topic"
+                      class="form-control form-control-sm" style="min-width:90px;">
+                  </td>
+
+                  <!-- Question -->
+                  <td style="max-width: 200px;"
+                    [class.cell-error]="getFieldError(row, ['question']) || getSpecialCharError(row, 'question')"
+                    [matTooltip]="getFieldError(row, ['question']) || getSpecialCharError(row, 'question') || row.raw_data?.question">
+                    <div *ngIf="!row.isEditing" class="text-truncate">{{row.raw_data?.question || '—'}}</div>
+                    <textarea *ngIf="row.isEditing" [(ngModel)]="row.raw_data.question"
+                      class="form-control form-control-sm" rows="2" style="min-width:180px;"></textarea>
+                  </td>
+
+                  <!-- Options -->
+                  <td style="max-width: 140px;"
+                    [class.cell-error]="!row.raw_data?.option1 && row.match_status === 'VALIDATION_ERROR'"
+                    [matTooltip]="!row.raw_data?.option1 && row.match_status === 'VALIDATION_ERROR' ? 'Options are required' : ''">
+                    <div *ngIf="!row.isEditing">
+                      <ul class="list-unstyled mb-0" style="font-size: 0.8rem; line-height: 1.2;"
+                        *ngIf="row.raw_data?.option1">
+                        <li class="text-truncate">1) {{row.raw_data?.option1}}</li>
+                        <li class="text-truncate" *ngIf="row.raw_data?.option2">2) {{row.raw_data?.option2}}</li>
+                        <li class="text-truncate" *ngIf="row.raw_data?.option3">3) {{row.raw_data?.option3}}</li>
+                        <li class="text-truncate" *ngIf="row.raw_data?.option4">4) {{row.raw_data?.option4}}</li>
+                      </ul>
+                      <span *ngIf="!row.raw_data?.option1">—</span>
+                    </div>
+                    <div *ngIf="row.isEditing" class="d-flex flex-column gap-1">
+                      <input type="text" [(ngModel)]="row.raw_data.option1" class="form-control form-control-sm"
+                        placeholder="Opt 1" style="min-width:120px;">
+                      <input type="text" [(ngModel)]="row.raw_data.option2" class="form-control form-control-sm"
+                        placeholder="Opt 2">
+                      <input type="text" [(ngModel)]="row.raw_data.option3" class="form-control form-control-sm"
+                        placeholder="Opt 3">
+                      <input type="text" [(ngModel)]="row.raw_data.option4" class="form-control form-control-sm"
+                        placeholder="Opt 4">
+                    </div>
+                  </td>
+
+                  <!-- Answer -->
+                  <td>
+                    <span *ngIf="!row.isEditing">
+                      <span class="badge bg-success" *ngIf="row.raw_data?.answer">{{row.raw_data?.answer}}</span>
+                      <span *ngIf="!row.raw_data?.answer" [class.cell-error]="row.match_status === 'VALIDATION_ERROR'"
+                        [matTooltip]="row.match_status === 'VALIDATION_ERROR' ? 'Answer is required' : ''">—</span>
+                    </span>
+                    <input *ngIf="row.isEditing" type="text" [(ngModel)]="row.raw_data.answer"
+                      class="form-control form-control-sm" style="min-width:80px;">
+                  </td>
+
+                  <!-- Marks & Difficulty -->
+                  <td [class.cell-error]="getFieldError(row, ['marks'])"
+                    [matTooltip]="getFieldError(row, ['marks']) || ''">
+                    <span *ngIf="!row.isEditing">{{row.raw_data?.marks || '—'}}</span>
+                    <input *ngIf="row.isEditing" type="number" [(ngModel)]="row.raw_data.marks"
+                      class="form-control form-control-sm" style="min-width:60px;">
+                  </td>
+                  <td [class.cell-error]="getFieldError(row, ['difficulty_level'])"
+                    [matTooltip]="getFieldError(row, ['difficulty_level']) || ''">
+                    <span *ngIf="!row.isEditing">{{row.raw_data?.difficulty_level || '—'}}</span>
+                    <input *ngIf="row.isEditing" type="text" [(ngModel)]="row.raw_data.difficulty_level"
+                      class="form-control form-control-sm" style="min-width:80px;">
+                  </td>
+
+                  <!-- Matched Path -->
+                  <!-- <td class="matched-path-cell">
+                    <span *ngIf="row.resolved_data?.matched_path" class="matched-path"
+                      [matTooltip]="row.resolved_data?.matched_path">
+                      {{row.resolved_data?.matched_path}}
+                    </span>
+                    <span *ngIf="!row.resolved_data?.matched_path">—</span>
+                  </td> -->
+
+                  <!-- Created By -->
+                  <td>{{row.created_by_name || '—'}}</td>
+
+                  <!-- Created Date -->
+                  <td>
+                    <ng-container *ngIf="row.created_date; else noDate">
+                      {{ row.created_date | date:'mediumDate' }}
+                    </ng-container>
+                    <ng-template #noDate>—</ng-template>
+                  </td>
+                  <td>
+                    <button *ngIf="!row.isEditing" mat-icon-button color="primary" (click)="startEdit(row)"
+                      matTooltip="Edit Row">
+                      <mat-icon>edit</mat-icon>
+                    </button>
+                    <button *ngIf="row.isEditing" mat-icon-button color="accent" (click)="saveEdit(row)"
+                      matTooltip="Save Changes">
+                      <mat-icon>save</mat-icon>
+                    </button>
+                  </td>
                 </tr>
               </tbody>
             </table>
           </div>
         </div>
-        <div class="text-center text-muted mt-3" *ngIf="previewData.length > 10">
-          <small>Showing first 10 of {{previewData.length}} records</small>
-        </div>
+
+
+
+
       </div>
+
+      <!-- Footer -->
       <div class="modal-footer border-top-0 bg-light">
         <button mat-button color="warn" (click)="discard.emit()">Discard</button>
-        <button mat-raised-button color="primary" (click)="confirm.emit()">
-          <mat-icon>check_circle</mat-icon> Confirm & Import
+        <button mat-raised-button color="primary" (click)="onConfirm()" [disabled]="hasErrors"
+          matTooltip="Fix validation errors and duplicates before confirming">
+          <mat-icon>check_circle</mat-icon>
+          Confirm & Import
+          <!-- <span class="ms-1">({{previewSummary.valid}} valid rows)</span> -->
         </button>
       </div>
     </div>

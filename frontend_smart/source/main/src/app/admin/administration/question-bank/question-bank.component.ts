@@ -51,6 +51,7 @@ export class QuestionBankComponent implements OnInit {
   ];
 
   isLoading = false;
+  activeTabIndex = 0;
   questionForm!: FormGroup;
 
   // Context Data
@@ -198,7 +199,8 @@ export class QuestionBankComponent implements OnInit {
   // Preview State
   showPreviewModal = false;
   previewData: any[] = [];
-  previewCsvFile: File | null = null;
+  previewSummary: any = {};
+  previewSessionId: string | null = null;
 
   onFileImport(event: any) {
     const target: DataTransfer = <DataTransfer>(event.target);
@@ -216,23 +218,26 @@ export class QuestionBankComponent implements OnInit {
         const wsname: string = wb.SheetNames[0];
         const ws: XLSX.WorkSheet = wb.Sheets[wsname];
 
-        // Prepare preview data - filter out rows that don't have an actual question
-        const rawData: any[] = XLSX.utils.sheet_to_json(ws);
-        this.previewData = rawData.filter(row => {
-          return row.question && String(row.question).trim() !== '';
-        });
-        if (!this.previewData || this.previewData.length === 0) {
-          this.snackBar.open('No data found in the Excel file.', 'Close', { duration: 3000 });
-          return;
-        }
-
         // Convert parsed Excel data directly to CSV string for backend
         const csv = XLSX.utils.sheet_to_csv(ws);
         const csvBlob = new Blob([csv], { type: 'text/csv' });
-        this.previewCsvFile = new File([csvBlob], 'import.csv', { type: 'text/csv' });
+        const csvFile = new File([csvBlob], 'import.csv', { type: 'text/csv' });
 
-        // Show modal
-        this.showPreviewModal = true;
+        this.isLoading = true;
+        this.questionService.uploadBulkCsvPreview(csvFile).subscribe({
+          next: (res) => {
+            this.isLoading = false;
+            this.previewSessionId = res.session_id;
+            this.previewSummary = res.summary || {};
+            this.previewData = res.records || [];
+            this.showPreviewModal = true;
+          },
+          error: (err) => {
+            this.isLoading = false;
+            console.error(err);
+            this.snackBar.open(err.error?.message || 'Error processing preview.', 'Close', { duration: 5000 });
+          }
+        });
       } catch (err) {
         console.error('Error reading Excel file:', err);
         this.snackBar.open('Invalid Excel file format.', 'Close', { duration: 3000 });
@@ -243,19 +248,70 @@ export class QuestionBankComponent implements OnInit {
   }
 
   discardImport() {
+    if (this.previewSessionId) {
+      this.questionService.discardBulkImport(this.previewSessionId).subscribe({
+        next: () => {},
+        error: (err) => console.error('Error discarding preview', err)
+      });
+    }
     this.showPreviewModal = false;
     this.previewData = [];
-    this.previewCsvFile = null;
+    this.previewSummary = {};
+    this.previewSessionId = null;
   }
 
-  confirmImport() {
-    if (!this.previewCsvFile) return;
+
+
+  revalidateImport(modifiedRecords: any[]) {
+    this.isLoading = true;
+    
+    // Create CSV header matching the backend parse expectations (which maps back exactly)
+    const header = [
+      'grade', 'section', 'subject', 'unit_lesson', 'topic', 'sub_topic',
+      'question_type', 'question', 'option1', 'option2', 'option3', 'option4',
+      'correct_options', 'true_false_answer', 'yes_no_answer', 'fill_blank_sentence',
+      'fill_blank_answers', 'answer', 'marks', 'difficulty_level', 'important_question',
+      'repeated_question', 'prepared_by'
+    ];
+    
+    const csvRows = [header.join(',')];
+    
+    for (const r of modifiedRecords) {
+      const row = header.map(field => {
+        const val = r[field] || '';
+        return `"${String(val).replace(/"/g, '""')}"`;
+      });
+      csvRows.push(row.join(','));
+    }
+    
+    const csvString = csvRows.join('\n');
+    const csvBlob = new Blob([csvString], { type: 'text/csv' });
+    const csvFile = new File([csvBlob], 'import.csv', { type: 'text/csv' });
+
+    this.questionService.uploadBulkCsvPreview(csvFile).subscribe({
+      next: (res) => {
+        this.isLoading = false;
+        this.previewSessionId = res.session_id;
+        this.previewSummary = res.summary || {};
+        this.previewData = res.records || [];
+      },
+      error: (err) => {
+        this.isLoading = false;
+        console.error(err);
+        this.snackBar.open(err.error?.message || 'Error re-validating preview.', 'Close', { duration: 5000 });
+      }
+    });
+  }
+
+  confirmImport(modifiedRecords?: any[]) {
+    if (!this.previewSessionId) return;
     this.isLoading = true;
     this.showPreviewModal = false;
-    this.questionService.uploadBulkCsv(this.previewCsvFile).subscribe({
+    this.questionService.confirmBulkImport(this.previewSessionId, modifiedRecords).subscribe({
       next: (res) => {
         this.isLoading = false;
         this.snackBar.open(res.message || 'Data imported successfully!', 'Close', { duration: 5000 });
+        this.previewSessionId = null; // clear it so discard doesn't fire again
         this.discardImport(); // clear state
         this.loadGrades(); // Refresh grades in dropdown
         this.loadCurriculumAndQuestions();
@@ -424,6 +480,7 @@ export class QuestionBankComponent implements OnInit {
 
   editQuestion(question: IQuestion) {
     this.editingQuestionId = question.id;
+    this.activeTabIndex = 0; // Switch to Create Question tab
     // Set the values. Because of cascading subscriptions, we need to carefully patch.
     this.questionForm.patchValue({
       subject_id: question.subject_id,

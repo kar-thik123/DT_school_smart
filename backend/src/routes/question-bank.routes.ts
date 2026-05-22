@@ -12,9 +12,9 @@ router.use(authMiddleware);
 const upload = multer({ storage: multer.memoryStorage() });
 
 const questionTypeEnum = z.enum([
-  'MCQ_SINGLE', 'MCQ_MULTI', 'TRUE_FALSE', 'YES_NO', 
-  'FILL_BLANK', 'DRAG_DROP_FILL', 'MATCH_FOLLOWING', 
-  'DRAG_DROP_MATCH', 'SENTENCE_ORDER', 'STRUCTURED_2MARK', 
+  'MCQ_SINGLE', 'MCQ_MULTI', 'TRUE_FALSE', 'YES_NO',
+  'FILL_BLANK', 'DRAG_DROP_FILL', 'MATCH_FOLLOWING',
+  'DRAG_DROP_MATCH', 'SENTENCE_ORDER', 'STRUCTURED_2MARK',
   'STRUCTURED_5MARK', 'LONG_ANSWER'
 ]);
 
@@ -138,10 +138,10 @@ router.get('/', requirePermission('QUESTION_BANK', 'READ'), async (req: any, res
     if (subject_id) filter.subject_id = String(subject_id);
     if (difficulty) filter.difficulty = String(difficulty);
     if (grade_id) {
-       filter.OR = [
-         { grade_id: String(grade_id) },
-         { subject: { grade_id: String(grade_id) } }
-       ];
+      filter.OR = [
+        { grade_id: String(grade_id) },
+        { subject: { grade_id: String(grade_id) } }
+      ];
     }
 
     const isGlobalAdmin = ['SYSTEM_ADMIN', 'SUPER_ADMIN', 'MANAGEMENT'].includes(req.user.role);
@@ -149,11 +149,11 @@ router.get('/', requirePermission('QUESTION_BANK', 'READ'), async (req: any, res
       const assignments = await prisma.teacherAssignment.findMany({
         where: { teacher_id: req.user.user_id, organization_id: req.user.organization_id }
       });
-      
+
       const inchargeGradeIds = assignments
         .filter((a: any) => a.assignment_type === 'CLASS_INCHARGE')
         .map((a: any) => a.grade_id);
-        
+
       const specificSubjectIds = assignments
         .filter((a: any) => a.subject_id)
         .map((a: any) => a.subject_id);
@@ -171,26 +171,26 @@ router.get('/', requirePermission('QUESTION_BANK', 'READ'), async (req: any, res
       const allowedSubjectIds = allowedSubjects.map((s: any) => s.id);
 
       if (filter.subject_id) {
-         if (!allowedSubjectIds.includes(filter.subject_id)) {
-            return res.status(403).json({ message: 'Unauthorized access to this subject' });
-         }
+        if (!allowedSubjectIds.includes(filter.subject_id)) {
+          return res.status(403).json({ message: 'Unauthorized access to this subject' });
+        }
       } else {
-         const authFilter = {
-           OR: [
-             { subject_id: { in: allowedSubjectIds } },
-             { subject_id: null, grade_id: { in: inchargeGradeIds } }
-           ]
-         };
-         
-         if (filter.OR) {
-           filter.AND = [
-             { OR: filter.OR },
-             authFilter
-           ];
-           delete filter.OR;
-         } else {
-           filter.OR = authFilter.OR;
-         }
+        const authFilter = {
+          OR: [
+            { subject_id: { in: allowedSubjectIds } },
+            { subject_id: null, grade_id: { in: inchargeGradeIds } }
+          ]
+        };
+
+        if (filter.OR) {
+          filter.AND = [
+            { OR: filter.OR },
+            authFilter
+          ];
+          delete filter.OR;
+        } else {
+          filter.OR = authFilter.OR;
+        }
       }
     }
 
@@ -221,7 +221,7 @@ router.put('/:id', requirePermission('QUESTION_BANK', 'EDIT'), async (req: any, 
 
     const isGlobalAdmin = ['SYSTEM_ADMIN', 'SUPER_ADMIN', 'MANAGEMENT'].includes(req.user.role);
     if (!isGlobalAdmin && existing.created_by !== req.user.user_id) {
-       return res.status(403).json({ message: 'Only creator or admins can edit' });
+      return res.status(403).json({ message: 'Only creator or admins can edit' });
     }
 
     const parsed = questionSchema.parse(req.body);
@@ -243,7 +243,7 @@ router.delete('/:id', requirePermission('QUESTION_BANK', 'DELETE'), async (req: 
   try {
     const existing = await prisma.question.findFirst({ where: { id: req.params.id, organization_id: req.user.organization_id } });
     if (!existing) return res.status(404).json({ message: 'Question not found' });
-    
+
     await prisma.question.delete({ where: { id: existing.id } });
     res.json({ message: 'Question deleted' });
   } catch (error) {
@@ -345,7 +345,7 @@ const buildAnswerConfig = (type: string, row: any): any => {
       const ans = String(row.answer || '').trim();
       let idx = parseInt(ans, 10);
       if (isNaN(idx) || idx < 1 || idx > 4) {
-         idx = opts.indexOf(ans) + 1; // Try matching text
+        idx = opts.indexOf(ans) + 1; // Try matching text
       }
       return { options: opts, correct_answer: (idx > 0) ? (idx - 1) : 0 };
     }
@@ -374,6 +374,416 @@ const buildAnswerConfig = (type: string, row: any): any => {
       return {};
   }
 };
+
+import { randomUUID } from 'crypto';
+
+// BULK PREVIEW — simplified validation without hierarchy matching
+router.post('/bulk/preview', requirePermission('QUESTION_BANK', 'IMPORT'), upload.single('file'), async (req: any, res: Response) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
+
+    const records = parse(req.file.buffer, { columns: true, skip_empty_lines: true, trim: true });
+    if (!records || records.length === 0) return res.status(400).json({ message: 'Empty or invalid CSV spreadsheet' });
+
+    const org_id = req.user.organization_id;
+    const session_id = randomUUID();
+
+    const existingQuestions = await prisma.question.findMany({
+      where: { organization_id: org_id },
+      select: {
+        question_text: true,
+        grade: { select: { name: true } },
+        section: { select: { name: true } },
+        subject: { select: { name: true } },
+        unit: { select: { name: true } },
+        topic: { select: { name: true } },
+        sub_topic: { select: { name: true } },
+        answer: true,
+        answer_config: true,
+        marks: true,
+        difficulty: true
+      }
+    });
+
+    const getCompositeKey = (q: any) => [
+      String(q.grade || '').trim().toLowerCase(),
+      String(q.section || '').trim().toLowerCase(),
+      String(q.subject || '').trim().toLowerCase(),
+      String(q.unit || '').trim().toLowerCase(),
+      String(q.topic || '').trim().toLowerCase(),
+      String(q.sub_topic || '').trim().toLowerCase(),
+      String(q.question || '').trim().toLowerCase(),
+      String(q.options || '').trim().toLowerCase(),
+      String(q.answer || '').trim().toLowerCase(),
+      String(q.marks || '').trim().toLowerCase(),
+      String(q.difficulty || '').trim().toLowerCase()
+    ].join('|');
+
+    const dbQuestions = new Set(existingQuestions.map((q: any) => getCompositeKey({
+      grade: q.grade?.name,
+      section: q.section?.name,
+      subject: q.subject?.name,
+      unit: q.unit?.name,
+      topic: q.topic?.name,
+      sub_topic: q.sub_topic?.name,
+      question: q.question_text,
+      options: q.answer_config && typeof q.answer_config === 'object' && Array.isArray((q.answer_config as any).options) 
+               ? (q.answer_config as any).options.map((o: any) => String(o).trim()).join(',') : '',
+      answer: q.answer,
+      marks: q.marks,
+      difficulty: q.difficulty
+    })));
+
+    
+    const allGrades = await prisma.grade.findMany({ where: { organization_id: org_id }, select: { id: true, name: true } });
+    const allSections = await prisma.section.findMany({ where: { organization_id: org_id }, select: { id: true, name: true, grade_id: true } });
+    const allSubjects = await prisma.subject.findMany({ where: { organization_id: org_id }, select: { id: true, name: true, grade_id: true } });
+    const allSyllabuses = await prisma.syllabus.findMany({ where: { organization_id: org_id }, select: { id: true, subject_id: true } });
+    const allUnitsRaw = await prisma.unit.findMany({ where: { organization_id: org_id }, select: { id: true, name: true, subject_id: true, syllabus_id: true } });
+    const allTopics = await prisma.topic.findMany({ where: { organization_id: org_id }, select: { id: true, name: true, unit_id: true } });
+    const allSubTopics = await prisma.subTopic.findMany({ where: { organization_id: org_id }, select: { id: true, name: true, topic_id: true } });
+
+    const syllabusSubjectMap = new Map(allSyllabuses.map((sy: any) => [sy.id, sy.subject_id]));
+    const unitsWithSubject = allUnitsRaw.map((u: any) => ({
+      id: u.id, name: u.name,
+      resolvedSubjectId: u.subject_id ?? (u.syllabus_id ? syllabusSubjectMap.get(u.syllabus_id) ?? null : null)
+    }));
+
+    const findGrade = (name: any) => allGrades.find((g: any) => g.name.trim().toLowerCase() === String(name).trim().toLowerCase());
+    const findSection = (name: any, grade_id: any) => allSections.find((s: any) => s.grade_id === grade_id && s.name.trim().toLowerCase() === String(name).trim().toLowerCase());
+    const findSubject = (name: any, grade_id: any) => allSubjects.find((s: any) => s.grade_id === grade_id && s.name.trim().toLowerCase() === String(name).trim().toLowerCase());
+    const findUnit = (name: any, subject_id: any) => unitsWithSubject.find((u: any) => u.resolvedSubjectId === subject_id && u.name.trim().toLowerCase() === String(name).trim().toLowerCase());
+    const findTopic = (name: any, unit_id: any) => allTopics.find((t: any) => t.unit_id === unit_id && t.name.trim().toLowerCase() === String(name).trim().toLowerCase());
+    const findSubTopic = (name: any, topic_id: any) => allSubTopics.find((st: any) => st.topic_id === topic_id && st.name.trim().toLowerCase() === String(name).trim().toLowerCase());
+
+    const seenQuestions = new Set<string>();
+
+    const resolvedRows = [];
+
+    for (let i = 0; i < records.length; i++) {
+      const row: any = records[i];
+      const rowNum = i + 2;
+
+      const isEmptyRow = Object.values(row).every(val => !val || String(val).trim() === '');
+      if (isEmptyRow) continue;
+
+      const errors: string[] = [];
+      let match_status = 'NOT_VALID';
+
+      const startsWithSpecialChar = (val: string) => val ? /^[^a-zA-Z0-9]/.test(val) : false;
+
+      if (!row.grade || String(row.grade).trim() === '') errors.push('Missing required field: "grade"');
+      else if (startsWithSpecialChar(row.grade)) errors.push('Value must not start with a special character');
+
+      if (!row.section || String(row.section).trim() === '') errors.push('Missing required field: "section"');
+      else if (startsWithSpecialChar(row.section)) errors.push('Value must not start with a special character');
+
+      if (!row.subject || String(row.subject).trim() === '') errors.push('Missing required field: "subject"');
+      else if (startsWithSpecialChar(row.subject)) errors.push('Value must not start with a special character');
+
+      if (!row.unit_lesson || String(row.unit_lesson).trim() === '') errors.push('Missing required field: "unit_lesson"');
+      else if (startsWithSpecialChar(row.unit_lesson)) errors.push('Value must not start with a special character');
+
+      if (!row.topic || String(row.topic).trim() === '') errors.push('Missing required field: "topic"');
+      else if (startsWithSpecialChar(row.topic)) errors.push('Value must not start with a special character');
+
+      if (row.sub_topic && startsWithSpecialChar(row.sub_topic)) errors.push('Value must not start with a special character');
+
+      if (!row.question || String(row.question).trim() === '') errors.push('Missing required field: "question"');
+      if (!row.option1 || String(row.option1).trim() === '') errors.push('Missing required field: "options"');
+      if (!row.answer || String(row.answer).trim() === '') errors.push('Missing required field: "answer"');
+      if (!row.marks) errors.push('Missing required field: "marks"');
+      if (!row.difficulty_level) errors.push('Missing required field: "difficulty_level"');
+
+      
+      if (errors.length === 0) {
+        const gradeName = String(row.grade).trim();
+        const sectionName = String(row.section).trim();
+        const subjectName = String(row.subject).trim();
+        const unitName = String(row.unit_lesson).trim();
+        const topicName = String(row.topic).trim();
+
+        const grade = findGrade(gradeName);
+        if (!grade) errors.push(`Hierarchy Error: Grade "${gradeName}" does not exist`);
+        else {
+          const section = findSection(sectionName, grade.id);
+          if (!section) errors.push(`Hierarchy Error: Section "${sectionName}" does not exist in Grade "${gradeName}"`);
+
+          const subject = findSubject(subjectName, grade.id);
+          if (!subject) errors.push(`Hierarchy Error: Subject "${subjectName}" does not exist in Grade "${gradeName}"`);
+          else {
+            const unit = findUnit(unitName, subject.id);
+            if (!unit) errors.push(`Hierarchy Error: Unit "${unitName}" does not exist in Subject "${subjectName}"`);
+            else {
+              const topic = findTopic(topicName, unit.id);
+              if (!topic) errors.push(`Hierarchy Error: Topic "${topicName}" does not exist in Unit "${unitName}"`);
+              else if (row.sub_topic && String(row.sub_topic).trim() !== '') {
+                const subTopic = findSubTopic(String(row.sub_topic).trim(), topic.id);
+                if (!subTopic) errors.push(`Hierarchy Error: SubTopic "${row.sub_topic}" does not exist in Topic "${topicName}"`);
+              }
+            }
+          }
+        }
+      }
+
+      if (errors.length === 0) {
+
+        match_status = 'VALID';
+        const csvOptions = [row.option1, row.option2, row.option3, row.option4].filter(Boolean).map(o => String(o).trim()).join(',');
+        const compositeKey = getCompositeKey({
+          grade: row.grade,
+          section: row.section,
+          subject: row.subject,
+          unit: row.unit_lesson,
+          topic: row.topic,
+          sub_topic: row.sub_topic,
+          question: row.question,
+          options: csvOptions,
+          answer: row.answer,
+          marks: row.marks,
+          difficulty: row.difficulty_level
+        });
+
+        const isDuplicate = seenQuestions.has(compositeKey) || dbQuestions.has(compositeKey);
+        seenQuestions.add(compositeKey);
+
+        if (isDuplicate) match_status = 'DUPLICATE';
+      }
+
+      resolvedRows.push({
+        row_number: rowNum,
+        raw_data: row,
+        match_status,
+        resolved_data: { errors }
+      });
+    }
+
+    const previewData = resolvedRows.map((r) => ({
+      session_id,
+      organization_id: org_id,
+      created_by: req.user.user_id,
+      row_number: r.row_number,
+      raw_data: r.raw_data,
+      match_status: r.match_status,
+      resolved_data: r.resolved_data
+    }));
+
+    await (prisma as any).previewQuestion.createMany({ data: previewData });
+
+    const summary = {
+      total: resolvedRows.length,
+      valid: resolvedRows.filter(r => r.match_status === 'VALID').length,
+      duplicate: resolvedRows.filter(r => r.match_status === 'DUPLICATE').length,
+      validation_error: resolvedRows.filter(r => r.match_status === 'NOT_VALID').length,
+    };
+
+    res.status(201).json({
+      message: 'Preview generated successfully',
+      session_id,
+      summary,
+      records: resolvedRows.map(r => ({
+        ...r,
+        created_by_name: req.user.name || 'System',
+        created_date: new Date().toISOString()
+      }))
+    });
+  } catch (error: any) {
+    console.error('[Bulk Preview Error]', error);
+    res.status(500).json({ message: 'Failed to process preview', error: error.message });
+  }
+});
+
+// BULK DISCARD
+router.post('/bulk/discard', requirePermission('QUESTION_BANK', 'IMPORT'), async (req: any, res: Response) => {
+  try {
+    const { session_id } = req.body;
+    if (!session_id) return res.status(400).json({ message: 'Missing session_id' });
+    await (prisma as any).previewQuestion.deleteMany({ where: { session_id, organization_id: req.user.organization_id } });
+    res.json({ message: 'Preview discarded' });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Failed to discard preview', error: error.message });
+  }
+});
+
+// BULK CONFIRM (Takes session_id, reads from preview table, processes them)
+router.post('/bulk/confirm', requirePermission('QUESTION_BANK', 'IMPORT'), async (req: any, res: Response) => {
+  try {
+    const { session_id, modified_records } = req.body;
+    if (!session_id) return res.status(400).json({ message: 'Missing session_id' });
+
+    let records: any[] = [];
+    if (modified_records && Array.isArray(modified_records) && modified_records.length > 0) {
+      records = modified_records;
+    } else {
+      const previews = await (prisma as any).previewQuestion.findMany({ where: { session_id, organization_id: req.user.organization_id } });
+      if (!previews || previews.length === 0) return res.status(404).json({ message: 'Session not found or empty' });
+      records = previews.map((p: any) => p.raw_data);
+    }
+
+    const org_id = req.user.organization_id;
+    const isGlobalAdmin = ['SYSTEM_ADMIN', 'SUPER_ADMIN', 'MANAGEMENT'].includes(req.user.role);
+
+    let activeYear = await prisma.academicYear.findFirst({
+      where: { organization_id: org_id, is_active: true }
+    });
+    if (!activeYear) {
+      const now = new Date();
+      activeYear = await prisma.academicYear.create({
+        data: { name: `${now.getFullYear()}-${now.getFullYear() + 1}`, organization_id: org_id, is_active: true }
+      });
+    }
+    const activeYearId = activeYear.id;
+
+    const allGrades = await prisma.grade.findMany({ where: { organization_id: org_id }, select: { id: true, name: true } });
+    const allSections = await prisma.section.findMany({ where: { organization_id: org_id }, select: { id: true, name: true, grade_id: true } });
+    const allSubjects = await prisma.subject.findMany({ where: { organization_id: org_id }, select: { id: true, name: true, grade_id: true } });
+    const allSyllabuses = await prisma.syllabus.findMany({ where: { organization_id: org_id }, select: { id: true, subject_id: true } });
+    const allUnitsRaw = await prisma.unit.findMany({ where: { organization_id: org_id }, select: { id: true, name: true, subject_id: true, syllabus_id: true } });
+    const allTopics = await prisma.topic.findMany({ where: { organization_id: org_id }, select: { id: true, name: true, unit_id: true } });
+    const allSubTopics = await prisma.subTopic.findMany({ where: { organization_id: org_id }, select: { id: true, name: true, topic_id: true } });
+
+    const syllabusSubjectMap = new Map(allSyllabuses.map((sy: any) => [sy.id, sy.subject_id]));
+    const unitsWithSubject = allUnitsRaw.map((u: any) => ({
+      id: u.id, name: u.name,
+      resolvedSubjectId: u.subject_id ?? (u.syllabus_id ? syllabusSubjectMap.get(u.syllabus_id) ?? null : null)
+    }));
+
+    
+    const findGrade = (name: any) => allGrades.find((g: any) => g.name.trim().toLowerCase() === String(name).trim().toLowerCase());
+    const findSection = (name: any, grade_id: any) => allSections.find((s: any) => s.grade_id === grade_id && s.name.trim().toLowerCase() === String(name).trim().toLowerCase());
+    const findSubject = (name: any, grade_id: any) => allSubjects.find((s: any) => s.grade_id === grade_id && s.name.trim().toLowerCase() === String(name).trim().toLowerCase());
+    const findUnit = (name: any, subject_id: any) => unitsWithSubject.find((u: any) => u.resolvedSubjectId === subject_id && u.name.trim().toLowerCase() === String(name).trim().toLowerCase());
+    const findTopic = (name: any, unit_id: any) => allTopics.find((t: any) => t.unit_id === unit_id && t.name.trim().toLowerCase() === String(name).trim().toLowerCase());
+    const findSubTopic = (name: any, topic_id: any) => allSubTopics.find((st: any) => st.topic_id === topic_id && st.name.trim().toLowerCase() === String(name).trim().toLowerCase());
+  
+    const results = { created: 0, skipped: 0, autoCreated: { grades: 0, subjects: 0, units: 0, topics: 0 }, errors: [] as string[] };
+    const prevGradeCount = allGrades.length;
+    const prevSubjectCount = allSubjects.length;
+    const prevUnitCount = unitsWithSubject.length;
+    const prevTopicCount = allTopics.length;
+
+
+    for (let i = 0; i < records.length; i++) {
+      const row: any = records[i];
+      const rowNum = i + 2;
+
+      const isEmptyRow = Object.values(row).every(val => !val || String(val).trim() === '');
+      if (isEmptyRow) continue;
+
+      try {
+        const requiredFields = ['grade', 'section', 'subject', 'unit_lesson', 'topic', 'question', 'option1', 'answer', 'marks', 'difficulty_level'];
+        for (const f of requiredFields) {
+          if (!row[f] || String(row[f]).trim() === '') throw new Error(`Missing required field: "${f}"`);
+        }
+
+        const startsWithSpecialChar = (val: string) => val ? /^[^a-zA-Z0-9]/.test(val) : false;
+        const stringFieldsToCheck = ['grade', 'section', 'subject', 'unit_lesson', 'topic', 'sub_topic'];
+        for (const f of stringFieldsToCheck) {
+           const val = String(row[f] || '').trim();
+           if (val && startsWithSpecialChar(val)) throw new Error(`Value for "${f}" must not start with a special character`);
+        }
+
+        const gradeName = String(row.grade).trim();
+        const sectionName = String(row.section).trim();
+        const subjectName = String(row.subject).trim();
+        const unitName = String(row.unit_lesson).trim();
+        const topicName = String(row.topic).trim();
+
+        
+        const grade = findGrade(gradeName);
+        if (!grade) throw new Error(`Hierarchy Error: Grade "${gradeName}" does not exist`);
+
+        const section = findSection(sectionName, grade.id);
+        if (!section) throw new Error(`Hierarchy Error: Section "${sectionName}" does not exist in Grade "${gradeName}"`);
+
+        const subject = findSubject(subjectName, grade.id);
+        if (!subject) throw new Error(`Hierarchy Error: Subject "${subjectName}" does not exist in Grade "${gradeName}"`);
+
+        const unit = findUnit(unitName, subject.id);
+        if (!unit) throw new Error(`Hierarchy Error: Unit "${unitName}" does not exist in Subject "${subjectName}"`);
+
+        const topic = findTopic(topicName, unit.id);
+        if (!topic) throw new Error(`Hierarchy Error: Topic "${topicName}" does not exist in Unit "${unitName}"`);
+
+        let subTopic: any = null;
+        if (row.sub_topic && String(row.sub_topic).trim() !== '') {
+          subTopic = findSubTopic(String(row.sub_topic).trim(), topic.id);
+          if (!subTopic) throw new Error(`Hierarchy Error: SubTopic "${row.sub_topic}" does not exist in Topic "${topicName}"`);
+        }
+  
+
+        let rawType = String(row.question_type || 'MCQ_SINGLE').trim().toUpperCase();
+        if (rawType === 'MCQ') rawType = 'MCQ_SINGLE';
+        const validTypes = ['MCQ_SINGLE', 'MCQ_MULTI', 'TRUE_FALSE', 'YES_NO', 'FILL_BLANK', 'DRAG_DROP_FILL', 'MATCH_FOLLOWING', 'DRAG_DROP_MATCH', 'SENTENCE_ORDER', 'STRUCTURED_2MARK', 'STRUCTURED_5MARK', 'LONG_ANSWER'];
+        if (!validTypes.includes(rawType)) throw new Error(`Invalid question_type: "${rawType}". Valid: ${validTypes.join(', ')}`);
+
+        const answer_config = buildAnswerConfig(rawType, row);
+        try { validateConfig(rawType, answer_config); } catch {
+          throw new Error(`Invalid answer config for type "${rawType}". Check option1-4 and answer columns.`);
+        }
+
+        let diff = String(row.difficulty_level || '').trim().toUpperCase();
+        if (diff === 'HARD LEVEL') diff = 'HARD';
+        else if (diff === 'EASY LEVEL') diff = 'EASY';
+        else if (diff === 'MEDIUM LEVEL') diff = 'MEDIUM';
+        if (!['EASY', 'MEDIUM', 'HARD'].includes(diff)) diff = 'MEDIUM';
+
+        const marks = parseInt(row.marks, 10);
+        if (isNaN(marks) || marks < 1) throw new Error(`Invalid marks: "${row.marks}". Must be a positive integer.`);
+
+        if (!isGlobalAdmin && subject) {
+          const canAccess = await hasSubjectAccess(req.user.user_id, subject.id, org_id);
+          if (!canAccess) throw new Error(`Not authorized to upload questions for subject "${subjectName}"`);
+        }
+
+        await prisma.question.create({
+          data: {
+            grade_id: grade?.id || undefined,
+            section_id: section?.id || undefined,
+            subject_id: subject?.id || undefined,
+            unit_id: unit?.id || undefined,
+            topic_id: topic?.id || undefined,
+            sub_topic_id: subTopic?.id || undefined,
+            question_text: String(row.question).trim(),
+            type: rawType as any,
+            answer: row.answer ? String(row.answer).trim() : undefined,
+            answer_config,
+            marks,
+            difficulty: diff as any,
+            is_important: String(row.important_question || 'false').toLowerCase() === 'true',
+            is_repeated: String(row.repeated_question || 'false').toLowerCase() === 'true',
+            organization_id: org_id,
+            created_by: req.user.user_id
+          }
+        });
+        results.created++;
+      } catch (err: any) {
+        results.skipped++;
+        results.errors.push(`Row ${rowNum}: ${err.message || 'Unknown error'}`);
+      }
+    }
+
+    results.autoCreated.grades = allGrades.length - prevGradeCount;
+    results.autoCreated.subjects = allSubjects.length - prevSubjectCount;
+    results.autoCreated.units = unitsWithSubject.length - prevUnitCount;
+    results.autoCreated.topics = allTopics.length - prevTopicCount;
+
+    // Delete the preview records now that they are processed
+    await (prisma as any).previewQuestion.deleteMany({ where: { session_id, organization_id: org_id } });
+
+    const autoMsg = Object.entries(results.autoCreated)
+      .filter(([, v]) => v > 0)
+      .map(([k, v]) => `${v} ${k}`)
+      .join(', ');
+
+    res.status(201).json({
+      message: `Bulk import confirmed. ${results.created} questions created, ${results.skipped} skipped.${autoMsg ? ` Auto-created: ${autoMsg}.` : ''}`,
+      results
+    });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Failed to confirm bulk import', error: error.message });
+  }
+});
 
 // BULK UPLOAD (CSV Parse) — auto-creates missing academic hierarchy
 router.post('/bulk', requirePermission('QUESTION_BANK', 'IMPORT'), upload.single('file'), async (req: any, res: Response) => {
@@ -424,63 +834,24 @@ router.post('/bulk', requirePermission('QUESTION_BANK', 'IMPORT'), upload.single
         resolvedSubjectId: u.subject_id ?? (u.syllabus_id ? syllabusSubjectMap.get(u.syllabus_id) ?? null : null)
       }));
 
-    // ── findOrCreate helpers — check in-memory cache first, create in DB if missing ──
-
-    const findOrCreateGrade = async (name: string) => {
-      const found = allGrades.find(g => normalizeGradeName(g.name) === normalizeGradeName(name));
-      if (found) return found;
-      // Create and cache
-      const record = await prisma.grade.create({
-        data: { name: name.trim(), academic_year_id: activeYearId, organization_id: org_id }
-      });
-      const entry = { id: record.id, name: record.name };
-      allGrades.push(entry);
-      return entry;
-    };
-
-    const findOrCreateSubject = async (name: string, grade_id: string) => {
-      const found = allSubjects.find(s => s.grade_id === grade_id && fuzzyMatch(s.name, name));
-      if (found) return found;
-      const record = await prisma.subject.create({
-        data: { name: name.trim(), grade_id, organization_id: org_id }
-      });
-      const entry = { id: record.id, name: record.name, grade_id: record.grade_id };
-      allSubjects.push(entry);
-      return entry;
-    };
-
-    const findOrCreateUnit = async (name: string, subject_id: string) => {
-      const found = unitsWithSubject.find(u => u.resolvedSubjectId === subject_id && fuzzyMatch(u.name, name));
-      if (found) return found;
-      const record = await prisma.unit.create({
-        data: { name: name.trim(), subject_id, organization_id: org_id }
-      });
-      const entry = { id: record.id, name: record.name, resolvedSubjectId: subject_id };
-      unitsWithSubject.push(entry);
-      return entry;
-    };
-
-    const findOrCreateTopic = async (name: string, unit_id: string) => {
-      const found = allTopics.find(t => t.unit_id === unit_id && fuzzyMatch(t.name, name));
-      if (found) return found;
-      const record = await prisma.topic.create({
-        data: { name: name.trim(), unit_id, organization_id: org_id }
-      });
-      const entry = { id: record.id, name: record.name, unit_id: record.unit_id };
-      allTopics.push(entry);
-      return entry;
-    };
+    const findGrade = (name: any) => allGrades.find((g: any) => g.name.trim().toLowerCase() === String(name).trim().toLowerCase());
+    const findSubject = (name: any, grade_id: any) => allSubjects.find((s: any) => s.grade_id === grade_id && s.name.trim().toLowerCase() === String(name).trim().toLowerCase());
+    const findUnit = (name: any, subject_id: any) => unitsWithSubject.find((u: any) => u.resolvedSubjectId === subject_id && u.name.trim().toLowerCase() === String(name).trim().toLowerCase());
+    const findTopic = (name: any, unit_id: any) => allTopics.find((t: any) => t.unit_id === unit_id && t.name.trim().toLowerCase() === String(name).trim().toLowerCase());
 
     // ── Process rows ──────────────────────────────────────────────────────────
     const results = { created: 0, skipped: 0, autoCreated: { grades: 0, subjects: 0, units: 0, topics: 0 }, errors: [] as string[] };
-    const prevGradeCount    = allGrades.length;
-    const prevSubjectCount  = allSubjects.length;
-    const prevUnitCount     = unitsWithSubject.length;
-    const prevTopicCount    = allTopics.length;
+    const prevGradeCount = allGrades.length;
+    const prevSubjectCount = allSubjects.length;
+    const prevUnitCount = unitsWithSubject.length;
+    const prevTopicCount = allTopics.length;
 
     for (let i = 0; i < records.length; i++) {
       const row: any = records[i];
       const rowNum = i + 2; // row 1 = header
+
+      const isEmptyRow = Object.values(row).every(val => !val || String(val).trim() === '');
+      if (isEmptyRow) continue;
 
       try {
         // ── Required field checks ────────────────────────────────────────────
@@ -489,21 +860,30 @@ router.post('/bulk', requirePermission('QUESTION_BANK', 'IMPORT'), upload.single
           if (!row[f] || String(row[f]).trim() === '') throw new Error(`Missing required field: "${f}"`);
         }
 
-        const gradeName   = String(row.grade).trim();
+        const gradeName = String(row.grade).trim();
         const subjectName = String(row.subject).trim();
-        const unitName    = String(row.unit_lesson).trim();
-        const topicName   = String(row.topic).trim();
+        const unitName = String(row.unit_lesson).trim();
+        const topicName = String(row.topic).trim();
 
         // ── Auto-resolve or auto-create academic hierarchy ───────────────────
-        const grade   = await findOrCreateGrade(gradeName);
-        const subject = await findOrCreateSubject(subjectName, grade.id);
-        const unit    = await findOrCreateUnit(unitName, subject.id);
-        const topic   = await findOrCreateTopic(topicName, unit.id);
+        
+        const grade = findGrade(gradeName);
+        if (!grade) throw new Error(`Hierarchy Error: Grade "${gradeName}" does not exist`);
+
+        const subject = findSubject(subjectName, grade.id);
+        if (!subject) throw new Error(`Hierarchy Error: Subject "${subjectName}" does not exist in Grade "${gradeName}"`);
+
+        const unit = findUnit(unitName, subject.id);
+        if (!unit) throw new Error(`Hierarchy Error: Unit "${unitName}" does not exist in Subject "${subjectName}"`);
+
+        const topic = findTopic(topicName, unit.id);
+        if (!topic) throw new Error(`Hierarchy Error: Topic "${topicName}" does not exist in Unit "${unitName}"`);
+  
 
         // ── Type & Config ────────────────────────────────────────────────────
         let rawType = String(row.question_type || 'MCQ_SINGLE').trim().toUpperCase();
         if (rawType === 'MCQ') rawType = 'MCQ_SINGLE';
-        const validTypes = ['MCQ_SINGLE','MCQ_MULTI','TRUE_FALSE','YES_NO','FILL_BLANK','DRAG_DROP_FILL','MATCH_FOLLOWING','DRAG_DROP_MATCH','SENTENCE_ORDER','STRUCTURED_2MARK','STRUCTURED_5MARK','LONG_ANSWER'];
+        const validTypes = ['MCQ_SINGLE', 'MCQ_MULTI', 'TRUE_FALSE', 'YES_NO', 'FILL_BLANK', 'DRAG_DROP_FILL', 'MATCH_FOLLOWING', 'DRAG_DROP_MATCH', 'SENTENCE_ORDER', 'STRUCTURED_2MARK', 'STRUCTURED_5MARK', 'LONG_ANSWER'];
         if (!validTypes.includes(rawType)) throw new Error(`Invalid question_type: "${rawType}". Valid: ${validTypes.join(', ')}`);
 
         const answer_config = buildAnswerConfig(rawType, row);
@@ -522,27 +902,27 @@ router.post('/bulk', requirePermission('QUESTION_BANK', 'IMPORT'), upload.single
         if (isNaN(marks) || marks < 1) throw new Error(`Invalid marks: "${row.marks}". Must be a positive integer.`);
 
         // ── Teacher access check ─────────────────────────────────────────────
-        if (!isGlobalAdmin) {
+        if (!isGlobalAdmin && subject) {
           const canAccess = await hasSubjectAccess(req.user.user_id, subject.id, org_id);
           if (!canAccess) throw new Error(`Not authorized to upload questions for subject "${subjectName}"`);
         }
 
         await prisma.question.create({
           data: {
-            grade_id:        grade.id,
-            subject_id:      subject.id,
-            unit_id:         unit.id,
-            topic_id:        topic.id,
-            question_text:   String(row.question).trim(),
-            type:            rawType as any,
-            answer:          row.answer ? String(row.answer).trim() : undefined,
+            grade_id: grade?.id || undefined,
+            subject_id: subject?.id || undefined,
+            unit_id: unit?.id || undefined,
+            topic_id: topic?.id || undefined,
+            question_text: String(row.question).trim(),
+            type: rawType as any,
+            answer: row.answer ? String(row.answer).trim() : undefined,
             answer_config,
             marks,
-            difficulty:      diff as any,
-            is_important:    String(row.important_question || 'false').toLowerCase() === 'true',
-            is_repeated:     String(row.repeated_question || 'false').toLowerCase() === 'true',
+            difficulty: diff as any,
+            is_important: String(row.important_question || 'false').toLowerCase() === 'true',
+            is_repeated: String(row.repeated_question || 'false').toLowerCase() === 'true',
             organization_id: org_id,
-            created_by:      req.user.user_id
+            created_by: req.user.user_id
           }
         });
         results.created++;
@@ -554,10 +934,10 @@ router.post('/bulk', requirePermission('QUESTION_BANK', 'IMPORT'), upload.single
     }
 
     // Count auto-created items
-    results.autoCreated.grades   = allGrades.length - prevGradeCount;
+    results.autoCreated.grades = allGrades.length - prevGradeCount;
     results.autoCreated.subjects = allSubjects.length - prevSubjectCount;
-    results.autoCreated.units    = unitsWithSubject.length - prevUnitCount;
-    results.autoCreated.topics   = allTopics.length - prevTopicCount;
+    results.autoCreated.units = unitsWithSubject.length - prevUnitCount;
+    results.autoCreated.topics = allTopics.length - prevTopicCount;
 
     const autoMsg = Object.entries(results.autoCreated)
       .filter(([, v]) => v > 0)
@@ -573,7 +953,4 @@ router.post('/bulk', requirePermission('QUESTION_BANK', 'IMPORT'), upload.single
   }
 });
 
-
 export default router;
-
-

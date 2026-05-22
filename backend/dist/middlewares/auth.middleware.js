@@ -32,6 +32,7 @@ const authMiddleware = async (req, res, next) => {
         const freshPermissions = dbUser.role?.permissions?.map((rp) => `${rp.permission.module}:${rp.permission.action}`) || [];
         req.user = {
             user_id: dbUser.id,
+            name: dbUser.name,
             role: dbUser.role?.name || '',
             organization_id: dbUser.organization_id,
             permissions: freshPermissions

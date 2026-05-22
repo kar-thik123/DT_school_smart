@@ -52,6 +52,21 @@ export class QuestionBankService {
     return this.http.post<{ message: string; question: IQuestion }>(this.API_URL, question);
   }
 
+  uploadBulkCsvPreview(file: File): Observable<{ message: string; session_id: string; summary: any; records: any[] }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<{ message: string; session_id: string; summary: any; records: any[] }>(`${this.API_URL}/bulk/preview`, formData);
+  }
+
+  discardBulkImport(session_id: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.API_URL}/bulk/discard`, { session_id });
+  }
+
+  confirmBulkImport(session_id: string, modifiedRecords?: any[]): Observable<{ message: string; results?: any }> {
+    return this.http.post<{ message: string; results?: any }>(`${this.API_URL}/bulk/confirm`, { session_id, modified_records: modifiedRecords });
+  }
+
+  // legacy direct bulk route
   uploadBulkCsv(file: File): Observable<{ message: string; results?: any }> {
     const formData = new FormData();
     formData.append('file', file);

@@ -20,26 +20,30 @@ $transition-smooth: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     background-color: #1a202e !important;
     border-color: #404755 !important;
     color: #96a2b4 !important;
-    
+
     .trigger-content .trigger-text {
       color: #96a2b4 !important;
+
       .label {
         color: #6c757d !important;
       }
+
       &.empty {
         color: #6c757d !important;
       }
     }
+
     .trigger-icon-right {
       color: #6c757d !important;
     }
 
-    &:hover, &.open {
+    &:hover,
+    &.open {
       background-color: #232b3e !important; // Fallback hover
       border-color: #6c757d !important;
     }
   }
-  
+
   .hierarchy-panel {
     background-color: #1a202e !important;
     border-color: #404755 !important;
@@ -48,23 +52,28 @@ $transition-smooth: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 
   .grade-row {
     color: #96a2b4 !important;
+
     .grade-chevron {
       color: #6c757d !important;
     }
+
     &:hover {
       background-color: #232b3e !important;
     }
   }
-  
+
   .section-row {
     color: #96a2b4 !important;
+
     .tree-line {
       background-color: #404755 !important;
     }
+
     &:hover {
       background-color: #232b3e !important;
       color: #fff !important;
     }
+
     &.empty .section-name {
       color: #6c757d !important;
     }
@@ -89,24 +98,28 @@ $themes: (
 @each $name, $color in $themes {
   :host-context(.theme-#{$name}) {
     .hierarchy-trigger {
-      &:hover, &.open {
+
+      &:hover,
+      &.open {
         border-color: rgba($color, 0.4) !important;
         background-color: rgba($color, 0.05) !important;
         box-shadow: 0 4px 6px -1px rgba($color, 0.1) !important;
       }
+
       .trigger-content .trigger-icon-left {
         color: $color !important;
       }
     }
-    
+
     .grade-row.expanded {
       background-color: rgba($color, 0.1) !important;
       color: $color !important;
-      .grade-chevron { 
-        color: $color !important; 
+
+      .grade-chevron {
+        color: $color !important;
       }
     }
-    
+
     .section-row.active {
       background-color: rgba($color, 0.1) !important;
       color: $color !important;
@@ -131,16 +144,17 @@ $themes: (
   max-width: 100%;
   background-color: $bg-white;
   border: 1px solid $border-color;
-  border-radius: $radius-btn;
-  box-shadow: $shadow-sm;
+  border-radius: 14px;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   cursor: pointer;
   outline: none;
   transition: $transition-smooth;
 
-  &:hover, &.open {
-    border-color: #c7d2fe;
-    background-color: #f8fafc;
-    box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.1);
+  &:hover,
+  &.open {
+    border-color: #d1d5db;
+    background-color: #f9fafb;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   }
 
   .trigger-content {
@@ -148,29 +162,31 @@ $themes: (
     align-items: center;
     gap: 6px;
     overflow: hidden;
-    min-width: 0;
 
     .trigger-icon-left {
-      color: $primary-color;
-      font-size: 18px;
-      width: 18px;
-      height: 18px;
+      color: #6b7280;
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
     }
 
     .trigger-text {
-      font-size: 13px;
-      color: $text-main;
+      font-size: 14px;
+      color: #1f2937;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      font-weight: 500;
 
       .label {
-        font-weight: 500;
-        color: $text-muted;
+        color: #1c1919;
         margin-right: 4px;
-      }
-      .value {
         font-weight: 600;
+      }
+
+      .value {
+        font-weight: 500;
+        color: #1f2937;
       }
 
       &.empty {
@@ -212,9 +228,11 @@ $themes: (
     &::-webkit-scrollbar {
       width: 6px;
     }
+
     &::-webkit-scrollbar-track {
       background: transparent;
     }
+
     &::-webkit-scrollbar-thumb {
       background-color: #d1d5db;
       border-radius: 10px;
@@ -261,10 +279,11 @@ $themes: (
   &.expanded {
     background-color: $accent-green-light;
     color: $accent-green;
-    
+
     .grade-chevron {
       color: $accent-green;
     }
+
     .grade-name {
       font-weight: 600;
     }
@@ -320,7 +339,7 @@ $themes: (
   &.active {
     background-color: $accent-green-light;
     color: $accent-green;
-    
+
     .section-name {
       font-weight: 600;
     }
@@ -330,6 +349,7 @@ $themes: (
     .section-name {
       font-weight: 500;
     }
+
     &.active {
       font-weight: 600;
     }
@@ -337,6 +357,7 @@ $themes: (
 
   &.empty {
     cursor: default;
+
     &:hover {
       background-color: transparent;
     }
@@ -352,16 +373,11 @@ $themes: (
 // Responsive Breakpoints
 @media (max-width: 768px) {
   .hierarchy-trigger {
-    height: 36px;
-    padding: 0 10px;
-    
     .trigger-content {
       gap: 4px;
+
       .trigger-icon-left {
         display: none; // Hide icon on small screens to save space
-      }
-      .trigger-text {
-        font-size: 12px;
       }
     }
   }
@@ -432,6 +448,7 @@ $themes: (
 
   &.expanded {
     color: #4f46e5;
+
     .group-chevron {
       color: #4f46e5;
     }
@@ -487,6 +504,7 @@ $themes: (
   &.active {
     background-color: $accent-green-light;
     color: $accent-green;
+
     .subject-name {
       font-weight: 600;
     }
@@ -494,6 +512,7 @@ $themes: (
 
   &.empty {
     cursor: default;
+
     &:hover {
       background-color: transparent;
     }
@@ -507,11 +526,15 @@ $themes: (
 }
 
 // Units, Topics, Subtopics Styling
-.units-container, .topics-container, .subtopics-container {
+.units-container,
+.topics-container,
+.subtopics-container {
   overflow: hidden;
 }
 
-.units-tree, .topics-tree, .subtopics-tree {
+.units-tree,
+.topics-tree,
+.subtopics-tree {
   position: relative;
   margin-left: 20px;
   margin-top: 2px;
@@ -522,7 +545,9 @@ $themes: (
   gap: 2px;
 }
 
-.unit-row, .topic-row, .subtopic-row {
+.unit-row,
+.topic-row,
+.subtopic-row {
   position: relative;
   display: flex;
   align-items: center;
@@ -541,7 +566,9 @@ $themes: (
     background-color: $border-color;
   }
 
-  .unit-name, .topic-name, .subtopic-name {
+  .unit-name,
+  .topic-name,
+  .subtopic-name {
     font-size: 12px;
     font-weight: 400;
   }
@@ -554,14 +581,17 @@ $themes: (
   &.active {
     background-color: $accent-green-light;
     color: $accent-green;
-    
-    .unit-name, .topic-name, .subtopic-name {
+
+    .unit-name,
+    .topic-name,
+    .subtopic-name {
       font-weight: 600;
     }
   }
 
   &.empty {
     cursor: default;
+
     &:hover {
       background-color: transparent;
     }
@@ -577,14 +607,16 @@ $themes: (
   color: $text-muted;
   transition: transform 0.2s ease;
   cursor: pointer;
-  
+
   &:hover {
     color: $text-main;
   }
 }
 
 // Muted breadcrumb labels in trigger
-.unit-val, .topic-val, .subtopic-val {
+.unit-val,
+.topic-val,
+.subtopic-val {
   color: #6366f1;
   font-weight: 500;
   margin-left: 4px;
@@ -595,22 +627,31 @@ $themes: (
   .subject-val {
     color: #10b981 !important;
   }
-  
-  .unit-val, .topic-val, .subtopic-val {
+
+  .unit-val,
+  .topic-val,
+  .subtopic-val {
     color: #818cf8 !important;
   }
-  
-  .section-row, .group-row, .subject-row, .unit-row, .topic-row, .subtopic-row {
+
+  .section-row,
+  .group-row,
+  .subject-row,
+  .unit-row,
+  .topic-row,
+  .subtopic-row {
     color: #96a2b4 !important;
-    
-    .section-chevron, .group-chevron, .expand-chevron {
+
+    .section-chevron,
+    .group-chevron,
+    .expand-chevron {
       color: #6c757d !important;
     }
-    
+
     .tree-line {
       background-color: #404755 !important;
     }
-    
+
     &:hover {
       background-color: #232b3e !important;
       color: #fff !important;
@@ -619,12 +660,16 @@ $themes: (
 
   .group-row.expanded {
     color: #909de4 !important;
+
     .group-chevron {
       color: #909de4 !important;
     }
   }
 
-  .subject-row.active, .unit-row.active, .topic-row.active, .subtopic-row.active {
+  .subject-row.active,
+  .unit-row.active,
+  .topic-row.active,
+  .subtopic-row.active {
     background-color: rgba(#10b981, 0.15) !important;
     color: #10b981 !important;
   }

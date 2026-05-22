@@ -1,0 +1,211 @@
+// ── Summary Bar ──
+.summary-bar {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  // background: #fff;
+  // border-radius: 8px;
+  // box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+
+  .summary-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    background: #f8f9fa;
+
+    .summary-count {
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    .summary-label {
+      color: #6c757d;
+    }
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+    }
+
+    &.exact {
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+
+    &.closest {
+      background: #fff3e0;
+      color: #e65100;
+    }
+
+    &.new-h {
+      background: #e3f2fd;
+      color: #1565c0;
+    }
+
+    &.error-h {
+      background: #fce4ec;
+      color: #c62828;
+    }
+  }
+}
+
+// ── Status Badges ──
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+
+  .status-icon {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+  }
+
+  .status-text {
+    font-size: 0.7rem;
+  }
+
+  &.status-exact {
+    background: #e8f5e9;
+    color: #2e7d32;
+  }
+
+  &.status-closest {
+    background: #fff3e0;
+    color: #e65100;
+  }
+
+  &.status-new {
+    background: #e3f2fd;
+    color: #1565c0;
+  }
+
+  &.status-error {
+    background: #fce4ec;
+    color: #c62828;
+  }
+}
+
+// ── Row Highlights ──
+.row-error {
+  background-color: #fff5f5 !important;
+
+  &:hover {
+    background-color: #ffe0e0 !important;
+  }
+}
+
+.row-closest {
+  background-color: #fffbf0 !important;
+
+  &:hover {
+    background-color: #fff3e0 !important;
+  }
+}
+
+.row-new {
+  background-color: #f5faff !important;
+
+  &:hover {
+    background-color: #e3f2fd !important;
+  }
+}
+
+.cell-error {
+  background-color: #ffebee !important;
+  color: #c62828 !important;
+  border: 1px solid #ef9a9a !important;
+  cursor: help;
+}
+
+// ── Field Warning Icon ──
+.field-warning {
+  font-size: 14px;
+  width: 14px;
+  height: 14px;
+  color: #c62828;
+  vertical-align: middle;
+  margin-left: 4px;
+}
+
+// ── Matched Path ──
+.matched-path-cell {
+  max-width: 250px;
+}
+
+.matched-path {
+  display: inline-block;
+  max-width: 230px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.8rem;
+  color: #546e7a;
+}
+
+// ── Table ──
+.preview-table {
+  font-size: 0.85rem;
+
+  th {
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    color: #546e7a;
+  }
+
+  .th-status {
+    min-width: 130px;
+  }
+}
+
+// ── Error / Suggestion Details ──
+.error-details,
+.closest-details {
+  padding: 12px 16px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  max-height: 200px;
+  overflow-y: auto;
+
+  h6 {
+    margin-bottom: 8px;
+  }
+}
+
+.error-item,
+.suggestion-item {
+  padding: 6px 0;
+  border-bottom: 1px solid #f0f0f0;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.error-row-header {
+  font-size: 0.85rem;
+}
+
+// ── Modal ──
+.preview-modal {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.preview-dialog {
+  max-width: 95% !important;
+  width: 95vw !important;
+}
