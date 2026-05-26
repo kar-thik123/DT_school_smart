@@ -130,14 +130,14 @@
       <div class="subject-row" 
            [class.active]="selectedGradeId === grade.id && (section === 'ALL' ? selectedSectionId === 'ALL' : selectedSectionId === section.id) && selectedSubjectId === subject.id && !selectedUnitId">
         <div class="tree-line"></div>
-        <div (click)="toggleSubject(subject.id, $event)" class="d-inline-flex align-items-center">
+        <div *ngIf="showUnitsAndBelow" (click)="toggleSubject(subject.id, $event)" class="d-inline-flex align-items-center">
           <mat-icon class="expand-chevron" [@iconRotate]="expandedSubject === subject.id ? 'expanded' : 'collapsed'">chevron_right</mat-icon>
         </div>
-        <span class="subject-name flex-grow-1" (click)="selectNode(grade, section, subject, null, null, null, $event)">{{ subject.name }}</span>
+        <span class="subject-name flex-grow-1" (click)="selectSubject(grade, section, subject, $event)">{{ subject.name }}</span>
       </div>
 
       <!-- UNITS -->
-      <div class="units-container" [@expandAnimation]="expandedSubject === subject.id ? 'expanded' : 'collapsed'">
+      <div *ngIf="showUnitsAndBelow" class="units-container" [@expandAnimation]="expandedSubject === subject.id ? 'expanded' : 'collapsed'">
         <div class="units-tree">
           <ng-container *ngIf="getUnitsForSubject(subject.id).length > 0; else noUnits">
             <div *ngFor="let unit of getUnitsForSubject(subject.id)">

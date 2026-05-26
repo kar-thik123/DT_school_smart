@@ -144,7 +144,8 @@
         "ACADEMIC-RULES": "Academic Rules",
         "NOTIFICATION-SETTINGS": "Notification Settings",
         "SYSTEM-LOGS": "System Logs",
-        "BACKUP-RESTORE": "Backup & Restore"
+        "BACKUP-RESTORE": "Backup & Restore",
+        "COMPLETION-SETTINGS": "Completion Settings"
       }
     },
     "ADMINISTRATION": {
@@ -157,7 +158,9 @@
         "UNITS-LIST": "Units List",
         "QUESTION-BANK": "Question Bank",
         "TEACHER-ASSIGNMENT": "Teacher Assignment",
-        "STUDENT-ENROLLMENT": "Student Enrollment"
+        "STUDENT-ENROLLMENT": "Student Enrollment",
+        "COMPLETION-TRACKING": "Completion Tracking",
+        "SETTINGS": "Settings"
       }
     },
     "FEES": {

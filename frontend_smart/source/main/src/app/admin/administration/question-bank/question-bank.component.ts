@@ -14,6 +14,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.component';
+import { Router } from '@angular/router';
 
 import { QuestionBankService, IQuestion } from './services/question-bank.service';
 import { AcademicStructureService, IGrade, ISection, ISubject } from '../units-list/services/units.service';
@@ -21,6 +22,7 @@ import { CurriculumService, ICurriculumUnit, ICurriculumTopic, ICurriculumSubTop
 import { QuestionBankDropdownComponent } from './questionBank-dropdown/questionBank-dropdown.component';
 import { QuestionBankPreviewComponent } from './question-bank-preview/question-bank-preview.component';
 import Swal from 'sweetalert2';
+import { AuthService } from '@core';
 
 @Component({
   selector: 'app-question-bank',
@@ -41,6 +43,8 @@ export class QuestionBankComponent implements OnInit {
   private academicService = inject(AcademicStructureService);
   private curriculumService = inject(CurriculumService);
   private snackBar = inject(MatSnackBar);
+  private authService = inject(AuthService);
+  private router = inject(Router);
 
   breadscrums = [
     {
@@ -84,8 +88,35 @@ export class QuestionBankComponent implements OnInit {
   selectedSubTopicName: string = '';
 
   editingQuestionId: string | null = null;
+  canImport = false;
+  capabilities = {
+    canCreate: false,
+    canEdit: false,
+    canDelete: false,
+    canImport: false
+  };
 
   ngOnInit() {
+    const isTeacherPath = this.router.url.startsWith('/teacher/');
+    const parentPath = isTeacherPath ? 'Teacher' : 'Administration';
+    this.breadscrums = [
+      {
+        title: 'Question Bank',
+        items: [parentPath],
+        active: 'Question Bank',
+      },
+    ];
+
+    this.capabilities.canCreate = this.authService.hasPermission('QUESTION_BANK', 'CREATE') ||
+                                 this.authService.hasPermission('QUESTION_BANK_CREATE');
+    this.capabilities.canEdit = this.authService.hasPermission('QUESTION_BANK', 'EDIT') ||
+                               this.authService.hasPermission('QUESTION_BANK_EDIT');
+    this.capabilities.canDelete = this.authService.hasPermission('QUESTION_BANK', 'DELETE') ||
+                                 this.authService.hasPermission('QUESTION_BANK_DELETE');
+    this.capabilities.canImport = this.authService.hasPermission('QUESTION_BANK', 'IMPORT') ||
+                                 this.authService.hasPermission('QUESTION_BANK_IMPORT');
+    this.canImport = this.capabilities.canImport;
+
     this.initForm();
     this.loadGrades();
     this.loadAllSections();

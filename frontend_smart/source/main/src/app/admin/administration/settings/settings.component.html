@@ -1,0 +1,62 @@
+<section class="content">
+    <div class="content-block">
+        @for (breadscrum of breadscrums; track breadscrum) {
+        <div class="block-header">
+            <app-breadcrumb [title]="breadscrum.title" [items]="breadscrum.items" [active_item]="breadscrum.active">
+            </app-breadcrumb>
+        </div>
+        }
+
+        <div class="row">
+            <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12">
+                <mat-card class="card-box" style="border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); overflow: hidden;">
+                    <div class="header d-flex justify-content-between align-items-center p-4 bg-white border-bottom">
+                        <div class="d-flex align-items-center gap-3">
+                            <mat-icon style="font-size: 28px; width: 28px; height: 28px; color: #3f51b5;">settings</mat-icon>
+                            <h2 class="m-0" style="font-weight: 600; font-size: 20px; color: #333;">Master Configuration Dashboard</h2>
+                        </div>
+                        <button mat-raised-button color="primary" (click)="saveSettings()" style="border-radius: 20px; padding: 0 24px;">
+                            <mat-icon>save</mat-icon> Save Changes
+                        </button>
+                    </div>
+
+                    <div class="p-4" style="background-color: #fdfdfd;">
+
+                        <!-- Section 1: Core Modules -->
+                        <div class="mb-4">
+                            <h4 style="color: #3f51b5; font-weight: 600; border-bottom: 2px solid #eaeaea; padding-bottom: 8px;" class="mb-3 d-flex align-items-center gap-2">
+                                <mat-icon style="font-size: 20px; width: 20px; height: 20px;">widgets</mat-icon> Core Modules Integration
+                            </h4>
+
+                            <!-- Completion Mgmt Module Toggle -->
+                            <div class="setting-item d-flex align-items-center py-3 px-2 border-bottom" style="transition: all 0.2s;">
+                                <div class="setting-info flex-grow-1">
+                                    <h5 class="mb-1 font-weight-bold" style="color: #444;">Enable Completion Management</h5>
+                                    <p class="text-muted mb-0 small">Toggle the entire Completion Management module ON or OFF for this school.</p>
+                                </div>
+                                <mat-slide-toggle color="primary" [(ngModel)]="settings.enable_module"></mat-slide-toggle>
+                            </div>
+                        </div>
+
+                        <!-- Section 2: Communication & Alerts -->
+                        <div class="mb-4">
+                            <h4 style="color: #3f51b5; font-weight: 600; border-bottom: 2px solid #eaeaea; padding-bottom: 8px;" class="mb-3 d-flex align-items-center gap-2">
+                                <mat-icon style="font-size: 20px; width: 20px; height: 20px;">notifications</mat-icon> Communication & Alerting
+                            </h4>
+
+                            <!-- Completion Notifications -->
+                            <div class="setting-item d-flex align-items-center py-3 px-2 border-bottom">
+                                <div class="setting-info flex-grow-1">
+                                    <h5 class="mb-1 font-weight-bold" style="color: #444;">Enable Completion Notifications</h5>
+                                    <p class="text-muted mb-0 small">Send real-time alerts to students and parents when topics are marked as completed.</p>
+                                </div>
+                                <mat-slide-toggle color="primary" [(ngModel)]="settings.enable_notifications"></mat-slide-toggle>
+                            </div>
+                        </div>
+
+                    </div>
+                </mat-card>
+            </div>
+        </div>
+    </div>
+</section>

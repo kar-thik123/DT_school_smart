@@ -14,6 +14,8 @@ import { TeacherAssignmentService } from './services/teacher-assignment.service'
 import { AcademicStructureService, IGrade, ISection } from '../academic-structure/services/academic-structure.service';
 import { AcademicYearService } from '../../academics/academic-year/academic-year.service';
 import { AssignmentType, ITeacherAssignment, IBatchTeacherAssignmentPayload } from './models/teacher-assignment.model';
+import { AuthService, AcademicContextService } from '@core';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-teacher-assignment',
@@ -37,7 +39,10 @@ export class TeacherAssignmentComponent implements OnInit {
   private assignmentService = inject(TeacherAssignmentService);
   private academicService = inject(AcademicStructureService);
   private academicYearService = inject(AcademicYearService);
+  private academicContextService = inject(AcademicContextService);
   private snackBar = inject(MatSnackBar);
+  private authService = inject(AuthService);
+  private router = inject(Router);
 
   breadscrums = [
     { title: 'Teacher Assignment', items: ['Administration'], active: 'Teacher Assignment' }
@@ -61,16 +66,32 @@ export class TeacherAssignmentComponent implements OnInit {
 
   isLoadingSubjects = false;
   isSaving = false;
+  canManageAssignments = false;
 
   ngOnInit() {
+    const isTeacherPath = this.router.url.startsWith('/teacher/');
+    const parentPath = isTeacherPath ? 'Teacher' : 'Administration';
+    this.breadscrums = [
+      { title: 'Teacher Assignment', items: [parentPath], active: 'Teacher Assignment' }
+    ];
+
+    this.canManageAssignments = this.authService.hasPermission('TEACHER_ASSIGNMENT', 'CREATE') ||
+                                this.authService.hasPermission('TEACHER_ASSIGNMENT_CREATE') ||
+                                this.authService.hasPermission('TEACHER_ASSIGNMENT', 'DELETE') ||
+                                this.authService.hasPermission('TEACHER_ASSIGNMENT_DELETE');
+
+    // Subscribe to centralized Academic Context
+    this.academicContextService.activeYear$.subscribe((year: any) => {
+      this.activeAcademicYear = year;
+      if (this.selectedGradeId && this.selectedSectionId) {
+        this.loadAssignmentsForSection();
+      }
+    });
+
     this.loadInitialData();
   }
 
   loadInitialData() {
-    this.academicYearService.getAllAcademicYears().subscribe((years: any) => {
-      this.activeAcademicYear = years.find((y: any) => y.is_active) || null;
-    });
-
     this.academicService.getGrades().subscribe((grades) => this.grades = grades);
     this.academicService.getSections().subscribe((sections) => this.sections = sections);
     
@@ -78,6 +99,7 @@ export class TeacherAssignmentComponent implements OnInit {
       this.teachers = teachers;
     });
   }
+
 
   onGradeChange() {
     this.selectedSectionId = null;

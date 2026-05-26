@@ -10,6 +10,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TopicProcessor = exports.UnitProcessor = exports.SubjectProcessor = exports.SectionProcessor = exports.GradeProcessor = void 0;
 const prisma_1 = __importDefault(require("../../../prisma"));
+const academic_helper_1 = require("../../../utils/academic-helper");
 // ────────────────────────────────────────────────────────────────────────────
 // GRADES
 // CSV: grade_name
@@ -26,11 +27,7 @@ class GradeProcessor {
     }
     async resolveRelations(rows) {
         // Look up the active academic year (required for grade creation)
-        const activeYear = await prisma_1.default.academicYear.findFirst({
-            where: { organization_id: this.organizationId, is_active: true },
-            select: { id: true }
-        });
-        this.activeAcademicYearId = activeYear?.id;
+        this.activeAcademicYearId = await (0, academic_helper_1.getActiveAcademicYearId)(this.organizationId);
         // Pre-load existing grade names for this org+year to detect duplicates
         if (this.activeAcademicYearId) {
             const existing = await prisma_1.default.grade.findMany({

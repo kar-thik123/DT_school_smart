@@ -31,6 +31,7 @@ import { DocumentsComponent } from './profile/documents/documents.component';
 import { ChangePasswordComponent } from './profile/change-password/change-password.component';
 import { AttendanceSummaryComponent } from './attendance/attendance-summary/attendance-summary.component';
 import { TodayScheduleComponent } from './today-schedule/today-schedule.component';
+import { AuthGuard } from '../core/guard/auth.guard';
 
 export const TEACHER_ROUTE: Route[] = [
   {
@@ -108,5 +109,37 @@ export const TEACHER_ROUTE: Route[] = [
   },
   { path: 'lectures', component: LecturesComponent },
   { path: 'settings', component: SettingsComponent },
+  {
+    path: 'question-bank',
+    canActivate: [AuthGuard],
+    data: { permission: 'QUESTION_BANK:VIEW' },
+    loadComponent: () =>
+      import('../admin/administration/question-bank/question-bank.component').then(
+        (m) => m.QuestionBankComponent
+      ),
+  },
+  {
+    path: 'completion',
+    canActivate: [AuthGuard],
+    data: { permission: 'COMPLETION_TRACKING:VIEW' },
+    loadComponent: () =>
+      import('../admin/administration/completion-mgmt/completion-mgmt.component').then(
+        (m) => m.CompletionMgmtComponent
+      ),
+  },
+  {
+    path: 'analytics',
+    canActivate: [AuthGuard],
+    data: { permission: 'ANALYTICS:VIEW_OWN' },
+    loadComponent: () =>
+      import('../admin/reports/academic-reports/academic-reports.component').then(
+        (m) => m.AcademicReportsComponent
+      ),
+  },
+  {
+    path: 'practice',
+    redirectTo: 'dashboard',
+    pathMatch: 'full'
+  },
   { path: '**', component: Page404Component },
 ];

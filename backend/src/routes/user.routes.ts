@@ -20,18 +20,30 @@ const userSchema = z.object({
   mobile_number: z.string().optional(),
 });
 
-// GET all teachers in org
+// GET all teachers in org — only users whose role has IS_TEACHER but NOT IS_MANAGEMENT or IS_STUDENT
 router.get('/teachers', async (req: any, res: Response) => {
   try {
     const teachers = await prisma.user.findMany({
       where: { 
         organization_id: req.user.organization_id,
+        is_active: true,
         role: {
           permissions: {
             some: { permission: { module: 'IDENTITY', action: 'IS_TEACHER' } }
-          }
-        },
-        is_active: true
+          },
+          AND: [
+            {
+              permissions: {
+                none: { permission: { module: 'IDENTITY', action: 'IS_MANAGEMENT' } }
+              }
+            },
+            {
+              permissions: {
+                none: { permission: { module: 'IDENTITY', action: 'IS_STUDENT' } }
+              }
+            }
+          ]
+        }
       },
       select: { id: true, name: true, email: true },
       orderBy: { name: 'asc' }

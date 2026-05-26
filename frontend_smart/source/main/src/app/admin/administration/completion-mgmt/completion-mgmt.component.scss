@@ -1,0 +1,80 @@
+/* Question Card Modern UI imported from Question Bank */
+.card-container.mat-mdc-card {
+  background-color: transparent !important;
+}
+
+.q-text-dark {
+  color: #495057 !important;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+:host-context(.dark) {
+  .q-text-dark {
+    color: #e2e8f0 !important;
+  }
+}
+
+.completion-accordion {
+  .mat-expansion-panel {
+    border-radius: 8px !important;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04) !important;
+    border: 1px solid #e9ecef;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    
+    &:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
+    }
+    
+    .mat-expansion-panel-header {
+      padding: 0 24px;
+      height: 64px !important;
+      
+      &:hover {
+        background: #f8f9fa;
+      }
+    }
+  }
+
+  .topic-item {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
+    }
+  }
+}
+
+:host-context(.dark) .completion-accordion {
+  .mat-expansion-panel {
+    background: #1a202e;
+    border: 1px solid #2d3748;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+
+    .mat-expansion-panel-header {
+      &:hover {
+        background: rgba(255, 255, 255, 0.05);
+      }
+    }
+  }
+
+  .topics-list, .subtopics-list {
+    background: #1a202e !important;
+    border-color: #2d3748 !important;
+  }
+  
+  .topic-item {
+    background: #232b3e !important;
+    border-color: #2d3748 !important;
+  }
+  
+  .text-muted {
+    color: #cbd5e1 !important;
+  }
+}
+
+.hierarchy-dropdown-wrapper {
+  min-width: 280px;
+}

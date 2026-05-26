@@ -3,6 +3,7 @@ import { UntypedFormBuilder, UntypedFormGroup, Validators, FormsModule, Reactive
 import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.component';
 import { RolePermissionService } from './role-permission.service';
 import { IRole, IPermission, PermissionGroup } from './role-permission.model';
+import { CENTRAL_PERMISSION_REGISTRY } from './permission-registry';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -96,8 +97,10 @@ export class RolePermissionsComponent implements OnInit {
   async loadInitialData() {
     this.isLoading = true;
     try {
-      // 1. Load Available Permissions
-      this.allPermissions = await lastValueFrom(this.roleService.getAvailablePermissions()) || [];
+      // 1. Load Available Permissions and filter by active registry
+      const dbPermissions = await lastValueFrom(this.roleService.getAvailablePermissions()) || [];
+      const registryModules = new Set(CENTRAL_PERMISSION_REGISTRY.map(r => r.module));
+      this.allPermissions = dbPermissions.filter(p => registryModules.has(p.module));
       
       // 2. Load Roles
       await this.loadRoles();
@@ -136,8 +139,9 @@ export class RolePermissionsComponent implements OnInit {
     
     try {
       // Load active permissions for this role
-      const activePerms = await lastValueFrom(this.roleService.getRolePermissions(role.id)) || [];
-      const activeIds = new Set(activePerms.map(p => p.id));
+      const response = await lastValueFrom(this.roleService.getRolePermissions(role.id)) || [];
+      console.log('Permissions Loaded', response);
+      const activeIds = new Set(response.map(p => p.id));
       
       // Group permissions and mark selected
       this.buildPermissionMatrix(activeIds);
@@ -150,25 +154,20 @@ export class RolePermissionsComponent implements OnInit {
   }
 
   buildPermissionMatrix(activeIds: Set<string>) {
-    const groups: Map<string, PermissionGroup> = new Map();
-    
-    this.allPermissions.forEach(p => {
-      if (!groups.has(p.module)) {
-        groups.set(p.module, { module: p.module, actions: [] });
-      }
-      groups.get(p.module)?.actions.push({
-        id: p.id,
-        action: p.action,
-        selected: activeIds.has(p.id)
-      });
-    });
-    
-    this.permissionGroups = Array.from(groups.values());
-  }
-
-  togglePermission(action: any) {
-    if (this.selectedRole?.name === 'SUPER_ADMIN') return;
-    action.selected = !action.selected;
+    this.permissionGroups = CENTRAL_PERMISSION_REGISTRY.map(registryGroup => {
+      const actions = this.allPermissions
+        .filter(p => p.module === registryGroup.module)
+        .map(p => ({
+          id: p.id,
+          action: p.action,
+          selected: activeIds.has(p.id)
+        }));
+        
+      return {
+        module: registryGroup.module,
+        actions
+      };
+    }).filter(group => group.actions.length > 0);
   }
 
   toggleModule(group: PermissionGroup, checked: boolean) {
@@ -193,6 +192,9 @@ export class RolePermissionsComponent implements OnInit {
       .flatMap(g => g.actions)
       .filter(a => a.selected)
       .map(a => a.id);
+      
+    const payload = selectedIds;
+    console.log('Saving Permissions Payload', payload);
       
     this.roleService.syncPermissions(this.selectedRole.id, selectedIds).subscribe({
       next: () => {

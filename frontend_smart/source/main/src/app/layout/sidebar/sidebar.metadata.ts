@@ -10,4 +10,13 @@ export interface RouteInfo {
   badgeClass: string;
   role: string[];
   submenu: RouteInfo[];
+  showInSidebar?: boolean;
+  // Module Registry Foundation (Phase 1)
+  moduleKey?: string;
+  requiredPermissions?: string[];
+  sidebarGroup?: string;
+  breadcrumbGroup?: string;
+  visibilityRules?: any;
+  domain?: 'PLATFORM' | 'TENANT';
 }
+

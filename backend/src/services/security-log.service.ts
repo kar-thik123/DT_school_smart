@@ -13,18 +13,18 @@ export class SecurityLogService {
     metadata?: any;
   }) {
     try {
-      // Assuming a SecurityAuditLog table exists or using a generic AuditLog
       console.log(`[SECURITY_AUDIT] ${data.event_type}: ${data.description} by ${data.actor_id}`);
       
-      /* 
       await prisma.auditLog.create({
         data: {
-          ...data,
-          ip_address: '', // Could be captured from request
-          timestamp: new Date()
+          organization_id: data.organization_id,
+          user_id: data.actor_id,
+          action_type: data.event_type,
+          entity_type: 'ROLE_PERMISSION',
+          entity_id: data.target_user_id || data.metadata?.roleId || 'SYSTEM',
+          metadata: { description: data.description, ...data.metadata }
         }
       });
-      */
     } catch (error) {
       console.error('Failed to log security event:', error);
     }

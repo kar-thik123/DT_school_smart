@@ -1,24 +1,17 @@
-import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Injectable } from '@angular/core';
+import { Observable, of } from 'rxjs';
 import { RouteInfo } from './sidebar.metadata';
+import { PLATFORM_MODULES } from './platform-module-registry';
 
 @Injectable({
   providedIn: 'root',
 })
 export class SidebarService {
-  private http = inject(HttpClient);
-
-
   /**
-   * Get sidebar menu items from JSON file
+   * Get platform-controlled RBAC module registry
    * @returns Observable<RouteInfo[]>
    */
   getRouteInfo(): Observable<RouteInfo[]> {
-    // Assuming the JSON file is in the assets folder
-    return this.http
-      .get<{ routes: RouteInfo[] }>('assets/data/routes.json')
-      .pipe(map((response) => response.routes));
+    return of(PLATFORM_MODULES);
   }
 }

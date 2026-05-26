@@ -4,7 +4,9 @@ import { parse } from 'csv-parse/sync';
 import prisma from '../prisma';
 import { z } from 'zod';
 import { authMiddleware, requirePermission } from '../middlewares/auth.middleware';
+import { getActiveAcademicYearId } from '../utils/academic-helper';
 import { checkTeacherSubjectAccess } from '../services/academic-compatibility.service';
+import { logAuditEvent } from '../services/audit.service';
 
 const router = Router();
 router.use(authMiddleware);
@@ -97,7 +99,7 @@ router.post('/', requirePermission('QUESTION_BANK', 'CREATE'), async (req: any, 
     if (!isGlobalAdmin) {
       if (parsed.subject_id) {
         const canAccess = await hasSubjectAccess(req.user.user_id, parsed.subject_id, org_id);
-        if (!canAccess) return res.status(403).json({ message: 'Teacher is not assigned to this subject or grade' });
+        if (!canAccess) return res.status(403).json({ message: 'Unauthorized access to this subject' });
       }
     }
 
@@ -123,10 +125,21 @@ router.post('/', requirePermission('QUESTION_BANK', 'CREATE'), async (req: any, 
       }
     });
 
+    await logAuditEvent({
+      organization_id: org_id,
+      user_id: req.user.user_id,
+      user_name: req.user.name,
+      action_type: 'CREATE',
+      entity_type: 'QUESTION',
+      entity_id: question.id,
+      metadata: { subject_id: question.subject_id, grade_id: question.grade_id }
+    });
+
     res.status(201).json({ message: 'Question created', question });
   } catch (error: any) {
     if (error?.errors) return res.status(400).json({ message: 'Validation failed', errors: error.errors });
-    res.status(500).json({ message: 'Server Error' });
+    console.error('[Question Create Error]', error);
+    res.status(500).json({ message: 'Server Error', detail: error?.message });
   }
 });
 
@@ -225,6 +238,13 @@ router.put('/:id', requirePermission('QUESTION_BANK', 'EDIT'), async (req: any, 
     }
 
     const parsed = questionSchema.parse(req.body);
+    if (!isGlobalAdmin && parsed.subject_id) {
+      const canAccess = await hasSubjectAccess(req.user.user_id, parsed.subject_id, org_id);
+      if (!canAccess) {
+        return res.status(403).json({ message: 'Teacher is not assigned to this subject or grade' });
+      }
+    }
+
     const isValidHierarchy = await validateHierarchy(parsed.subject_id, parsed.unit_id, parsed.topic_id, parsed.sub_topic_id, org_id);
     if (!isValidHierarchy) return res.status(400).json({ message: 'Invalid hierarchy' });
 
@@ -232,6 +252,17 @@ router.put('/:id', requirePermission('QUESTION_BANK', 'EDIT'), async (req: any, 
       where: { id: existing.id },
       data: parsed
     });
+
+    await logAuditEvent({
+      organization_id: org_id,
+      user_id: req.user.user_id,
+      user_name: req.user.name,
+      action_type: 'UPDATE',
+      entity_type: 'QUESTION',
+      entity_id: updated.id,
+      metadata: { subject_id: updated.subject_id, grade_id: updated.grade_id }
+    });
+
     res.json({ message: 'Question updated', question: updated });
   } catch (error: any) {
     res.status(400).json({ message: 'Error updating question' });
@@ -244,7 +275,23 @@ router.delete('/:id', requirePermission('QUESTION_BANK', 'DELETE'), async (req: 
     const existing = await prisma.question.findFirst({ where: { id: req.params.id, organization_id: req.user.organization_id } });
     if (!existing) return res.status(404).json({ message: 'Question not found' });
 
+    const isGlobalAdmin = ['SYSTEM_ADMIN', 'SUPER_ADMIN', 'MANAGEMENT'].includes(req.user.role);
+    if (!isGlobalAdmin && existing.created_by !== req.user.user_id) {
+      return res.status(403).json({ message: 'Only creator or admins can delete' });
+    }
+
     await prisma.question.delete({ where: { id: existing.id } });
+
+    await logAuditEvent({
+      organization_id: req.user.organization_id,
+      user_id: req.user.user_id,
+      user_name: req.user.name,
+      action_type: 'DELETE',
+      entity_type: 'QUESTION',
+      entity_id: existing.id,
+      metadata: { subject_id: existing.subject_id, grade_id: existing.grade_id }
+    });
+
     res.json({ message: 'Question deleted' });
   } catch (error) {
     res.status(500).json({ message: 'Error deleting question' });
@@ -598,7 +645,18 @@ router.post('/bulk/discard', requirePermission('QUESTION_BANK', 'IMPORT'), async
   try {
     const { session_id } = req.body;
     if (!session_id) return res.status(400).json({ message: 'Missing session_id' });
-    await (prisma as any).previewQuestion.deleteMany({ where: { session_id, organization_id: req.user.organization_id } });
+    
+    const isGlobalAdmin = ['SYSTEM_ADMIN', 'SUPER_ADMIN', 'MANAGEMENT'].includes(req.user.role);
+    const deleteWhere: any = { session_id, organization_id: req.user.organization_id };
+    if (!isGlobalAdmin) {
+      deleteWhere.created_by = req.user.user_id;
+    }
+
+    const deleteResult = await (prisma as any).previewQuestion.deleteMany({ where: deleteWhere });
+    if (deleteResult.count === 0 && !isGlobalAdmin) {
+      return res.status(403).json({ message: 'You are not authorized to discard this preview session.' });
+    }
+
     res.json({ message: 'Preview discarded' });
   } catch (error: any) {
     res.status(500).json({ message: 'Failed to discard preview', error: error.message });
@@ -611,28 +669,22 @@ router.post('/bulk/confirm', requirePermission('QUESTION_BANK', 'IMPORT'), async
     const { session_id, modified_records } = req.body;
     if (!session_id) return res.status(400).json({ message: 'Missing session_id' });
 
+    const org_id = req.user.organization_id;
+    const hasElevatedTenantAccess = ['SYSTEM_ADMIN', 'SUPER_ADMIN', 'MANAGEMENT'].includes(req.user.role);
     let records: any[] = [];
     if (modified_records && Array.isArray(modified_records) && modified_records.length > 0) {
       records = modified_records;
     } else {
-      const previews = await (prisma as any).previewQuestion.findMany({ where: { session_id, organization_id: req.user.organization_id } });
+      const previewWhere: any = { session_id, organization_id: org_id };
+      if (!hasElevatedTenantAccess) {
+        previewWhere.created_by = req.user.user_id;
+      }
+      const previews = await (prisma as any).previewQuestion.findMany({ where: previewWhere });
       if (!previews || previews.length === 0) return res.status(404).json({ message: 'Session not found or empty' });
       records = previews.map((p: any) => p.raw_data);
     }
 
-    const org_id = req.user.organization_id;
-    const isGlobalAdmin = ['SYSTEM_ADMIN', 'SUPER_ADMIN', 'MANAGEMENT'].includes(req.user.role);
-
-    let activeYear = await prisma.academicYear.findFirst({
-      where: { organization_id: org_id, is_active: true }
-    });
-    if (!activeYear) {
-      const now = new Date();
-      activeYear = await prisma.academicYear.create({
-        data: { name: `${now.getFullYear()}-${now.getFullYear() + 1}`, organization_id: org_id, is_active: true }
-      });
-    }
-    const activeYearId = activeYear.id;
+    const activeYearId = await getActiveAcademicYearId(org_id);
 
     const allGrades = await prisma.grade.findMany({ where: { organization_id: org_id }, select: { id: true, name: true } });
     const allSections = await prisma.section.findMany({ where: { organization_id: org_id }, select: { id: true, name: true, grade_id: true } });
@@ -731,7 +783,7 @@ router.post('/bulk/confirm', requirePermission('QUESTION_BANK', 'IMPORT'), async
         const marks = parseInt(row.marks, 10);
         if (isNaN(marks) || marks < 1) throw new Error(`Invalid marks: "${row.marks}". Must be a positive integer.`);
 
-        if (!isGlobalAdmin && subject) {
+        if (!hasElevatedTenantAccess && subject) {
           const canAccess = await hasSubjectAccess(req.user.user_id, subject.id, org_id);
           if (!canAccess) throw new Error(`Not authorized to upload questions for subject "${subjectName}"`);
         }
@@ -769,7 +821,19 @@ router.post('/bulk/confirm', requirePermission('QUESTION_BANK', 'IMPORT'), async
     results.autoCreated.topics = allTopics.length - prevTopicCount;
 
     // Delete the preview records now that they are processed
-    await (prisma as any).previewQuestion.deleteMany({ where: { session_id, organization_id: org_id } });
+    const deleteWhere: any = { session_id, organization_id: org_id };
+    if (!hasElevatedTenantAccess) deleteWhere.created_by = req.user.user_id;
+    await (prisma as any).previewQuestion.deleteMany({ where: deleteWhere });
+
+    await logAuditEvent({
+      organization_id: org_id,
+      user_id: req.user.user_id,
+      user_name: req.user.name,
+      action_type: 'IMPORT',
+      entity_type: 'QUESTION',
+      entity_id: session_id,
+      metadata: { success_count: results.created, skipped_count: results.skipped }
+    });
 
     const autoMsg = Object.entries(results.autoCreated)
       .filter(([, v]) => v > 0)
@@ -794,19 +858,9 @@ router.post('/bulk', requirePermission('QUESTION_BANK', 'IMPORT'), upload.single
     if (!records || records.length === 0) return res.status(400).json({ message: 'Empty or invalid CSV spreadsheet' });
 
     const org_id = req.user.organization_id;
-    const isGlobalAdmin = ['SYSTEM_ADMIN', 'SUPER_ADMIN', 'MANAGEMENT'].includes(req.user.role);
+    const hasElevatedTenantAccess = ['SYSTEM_ADMIN', 'SUPER_ADMIN', 'MANAGEMENT'].includes(req.user.role);
 
-    // ── Resolve active academic year (needed if we must create a grade) ────────
-    let activeYear = await prisma.academicYear.findFirst({
-      where: { organization_id: org_id, is_active: true }
-    });
-    if (!activeYear) {
-      const now = new Date();
-      activeYear = await prisma.academicYear.create({
-        data: { name: `${now.getFullYear()}-${now.getFullYear() + 1}`, organization_id: org_id, is_active: true }
-      });
-    }
-    const activeYearId = activeYear.id;
+    const activeYearId = await getActiveAcademicYearId(org_id);
 
     // ── Pre-fetch all org-scoped academic data (mutable arrays — updated as we create) ──
     const allGrades: { id: string; name: string }[] =
@@ -902,7 +956,7 @@ router.post('/bulk', requirePermission('QUESTION_BANK', 'IMPORT'), upload.single
         if (isNaN(marks) || marks < 1) throw new Error(`Invalid marks: "${row.marks}". Must be a positive integer.`);
 
         // ── Teacher access check ─────────────────────────────────────────────
-        if (!isGlobalAdmin && subject) {
+        if (!hasElevatedTenantAccess && subject) {
           const canAccess = await hasSubjectAccess(req.user.user_id, subject.id, org_id);
           if (!canAccess) throw new Error(`Not authorized to upload questions for subject "${subjectName}"`);
         }

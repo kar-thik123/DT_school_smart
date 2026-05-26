@@ -204,7 +204,6 @@
                                   <mat-checkbox *ngFor="let action of group.actions"
                                                 [(ngModel)]="action.selected"
                                                 [disabled]="selectedRole.name === 'SUPER_ADMIN'"
-                                                (change)="togglePermission(action)"
                                                 class="me-3">
                                     {{ action.action }}
                                   </mat-checkbox>

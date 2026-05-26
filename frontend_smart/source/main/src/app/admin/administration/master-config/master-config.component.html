@@ -145,16 +145,43 @@
             </ng-template>
             <div class="p-4">
                <div class="row">
-                 <div class="col-md-6">
-                   <mat-card>
-                     <div class="card-header p-3">
-                       <h3 class="mb-0">Academic Years</h3>
+                 
+                 <!-- Active Academic Year Configurations -->
+                 <div class="col-md-6 mb-4">
+                   <mat-card class="p-4 h-100">
+                     <div class="card-header p-0 mb-3">
+                       <h3 class="mb-0">Active Academic Year Settings</h3>
                      </div>
-                     <div class="p-3">
+                     <div class="p-0">
                         <div class="alert alert-info">
-                          The active academic year determines the default data for the entire organization.
+                          Select the active academic year. This acts as the centralized single source of truth for all modules across the organization.
                         </div>
-                        <table class="table mt-3">
+                        <div class="mt-4">
+                          <mat-form-field class="w-100" appearance="outline">
+                            <mat-label>Active Academic Year</mat-label>
+                            <mat-select [formControl]="activeYearControl">
+                              <mat-option *ngFor="let year of academicYears" [value]="year.id">
+                                {{ year.name }}
+                              </mat-option>
+                            </mat-select>
+                          </mat-form-field>
+                          <button mat-raised-button color="primary" [disabled]="isSaving || !activeYearControl.value" (click)="saveActiveYear(activeYearControl.value!)">
+                            <mat-icon class="me-2">{{ isSaving ? 'hourglass_empty' : 'save' }}</mat-icon>
+                            Save Active Year
+                          </button>
+                        </div>
+                     </div>
+                   </mat-card>
+                 </div>
+
+                 <!-- Academic Years Management -->
+                 <div class="col-md-6 mb-4">
+                   <mat-card class="p-4 h-100">
+                     <div class="card-header p-0 mb-3">
+                       <h3 class="mb-0">Academic Years List</h3>
+                     </div>
+                     <div class="p-0">
+                        <table class="table table-hover mt-3">
                           <thead>
                             <tr>
                               <th>Year Label</th>
@@ -166,24 +193,25 @@
                             <tr *ngFor="let year of academicYears">
                               <td>{{ year.name }}</td>
                               <td>
-                                <span [class]="year.is_active ? 'badge badge-solid-green' : 'badge badge-solid-red'">
-                                  {{ year.is_active ? 'Active' : 'Inactive' }}
+                                <span [class]="year.id === activeYearControl.value ? 'badge badge-solid-green' : 'badge badge-solid-red'">
+                                  {{ year.id === activeYearControl.value ? 'Active' : 'Inactive' }}
                                 </span>
                               </td>
                               <td>
-                                <button mat-icon-button (click)="deleteMaster('academic-years', year.id)">
-                                  <mat-icon>delete</mat-icon>
+                                <button mat-icon-button color="warn" (click)="deleteMaster('academic-years', year.id)">
+                                  <mat-icon>delete_outline</mat-icon>
                                 </button>
                               </td>
                             </tr>
                           </tbody>
                         </table>
-                        <button mat-stroked-button color="primary" class="mt-2" (click)="addMaster('academic-years', '2025-2026')">
-                          <mat-icon class="me-2">add</mat-icon> Add New Year
+                        <button mat-stroked-button color="primary" class="mt-2" (click)="addMaster('academic-years', '2027-2028')">
+                          <mat-icon class="me-2">add</mat-icon> Add New Year (2027-2028)
                         </button>
                      </div>
                    </mat-card>
                  </div>
+
                </div>
             </div>
           </mat-tab>

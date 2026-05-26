@@ -1839,6 +1839,34 @@
             ""
           ],
           "submenu": []
+        },
+        {
+          "path": "/admin/administration/completion-mgmt",
+          "title": "MENUITEMS.ADMINISTRATION.LIST.COMPLETION-TRACKING",
+          "iconType": "",
+          "icon": "",
+          "class": "ml-menu",
+          "groupTitle": false,
+          "badge": "",
+          "badgeClass": "",
+          "role": [
+            ""
+          ],
+          "submenu": []
+        },
+        {
+          "path": "/admin/administration/settings",
+          "title": "MENUITEMS.ADMINISTRATION.LIST.SETTINGS",
+          "iconType": "",
+          "icon": "",
+          "class": "ml-menu",
+          "groupTitle": false,
+          "badge": "",
+          "badgeClass": "",
+          "role": [
+            ""
+          ],
+          "submenu": []
         }
       ]
     },
@@ -1980,6 +2008,70 @@
       "badgeClass": "",
       "role": [
         "TEACHER"
+      ],
+      "submenu": []
+    },
+    {
+      "path": "/teacher/question-bank",
+      "title": "MENUITEMS.ADMINISTRATION.LIST.QUESTION-BANK",
+      "iconType": "material-icons-outlined",
+      "icon": "fact_check",
+      "class": "",
+      "groupTitle": false,
+      "badge": "",
+      "badgeClass": "",
+      "role": [
+        "QUESTION_BANK:VIEW",
+        "QUESTION_BANK_VIEW"
+      ],
+      "submenu": []
+    },
+    {
+      "path": "/teacher/completion",
+      "title": "MENUITEMS.ADMINISTRATION.LIST.COMPLETION-TRACKING",
+      "iconType": "material-icons-outlined",
+      "icon": "assignment_turned_in",
+      "class": "",
+      "groupTitle": false,
+      "badge": "",
+      "badgeClass": "",
+      "role": [
+        "COMPLETION:VIEW",
+        "COMPLETION_VIEW"
+      ],
+      "submenu": []
+    },
+    {
+      "path": "/teacher/analytics",
+      "title": "MENUITEMS.REPORTS.TEXT",
+      "iconType": "material-icons-outlined",
+      "icon": "analytics",
+      "class": "",
+      "groupTitle": false,
+      "badge": "",
+      "badgeClass": "",
+      "role": [
+        "ANALYTICS:VIEW_OWN",
+        "ANALYTICS_VIEW_OWN",
+        "ANALYTICS:VIEW_SCHOOL",
+        "ANALYTICS_VIEW_SCHOOL"
+      ],
+      "submenu": []
+    },
+    {
+      "path": "/teacher/practice",
+      "title": "Practice",
+      "iconType": "material-icons-outlined",
+      "icon": "fitness_center",
+      "class": "",
+      "groupTitle": false,
+      "badge": "",
+      "badgeClass": "",
+      "role": [
+        "PRACTICE:VIEW_OWN",
+        "PRACTICE_VIEW_OWN",
+        "PRACTICE:VIEW_ALL",
+        "PRACTICE_VIEW_ALL"
       ],
       "submenu": []
     },

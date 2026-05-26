@@ -3,6 +3,7 @@ import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { catchError, map } from 'rxjs/operators';
 import { SystemLog, ISystemLog } from './system-log.model';
+import { environment } from 'environments/environment';
 
 @Injectable({
   providedIn: 'root',
@@ -29,12 +30,16 @@ export class SystemLogService {
   ];
 
   getAllLogs(): Observable<SystemLog[]> {
-    return of(this.staticData as SystemLog[]).pipe(
+    return this.httpClient.get<SystemLog[]>(`${environment.apiUrl}/settings/system-logs`).pipe(
       map((data) => {
         this.dataChange.next(data);
         return data;
       }),
-      catchError(this.handleError)
+      catchError((error) => {
+        console.warn('[SystemLogService] Failed to load real audit logs, falling back to mock data:', error);
+        this.dataChange.next(this.staticData as SystemLog[]);
+        return of(this.staticData as SystemLog[]);
+      })
     );
   }
 

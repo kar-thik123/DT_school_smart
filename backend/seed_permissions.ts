@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { getFlatPermissions } from './src/config/permissions';
+import { getFlatPermissions, PERMISSION_DOMAINS } from './src/config/permissions';
 
 const prisma = new PrismaClient();
 
@@ -40,17 +40,21 @@ async function main() {
   // 4. Map Default Permissions to SUPER_ADMIN (Tenant Control)
   if (superAdminRole) {
     const allDbPermissions = await prisma.permission.findMany();
+    const tenantDbPermissions = allDbPermissions.filter(p => 
+      PERMISSION_DOMAINS[p.module] === 'TENANT' && 
+      !(p.module === 'IDENTITY' && p.action === 'IS_SYSTEM_ADMIN')
+    );
     
     // Clean existing mappings to avoid duplicates or stale perms
     await prisma.rolePermission.deleteMany({ where: { role_id: superAdminRole.id } });
     
     await prisma.rolePermission.createMany({
-      data: allDbPermissions.map(p => ({
+      data: tenantDbPermissions.map(p => ({
         role_id: superAdminRole.id,
         permission_id: p.id
       }))
     });
-    console.log('Mapped all permissions to SUPER_ADMIN.');
+    console.log(`Mapped ${tenantDbPermissions.length} tenant permissions to SUPER_ADMIN.`);
   }
 
   // 5. Map subset to MANAGEMENT

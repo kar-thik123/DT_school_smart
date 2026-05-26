@@ -1,6 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule, UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, UntypedFormBuilder, UntypedFormGroup, Validators, FormControl } from '@angular/forms';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -12,6 +12,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatDividerModule } from '@angular/material/divider';
 import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.component';
+import { AcademicContextService } from '@core';
 import { MasterConfigService } from './master-config.service';
 import { OrganizationProfile, MasterEntity } from './master-config.model';
 import { lastValueFrom } from 'rxjs';
@@ -40,11 +41,13 @@ import { lastValueFrom } from 'rxjs';
 export class MasterConfigComponent implements OnInit {
   private fb = inject(UntypedFormBuilder);
   private configService = inject(MasterConfigService);
+  private academicContextService = inject(AcademicContextService);
   private snackBar = inject(MatSnackBar);
 
   // Profile
   profileForm!: UntypedFormGroup;
   organization?: OrganizationProfile;
+  activeYearControl = new FormControl<string>('');
   
   // UI State
   isLoading = true;
@@ -89,10 +92,36 @@ export class MasterConfigComponent implements OnInit {
         lastValueFrom(this.configService.getEntities('academic-years'))
       ]);
 
+      // Load Master Config Settings
+      try {
+        const settings = await lastValueFrom(this.configService.getSettings('master-config'));
+        const activeYearId = settings?.config_data?.active_academic_year_id || '';
+        this.activeYearControl.setValue(activeYearId);
+      } catch (err) {
+        console.error('Failed to load master-config settings', err);
+      }
+
       this.isLoading = false;
     } catch (error: any) {
       this.showNotification('error', 'Failed to load configuration data');
       this.isLoading = false;
+    }
+  }
+
+  async saveActiveYear(yearId: string) {
+    if (!yearId) return;
+    this.isSaving = true;
+    try {
+      await lastValueFrom(this.configService.updateSettings('master-config', { active_academic_year_id: yearId }));
+      
+      // Propagate the change globally via AcademicContextService
+      await lastValueFrom(this.academicContextService.loadActiveYear());
+      
+      this.showNotification('success', 'Active academic year updated successfully');
+    } catch (err: any) {
+      this.showNotification('error', err.message || 'Failed to update active academic year');
+    } finally {
+      this.isSaving = false;
     }
   }
 

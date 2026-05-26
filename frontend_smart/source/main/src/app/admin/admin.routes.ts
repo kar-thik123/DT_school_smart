@@ -174,6 +174,20 @@ export const ADMIN_ROUTE: Route[] = [
             (m) => m.StudentMappingComponent
           ),
       },
+      {
+        path: 'completion-mgmt',
+        loadComponent: () =>
+          import('./administration/completion-mgmt/completion-mgmt.component').then(
+            (m) => m.CompletionMgmtComponent
+          ),
+      },
+      {
+        path: 'settings',
+        loadComponent: () =>
+          import('./administration/settings/settings.component').then(
+            (m) => m.SettingsComponent
+          ),
+      },
     ]
   },
 

@@ -14,7 +14,8 @@ exports.isNewAcademicStructureEnabled = isNewAcademicStructureEnabled;
  * Integrates dual-read logic while maintaining backwards compatibility.
  */
 const checkTeacherSubjectAccess = async (teacher_id, subject_id, org_id) => {
-    const subject = await prisma_1.default.subject.findUnique({ where: { id: subject_id, organization_id: org_id } });
+    // Use findFirst (not findUnique) because compound { id, organization_id } is not a unique constraint in the schema.
+    const subject = await prisma_1.default.subject.findFirst({ where: { id: subject_id, organization_id: org_id } });
     if (!subject)
         return false;
     // Check traditional Teacher Assignments
@@ -23,8 +24,8 @@ const checkTeacherSubjectAccess = async (teacher_id, subject_id, org_id) => {
             teacher_id,
             organization_id: org_id,
             OR: [
-                { subject_id },
-                { assignment_type: 'CLASS_INCHARGE', grade_id: subject.grade_id }
+                { subject_id }, // Direct subject assignment
+                { assignment_type: 'CLASS_TEACHER', grade_id: subject.grade_id } // Class teacher has access to all subjects in their grade
             ]
         }
     });

@@ -18,6 +18,8 @@ import { AcademicStructureService, IGrade, ISection, ISubject } from './services
 import { HierarchyDropdownComponent } from './components/hierarchy-dropdown/hierarchy-dropdown.component';
 import { forkJoin } from 'rxjs';
 import Swal from 'sweetalert2';
+import { AuthService } from '@core';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-units-list',
@@ -37,6 +39,8 @@ export class UnitsListComponent implements OnInit {
   private curriculumService = inject(CurriculumService);
   private academicService = inject(AcademicStructureService);
   private snackBar = inject(MatSnackBar);
+  private authService = inject(AuthService);
+  private router = inject(Router);
 
   breadscrums = [
     {
@@ -87,8 +91,25 @@ export class UnitsListComponent implements OnInit {
   unitColumns: string[] = ['name', 'grade', 'section', 'subject', 'actions'];
   topicColumns: string[] = ['name', 'unit', 'actions'];
   subTopicColumns: string[] = ['name', 'topic', 'actions'];
+  
+  canManageSyllabus = false;
 
   ngOnInit() {
+    const isTeacherPath = this.router.url.startsWith('/teacher/');
+    const parentPath = isTeacherPath ? 'Teacher' : 'Administration';
+    this.breadscrums = [
+      {
+        title: 'Curriculum Management',
+        items: [parentPath],
+        active: 'Curriculum',
+      },
+    ];
+
+    this.canManageSyllabus = this.authService.hasPermission('ACADEMIC', 'MANAGE_SYLLABUS') ||
+                             this.authService.hasPermission('ACADEMIC_MANAGE_SYLLABUS') ||
+                             this.authService.hasPermission('UNITS_LIST', 'MANAGE_SYLLABUS') ||
+                             this.authService.hasPermission('UNITS_LIST_MANAGE_SYLLABUS');
+
     this.initForms();
     this.loadGrades();
     this.loadAllSections();

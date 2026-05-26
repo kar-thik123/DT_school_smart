@@ -10,6 +10,7 @@ const router = (0, express_1.Router)();
 router.use(auth_middleware_1.authMiddleware);
 // --- MANAGEMENT TOPIC ANALYTICS ---
 // View performance and Validation Engine labels
+// OPTIMIZED: Bulk-loads attempts and student counts to eliminate N+1 queries
 router.get('/topic', (0, auth_middleware_1.requirePermission)('IDENTITY', 'IS_MANAGEMENT'), async (req, res) => {
     try {
         const org_id = req.user.organization_id;
@@ -38,21 +39,51 @@ router.get('/topic', (0, auth_middleware_1.requirePermission)('IDENTITY', 'IS_MA
                 }
             }
         });
+        // Filter activations by subject_id early
+        const filteredActivations = subject_id
+            ? topicActivations.filter((a) => a.topic.unit.subject_id === subject_id)
+            : topicActivations;
+        // Collect unique topic IDs and section IDs for bulk queries
+        const topicIds = [...new Set(filteredActivations.map((a) => a.topic_id))];
+        const sectionIds = [...new Set(filteredActivations.map((a) => a.subjectGroup?.section_id).filter(Boolean))];
+        // BULK LOAD: All practice attempts for relevant topics in one query
+        const allAttempts = topicIds.length > 0 ? await prisma_1.default.practiceAttempt.findMany({
+            where: {
+                organization_id: org_id,
+                topic_id: { in: topicIds }
+            },
+            include: {
+                student: { select: { section_id: true } }
+            }
+        }) : [];
+        // Group attempts by composite key: topic_id + section_id
+        const attemptsByKey = new Map();
+        for (const attempt of allAttempts) {
+            const key = `${attempt.topic_id}_${attempt.student?.section_id || 'null'}`;
+            if (!attemptsByKey.has(key))
+                attemptsByKey.set(key, []);
+            attemptsByKey.get(key).push(attempt);
+        }
+        // BULK LOAD: Student counts per section in one query
+        const studentCountsBySection = new Map();
+        if (sectionIds.length > 0) {
+            const sectionCounts = await prisma_1.default.user.groupBy({
+                by: ['section_id'],
+                where: { organization_id: org_id, is_active: true, section_id: { in: sectionIds } },
+                _count: { id: true }
+            });
+            for (const sc of sectionCounts) {
+                if (sc.section_id)
+                    studentCountsBySection.set(sc.section_id, sc._count.id);
+            }
+        }
+        // Process results using pre-loaded data (no more DB calls in loop)
         const results = [];
-        for (const activation of topicActivations) {
-            if (subject_id && activation.topic.unit.subject_id !== subject_id)
-                continue;
+        for (const activation of filteredActivations) {
             const sectionId = activation.subjectGroup?.section_id;
-            const attempts = await prisma_1.default.practiceAttempt.findMany({
-                where: {
-                    topic_id: activation.topic_id,
-                    organization_id: org_id,
-                    student: { section_id: sectionId }
-                }
-            });
-            const totalStudents = await prisma_1.default.user.count({
-                where: { section_id: sectionId, organization_id: org_id, is_active: true }
-            });
+            const key = `${activation.topic_id}_${sectionId || 'null'}`;
+            const attempts = attemptsByKey.get(key) || [];
+            const totalStudents = sectionId ? (studentCountsBySection.get(sectionId) || 0) : 0;
             const uniqueStudentsAttempted = new Set(attempts.map((a) => a.student_id)).size;
             let avgAccuracy = 0;
             let passCount = 0;
@@ -159,16 +190,10 @@ router.get('/teacher', (0, auth_middleware_1.requirePermission)('IDENTITY', 'IS_
 });
 // --- MANAGEMENT CONSOLIDATED OVERVIEW ---
 // Used for the management dashboard to see teachers, risk students, and general health
+// OPTIMIZED: Bulk-loads all attempts once, computes teacher + student analytics in memory
 router.get('/management/overview', (0, auth_middleware_1.requirePermission)('IDENTITY', 'IS_MANAGEMENT'), async (req, res) => {
     try {
         const org_id = req.user.organization_id;
-        // 1. Overview Stats (Topics and Performance)
-        const topicActivations = await prisma_1.default.topicActivation.findMany({
-            where: { organization_id: org_id },
-            include: {
-                topic: { select: { name: true } }
-            }
-        });
         // 1. Overview Stats
         const roles = await prisma_1.default.role.findMany({
             where: {
@@ -188,16 +213,31 @@ router.get('/management/overview', (0, auth_middleware_1.requirePermission)('IDE
                 risk_students: []
             });
         }
-        const attempts = await prisma_1.default.practiceAttempt.findMany({
+        // BULK LOAD: All practice attempts for this org in one query
+        const allAttempts = await prisma_1.default.practiceAttempt.findMany({
             where: { organization_id: org_id }
         });
+        // Overall preparedness
         let totalPoints = 0;
-        attempts.forEach((a) => totalPoints += (a.correct_answers / Math.max(a.total_questions, 1)) * 100);
-        const avgPreparedness = attempts.length > 0 ? Math.round(totalPoints / attempts.length) : 0;
+        allAttempts.forEach((a) => totalPoints += (a.correct_answers / Math.max(a.total_questions, 1)) * 100);
+        const avgPreparedness = allAttempts.length > 0 ? Math.round(totalPoints / allAttempts.length) : 0;
         const totalStudents = await prisma_1.default.user.count({
             where: { organization_id: org_id, role_id: studentRole?.id, is_active: true }
         });
-        // 2. Teacher Performance
+        // Pre-index attempts by subject_id and student_id for O(1) lookups
+        const attemptsBySubject = new Map();
+        const attemptsByStudent = new Map();
+        for (const attempt of allAttempts) {
+            // By subject
+            if (!attemptsBySubject.has(attempt.subject_id))
+                attemptsBySubject.set(attempt.subject_id, []);
+            attemptsBySubject.get(attempt.subject_id).push(attempt);
+            // By student
+            if (!attemptsByStudent.has(attempt.student_id))
+                attemptsByStudent.set(attempt.student_id, []);
+            attemptsByStudent.get(attempt.student_id).push(attempt);
+        }
+        // 2. Teacher Performance (no more per-teacher DB queries)
         const teachers = await prisma_1.default.user.findMany({
             where: { organization_id: org_id, role_id: teacherRole?.id, is_active: true },
             include: {
@@ -211,9 +251,13 @@ router.get('/management/overview', (0, auth_middleware_1.requirePermission)('IDE
         const teacherPerformance = [];
         for (const t of teachers) {
             const subjectIds = (t.teacher_assignments || []).map((a) => a.subject_id).filter(Boolean);
-            const tAttempts = subjectIds.length > 0
-                ? await prisma_1.default.practiceAttempt.findMany({ where: { organization_id: org_id, subject_id: { in: subjectIds } } })
-                : [];
+            // Gather attempts from pre-indexed map instead of querying DB
+            const tAttempts = [];
+            for (const sid of subjectIds) {
+                const subAttempts = attemptsBySubject.get(sid);
+                if (subAttempts)
+                    tAttempts.push(...subAttempts);
+            }
             let tPct = 0;
             tAttempts.forEach((a) => tPct += (a.correct_answers / Math.max(a.total_questions, 1)) * 100);
             const tAvg = tAttempts.length > 0 ? Math.round(tPct / tAttempts.length) : 0;
@@ -224,16 +268,14 @@ router.get('/management/overview', (0, auth_middleware_1.requirePermission)('IDE
                 status: tAvg >= 70 ? 'GOOD' : (tAvg >= 40 ? 'AVERAGE' : 'POOR')
             });
         }
-        // 3. High Risk Students
+        // 3. High Risk Students (no more per-student DB queries)
         const allStudents = await prisma_1.default.user.findMany({
             where: { organization_id: org_id, role_id: studentRole?.id, is_active: true },
             include: { section: { select: { name: true } } }
         });
         const riskStudents = [];
         for (const s of allStudents) {
-            const sAttempts = await prisma_1.default.practiceAttempt.findMany({
-                where: { student_id: s.id }
-            });
+            const sAttempts = attemptsByStudent.get(s.id) || [];
             if (sAttempts.length === 0)
                 continue;
             let sPct = 0;
@@ -250,7 +292,7 @@ router.get('/management/overview', (0, auth_middleware_1.requirePermission)('IDE
         res.json({
             avg_preparedness: avgPreparedness,
             total_students: totalStudents,
-            active_modules: attempts.length,
+            active_modules: allAttempts.length,
             critical_alerts: 0,
             teacher_performance: teacherPerformance.sort((a, b) => b.performance - a.performance),
             risk_students: riskStudents.sort((a, b) => a.score - b.score).slice(0, 10)
