@@ -21,6 +21,7 @@ import { MatMenuModule, MatMenuTrigger, MatMenu } from '@angular/material/menu';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { MatDividerModule } from '@angular/material/divider';
 import { OverlayContainer } from '@angular/cdk/overlay';
+import { AcademicContextSelectorComponent, IAcademicContextSelection } from '@shared/components/academic-context-selector/academic-context-selector.component';
 
 @Component({
   selector: 'app-simple-test-dialog',
@@ -51,7 +52,8 @@ import { WithdrawStudentDialogComponent } from './dialogs/withdraw-student-dialo
     MatMenuModule,
     MatDialogModule,
     MatDividerModule,
-    BreadcrumbComponent
+    BreadcrumbComponent,
+    AcademicContextSelectorComponent
   ],
   templateUrl: './student-mapping.component.html',
   styleUrls: ['./student-mapping.component.scss']
@@ -78,20 +80,23 @@ export class StudentMappingComponent implements OnInit {
   sections: ISection[] = [];
   subjectGroups: any[] = [];
 
+  // Global Context State
+  globalGradeId: string | null = null;
+  globalSectionId: string | null = null;
+  globalGroupId: string | null = null;
+  globalGradeName: string = '';
+  globalSectionName: string = '';
+  globalGroupName: string = '';
+  
   // Tab 1: Single/List
   enrollments: any[] = [];
   _groupedEnrollments: any[] = [];
-  selectedGradeId: string | null = null;
-  selectedSectionId: string | null = null;
   isLoading = false;
 
   // Tab 2: Bulk
   unenrolledStudents: any[] = [];
   selectedBulkStudentIds: string[] = [];
   bulkSearchQuery: string = '';
-  bulkGradeId: string | null = null;
-  bulkSectionId: string | null = null;
-  bulkGroupId: string | null = null;
   isBulkSaving = false;
 
   ngOnInit() {
@@ -120,8 +125,8 @@ export class StudentMappingComponent implements OnInit {
     if (!this.activeAcademicYear) return;
     this.isLoading = true;
     const params: any = { academic_year_id: this.activeAcademicYear.id };
-    if (this.selectedGradeId) params.grade_id = this.selectedGradeId;
-    if (this.selectedSectionId) params.section_id = this.selectedSectionId;
+    if (this.globalGradeId) params.grade_id = this.globalGradeId;
+    if (this.globalSectionId) params.section_id = this.globalSectionId;
 
     this.enrollmentService.getEnrollments(params).subscribe({
       next: (data) => {
@@ -179,28 +184,30 @@ export class StudentMappingComponent implements OnInit {
     this.loadUnenrolledStudents();
   }
 
-  onFilterChange() {
-    this.loadEnrollments();
-  }
+  onGlobalAcademicContextChange(context: IAcademicContextSelection) {
+    this.globalGradeId = context.grade?.id || null;
+    this.globalGradeName = context.grade?.name || '';
+    
+    if (context.section && context.section !== 'ALL') {
+      this.globalSectionId = context.section.id;
+      this.globalSectionName = context.section.name;
+    } else {
+      this.globalSectionId = null;
+      this.globalSectionName = '';
+    }
+    
+    this.globalGroupId = context.subjectGroup?.id || null;
+    this.globalGroupName = context.subjectGroup?.name || '';
 
-  onBulkGradeChange() {
-    this.bulkSectionId = null;
-    this.bulkGroupId = null;
-    this.subjectGroups = [];
-  }
-
-  onBulkSectionChange() {
-    this.bulkGroupId = null;
-    if (this.bulkGradeId && this.bulkSectionId) {
-      this.academicService.getSubjectGroups(this.bulkGradeId, this.bulkSectionId).subscribe(groups => {
+    if (this.globalGradeId && this.globalSectionId) {
+      this.academicService.getSubjectGroups(this.globalGradeId, this.globalSectionId).subscribe(groups => {
         this.subjectGroups = groups;
-        if (groups.length === 1) {
-          this.bulkGroupId = groups[0].id;
-        }
       });
     } else {
       this.subjectGroups = [];
     }
+
+    this.loadEnrollments();
   }
 
   onBulkStudentSelect(event: any, studentId: string) {
@@ -220,14 +227,14 @@ export class StudentMappingComponent implements OnInit {
   }
 
   bulkEnroll() {
-    if (!this.activeAcademicYear || !this.bulkGradeId || this.selectedBulkStudentIds.length === 0) return;
+    if (!this.activeAcademicYear || !this.globalGradeId || this.selectedBulkStudentIds.length === 0) return;
     
     this.isBulkSaving = true;
     const payload = {
       academic_year_id: this.activeAcademicYear.id,
-      grade_id: this.bulkGradeId,
-      section_id: this.bulkSectionId,
-      subject_group_id: this.bulkGroupId,
+      grade_id: this.globalGradeId,
+      section_id: this.globalSectionId,
+      subject_group_id: this.globalGroupId,
       student_ids: this.selectedBulkStudentIds
     };
 
@@ -246,10 +253,7 @@ export class StudentMappingComponent implements OnInit {
     });
   }
 
-  getFilteredSections(gradeId: string | null): ISection[] {
-    if (!gradeId) return [];
-    return this.sections.filter(s => s.grade_id === gradeId);
-  }
+  // Removed getFilteredSections as handled by shared component
 
   // Get grouped enrollments
   get groupedEnrollments() {

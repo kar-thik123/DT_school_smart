@@ -19,7 +19,7 @@ import { Router } from '@angular/router';
 import { QuestionBankService, IQuestion } from './services/question-bank.service';
 import { AcademicStructureService, IGrade, ISection, ISubject } from '../units-list/services/units.service';
 import { CurriculumService, ICurriculumUnit, ICurriculumTopic, ICurriculumSubTopic } from '../units-list/services/curriculum.service';
-import { QuestionBankDropdownComponent } from './questionBank-dropdown/questionBank-dropdown.component';
+import { AcademicContextSelectorComponent, IAcademicContextSelection } from '@shared/components/academic-context-selector/academic-context-selector.component';
 import { QuestionBankPreviewComponent } from './question-bank-preview/question-bank-preview.component';
 import Swal from 'sweetalert2';
 import { AuthService } from '@core';
@@ -32,7 +32,7 @@ import { AuthService } from '@core';
     MatIconModule, MatButtonModule, MatCardModule,
     MatMenuModule, MatFormFieldModule, MatInputModule,
     MatSelectModule, MatSnackBarModule, MatProgressBarModule, MatTabsModule, MatCheckboxModule,
-    QuestionBankDropdownComponent, QuestionBankPreviewComponent
+    AcademicContextSelectorComponent, QuestionBankPreviewComponent
   ],
   templateUrl: './question-bank.component.html',
   styleUrls: ['./question-bank.component.scss']
@@ -357,14 +357,8 @@ export class QuestionBankComponent implements OnInit {
     });
   }
 
-  selectGradeSectionSubjectForQuestion(
-    grade: IGrade,
-    section: ISection | 'ALL' | null,
-    subject: any | null,
-    unit?: any,
-    topic?: any,
-    subTopic?: any
-  ) {
+  selectGradeSectionSubjectForQuestion(selection: IAcademicContextSelection) {
+    const { grade, section, subject, unit, topic, subTopic } = selection;
     this.selectedGradeId = grade?.id || null;
     this.selectedGradeName = grade?.name || '';
     this.selectedSectionId = section === 'ALL' ? 'ALL' : section?.id || null;

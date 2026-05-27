@@ -3,15 +3,25 @@ import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { trigger, state, style, transition, animate } from '@angular/animations';
 
-import { AcademicStructureService, IGrade, ISection, ISubject, ISubjectGroup, ISubjectGroupSubject } from '../../units-list/services/units.service';
-import { CurriculumService, ICurriculumUnit, ICurriculumTopic, ICurriculumSubTopic } from '../../units-list/services/curriculum.service';
+import { AcademicStructureService, IGrade, ISection, ISubject, ISubjectGroup, ISubjectGroupSubject } from '../../../admin/administration/units-list/services/units.service';
+import { CurriculumService, ICurriculumUnit, ICurriculumTopic, ICurriculumSubTopic } from '../../../admin/administration/units-list/services/curriculum.service';
+
+export interface IAcademicContextSelection {
+  grade?: IGrade | null;
+  section?: ISection | 'ALL' | null;
+  subject?: ISubject | ISubjectGroupSubject | null;
+  subjectGroup?: ISubjectGroup | null;
+  unit?: ICurriculumUnit | null;
+  topic?: ICurriculumTopic | null;
+  subTopic?: ICurriculumSubTopic | null;
+}
 
 @Component({
-  selector: 'app-questionbank-dropdown',
+  selector: 'app-academic-context-selector',
   standalone: true,
   imports: [CommonModule, MatIconModule],
-  templateUrl: './questionBank-dropdown.component.html',
-  styleUrls: ['./questionBank-dropdown.component.scss'],
+  templateUrl: './academic-context-selector.component.html',
+  styleUrls: ['./academic-context-selector.component.scss'],
   animations: [
     trigger('dropdownAnimation', [
       transition(':enter', [
@@ -34,7 +44,7 @@ import { CurriculumService, ICurriculumUnit, ICurriculumTopic, ICurriculumSubTop
     ])
   ]
 })
-export class QuestionBankDropdownComponent implements OnInit {
+export class AcademicContextSelectorComponent implements OnInit {
   @Input() grades: IGrade[] = [];
   @Input() allSections: ISection[] = [];
   @Input() selectedGradeId: string | null = null;
@@ -50,16 +60,15 @@ export class QuestionBankDropdownComponent implements OnInit {
   @Input() selectedSubTopicId: string | null = null;
   @Input() selectedSubTopicName: string = '';
   @Input() labelName: string = 'Curriculum';
-  @Input() showUnitsAndBelow: boolean = true;
+  
+  // New Configurability
+  @Input() showSubjects = true;
+  @Input() showGroups = false;
+  @Input() showUnits = false;
+  @Input() showTopics = false;
+  @Input() showSubTopics = false;
 
-  @Output() selectionChange = new EventEmitter<{
-    grade: IGrade,
-    section: ISection | 'ALL' | null,
-    subject: ISubject | ISubjectGroupSubject | null,
-    unit?: ICurriculumUnit | null,
-    topic?: ICurriculumTopic | null,
-    subTopic?: ICurriculumSubTopic | null
-  }>();
+  @Output() selectionChange = new EventEmitter<IAcademicContextSelection>();
 
   private academicService = inject(AcademicStructureService);
   private curriculumService = inject(CurriculumService);
@@ -85,21 +94,36 @@ export class QuestionBankDropdownComponent implements OnInit {
   }
 
   loadDropdownData() {
-    this.academicService.getSubjects().subscribe(subs => {
-      this.subjects = subs || [];
-    });
-    this.academicService.getSubjectGroups(undefined, undefined, false).subscribe(groups => {
-      this.subjectGroups = groups || [];
-    });
-    this.curriculumService.getUnits({ limit: 1000 }).subscribe(res => {
-      this.allUnits = res?.data || [];
-    });
-    this.curriculumService.getTopics({ limit: 1000 }).subscribe(res => {
-      this.allTopics = res?.data || [];
-    });
-    this.curriculumService.getSubTopics({ limit: 1000 }).subscribe(res => {
-      this.allSubTopics = res?.data || [];
-    });
+    // Lazy Loading Data conditionally based on config flags
+    if (this.showSubjects) {
+      this.academicService.getSubjects().subscribe(subs => {
+        this.subjects = subs || [];
+      });
+    }
+
+    if (this.showGroups) {
+      this.academicService.getSubjectGroups(undefined, undefined, false).subscribe(groups => {
+        this.subjectGroups = groups || [];
+      });
+    }
+
+    if (this.showUnits) {
+      this.curriculumService.getUnits({ limit: 1000 }).subscribe(res => {
+        this.allUnits = res?.data || [];
+      });
+    }
+
+    if (this.showTopics) {
+      this.curriculumService.getTopics({ limit: 1000 }).subscribe(res => {
+        this.allTopics = res?.data || [];
+      });
+    }
+
+    if (this.showSubTopics) {
+      this.curriculumService.getSubTopics({ limit: 1000 }).subscribe(res => {
+        this.allSubTopics = res?.data || [];
+      });
+    }
   }
 
   @HostListener('document:click', ['$event'])
@@ -206,13 +230,15 @@ export class QuestionBankDropdownComponent implements OnInit {
     grade: IGrade,
     section: ISection | 'ALL',
     subject: ISubject | ISubjectGroupSubject,
+    group: ISubjectGroup | null,
     event: Event
   ) {
     event.stopPropagation();
     this.selectionChange.emit({
       grade,
       section,
-      subject
+      subject,
+      subjectGroup: group || undefined
     });
     this.isHierarchyOpen = false;
   }
@@ -221,6 +247,7 @@ export class QuestionBankDropdownComponent implements OnInit {
     grade: IGrade,
     section: ISection | 'ALL' | null,
     subject: ISubject | ISubjectGroupSubject | null,
+    group: ISubjectGroup | null,
     unit: ICurriculumUnit | null,
     topic: ICurriculumTopic | null,
     subTopic: ICurriculumSubTopic | null,
@@ -231,6 +258,7 @@ export class QuestionBankDropdownComponent implements OnInit {
       grade,
       section,
       subject,
+      subjectGroup: group || undefined,
       unit: unit || undefined,
       topic: topic || undefined,
       subTopic: subTopic || undefined

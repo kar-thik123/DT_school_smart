@@ -16,6 +16,7 @@ import { AcademicYearService } from '../../academics/academic-year/academic-year
 import { AssignmentType, ITeacherAssignment, IBatchTeacherAssignmentPayload } from './models/teacher-assignment.model';
 import { AuthService, AcademicContextService } from '@core';
 import { Router } from '@angular/router';
+import { AcademicContextSelectorComponent, IAcademicContextSelection } from '@shared/components/academic-context-selector/academic-context-selector.component';
 
 @Component({
   selector: 'app-teacher-assignment',
@@ -30,7 +31,8 @@ import { Router } from '@angular/router';
     MatIconModule,
     MatButtonModule,
     MatProgressSpinnerModule,
-    BreadcrumbComponent
+    BreadcrumbComponent,
+    AcademicContextSelectorComponent
   ],
   templateUrl: './teacher-assignment.component.html',
   styleUrls: ['./teacher-assignment.component.scss']
@@ -51,11 +53,12 @@ export class TeacherAssignmentComponent implements OnInit {
   activeAcademicYear: any;
   grades: IGrade[] = [];
   sections: ISection[] = [];
-  filteredSections: ISection[] = [];
   teachers: {id: string, name: string, email: string}[] = [];
   
   selectedGradeId: string | null = null;
   selectedSectionId: string | null = null;
+  selectedGradeName: string = '';
+  selectedSectionName: string = '';
 
   currentClassTeacherId: string | null = null;
   currentClassTeacherAssignment: ITeacherAssignment | null = null;
@@ -101,13 +104,20 @@ export class TeacherAssignmentComponent implements OnInit {
   }
 
 
-  onGradeChange() {
-    this.selectedSectionId = null;
-    this.filteredSections = this.sections.filter(s => s.grade_id === this.selectedGradeId);
-    this.resetAssignments();
-  }
+  onAcademicContextChange(context: IAcademicContextSelection) {
+    const { grade, section } = context;
 
-  onSectionChange() {
+    this.selectedGradeId = grade?.id || null;
+    this.selectedGradeName = grade?.name || '';
+
+    if (section && section !== 'ALL') {
+      this.selectedSectionId = section.id;
+      this.selectedSectionName = section.name;
+    } else {
+      this.selectedSectionId = null;
+      this.selectedSectionName = '';
+    }
+
     this.resetAssignments();
     if (this.selectedGradeId && this.selectedSectionId) {
       this.loadAssignmentsForSection();

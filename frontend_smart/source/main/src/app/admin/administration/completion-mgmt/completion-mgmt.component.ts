@@ -13,7 +13,7 @@ import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.co
 import { environment } from 'environments/environment';
 import Swal from 'sweetalert2';
 import { AuthService, AcademicContextService } from '@core';
-import { QuestionBankDropdownComponent } from '../question-bank/questionBank-dropdown/questionBank-dropdown.component';
+import { AcademicContextSelectorComponent } from '@shared/components/academic-context-selector/academic-context-selector.component';
 import { Router } from '@angular/router';
 
 import { forkJoin } from 'rxjs';
@@ -35,7 +35,7 @@ import { AcademicStructureService, IGrade, ISection } from '../academic-structur
     MatIconModule,
     MatProgressBarModule,
     BreadcrumbComponent,
-    QuestionBankDropdownComponent
+    AcademicContextSelectorComponent
   ]
 })
 export class CompletionMgmtComponent implements OnInit {

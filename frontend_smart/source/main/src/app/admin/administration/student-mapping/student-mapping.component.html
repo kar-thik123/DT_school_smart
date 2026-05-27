@@ -29,30 +29,34 @@
               <h5 class="m-0">Academic Year: {{ activeAcademicYear?.name || 'Not Set' }}</h5>
             </div>
 
+            <!-- GLOBAL ACADEMIC CONTEXT SELECTOR -->
+            <div class="hierarchy-dropdown-wrapper mb-4 p-3 bg-white rounded shadow-sm border">
+              <label class="d-block text-muted small fw-bold mb-2">Global Academic Context</label>
+              <app-academic-context-selector
+                [grades]="grades"
+                [allSections]="sections"
+                [selectedGradeId]="globalGradeId"
+                [selectedSectionId]="globalSectionId"
+                [selectedGradeName]="globalGradeName"
+                [selectedSectionName]="globalSectionName"
+                [showSubjects]="false"
+                [showGroups]="true"
+                [showUnits]="false"
+                [showTopics]="false"
+                [showSubTopics]="false"
+                (selectionChange)="onGlobalAcademicContextChange($event)"
+              >
+              </app-academic-context-selector>
+              <div class="text-danger small mt-2" *ngIf="globalSectionId && subjectGroups.length > 0 && !globalGroupId">
+                Group selection is required for this section.
+              </div>
+            </div>
+
             <mat-tab-group>
               <!-- TAB 1: Enrolled Students -->
               <mat-tab label="Enrollment List">
                 <div class="p-4">
-                  <div class="row mb-3">
-                    <div class="col-md-4">
-                      <mat-form-field appearance="outline" class="w-100">
-                        <mat-label>Filter by Grade</mat-label>
-                        <mat-select [(ngModel)]="selectedGradeId" (selectionChange)="onFilterChange()">
-                          <mat-option [value]="null">All Grades</mat-option>
-                          <mat-option *ngFor="let g of grades" [value]="g.id">{{ g.name }}</mat-option>
-                        </mat-select>
-                      </mat-form-field>
-                    </div>
-                    <div class="col-md-4">
-                      <mat-form-field appearance="outline" class="w-100">
-                        <mat-label>Filter by Section</mat-label>
-                        <mat-select [(ngModel)]="selectedSectionId" (selectionChange)="onFilterChange()" [disabled]="!selectedGradeId">
-                          <mat-option [value]="null">All Sections</mat-option>
-                          <mat-option *ngFor="let s of getFilteredSections(selectedGradeId)" [value]="s.id">{{ s.name }}</mat-option>
-                        </mat-select>
-                      </mat-form-field>
-                    </div>
-                  </div>
+                  <!-- Removed duplicate embedded selector, Tab 1 now uses global context -->
 
                   <div *ngIf="isLoading" class="d-flex justify-content-center p-4">
                     <mat-spinner diameter="40"></mat-spinner>
@@ -116,30 +120,15 @@
                     <!-- Target Structure -->
                     <div class="col-md-4 border-end">
                       <h6 class="mb-3">Target Assignment</h6>
-                      <mat-form-field appearance="outline" class="w-100 mb-2">
-                        <mat-label>Target Grade *</mat-label>
-                        <mat-select [(ngModel)]="bulkGradeId" (selectionChange)="onBulkGradeChange()">
-                          <mat-option *ngFor="let g of grades" [value]="g.id">{{ g.name }}</mat-option>
-                        </mat-select>
-                      </mat-form-field>
-
-                      <mat-form-field appearance="outline" class="w-100 mb-2">
-                        <mat-label>Target Section</mat-label>
-                        <mat-select [(ngModel)]="bulkSectionId" (selectionChange)="onBulkSectionChange()" [disabled]="!bulkGradeId">
-                          <mat-option [value]="null">None</mat-option>
-                          <mat-option *ngFor="let s of getFilteredSections(bulkGradeId)" [value]="s.id">{{ s.name }}</mat-option>
-                        </mat-select>
-                      </mat-form-field>
-
-                      <mat-form-field appearance="outline" class="w-100 mb-3" *ngIf="subjectGroups.length > 1">
-                        <mat-label>Subject Group</mat-label>
-                        <mat-select [(ngModel)]="bulkGroupId">
-                          <mat-option *ngFor="let sg of subjectGroups" [value]="sg.id">{{ sg.name }}</mat-option>
-                        </mat-select>
-                      </mat-form-field>
+                      <div class="alert alert-info mb-3">
+                        <p class="mb-2">Students will be enrolled into the globally selected context:</p>
+                        <strong>Grade:</strong> {{ globalGradeName || 'Not selected' }} <br>
+                        <strong>Section:</strong> {{ globalSectionName || 'Not selected' }} <br>
+                        <span *ngIf="globalGroupId"><strong>Group:</strong> {{ globalGroupName }}</span>
+                      </div>
 
                       <button mat-raised-button color="primary" class="w-100" 
-                              [disabled]="!bulkGradeId || selectedBulkStudentIds.length === 0 || isBulkSaving || (subjectGroups.length > 0 && !bulkGroupId)" 
+                              [disabled]="!globalGradeId || selectedBulkStudentIds.length === 0 || isBulkSaving || (subjectGroups.length > 0 && !globalGroupId)" 
                               (click)="bulkEnroll()">
                         <span *ngIf="!isBulkSaving">Enroll {{ selectedBulkStudentIds.length }} Students</span>
                         <mat-spinner *ngIf="isBulkSaving" diameter="20"></mat-spinner>

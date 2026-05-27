@@ -13,15 +13,16 @@
 
       <div class="d-flex align-items-center gap-3">
         <div class="hierarchy-dropdown-wrapper">
-          <app-questionbank-dropdown [grades]="grades" [allSections]="allSections" [selectedGradeId]="selectedGradeId"
+          <app-academic-context-selector [grades]="grades" [allSections]="allSections" [selectedGradeId]="selectedGradeId"
             [selectedSectionId]="selectedSectionId" [selectedGradeName]="selectedGradeName"
             [selectedSectionName]="selectedSectionName" [selectedSubjectId]="selectedSubjectId"
             [selectedSubjectName]="selectedSubjectName" [selectedUnitId]="selectedUnitId"
             [selectedUnitName]="selectedUnitName" [selectedTopicId]="selectedTopicId"
             [selectedTopicName]="selectedTopicName" [selectedSubTopicId]="selectedSubTopicId"
             [selectedSubTopicName]="selectedSubTopicName"
-            (selectionChange)="selectGradeSectionSubjectForQuestion($event.grade, $event.section, $event.subject, $event.unit, $event.topic, $event.subTopic)">
-          </app-questionbank-dropdown>
+            [showSubjects]="true" [showUnits]="true" [showTopics]="true" [showSubTopics]="true"
+            (selectionChange)="selectGradeSectionSubjectForQuestion($event)">
+          </app-academic-context-selector>
         </div>
         <div *ngIf="canImport">
           <input type="file" #fileInput (change)="onFileImport($event)" style="display: none;"

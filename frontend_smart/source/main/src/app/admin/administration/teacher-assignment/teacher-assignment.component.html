@@ -11,30 +11,25 @@
       </div>
     </div>
 
-    <!-- Header Filters (Section Centric) -->
-    <div class="row">
+    <!-- Header Filters (Shared Context Selector) -->
+    <div class="row mb-4">
       <div class="col-12">
-        <div class="card card-box">
-          <div class="body pb-0">
-            <div class="row align-items-center">
-              <div class="col-xl-4 col-lg-4 col-md-6 col-sm-12 mb-3">
-                <mat-form-field appearance="outline" class="w-100 mb-0">
-                  <mat-label>Grade</mat-label>
-                  <mat-select [(ngModel)]="selectedGradeId" (selectionChange)="onGradeChange()">
-                    <mat-option *ngFor="let grade of grades" [value]="grade.id">{{ grade.name }}</mat-option>
-                  </mat-select>
-                </mat-form-field>
-              </div>
-              <div class="col-xl-4 col-lg-4 col-md-6 col-sm-12 mb-3">
-                <mat-form-field appearance="outline" class="w-100 mb-0">
-                  <mat-label>Section</mat-label>
-                  <mat-select [(ngModel)]="selectedSectionId" (selectionChange)="onSectionChange()" [disabled]="!selectedGradeId">
-                    <mat-option *ngFor="let sec of filteredSections" [value]="sec.id">{{ sec.name }}</mat-option>
-                  </mat-select>
-                </mat-form-field>
-              </div>
-            </div>
-          </div>
+        <div class="hierarchy-dropdown-wrapper p-3 bg-white rounded shadow-sm border">
+          <app-academic-context-selector
+            [grades]="grades"
+            [allSections]="sections"
+            [selectedGradeId]="selectedGradeId"
+            [selectedSectionId]="selectedSectionId"
+            [selectedGradeName]="selectedGradeName"
+            [selectedSectionName]="selectedSectionName"
+            [showSubjects]="false"
+            [showGroups]="false"
+            [showUnits]="false"
+            [showTopics]="false"
+            [showSubTopics]="false"
+            (selectionChange)="onAcademicContextChange($event)"
+          >
+          </app-academic-context-selector>
         </div>
       </div>
     </div>

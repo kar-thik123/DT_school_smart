@@ -22,6 +22,59 @@ async function checkSectionCapacity(sectionId: string, orgId: string, addedCount
   return { allowed: true };
 }
 
+// Helper to check if section has groups
+async function sectionHasGroups(
+  organizationId: string,
+  academicYearId: string,
+  gradeId: string,
+  sectionId: string
+): Promise<boolean> {
+  const groupCount = await prisma.subjectGroup.count({
+    where: {
+      organization_id: organizationId,
+      grade_id: gradeId,
+      section_id: sectionId
+    }
+  });
+  return groupCount > 0;
+}
+
+// Helper to validate the group assignment
+async function validateGroupAssignment(
+  organizationId: string,
+  academicYearId: string,
+  gradeId: string,
+  sectionId: string | null | undefined,
+  subjectGroupId: string | null | undefined
+): Promise<{ allowed: boolean, message?: string }> {
+  if (!sectionId) {
+    if (subjectGroupId) {
+      return { allowed: false, message: 'subject_group_id cannot be provided without a section' };
+    }
+    return { allowed: true };
+  }
+
+  const hasGroups = await sectionHasGroups(organizationId, academicYearId, gradeId, sectionId);
+
+  if (hasGroups && !subjectGroupId) {
+    return { allowed: false, message: 'subject_group_id is required for grouped sections' };
+  }
+
+  if (subjectGroupId) {
+    const group = await prisma.subjectGroup.findUnique({
+      where: { id: subjectGroupId }
+    });
+    if (!group || group.organization_id !== organizationId) {
+      return { allowed: false, message: 'Invalid subject_group_id: does not exist or belongs to another organization' };
+    }
+    if (group.section_id !== sectionId) {
+      return { allowed: false, message: 'Invalid subject_group_id: belongs to another section' };
+    }
+  }
+
+  return { allowed: true };
+}
+
 // GET enrollments
 router.get('/', requirePermission('ACADEMIC_STRUCTURE', 'READ'), async (req: any, res: Response) => {
   try {
@@ -126,6 +179,12 @@ router.post('/map', requirePermission('ACADEMIC_STRUCTURE', 'EDIT'), async (req:
       return res.status(400).json({ message: 'student_id, academic_year_id, grade_id required' });
     }
 
+    // Group requirement validation
+    const groupValidation = await validateGroupAssignment(orgId, academic_year_id, grade_id, section_id, subject_group_id);
+    if (!groupValidation.allowed) {
+      return res.status(400).json({ message: groupValidation.message });
+    }
+
     // Capacity check if section provided
     if (section_id) {
       // Find existing enrollment to see if section is changing
@@ -173,6 +232,12 @@ router.post('/bulk-enroll', requirePermission('ACADEMIC_STRUCTURE', 'EDIT'), asy
       return res.status(400).json({ message: 'Invalid payload' });
     }
 
+    // Group requirement validation
+    const groupValidation = await validateGroupAssignment(orgId, academic_year_id, grade_id, section_id, subject_group_id);
+    if (!groupValidation.allowed) {
+      return res.status(400).json({ message: groupValidation.message });
+    }
+
     if (section_id) {
       const cap = await checkSectionCapacity(section_id, orgId, student_ids.length);
       if (!cap.allowed) return res.status(400).json({ message: cap.message });
@@ -208,6 +273,14 @@ router.post('/promote', requirePermission('ACADEMIC_STRUCTURE', 'EDIT'), async (
     // promotions: [{ student_id, from_grade_id, to_grade_id, to_section_id, to_subject_group_id }]
     if (!from_academic_year_id || !to_academic_year_id || !Array.isArray(promotions)) {
       return res.status(400).json({ message: 'Invalid payload' });
+    }
+
+    // Group validation for each promotion
+    for (const promo of promotions) {
+      const groupValidation = await validateGroupAssignment(orgId, to_academic_year_id, promo.to_grade_id, promo.to_section_id, promo.to_subject_group_id);
+      if (!groupValidation.allowed) {
+        return res.status(400).json({ message: `Validation failed for student ${promo.student_id}: ${groupValidation.message}` });
+      }
     }
 
     await prisma.$transaction(async (tx: any) => {
@@ -297,6 +370,14 @@ router.put('/:id', requirePermission('ACADEMIC_STRUCTURE', 'EDIT'), async (req: 
       return res.status(404).json({ message: 'Enrollment not found' });
     }
 
+    const targetGradeId = grade_id || existing.grade_id;
+
+    // Group validation
+    const groupValidation = await validateGroupAssignment(orgId, existing.academic_year_id, targetGradeId, section_id, subject_group_id);
+    if (!groupValidation.allowed) {
+      return res.status(400).json({ message: groupValidation.message });
+    }
+
     if (section_id && section_id !== existing.section_id) {
        const cap = await checkSectionCapacity(section_id, orgId, 1);
        if (!cap.allowed) return res.status(400).json({ message: cap.message });
@@ -330,6 +411,12 @@ router.post('/:id/transfer', requirePermission('ACADEMIC_STRUCTURE', 'EDIT'), as
     const existing = await prisma.studentEnrollment.findUnique({ where: { id: req.params.id } });
     if (!existing || existing.organization_id !== orgId) {
       return res.status(404).json({ message: 'Enrollment not found' });
+    }
+
+    // Group validation
+    const groupValidation = await validateGroupAssignment(orgId, existing.academic_year_id, to_grade_id, to_section_id, to_subject_group_id);
+    if (!groupValidation.allowed) {
+      return res.status(400).json({ message: groupValidation.message });
     }
 
     if (to_section_id && to_section_id !== existing.section_id) {

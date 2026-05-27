@@ -7,36 +7,33 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { AcademicStructureService } from '../../academic-structure/services/academic-structure.service';
+import { AcademicContextSelectorComponent, IAcademicContextSelection } from '@shared/components/academic-context-selector/academic-context-selector.component';
 
 @Component({
   selector: 'app-transfer-student-dialog',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatDialogModule, MatFormFieldModule, MatSelectModule, MatInputModule, MatButtonModule],
+  imports: [CommonModule, FormsModule, MatDialogModule, MatFormFieldModule, MatSelectModule, MatInputModule, MatButtonModule, AcademicContextSelectorComponent],
   template: `
     <h2 mat-dialog-title>Transfer Student</h2>
     <mat-dialog-content>
       <p class="text-muted">Transferring records this movement in the student's academic history.</p>
       <div class="pt-3">
-        <mat-form-field appearance="outline" class="w-100 mb-3">
-          <mat-label>Transfer To Grade</mat-label>
-          <mat-select [(ngModel)]="data.payload.to_grade_id" (selectionChange)="onGradeChange()">
-            <mat-option *ngFor="let g of data.grades" [value]="g.id">{{ g.name }}</mat-option>
-          </mat-select>
-        </mat-form-field>
-        <mat-form-field appearance="outline" class="w-100 mb-3">
-          <mat-label>Transfer To Section</mat-label>
-          <mat-select [(ngModel)]="data.payload.to_section_id" (selectionChange)="onSectionChange()">
-            <mat-option [value]="null">None</mat-option>
-            <mat-option *ngFor="let s of filteredSections" [value]="s.id">{{ s.name }}</mat-option>
-          </mat-select>
-        </mat-form-field>
-        <mat-form-field appearance="outline" class="w-100 mb-3" *ngIf="subjectGroups.length > 1">
-          <mat-label>Transfer To Subject Group (Stream)</mat-label>
-          <mat-select [(ngModel)]="data.payload.to_subject_group_id">
-            <mat-option *ngFor="let sg of subjectGroups" [value]="sg.id">{{ sg.name }}</mat-option>
-          </mat-select>
-        </mat-form-field>
-        <mat-form-field appearance="outline" class="w-100">
+        <div class="hierarchy-dropdown-wrapper mb-3 border rounded p-2 bg-light">
+          <label class="d-block text-muted small fw-bold mb-2">Target Academic Context</label>
+          <app-academic-context-selector
+            [grades]="data.grades"
+            [allSections]="data.sections"
+            [selectedGradeId]="data.payload.to_grade_id"
+            [selectedSectionId]="data.payload.to_section_id"
+            [showSubjects]="false"
+            [showGroups]="true"
+            [showUnits]="false"
+            [showTopics]="false"
+            [showSubTopics]="false"
+            (selectionChange)="onContextChange($event)"
+          ></app-academic-context-selector>
+        </div>
+        <mat-form-field appearance="outline" class="w-100 mt-2">
           <mat-label>Reason for Transfer</mat-label>
           <textarea matInput [(ngModel)]="data.payload.reason" rows="2" placeholder="e.g. Changed stream to Commerce"></textarea>
         </mat-form-field>
@@ -59,22 +56,21 @@ export class TransferStudentDialogComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.onGradeChange();
-    this.onSectionChange();
+    this.checkGroups();
   }
 
-  onGradeChange() {
-    this.filteredSections = this.data.sections.filter((s: any) => s.grade_id === this.data.payload.to_grade_id);
-    this.onSectionChange();
+  onContextChange(context: IAcademicContextSelection) {
+    this.data.payload.to_grade_id = context.grade?.id || null;
+    this.data.payload.to_section_id = context.section && context.section !== 'ALL' ? context.section.id : null;
+    this.data.payload.to_subject_group_id = context.subjectGroup?.id || null;
+    
+    this.checkGroups();
   }
 
-  onSectionChange() {
+  checkGroups() {
     if (this.data.payload.to_grade_id && this.data.payload.to_section_id) {
       this.academicService.getSubjectGroups(this.data.payload.to_grade_id, this.data.payload.to_section_id).subscribe(groups => {
         this.subjectGroups = groups;
-        if (groups.length === 1 && !this.data.payload.to_subject_group_id) {
-          this.data.payload.to_subject_group_id = groups[0].id;
-        }
       });
     } else {
       this.subjectGroups = [];
