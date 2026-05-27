@@ -13,6 +13,8 @@ import { NgScrollbar } from 'ngx-scrollbar';
 import { UnsubscribeOnDestroyAdapter } from '@shared';
 import { SidebarService } from './sidebar.service';
 import { NgxPermissionsModule } from 'ngx-permissions';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-sidebar',
@@ -29,14 +31,14 @@ import { NgxPermissionsModule } from 'ngx-permissions';
 })
 export class SidebarComponent
   extends UnsubscribeOnDestroyAdapter
-  implements OnInit
-{
+  implements OnInit {
   private document = inject<Document>(DOCUMENT);
   private renderer = inject(Renderer2);
   elementRef = inject(ElementRef);
   private authService = inject(AuthService);
   private router = inject(Router);
   private sidebarService = inject(SidebarService);
+  private http = inject(HttpClient);
 
   public sidebarItems!: RouteInfo[];
   public innerHeight?: number;
@@ -86,6 +88,8 @@ export class SidebarComponent
       this.userFullName = this.authService.currentUserValue.name;
       this.userImg =
         './assets/images/user/' + this.authService.currentUserValue.avatar;
+
+      this.fetchProfileImage();
 
       this.subs.sink = this.sidebarService
         .getRouteInfo()
@@ -156,5 +160,24 @@ export class SidebarComponent
 
   capitalizeString(str: string) {
     return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+  }
+
+  fetchProfileImage(): void {
+    const currentUser = this.authService.currentUserValue;
+
+    if(currentUser?.id) {
+      this.http.get<any>(`${environment.apiUrl}/users/profile/${currentUser.id}`)
+        .subscribe({
+          next: (data) => {
+            if (data.profile_image) {
+              const baseUrl = environment.apiUrl.replace('/api', '');
+              this.userImg = `${baseUrl}${data.profile_image.startsWith('/') ? '' : '/'}${data.profile_image}`;
+            }
+          },
+          error: (err) => {
+            console.error('Failed to fetch profile image:', err);
+          }
+        });
+    }
   }
 }
