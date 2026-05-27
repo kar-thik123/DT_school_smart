@@ -1,1 +1,181 @@
-<p>mcq works!</p>
+<section class="content">
+  <div class="content-block">
+    <div class="d-flex justify-content-between align-items-center">
+      <div class="block-header">
+        <!-- breadcrumb -->
+        <app-breadcrumb [title]="'MCQ Practice'" [items]="['Academics']"
+          [active_item]="'MCQ Practice'"></app-breadcrumb>
+      </div>
+      <div class="d-flex align-items-center gap-3">
+        <div class="hierarchy-dropdown-wrapper">
+          <app-mcq-dropdown [grades]="grades" [allSections]="allSections" [selectedGradeId]="selectedGradeId"
+            [selectedSectionId]="selectedSectionId" [selectedGradeName]="selectedGradeName"
+            [selectedSectionName]="selectedSectionName" [selectedSubjectId]="selectedSubjectId"
+            [selectedSubjectName]="selectedSubjectName" [selectedUnitId]="selectedUnitId"
+            [selectedUnitName]="selectedUnitName" [selectedTopicId]="selectedTopicId"
+            [selectedTopicName]="selectedTopicName" [selectedSubTopicId]="selectedSubTopicId"
+            [selectedSubTopicName]="selectedSubTopicName"
+            (selectionChange)="selectGradeSectionSubjectForQuestion($event.grade, $event.section, $event.subject, $event.unit, $event.topic, $event.subTopic)">
+          </app-mcq-dropdown>
+        </div>
+      </div>
+    </div>
+    <!-- Questions Display -->
+    <div class="row mt-4" *ngIf="selectedSubjectId">
+      <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12">
+        <mat-card style="background-color: transparent; box-shadow: none;">
+          <!-- <div class="header">
+            <h2>Practice Questions</h2>
+          </div> -->
+          <div class="body">
+            <div *ngIf="loadingQuestions">
+              <p>Loading questions...</p>
+            </div>
+            <div *ngIf="!loadingQuestions && questions.length === 0">
+              <p>No questions found for the selected curriculum.</p>
+            </div>
+
+            <div *ngIf="!loadingQuestions && questions.length > 0">
+
+              <!-- Pre-start view -->
+              <div *ngIf="!quizStarted && !showResults" class="text-center p-5 question-card-modern">
+                <mat-icon style="font-size: 48px; width: 48px; height: 48px; color: #495057;"
+                  class="mb-3">quiz</mat-icon>
+                <h3 class="mb-2" style="color: #495057;">Ready to practice?</h3>
+                <p class="text-muted mb-4">There are {{ questions.length }} questions in this curriculum set.</p>
+                <div class="mb-4" *ngIf="attemptsCount > 0">
+                  <span class="q-badge-grey">Previous Attempts: {{ attemptsCount }}</span>
+                </div>
+                <button mat-raised-button color="primary" (click)="startQuiz()">Start Quiz</button>
+              </div>
+
+              <!-- Quiz in progress view -->
+              <div class="question-list" *ngIf="quizStarted && !showResults">
+                <div class="d-flex justify-content-between align-items-center mb-3 px-1">
+                  <h4 class="m-0 text-dark">Practice in Progress</h4>
+                  <div class="fw-bold text-primary d-flex align-items-center" style="font-size: 16px;">
+                    <mat-icon class="me-2">timer</mat-icon> {{ formattedTime }}
+                  </div>
+                </div>
+
+                <div *ngFor="let q of questions; let i = index" class="question-card-modern p-3 mb-3">
+                  <div class="d-flex justify-content-between">
+                    <!-- Main Content -->
+                    <div class="w-100">
+                      <div class="d-flex justify-content-between align-items-start mb-2">
+                        <!-- Question Text -->
+                        <div class="fw-semibold q-text-dark">
+                          <span style="font-size: 16px;"><strong>Q{{ i + 1 }}.</strong> {{ q.question_text }}</span>
+                        </div>
+
+                        <!-- Bottom Meta Row -->
+                        <div class="d-flex flex-wrap align-items-center text-muted" style="font-size: 13px;">
+                          <span class="q-badge-grey">{{ (q.difficulty | titlecase) || 'Easy' }}</span>
+                          <span class="me-2 fw-medium text-dark">{{ q.marks || 1 }}M</span>
+                        </div>
+                      </div>
+
+                      <hr class="q-separator my-2">
+
+                      <!-- MCQ Options Display -->
+                      <div class="row g-2 mb-2 ps-2">
+                        <ng-container *ngIf="q.type === 'MCQ_SINGLE'">
+                          <mat-radio-group [(ngModel)]="studentAnswers[q.id]" [disabled]="showResults"
+                            class="row w-100 m-0">
+                            <div class="col-md-6" *ngFor="let opt of q.answer_config.options; let idx = index">
+                              <div class="d-flex align-items-center mb-1">
+                                <!-- Option Text (Radio) -->
+                                <mat-radio-button [value]="idx" [disableRipple]="true" class="q-text-option flex-grow-1"
+                                  [ngClass]="{'text-success fw-bold': showResults && q.answer_config?.correct_answer === idx,
+                                                'text-danger fw-bold': showResults && studentAnswers[q.id] === idx && q.answer_config?.correct_answer !== idx}">
+                                  {{ opt }}
+                                </mat-radio-button>
+                              </div>
+                            </div>
+                          </mat-radio-group>
+                        </ng-container>
+
+                        <ng-container *ngIf="q.type === 'MCQ_MULTI'">
+                          <div class="col-md-6" *ngFor="let opt of q.answer_config.options; let idx = index">
+                            <div class="d-flex align-items-center mb-1">
+                              <!-- Option Letter Badge -->
+                              <span class="q-badge-red flex-shrink-0"
+                                [ngClass]="{'bg-success text-white border-success': showResults && q.answer_config?.correct_answers?.includes(idx),
+                                              'bg-danger text-white border-danger': showResults && studentAnswers[q.id]?.includes(idx) && !q.answer_config?.correct_answers?.includes(idx)}">
+                                {{ getOptionLetter(idx) }}
+                              </span>
+                              <!-- Option Text (Checkbox) -->
+                              <mat-checkbox (change)="toggleMultiAnswer(q.id, idx, $event)" [disabled]="showResults"
+                                [disableRipple]="true" class="q-text-option flex-grow-1"
+                                [checked]="studentAnswers[q.id]?.includes(idx)"
+                                [ngClass]="{'text-success fw-bold': showResults && q.answer_config?.correct_answers?.includes(idx),
+                                              'text-danger fw-bold': showResults && studentAnswers[q.id]?.includes(idx) && !q.answer_config?.correct_answers?.includes(idx)}">
+                                {{ opt }}
+                              </mat-checkbox>
+                            </div>
+                          </div>
+                        </ng-container>
+                      </div>
+
+                      <!-- Explanation -->
+                      <!-- <div class="mb-2 ps-2 mt-2 p-2 bg-light rounded"
+                      *ngIf="showResults && q.answer_config?.explanation">
+                      <strong class="text-primary"><mat-icon class="align-middle me-1"
+                          style="font-size: 18px; width: 18px; height: 18px;">lightbulb</mat-icon>Explanation:</strong><br />
+                      <span class="text-muted" style="white-space: pre-wrap; font-size: 14px;">{{
+                        q.answer_config.explanation }}</span>
+                    </div> -->
+
+                      <!-- Result Message -->
+                      <!-- <div class="result-message mt-2 ps-2" *ngIf="showResults">
+                      <span class="text-success fw-bold d-flex align-items-center" *ngIf="isCorrect(q)">
+                        <mat-icon class="me-2">check_circle</mat-icon> Correct!
+                      </span>
+                      <span class="text-danger fw-bold d-flex align-items-center" *ngIf="!isCorrect(q)">
+                        <mat-icon class="me-2">cancel</mat-icon> Incorrect.
+                      </span>
+                    </div> -->
+
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mt-4 d-flex justify-content-end">
+                  <button mat-raised-button color="primary" (click)="submitPractice()" [disabled]="showResults">Submit
+                    Practice</button>
+                </div>
+              </div>
+
+              <!-- Preview / Results Component -->
+              <div *ngIf="showResults">
+                <div class="d-flex justify-content-between align-items-center mb-3 px-1">
+                  <h4 class="m-0 text-dark">Practice Results</h4>
+                  <div class="d-flex align-items-center gap-3">
+                    <div class="fw-bold text-muted d-flex align-items-center" style="font-size: 14px;">
+                      <mat-icon class="me-1" style="font-size: 20px; width: 20px; height: 20px;">replay</mat-icon>
+                      Attempt: {{ attemptsCount }}
+                    </div>
+                    <div class="fw-bold text-muted d-flex align-items-center" style="font-size: 14px;">
+                      <mat-icon class="me-1" style="font-size: 20px; width: 20px; height: 20px;">timer</mat-icon> Time
+                      Taken: {{ formattedTotalTime }}
+                    </div>
+                  </div>
+                </div>
+
+                <app-mcq-preview [questions]="questions" [studentAnswers]="studentAnswers"></app-mcq-preview>
+
+                <div class="mt-4 d-flex justify-content-end">
+                  <button mat-stroked-button color="primary" (click)="resetQuiz()">
+                    <mat-icon>refresh</mat-icon> Try Again
+                  </button>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        </mat-card>
+      </div>
+    </div>
+  </div>
+</section>

@@ -481,7 +481,7 @@ router.get('/profile/:id', async (req: any, res: Response) => {
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-    
+
     const profileData = user.user_profile ? {
       phone: user.user_profile.phone,
       city: user.user_profile.city,
@@ -495,7 +495,7 @@ router.get('/profile/:id', async (req: any, res: Response) => {
       academic_profiles: [],
       skills: []
     };
-    
+
     res.json({ ...user, ...profileData });
   } catch (error: any) {
     console.error('Error fetching profile:', error);

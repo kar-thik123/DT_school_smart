@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { TableCardComponent } from './table-card.component';
+import { McqPreviewComponent } from './mcq-preview.component';
 
-describe('TableCardComponent', () => {
-  let component: TableCardComponent;
-  let fixture: ComponentFixture<TableCardComponent>;
+describe('McqPreviewComponent', () => {
+  let component: McqPreviewComponent;
+  let fixture: ComponentFixture<McqPreviewComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [TableCardComponent]
+      imports: [McqPreviewComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(TableCardComponent);
+    fixture = TestBed.createComponent(McqPreviewComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

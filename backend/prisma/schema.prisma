@@ -35,6 +35,7 @@ model Organization {
   license                OrganizationLicense?
   organization_types     OrganizationType[]
   practice_attempts      PracticeAttempt[]
+  student_assessment_attempts StudentAssessmentAttempt[]
   promotion_history      PromotionHistory[]
   questions              Question[]
   roles                  Role[]
@@ -94,6 +95,7 @@ model User {
   mails_sent                  InternalMail[]           @relation("MailSender")
   password_resets             PasswordReset[]
   practice_attempts           PracticeAttempt[]
+  student_assessment_attempts StudentAssessmentAttempt[]
   promotions_made             PromotionHistory[]       @relation("PromotedBy")
   promotion_history           PromotionHistory[]       @relation("PromotionStudent")
   questions                   Question[]
@@ -135,17 +137,17 @@ model StudentProfile {
 }
 
 model UserProfile {
-  id              String  @id @default(uuid()) @db.Uuid
-  user_id         String  @unique @db.Uuid
-  organization_id String  @db.Uuid
-  phone           String?
-  city            String?
-  country         String?
-  address         String?
-  about           String?
-  profile_image   String?
-  academic_profiles Json? @default("[]")
-  skills          Json? @default("[]")
+  id                String  @id @default(uuid()) @db.Uuid
+  user_id           String  @unique @db.Uuid
+  organization_id   String  @db.Uuid
+  phone             String?
+  city              String?
+  country           String?
+  address           String?
+  about             String?
+  profile_image     String?
+  academic_profiles Json?   @default("[]")
+  skills            Json?   @default("[]")
 
   user         User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
   organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
@@ -329,22 +331,23 @@ model Section {
 }
 
 model Subject {
-  id                  String                @id @default(uuid()) @db.Uuid
-  name                String
-  grade_id            String                @db.Uuid
-  organization_id     String                @db.Uuid
-  sort_order          Int                   @default(0)
-  is_active           Boolean               @default(true)
-  created_at          DateTime              @default(now())
-  updated_at          DateTime              @default(now()) @updatedAt
-  practice_attempts   PracticeAttempt[]
-  questions           Question[]
-  subject_groups      SubjectGroupSubject[]
-  grade               Grade                 @relation(fields: [grade_id], references: [id], onDelete: Cascade)
-  organization        Organization          @relation(fields: [organization_id], references: [id], onDelete: Cascade)
-  syllabuses          Syllabus[]
-  teacher_assignments TeacherAssignment[]
-  units               Unit[]
+  id                   String                @id @default(uuid()) @db.Uuid
+  name                 String
+  grade_id             String                @db.Uuid
+  organization_id      String                @db.Uuid
+  sort_order           Int                   @default(0)
+  is_active            Boolean               @default(true)
+  created_at           DateTime              @default(now())
+  updated_at           DateTime              @default(now()) @updatedAt
+  practice_attempts    PracticeAttempt[]
+  student_assessment_attempts StudentAssessmentAttempt[]
+  questions            Question[]
+  subject_groups       SubjectGroupSubject[]
+  grade                Grade                 @relation(fields: [grade_id], references: [id], onDelete: Cascade)
+  organization         Organization          @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  syllabuses           Syllabus[]
+  teacher_assignments  TeacherAssignment[]
+  units                Unit[]
   completion_trackings CompletionTracking[]
 
   @@unique([name, grade_id, organization_id])
@@ -374,23 +377,23 @@ model Syllabus {
 }
 
 model Unit {
-  id              String       @id @default(uuid()) @db.Uuid
-  name            String
-  grade_id        String?      @db.Uuid
-  section_id      String?      @db.Uuid
-  subject_id      String?      @db.Uuid
-  syllabus_id     String?      @db.Uuid
-  organization_id String       @db.Uuid
-  order_index     Int          @default(0)
-  created_at      DateTime     @default(now())
-  updated_at      DateTime     @default(now()) @updatedAt
-  questions       Question[]
-  topics          Topic[]
-  organization    Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
-  grade           Grade?       @relation(fields: [grade_id], references: [id], onDelete: Cascade)
-  section         Section?     @relation(fields: [section_id], references: [id], onDelete: Cascade)
-  subject         Subject?     @relation(fields: [subject_id], references: [id], onDelete: Cascade)
-  syllabus        Syllabus?    @relation(fields: [syllabus_id], references: [id], onDelete: Cascade)
+  id                   String               @id @default(uuid()) @db.Uuid
+  name                 String
+  grade_id             String?              @db.Uuid
+  section_id           String?              @db.Uuid
+  subject_id           String?              @db.Uuid
+  syllabus_id          String?              @db.Uuid
+  organization_id      String               @db.Uuid
+  order_index          Int                  @default(0)
+  created_at           DateTime             @default(now())
+  updated_at           DateTime             @default(now()) @updatedAt
+  questions            Question[]
+  topics               Topic[]
+  organization         Organization         @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  grade                Grade?               @relation(fields: [grade_id], references: [id], onDelete: Cascade)
+  section              Section?             @relation(fields: [section_id], references: [id], onDelete: Cascade)
+  subject              Subject?             @relation(fields: [subject_id], references: [id], onDelete: Cascade)
+  syllabus             Syllabus?            @relation(fields: [syllabus_id], references: [id], onDelete: Cascade)
   completion_trackings CompletionTracking[]
 
   @@index([organization_id])
@@ -402,19 +405,19 @@ model Unit {
 }
 
 model Topic {
-  id                String            @id @default(uuid()) @db.Uuid
-  name              String
-  unit_id           String            @db.Uuid
-  organization_id   String            @db.Uuid
-  order_index       Int               @default(0)
-  created_at        DateTime          @default(now())
-  updated_at        DateTime          @default(now()) @updatedAt
-  practice_attempts PracticeAttempt[]
-  questions         Question[]
-  topic_activations TopicActivation[]
-  organization      Organization      @relation(fields: [organization_id], references: [id], onDelete: Cascade)
-  unit              Unit              @relation(fields: [unit_id], references: [id], onDelete: Cascade)
-  sub_topics        SubTopic[]
+  id                   String               @id @default(uuid()) @db.Uuid
+  name                 String
+  unit_id              String               @db.Uuid
+  organization_id      String               @db.Uuid
+  order_index          Int                  @default(0)
+  created_at           DateTime             @default(now())
+  updated_at           DateTime             @default(now()) @updatedAt
+  practice_attempts    PracticeAttempt[]
+  questions            Question[]
+  topic_activations    TopicActivation[]
+  organization         Organization         @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  unit                 Unit                 @relation(fields: [unit_id], references: [id], onDelete: Cascade)
+  sub_topics           SubTopic[]
   completion_trackings CompletionTracking[]
 
   @@index([organization_id])
@@ -423,16 +426,16 @@ model Topic {
 }
 
 model SubTopic {
-  id              String       @id @default(uuid()) @db.Uuid
-  name            String
-  topic_id        String       @db.Uuid
-  organization_id String       @db.Uuid
-  order_index     Int          @default(0)
-  created_at      DateTime     @default(now())
-  updated_at      DateTime     @default(now()) @updatedAt
-  organization    Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
-  topic           Topic        @relation(fields: [topic_id], references: [id], onDelete: Cascade)
-  questions       Question[]
+  id                   String               @id @default(uuid()) @db.Uuid
+  name                 String
+  topic_id             String               @db.Uuid
+  organization_id      String               @db.Uuid
+  order_index          Int                  @default(0)
+  created_at           DateTime             @default(now())
+  updated_at           DateTime             @default(now()) @updatedAt
+  organization         Organization         @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  topic                Topic                @relation(fields: [topic_id], references: [id], onDelete: Cascade)
+  questions            Question[]
   completion_trackings CompletionTracking[]
 
   @@index([organization_id])
@@ -541,6 +544,32 @@ model PracticeAttempt {
   @@index([subject_id])
   @@index([topic_id])
   @@map("practice_attempts")
+}
+
+model StudentAssessmentAttempt {
+  id              String   @id @default(uuid()) @db.Uuid
+  organization_id String   @db.Uuid
+  student_id      String   @db.Uuid
+  subject_id      String   @db.Uuid
+  unit_id         String?  @db.Uuid
+  topic_id        String?  @db.Uuid
+  sub_topic_id    String?  @db.Uuid
+  attempt_count   Int      @default(1)
+  start_time      DateTime
+  end_time        DateTime
+  total_questions Int
+  correct_answers Int
+  created_at      DateTime @default(now())
+  updated_at      DateTime @default(now()) @updatedAt
+
+  organization    Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  student         User         @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  subject         Subject      @relation(fields: [subject_id], references: [id], onDelete: Cascade)
+
+  @@index([organization_id])
+  @@index([student_id])
+  @@index([subject_id])
+  @@map("student_assessment_attempts")
 }
 
 model PracticeAnswer {
@@ -822,7 +851,7 @@ model Notification {
   @@map("notifications")
 }
 
-model PreviewQuestion {
+model PreviewImportData {
   id              String   @id @default(uuid()) @db.Uuid
   session_id      String
   organization_id String   @db.Uuid
@@ -837,50 +866,50 @@ model PreviewQuestion {
   @@index([session_id])
   @@index([organization_id])
   @@index([created_by])
-  @@map("preview_questions")
+  @@map("preview_import_data")
 }
 
 model ModuleConfig {
-  id              String       @id @default(uuid()) @db.Uuid
-  organization_id String       @db.Uuid
+  id              String   @id @default(uuid()) @db.Uuid
+  organization_id String   @db.Uuid
   module_name     String
-  config_data     Json         @default("{}")
-  created_at      DateTime     @default(now())
-  updated_at      DateTime     @updatedAt
+  config_data     Json     @default("{}")
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
 
-  organization    Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
 
   @@unique([organization_id, module_name])
   @@map("module_configs")
 }
 
 model CompletionTracking {
-  id                   String       @id @default(uuid()) @db.Uuid
-  organization_id      String       @db.Uuid
-  academic_year_id     String       @db.Uuid
-  grade_id             String       @db.Uuid
-  section_id           String?      @db.Uuid
-  subject_id           String       @db.Uuid
-  unit_id              String?      @db.Uuid
-  topic_id             String?      @db.Uuid
-  sub_topic_id         String?      @db.Uuid
+  id                   String          @id @default(uuid()) @db.Uuid
+  organization_id      String          @db.Uuid
+  academic_year_id     String          @db.Uuid
+  grade_id             String          @db.Uuid
+  section_id           String?         @db.Uuid
+  subject_id           String          @db.Uuid
+  unit_id              String?         @db.Uuid
+  topic_id             String?         @db.Uuid
+  sub_topic_id         String?         @db.Uuid
   completion_level     CompletionLevel
-  is_completed         Boolean      @default(false)
-  completed_by         String?      @db.Uuid
+  is_completed         Boolean         @default(false)
+  completed_by         String?         @db.Uuid
   completed_at         DateTime?
-  notification_sent    Boolean      @default(false)
+  notification_sent    Boolean         @default(false)
   notification_sent_at DateTime?
-  created_at           DateTime     @default(now())
-  updated_at           DateTime     @updatedAt
+  created_at           DateTime        @default(now())
+  updated_at           DateTime        @updatedAt
 
-  organization         Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
-  academic_year        AcademicYear @relation(fields: [academic_year_id], references: [id], onDelete: Cascade)
-  grade                Grade        @relation(fields: [grade_id], references: [id], onDelete: Cascade)
-  section              Section?     @relation(fields: [section_id], references: [id], onDelete: Cascade)
-  subject              Subject      @relation(fields: [subject_id], references: [id], onDelete: Cascade)
-  unit                 Unit?        @relation(fields: [unit_id], references: [id], onDelete: Cascade)
-  topic                Topic?       @relation(fields: [topic_id], references: [id], onDelete: Cascade)
-  sub_topic            SubTopic?    @relation(fields: [sub_topic_id], references: [id], onDelete: Cascade)
+  organization  Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  academic_year AcademicYear @relation(fields: [academic_year_id], references: [id], onDelete: Cascade)
+  grade         Grade        @relation(fields: [grade_id], references: [id], onDelete: Cascade)
+  section       Section?     @relation(fields: [section_id], references: [id], onDelete: Cascade)
+  subject       Subject      @relation(fields: [subject_id], references: [id], onDelete: Cascade)
+  unit          Unit?        @relation(fields: [unit_id], references: [id], onDelete: Cascade)
+  topic         Topic?       @relation(fields: [topic_id], references: [id], onDelete: Cascade)
+  sub_topic     SubTopic?    @relation(fields: [sub_topic_id], references: [id], onDelete: Cascade)
 
   @@index([organization_id, academic_year_id, grade_id, subject_id])
   @@index([unit_id])
@@ -901,13 +930,13 @@ model AuditLog {
   organization_id String   @db.Uuid
   user_id         String   @db.Uuid
   user_name       String?
-  action_type     String   // CREATE, UPDATE, DELETE, TOGGLE, IMPORT, ASSIGN
-  entity_type     String   // QUESTION, COMPLETION, TEACHER_ASSIGNMENT, SYLLABUS, ROLE_PERMISSION
+  action_type     String // CREATE, UPDATE, DELETE, TOGGLE, IMPORT, ASSIGN
+  entity_type     String // QUESTION, COMPLETION, TEACHER_ASSIGNMENT, SYLLABUS, ROLE_PERMISSION
   entity_id       String
   timestamp       DateTime @default(now())
   metadata        Json?
 
-  organization    Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
 
   @@index([organization_id])
   @@index([user_id])
