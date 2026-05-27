@@ -52,6 +52,7 @@ model Organization {
   sub_topics             SubTopic[]
   units                  Unit[]
   users                  User[]
+  user_profiles          UserProfile[]
   notifications          Notification[]
   completion_trackings   CompletionTracking[]
   module_configs         ModuleConfig[]
@@ -99,6 +100,7 @@ model User {
   enrollments                 StudentEnrollment[]
   student_group_mappings      StudentGroupMapping[]
   student_profile             StudentProfile?
+  user_profile                UserProfile?
   transfer_history_as_creator StudentTransferHistory[] @relation("TransferCreator")
   transfer_history_as_student StudentTransferHistory[] @relation("TransferStudent")
   teacher_assignments         TeacherAssignment[]
@@ -130,6 +132,25 @@ model StudentProfile {
 
   @@unique([organization_id, admission_number])
   @@map("student_profiles")
+}
+
+model UserProfile {
+  id              String  @id @default(uuid()) @db.Uuid
+  user_id         String  @unique @db.Uuid
+  organization_id String  @db.Uuid
+  phone           String?
+  city            String?
+  country         String?
+  address         String?
+  about           String?
+  profile_image   String?
+  academic_profiles Json? @default("[]")
+  skills          Json? @default("[]")
+
+  user         User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+
+  @@map("user_profiles")
 }
 
 model PasswordReset {
@@ -776,25 +797,24 @@ enum SubjectType {
   ELECTIVE
 }
 
-
 enum MailStatus {
   DRAFT
   SENT
 }
 
 model Notification {
-  id              String       @id @default(uuid()) @db.Uuid
-  organization_id String       @db.Uuid
-  userId          String       @db.Uuid
+  id              String   @id @default(uuid()) @db.Uuid
+  organization_id String   @db.Uuid
+  userId          String   @db.Uuid
   type            String
   title           String
   message         String
-  isRead          Boolean      @default(false)
-  referenceId     String?      @db.Uuid
-  created_at      DateTime     @default(now())
+  isRead          Boolean  @default(false)
+  referenceId     String?  @db.Uuid
+  created_at      DateTime @default(now())
 
-  organization    Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
-  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([organization_id])
   @@index([userId])
@@ -809,8 +829,8 @@ model PreviewQuestion {
   created_by      String   @db.Uuid
   row_number      Int      @default(0)
   raw_data        Json
-  match_status    String   @default("PENDING")  // EXACT_MATCH, CLOSEST_MATCH, NEW_HIERARCHY, VALIDATION_ERROR
-  resolved_data   Json     @default("{}")        // resolved IDs, errors, suggestions
+  match_status    String   @default("PENDING") // EXACT_MATCH, CLOSEST_MATCH, NEW_HIERARCHY, VALIDATION_ERROR
+  resolved_data   Json     @default("{}") // resolved IDs, errors, suggestions
   created_at      DateTime @default(now())
   updated_at      DateTime @default(now()) @updatedAt
 

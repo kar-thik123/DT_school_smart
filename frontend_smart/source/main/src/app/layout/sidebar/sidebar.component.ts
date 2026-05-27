@@ -13,6 +13,8 @@ import { NgScrollbar } from 'ngx-scrollbar';
 import { UnsubscribeOnDestroyAdapter } from '@shared';
 import { SidebarService } from './sidebar.service';
 import { NgxPermissionsModule } from 'ngx-permissions';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-sidebar',
@@ -29,14 +31,14 @@ import { NgxPermissionsModule } from 'ngx-permissions';
 })
 export class SidebarComponent
   extends UnsubscribeOnDestroyAdapter
-  implements OnInit
-{
+  implements OnInit {
   private document = inject<Document>(DOCUMENT);
   private renderer = inject(Renderer2);
   elementRef = inject(ElementRef);
   private authService = inject(AuthService);
   private router = inject(Router);
   private sidebarService = inject(SidebarService);
+  private http = inject(HttpClient);
 
   public sidebarItems!: RouteInfo[];
   public innerHeight?: number;
@@ -87,16 +89,18 @@ export class SidebarComponent
       this.userImg =
         './assets/images/user/' + this.authService.currentUserValue.avatar;
 
+      this.fetchProfileImage();
+
       this.subs.sink = this.sidebarService
         .getRouteInfo()
         .subscribe((routes: RouteInfo[]) => {
           const userPermissions = this.authService.getPermissions();
           console.log('User Permissions', userPermissions);
           console.log('All Sidebar Menus', routes);
-          
+
           const filteredRoutes = this.filterRoutes(routes);
           console.log('Filtered Menus', filteredRoutes);
-          
+
           this.sidebarItems = this.adjustPathsForUser(filteredRoutes);
         });
 
@@ -165,6 +169,25 @@ export class SidebarComponent
     return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
   }
 
+  fetchProfileImage(): void {
+    const currentUser = this.authService.currentUserValue;
+
+    if (currentUser?.id) {
+      this.http.get<any>(`${environment.apiUrl}/users/profile/${currentUser.id}`)
+        .subscribe({
+          next: (data) => {
+            if (data.profile_image) {
+              const baseUrl = environment.apiUrl.replace('/api', '');
+              this.userImg = `${baseUrl}${data.profile_image.startsWith('/') ? '' : '/'}${data.profile_image}`;
+            }
+          },
+          error: (err) => {
+            console.error('Failed to fetch profile image:', err);
+          }
+        });
+    }
+  }
+
   adjustPathsForUser(routes: RouteInfo[]): RouteInfo[] {
     const userRole = this.authService.getRole() || '';
     const userRoleUpper = userRole.toUpperCase();
@@ -175,7 +198,7 @@ export class SidebarComponent
 
     return routes.map(item => {
       const newItem = { ...item };
-      
+
       // Rewrite routes for Teacher role context
       if (newItem.path === '/admin/administration/question-bank') {
         newItem.path = '/teacher/question-bank';
@@ -284,60 +307,60 @@ export class SidebarComponent
 
     // Map critical routes to their corresponding permissions FIRST
     if (path.includes('/question-bank')) {
-      return this.authService.hasPermission('QUESTION_BANK', 'VIEW') || 
-             this.authService.hasPermission('QUESTION_BANK_VIEW');
+      return this.authService.hasPermission('QUESTION_BANK', 'VIEW') ||
+        this.authService.hasPermission('QUESTION_BANK_VIEW');
     }
     if (path.includes('/completion') || path.includes('/completion-mgmt')) {
-      return this.authService.hasPermission('COMPLETION_TRACKING', 'VIEW') || 
-             this.authService.hasPermission('COMPLETION_TRACKING_VIEW') ||
-             this.authService.hasPermission('COMPLETION', 'VIEW') || 
-             this.authService.hasPermission('COMPLETION_VIEW');
+      return this.authService.hasPermission('COMPLETION_TRACKING', 'VIEW') ||
+        this.authService.hasPermission('COMPLETION_TRACKING_VIEW') ||
+        this.authService.hasPermission('COMPLETION', 'VIEW') ||
+        this.authService.hasPermission('COMPLETION_VIEW');
     }
     if (path.includes('/teacher-assignment')) {
-      return this.authService.hasPermission('TEACHER_ASSIGNMENT', 'VIEW') || 
-             this.authService.hasPermission('TEACHER_ASSIGNMENT_VIEW');
+      return this.authService.hasPermission('TEACHER_ASSIGNMENT', 'VIEW') ||
+        this.authService.hasPermission('TEACHER_ASSIGNMENT_VIEW');
     }
     if (path.includes('/units-list')) {
-      return this.authService.hasPermission('UNITS_LIST', 'MANAGE_SYLLABUS') || 
-             this.authService.hasPermission('ACADEMIC', 'MANAGE_SYLLABUS');
+      return this.authService.hasPermission('UNITS_LIST', 'MANAGE_SYLLABUS') ||
+        this.authService.hasPermission('ACADEMIC', 'MANAGE_SYLLABUS');
     }
     if (path.includes('/academic-structure')) {
-      return this.authService.hasPermission('ACADEMIC_STRUCTURE', 'READ') || 
-             this.authService.hasPermission('ACADEMIC_STRUCTURE_READ') ||
-             this.authService.hasPermission('ACADEMIC_STRUCTURE', 'VIEW') || 
-             this.authService.hasPermission('ACADEMIC_STRUCTURE_VIEW');
+      return this.authService.hasPermission('ACADEMIC_STRUCTURE', 'READ') ||
+        this.authService.hasPermission('ACADEMIC_STRUCTURE_READ') ||
+        this.authService.hasPermission('ACADEMIC_STRUCTURE', 'VIEW') ||
+        this.authService.hasPermission('ACADEMIC_STRUCTURE_VIEW');
     }
     if (path.includes('/users')) {
-      return this.authService.hasPermission('USERS', 'VIEW') || 
-             this.authService.hasPermission('USERS_VIEW');
+      return this.authService.hasPermission('USERS', 'VIEW') ||
+        this.authService.hasPermission('USERS_VIEW');
     }
     if (path.includes('/roles')) {
-      return this.authService.hasPermission('ROLES_AND_PERMISSIONS', 'VIEW') || 
-             this.authService.hasPermission('ROLES_AND_PERMISSIONS_VIEW');
+      return this.authService.hasPermission('ROLES_AND_PERMISSIONS', 'VIEW') ||
+        this.authService.hasPermission('ROLES_AND_PERMISSIONS_VIEW');
     }
     if (path.includes('/master-config')) {
-      return this.authService.hasPermission('MASTER_CONFIGURATION', 'VIEW') || 
-             this.authService.hasPermission('ORGANIZATION', 'MANAGE_CONFIG') || 
-             this.authService.hasPermission('ORGANIZATION_MANAGE_CONFIG');
+      return this.authService.hasPermission('MASTER_CONFIGURATION', 'VIEW') ||
+        this.authService.hasPermission('ORGANIZATION', 'MANAGE_CONFIG') ||
+        this.authService.hasPermission('ORGANIZATION_MANAGE_CONFIG');
     }
     if (path.includes('/student-mapping')) {
-      return this.authService.hasPermission('STUDENT_ENROLLMENT', 'READ') || 
-             this.authService.hasPermission('ACADEMIC_STRUCTURE', 'READ') || 
-             this.authService.hasPermission('ACADEMIC_STRUCTURE_READ');
+      return this.authService.hasPermission('STUDENT_ENROLLMENT', 'READ') ||
+        this.authService.hasPermission('ACADEMIC_STRUCTURE', 'READ') ||
+        this.authService.hasPermission('ACADEMIC_STRUCTURE_READ');
     }
     if (path.includes('/analytics')) {
-      return this.authService.hasPermission('ANALYTICS', 'VIEW_OWN') || 
-             this.authService.hasPermission('ANALYTICS_VIEW_OWN') || 
-             this.authService.hasPermission('ANALYTICS', 'VIEW_SCHOOL') ||
-             this.authService.hasPermission('ANALYTICS_VIEW_SCHOOL');
+      return this.authService.hasPermission('ANALYTICS', 'VIEW_OWN') ||
+        this.authService.hasPermission('ANALYTICS_VIEW_OWN') ||
+        this.authService.hasPermission('ANALYTICS', 'VIEW_SCHOOL') ||
+        this.authService.hasPermission('ANALYTICS_VIEW_SCHOOL');
     }
     if (path.includes('/practice')) {
-      return this.authService.hasPermission('PRACTICE', 'VIEW_OWN') || 
-             this.authService.hasPermission('PRACTICE_VIEW_OWN');
+      return this.authService.hasPermission('PRACTICE', 'VIEW_OWN') ||
+        this.authService.hasPermission('PRACTICE_VIEW_OWN');
     }
     if (path.includes('/settings')) {
-      return this.authService.hasPermission('MASTER_CONFIGURATION', 'VIEW') || 
-             this.authService.hasPermission('MASTER_CONFIGURATION_VIEW');
+      return this.authService.hasPermission('MASTER_CONFIGURATION', 'VIEW') ||
+        this.authService.hasPermission('MASTER_CONFIGURATION_VIEW');
     }
 
     // Default legacy namespace fallback for other path patterns
