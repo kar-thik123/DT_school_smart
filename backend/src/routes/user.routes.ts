@@ -4,6 +4,24 @@ import prisma from '../prisma';
 import { z } from 'zod';
 import { authMiddleware, requirePermission } from '../middlewares/auth.middleware';
 import { checkSeatAvailability } from '../utils/license-check';
+import multer = require('multer');
+import path = require('path');
+import fs = require('fs');
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const dir = path.join(process.cwd(), 'uploads', 'profile');
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    cb(null, dir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  }
+});
+const upload = multer({ storage: storage });
 
 const router = Router();
 router.use(authMiddleware);
@@ -24,7 +42,7 @@ const userSchema = z.object({
 router.get('/teachers', async (req: any, res: Response) => {
   try {
     const teachers = await prisma.user.findMany({
-      where: { 
+      where: {
         organization_id: req.user.organization_id,
         role: {
           permissions: {
@@ -54,14 +72,14 @@ router.get('/', async (req: any, res: Response) => {
     }
     if (req.query.role) {
       // Allow searching by role name dynamically without hardcoding
-      const roleRecords = await prisma.role.findMany({ 
-        where: { 
-          name: String(req.query.role), 
+      const roleRecords = await prisma.role.findMany({
+        where: {
+          name: String(req.query.role),
           OR: [
             { organization_id: req.user.organization_id },
             { is_system: true }
           ]
-        } 
+        }
       });
       if (roleRecords.length > 0) {
         filter.role_id = { in: roleRecords.map((r: any) => r.id) };
@@ -70,18 +88,18 @@ router.get('/', async (req: any, res: Response) => {
     console.log('[GET /api/users] filter:', JSON.stringify(filter));
     const users = await prisma.user.findMany({
       where: filter,
-      select: { 
+      select: {
         id: true, name: true, email: true, section_id: true, grade_id: true, role_id: true,
-        role: { select: { name: true } }, 
+        role: { select: { name: true } },
         grade: { select: { name: true } },
         section: { select: { name: true } },
-        is_active: true, created_at: true 
+        is_active: true, created_at: true
       },
       orderBy: { name: 'asc' }
     });
     console.log('[GET /api/users] returned:', users.length, 'users');
-    res.json(users.map((u: any) => ({ 
-      ...u, 
+    res.json(users.map((u: any) => ({
+      ...u,
       role: u.role?.name,
       grade_name: u.grade?.name || null,
       section_name: u.section?.name || null
@@ -104,7 +122,7 @@ router.post('/', async (req: any, res: Response) => {
     // Check license seat availability
     const licenseCheck = await checkSeatAvailability(req.user.organization_id, 1);
     if (!licenseCheck.allowed) {
-      return res.status(403).json({ 
+      return res.status(403).json({
         message: licenseCheck.message,
         code: 'LICENSE_LIMIT_REACHED',
         usage: licenseCheck.usagePercent
@@ -116,11 +134,11 @@ router.post('/', async (req: any, res: Response) => {
     if (existing) return res.status(400).json({ message: `Email '${parsed.email}' is already registered in the platform. Each email can only belong to one account.` });
 
     const password_hash = await bcrypt.hash(parsed.password, 10);
-    const roleDb = await prisma.role.findFirst({ 
-      where: { 
-        id: parsed.role_id, 
+    const roleDb = await prisma.role.findFirst({
+      where: {
+        id: parsed.role_id,
         OR: [{ organization_id: req.user.organization_id }, { is_system: true }]
-      } 
+      }
     });
     if (!roleDb) return res.status(400).json({ message: 'Role not found' });
 
@@ -167,9 +185,9 @@ router.post('/', async (req: any, res: Response) => {
     return res.status(201).json({ message: 'User created', user: { id: user.id, name: user.name, email: user.email, role_id: parsed.role_id } });
   } catch (error: any) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ 
-        message: 'Validation failed', 
-        errors: error.issues 
+      return res.status(400).json({
+        message: 'Validation failed',
+        errors: error.issues
       });
     }
     console.error('[POST /api/users] Error:', error.stack || error);
@@ -191,7 +209,7 @@ router.post('/bulk', async (req: any, res: Response) => {
     // Check license seat availability for bulk
     const licenseCheck = await checkSeatAvailability(req.user.organization_id, users.length);
     if (!licenseCheck.allowed) {
-      return res.status(403).json({ 
+      return res.status(403).json({
         message: licenseCheck.message,
         code: 'LICENSE_LIMIT_REACHED',
         usage: licenseCheck.usagePercent
@@ -205,27 +223,27 @@ router.post('/bulk', async (req: any, res: Response) => {
         const existing = await prisma.user.findUnique({ where: { email: u.email } });
         if (existing) { results.skipped++; results.errors.push(`${u.email}: already registered in platform`); continue; }
         let roleId = u.role_id;
-        
+
         if (!roleId && u.role) {
-            // Dynamic fallback by name if string is provided
-            const roleDb = await prisma.role.findFirst({ 
-              where: { 
-                name: { equals: u.role, mode: 'insensitive' }, 
-                OR: [{ organization_id: req.user.organization_id }, { is_system: true }]
-              } 
-            });
-            if (roleDb) roleId = roleDb.id;
+          // Dynamic fallback by name if string is provided
+          const roleDb = await prisma.role.findFirst({
+            where: {
+              name: { equals: u.role, mode: 'insensitive' },
+              OR: [{ organization_id: req.user.organization_id }, { is_system: true }]
+            }
+          });
+          if (roleDb) roleId = roleDb.id;
         }
 
         if (!roleId) {
-            // Ultimate fallback to ANY IS_STUDENT role
-            const studentRole = await prisma.role.findFirst({
-               where: {
-                   permissions: { some: { permission: { module: 'IDENTITY', action: 'IS_STUDENT' } } },
-                   OR: [{ organization_id: req.user.organization_id }, { is_system: true }]
-               }
-            });
-            if (studentRole) roleId = studentRole.id;
+          // Ultimate fallback to ANY IS_STUDENT role
+          const studentRole = await prisma.role.findFirst({
+            where: {
+              permissions: { some: { permission: { module: 'IDENTITY', action: 'IS_STUDENT' } } },
+              OR: [{ organization_id: req.user.organization_id }, { is_system: true }]
+            }
+          });
+          if (studentRole) roleId = studentRole.id;
         }
 
         if (!roleId) { results.skipped++; results.errors.push(`${u.email}: valid role could not be resolved`); continue; }
@@ -281,17 +299,17 @@ router.put('/:id', async (req: any, res: Response) => {
 
     let updateData: any = { name: req.body.name, is_active: req.body.is_active };
     if (req.body.role_id) {
-      const roleDb = await prisma.role.findFirst({ 
-        where: { 
-            id: req.body.role_id, 
-            OR: [{ organization_id: req.user.organization_id }, { is_system: true }]
-        } 
+      const roleDb = await prisma.role.findFirst({
+        where: {
+          id: req.body.role_id,
+          OR: [{ organization_id: req.user.organization_id }, { is_system: true }]
+        }
       });
       if (roleDb) updateData.role_id = roleDb.id;
     } else if (req.body.role) {
       // Legacy support for string updates if any still exist
-      const roleDb = await prisma.role.findFirst({ 
-        where: { name: req.body.role, OR: [{ organization_id: req.user.organization_id }, { is_system: true }] } 
+      const roleDb = await prisma.role.findFirst({
+        where: { name: req.body.role, OR: [{ organization_id: req.user.organization_id }, { is_system: true }] }
       });
       if (roleDb) updateData.role_id = roleDb.id;
     }
@@ -304,7 +322,7 @@ router.put('/:id', async (req: any, res: Response) => {
     res.json({ message: 'User updated', user: { ...updated, role: updated.role.name } });
   } catch (error: any) {
     if (error.code === 'P2025' || error.name === 'PrismaClientKnownRequestError') {
-       return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: 'User not found' });
     }
     res.status(500).json({ message: 'Server error' });
   }
@@ -332,7 +350,7 @@ router.patch('/:id/status', async (req: any, res: Response) => {
     res.json({ message: `User ${is_active ? 'activated' : 'deactivated'}` });
   } catch (error: any) {
     if (error.code === 'P2025' || error.name === 'PrismaClientKnownRequestError') {
-       return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: 'User not found' });
     }
     console.error('User status error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -357,7 +375,7 @@ router.delete('/:id', async (req: any, res: Response) => {
     res.json({ message: 'User deleted' });
   } catch (error: any) {
     if (error.code === 'P2025' || error.name === 'PrismaClientKnownRequestError') {
-       return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: 'User not found' });
     }
     console.error('User delete error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -367,11 +385,11 @@ router.delete('/:id', async (req: any, res: Response) => {
 // POST admin-triggered reset password link
 router.post('/:id/reset-password', async (req: any, res: Response) => {
   try {
-    const targetUser = await prisma.user.findFirst({ 
+    const targetUser = await prisma.user.findFirst({
       where: { id: req.params.id, organization_id: req.user.organization_id },
       include: { role: true }
     });
-    
+
     if (!targetUser) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -386,10 +404,10 @@ router.post('/:id/reset-password', async (req: any, res: Response) => {
     if (targetUser.role?.name === 'SUPER_ADMIN' && targetUser.id === req.user.user_id) {
       return res.status(403).json({ message: 'Tenant owner account cannot perform self-destructive actions.' });
     }
-    
+
     const { randomBytes } = require('crypto');
     const nodemailer = require('nodemailer');
-    
+
     const token = randomBytes(32).toString('hex');
     const expires_at = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
 
@@ -437,6 +455,99 @@ router.post('/:id/reset-password', async (req: any, res: Response) => {
 
   } catch (error: any) {
     console.error('Password reset error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+})
+
+
+router.get('/profile/:id', async (req: any, res: Response) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.params.id },
+      include: { role: true, user_profile: true }
+    });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    const profileData = user.user_profile ? {
+      phone: user.user_profile.phone,
+      city: user.user_profile.city,
+      country: user.user_profile.country,
+      address: user.user_profile.address,
+      about: user.user_profile.about,
+      profile_image: user.user_profile.profile_image,
+      academic_profiles: user.user_profile.academic_profiles || [],
+      skills: user.user_profile.skills || []
+    } : {
+      academic_profiles: [],
+      skills: []
+    };
+    
+    res.json({ ...user, ...profileData });
+  } catch (error: any) {
+    console.error('Error fetching profile:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.put('/profile/:id', upload.single('profile_image'), async (req: any, res: Response) => {
+  try {
+    let { name, email, phone, city, country, address, about, academic_profiles, skills } = req.body;
+
+    // Handle multipart/form-data where JSON arrays are sent as strings
+    if (typeof academic_profiles === 'string') {
+      try { academic_profiles = JSON.parse(academic_profiles); } catch (e) { academic_profiles = []; }
+    }
+    if (typeof skills === 'string') {
+      try { skills = JSON.parse(skills); } catch (e) { skills = []; }
+    }
+
+    let profile_image = undefined;
+    if (req.file) {
+      profile_image = `/uploads/profile/${req.file.filename}`;
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: req.params.id }
+    });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Update core User fields
+    await prisma.user.update({
+      where: { id: req.params.id },
+      data: { name, email }
+    });
+
+    // Upsert UserProfile fields
+    const updateData: any = { phone, city, country, address, about, academic_profiles, skills };
+    if (profile_image) {
+      updateData.profile_image = profile_image;
+    }
+
+    await prisma.userProfile.upsert({
+      where: { user_id: req.params.id },
+      update: updateData,
+      create: {
+        user_id: req.params.id,
+        organization_id: user.organization_id,
+        phone,
+        city,
+        country,
+        address,
+        about,
+        profile_image,
+        academic_profiles: academic_profiles || [],
+        skills: skills || []
+      }
+    });
+
+
+    res.json({ message: 'Profile updated successfully', user_profile: { profile_image } });
+  } catch (error: any) {
+    console.error('Error updating profile:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

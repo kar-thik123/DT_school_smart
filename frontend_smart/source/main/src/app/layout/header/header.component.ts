@@ -32,14 +32,13 @@ import { Notification, NotificationService } from '@core/service/notification.se
     MatToolbarModule,
     NotificationListComponent,
     MatMenuModule,
-    LanguageListComponent,
+    // LanguageListComponent,
     UserProfileMenuComponent,
   ],
 })
 export class HeaderComponent
   extends UnsubscribeOnDestroyAdapter
-  implements OnInit
-{
+  implements OnInit {
   private document = inject<Document>(DOCUMENT);
   private renderer = inject(Renderer2);
   elementRef = inject(ElementRef);
@@ -179,7 +178,7 @@ export class HeaderComponent
   }
   logout() {
     this.subs.sink = this.authService.logout().subscribe((res) => {
-      if (!res.success) {
+      if (res.success) {
         this.router.navigate(['/authentication/signin']);
       }
     });
