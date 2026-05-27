@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AcademicUnifiedProcessor = void 0;
 const prisma_1 = __importDefault(require("../../../prisma"));
+const academic_helper_1 = require("../../../utils/academic-helper");
 /**
  * Unified Academic Structure Processor
  * Handles grade_name, section_name, subject_name, unit_name, topic_name in one flow.
@@ -19,11 +20,7 @@ class AcademicUnifiedProcessor {
         this.userId = userId;
     }
     async resolveRelations(rows) {
-        const activeYear = await prisma_1.default.academicYear.findFirst({
-            where: { organization_id: this.organizationId, is_active: true },
-            select: { id: true }
-        });
-        this.activeAcademicYearId = activeYear?.id;
+        this.activeAcademicYearId = await (0, academic_helper_1.getActiveAcademicYearId)(this.organizationId);
         return {};
     }
     async validateRow(row) {

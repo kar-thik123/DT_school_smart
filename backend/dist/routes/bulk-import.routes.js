@@ -8,7 +8,40 @@ const multer_1 = __importDefault(require("multer"));
 const csv_parse_1 = require("csv-parse");
 const bulk_import_registry_1 = require("../services/bulk-import/bulk-import.registry");
 const auth_middleware_1 = require("../middlewares/auth.middleware");
+const audit_service_1 = require("../services/audit.service");
 const router = (0, express_1.Router)();
+const ENTITY_PERMISSION_MAP = {
+    'STUDENT_ENROLLMENT': { module: 'USERS', action: 'BULK_IMPORT' },
+    'STUDENT_MAPPING': { module: 'USERS', action: 'BULK_IMPORT' },
+    'TEACHER_ASSIGNMENT': { module: 'TEACHER_ASSIGNMENT', action: 'CREATE' },
+    'SUBJECT_GROUPS': { module: 'ACADEMIC_STRUCTURE', action: 'CREATE' },
+    'QUESTION_BANK': { module: 'QUESTION_BANK', action: 'IMPORT' },
+    'GRADES': { module: 'ACADEMIC_STRUCTURE', action: 'CREATE' },
+    'SECTIONS': { module: 'ACADEMIC_STRUCTURE', action: 'CREATE' },
+    'SUBJECTS': { module: 'ACADEMIC_STRUCTURE', action: 'CREATE' },
+    'UNITS': { module: 'ACADEMIC_STRUCTURE', action: 'CREATE' },
+    'TOPICS': { module: 'ACADEMIC_STRUCTURE', action: 'CREATE' },
+    'ACADEMIC_STRUCTURE_FULL': { module: 'ACADEMIC_STRUCTURE', action: 'CREATE' }
+};
+const verifyBulkImportPermission = (entityType, req) => {
+    if (req.user?.role === 'SYSTEM_ADMIN')
+        return true;
+    const perm = ENTITY_PERMISSION_MAP[entityType.toUpperCase()];
+    if (!perm)
+        return false;
+    const userPermissions = req.user?.permissions || [];
+    const required = `${perm.module}:${perm.action}`;
+    if (userPermissions.includes(required))
+        return true;
+    // Fallback mappings (same as requirePermission)
+    if (perm.module === 'ACADEMIC_STRUCTURE' && (perm.action === 'CREATE' || perm.action === 'EDIT' || perm.action === 'DELETE')) {
+        if (userPermissions.includes('UNITS_LIST:MANAGE_SYLLABUS') ||
+            userPermissions.includes('ACADEMIC:MANAGE_SYLLABUS')) {
+            return true;
+        }
+    }
+    return false;
+};
 router.use(auth_middleware_1.authMiddleware);
 // Setup multer for memory storage
 const upload = (0, multer_1.default)({
@@ -23,6 +56,9 @@ const upload = (0, multer_1.default)({
 router.post('/:entityType/analyze', upload.single('file'), async (req, res) => {
     try {
         const { entityType } = req.params;
+        if (!verifyBulkImportPermission(entityType, req)) {
+            return res.status(403).json({ message: `Forbidden: You do not have permission to import ${entityType}.` });
+        }
         const orgId = req.user.organization_id;
         const userId = req.user.user_id;
         const file = req.file;
@@ -68,6 +104,9 @@ router.post('/:entityType/analyze', upload.single('file'), async (req, res) => {
 router.post('/:entityType/commit', async (req, res) => {
     try {
         const { entityType } = req.params;
+        if (!verifyBulkImportPermission(entityType, req)) {
+            return res.status(403).json({ message: `Forbidden: You do not have permission to import ${entityType}.` });
+        }
         const orgId = req.user.organization_id;
         const userId = req.user.user_id;
         const { validRows, conflictResolutions } = req.body;
@@ -79,6 +118,16 @@ router.post('/:entityType/commit', async (req, res) => {
             return res.status(400).json({ message: `Bulk import for entity type '${entityType}' is not supported.` });
         }
         const result = await processor.commit(validRows, conflictResolutions);
+        await (0, audit_service_1.logAuditEvent)({
+            organization_id: orgId,
+            user_id: userId,
+            user_name: req.user.name,
+            action_type: 'IMPORT',
+            entity_type: entityType.toUpperCase() === 'QUESTION_BANK' ? 'QUESTION' :
+                entityType.toUpperCase() === 'TEACHER_ASSIGNMENT' ? 'TEACHER_ASSIGNMENT' : 'SYLLABUS',
+            entity_id: 'BULK_IMPORT',
+            metadata: { entity_type: entityType, success_count: result.success_count, failure_count: result.failure_count }
+        });
         return res.status(200).json({
             message: `Bulk import completed successfully for ${result.success_count} rows.`,
             result

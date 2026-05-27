@@ -7,6 +7,7 @@ const express_1 = require("express");
 const prisma_1 = __importDefault(require("../prisma"));
 const zod_1 = require("zod");
 const auth_middleware_1 = require("../middlewares/auth.middleware");
+const audit_service_1 = require("../services/audit.service");
 const router = (0, express_1.Router)();
 router.use(auth_middleware_1.authMiddleware);
 const assignmentSchema = zod_1.z.object({
@@ -99,6 +100,15 @@ router.post('/', (0, auth_middleware_1.requirePermission)('TEACHER_ASSIGNMENT', 
                 data: dataToInsert,
                 skipDuplicates: true
             });
+            await (0, audit_service_1.logAuditEvent)({
+                organization_id: req.user.organization_id,
+                user_id: req.user.user_id,
+                user_name: req.user.name,
+                action_type: 'ASSIGN',
+                entity_type: 'TEACHER_ASSIGNMENT',
+                entity_id: parsed.teacher_id,
+                metadata: { batch: true, count: assignmentProcess.count }
+            });
             return res.status(201).json({ message: 'Teacher assignments created', count: assignmentProcess.count });
         }
         else {
@@ -128,6 +138,15 @@ router.post('/', (0, auth_middleware_1.requirePermission)('TEACHER_ASSIGNMENT', 
                     ...parsed,
                     organization_id: req.user.organization_id
                 }
+            });
+            await (0, audit_service_1.logAuditEvent)({
+                organization_id: req.user.organization_id,
+                user_id: req.user.user_id,
+                user_name: req.user.name,
+                action_type: 'ASSIGN',
+                entity_type: 'TEACHER_ASSIGNMENT',
+                entity_id: assignment.id,
+                metadata: { teacher_id: assignment.teacher_id, assignment_type: assignment.assignment_type }
             });
             return res.status(201).json({ message: 'Teacher assignment created', assignment });
         }
@@ -176,6 +195,15 @@ router.put('/:id', (0, auth_middleware_1.requirePermission)('TEACHER_ASSIGNMENT'
             where: { id: existing.id },
             data: parsed
         });
+        await (0, audit_service_1.logAuditEvent)({
+            organization_id: req.user.organization_id,
+            user_id: req.user.user_id,
+            user_name: req.user.name,
+            action_type: 'UPDATE',
+            entity_type: 'TEACHER_ASSIGNMENT',
+            entity_id: assignment.id,
+            metadata: { teacher_id: assignment.teacher_id, assignment_type: assignment.assignment_type }
+        });
         res.json({ message: 'Teacher assignment updated', assignment });
     }
     catch (error) {
@@ -194,6 +222,15 @@ router.delete('/:id', (0, auth_middleware_1.requirePermission)('TEACHER_ASSIGNME
         if (!existing)
             return res.status(404).json({ message: 'Assignment not found' });
         await prisma_1.default.teacherAssignment.delete({ where: { id: existing.id } });
+        await (0, audit_service_1.logAuditEvent)({
+            organization_id: req.user.organization_id,
+            user_id: req.user.user_id,
+            user_name: req.user.name,
+            action_type: 'DELETE',
+            entity_type: 'TEACHER_ASSIGNMENT',
+            entity_id: existing.id,
+            metadata: { teacher_id: existing.teacher_id, assignment_type: existing.assignment_type }
+        });
         res.json({ message: 'Teacher assignment deleted' });
     }
     catch (error) {

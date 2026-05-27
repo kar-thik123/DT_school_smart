@@ -3,6 +3,7 @@ import prisma from '../prisma';
 import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { authMiddleware, requirePermission } from '../middlewares/auth.middleware';
+import { PERMISSION_DOMAINS } from '../config/permissions';
 import multer from 'multer';
 import path from 'path';
 import jwt from 'jsonwebtoken';
@@ -32,7 +33,7 @@ router.post('/upload-logo', authMiddleware, upload.single('logo'), (req: any, re
   res.json({ logoUrl });
 });
 
-router.get('/debug-db', async (req, res) => {
+router.get('/debug-db', authMiddleware, requirePermission('IDENTITY', 'IS_SYSTEM_ADMIN'), async (req, res) => {
   const orgs = await prisma.organization.findMany();
   res.json({ orgs });
 });
@@ -353,7 +354,13 @@ router.post('/', async (req: any, res: Response) => {
 
     console.log('[DEBUG] Proceeding to create organization and admin user...');
 
-    // Wrap org + admin user creation in a transaction
+    // Pre-hash password before starting transaction to avoid slow execution within interactive transaction
+    let preHashedPassword = '';
+    if (parsed.admin_email && parsed.admin_password) {
+      preHashedPassword = await bcrypt.hash(parsed.admin_password, 10);
+    }
+
+    // Wrap org + admin user creation in a transaction with extended 30s timeout
     const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // STEP 1: Create the organization
       const org = await tx.organization.create({
@@ -416,14 +423,12 @@ router.post('/', async (req: any, res: Response) => {
         });
         console.log(`[TX STEP 2.2] Tenant SUPER_ADMIN role created: id=${superAdminRole.id}, org=${org.id}`);
 
-        // STEP 2.2.5: Bootstrap IDENTITY:IS_SUPER_ADMIN permission for the new role.
-        // This ensures permissions[] is never empty after login, so getDefaultRoute()
-        // can correctly resolve to /admin/dashboard/main for this tenant owner.
+        // STEP 2.2.5: Bootstrap ALL permissions for the new role.
+        // This ensures the new SUPER_ADMIN user has access to all tenant modules without bypassing the permission system.
         let superAdminPermission = await tx.permission.findUnique({
           where: { module_action: { module: 'IDENTITY', action: 'IS_SUPER_ADMIN' } }
         });
         if (!superAdminPermission) {
-          // Seed the permission record if it doesn't exist in the platform registry
           superAdminPermission = await tx.permission.create({
             data: {
               module: 'IDENTITY',
@@ -431,25 +436,33 @@ router.post('/', async (req: any, res: Response) => {
               description: 'Identifies user as a tenant owner (school SUPER_ADMIN)'
             }
           });
-          console.log(`[TX STEP 2.2.5] Seeded IDENTITY:IS_SUPER_ADMIN permission: ${superAdminPermission.id}`);
-        } else {
-          console.log(`[TX STEP 2.2.5] Found IDENTITY:IS_SUPER_ADMIN permission: ${superAdminPermission.id}`);
         }
-        await tx.rolePermission.create({
-          data: { role_id: superAdminRole.id, permission_id: superAdminPermission.id }
-        });
-        console.log(`[TX STEP 2.2.5] Mapped IDENTITY:IS_SUPER_ADMIN → SUPER_ADMIN role (org: ${org.id})`);
+        
+        const allSystemPermissions = await tx.permission.findMany();
+        const tenantDbPermissions = allSystemPermissions.filter((p: any) => 
+          PERMISSION_DOMAINS[p.module] === 'TENANT' && 
+          !(p.module === 'IDENTITY' && p.action === 'IS_SYSTEM_ADMIN')
+        );
+        const rolePermissionsData = tenantDbPermissions.map((p: any) => ({
+          role_id: superAdminRole.id,
+          permission_id: p.id
+        }));
 
-        // STEP 2.3: Hash the admin password
-        const password_hash = await bcrypt.hash(parsed.admin_password, 10);
-        console.log(`[TX STEP 2.3] Password hashed for admin: ${parsed.admin_email}`);
+        await tx.rolePermission.createMany({
+          data: rolePermissionsData,
+          skipDuplicates: true
+        });
+        console.log(`[TX STEP 2.2.5] Mapped all permissions to SUPER_ADMIN role (org: ${org.id})`);
+
+        // STEP 2.3: Use pre-hashed admin password
+        console.log(`[TX STEP 2.3] Using pre-hashed password for admin: ${parsed.admin_email}`);
 
         // STEP 2.4: Create the super admin user assigned to the tenant-owned role
         adminUser = await tx.user.create({
           data: {
             name: parsed.admin_name || 'School Admin',
             email: parsed.admin_email,
-            password_hash,
+            password_hash: preHashedPassword,
             role_id: superAdminRole.id,
             organization_id: org.id,
             is_active: true,
@@ -460,7 +473,7 @@ router.post('/', async (req: any, res: Response) => {
 
       console.log(`[TX COMMITTED] Provisioning complete for org: ${org.id}`);
       return { org, adminUser };
-    });
+    }, { timeout: 30000 });
 
     // 4. Fire Async Hooks (e.g. Emails/Provisioning) safely WITHOUT blocking the API response
     if (result.adminUser) {

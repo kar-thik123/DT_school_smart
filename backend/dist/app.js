@@ -19,13 +19,15 @@ const bulk_import_routes_1 = __importDefault(require("./routes/bulk-import.route
 const mail_routes_1 = __importDefault(require("./routes/mail.routes"));
 const notification_routes_1 = __importDefault(require("./routes/notification.routes"));
 const curriculum_routes_1 = __importDefault(require("./routes/curriculum.routes"));
+const settings_routes_1 = __importDefault(require("./routes/settings.routes"));
+const completion_routes_1 = __importDefault(require("./routes/completion.routes"));
 const app = (0, express_1.default)();
 console.log('Starting application, mounting routes...');
 // app.use(cors());
 app.use((0, cors_1.default)({
     origin: [
         'http://localhost:4200',
-        'http://144.91.71.246:4200'
+        'http://144.91.71.246'
     ],
     credentials: true,
 }));
@@ -45,6 +47,8 @@ app.use('/api/bulk-import', bulk_import_routes_1.default);
 app.use('/api/mails', mail_routes_1.default);
 app.use('/api/notifications', notification_routes_1.default);
 app.use('/api/curriculum', curriculum_routes_1.default);
+app.use('/api/settings', settings_routes_1.default);
+app.use('/api/completion', completion_routes_1.default);
 app.get('/health', (req, res) => {
     res.json({ status: 'ok' });
 });

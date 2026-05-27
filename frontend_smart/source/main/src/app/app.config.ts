@@ -3,13 +3,14 @@ import {
   provideHttpClient,
   withInterceptorsFromDi,
 } from '@angular/common/http';
-import { ApplicationConfig, importProvidersFrom } from '@angular/core';
+import { ApplicationConfig, ErrorHandler, importProvidersFrom } from '@angular/core';
 import { APP_ROUTE } from './app.routes';
 import { provideRouter } from '@angular/router';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { HashLocationStrategy, LocationStrategy } from '@angular/common';
 import { ErrorInterceptor } from '@core/interceptor/error.interceptor';
 import { JwtInterceptor } from './core/interceptor/jwt.interceptor';
+import { GlobalErrorHandler } from './core/service/global-error-handler.service';
 import { DirectionService, LanguageService } from '@core';
 import { provideTranslateService } from '@ngx-translate/core';
 import { provideTranslateHttpLoader } from '@ngx-translate/http-loader';
@@ -72,6 +73,7 @@ export const appConfig: ApplicationConfig = {
       useClass: ErrorInterceptor,
       multi: true,
     },
+    { provide: ErrorHandler, useClass: GlobalErrorHandler },
     provideAnimationsAsync(),
   ],
 };

@@ -23,14 +23,14 @@
             (selectionChange)="selectGradeSectionSubjectForQuestion($event.grade, $event.section, $event.subject, $event.unit, $event.topic, $event.subTopic)">
           </app-questionbank-dropdown>
         </div>
-        <div>
+        <div *ngIf="canImport">
           <input type="file" #fileInput (change)="onFileImport($event)" style="display: none;"
             accept=".xlsx, .xls, .csv">
           <button class="import-excel-btn" (click)="fileInput.click()">
             <mat-icon>cloud_upload</mat-icon> Import Excel
           </button>
         </div>
-        <div>
+        <div *ngIf="canImport">
           <button class="import-excel-btn" (click)="downloadTemplate()">
             <mat-icon>download</mat-icon>
             Download Template
@@ -57,10 +57,9 @@
     <div class="row" *ngIf="selectedGradeId && !isLoading">
       <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12">
         <mat-tab-group animationDuration="0ms" color="primary" [(selectedIndex)]="activeTabIndex">
-          <mat-tab>
+          <mat-tab *ngIf="capabilities.canCreate">
             <ng-template mat-tab-label>
-              <mat-icon class="me-2">add_circle</mat-icon>
-              Create Question
+              <mat-icon class="me-2">add_circle</mat-icon> {{ editingQuestionId ? 'Edit Question' : 'Create Question' }}
             </ng-template>
             <div class="p-4">
               <mat-card>
@@ -237,8 +236,10 @@
                 </div> -->
                 <div>
                   <!-- No Questions State -->
-                  <div *ngIf="filteredQuestions.length === 0" class="text-center p-5 text-muted">
-                    No questions found for the selected context.
+                  <div *ngIf="filteredQuestions.length === 0" class="text-center p-5 mt-3 d-flex flex-column align-items-center justify-content-center" style="background-color: #fafafa; border: 2px dashed #eaeaea; border-radius: 12px;">
+                    <mat-icon style="font-size: 54px; width: 54px; height: 54px; color: #ccc;" class="mb-3">help_outline</mat-icon>
+                    <h4 style="font-weight: 600; color: #666;" class="mb-1">No Questions Found</h4>
+                    <p class="text-muted small mb-3" style="max-width: 320px;">There are no questions added for the selected section and subject yet. Use the import tools or add single questions to get started.</p>
                   </div>
 
                   <!-- Questions List -->
@@ -321,17 +322,17 @@
                         </div>
 
                         <!-- Action Menu -->
-                        <div class="flex-shrink-0 ms-3 d-flex align-items-center">
+                        <div class="flex-shrink-0 ms-3 d-flex align-items-center" *ngIf="capabilities.canEdit || capabilities.canDelete">
                           <button mat-icon-button [matMenuTriggerFor]="menu" class="q-menu-btn"
                             style="transform: scale(1.2);">
                             <mat-icon class="q-text-dark">more_vert</mat-icon>
                           </button>
                           <mat-menu #menu="matMenu">
-                            <button mat-menu-item (click)="editQuestion(element)">
+                            <button mat-menu-item (click)="editQuestion(element)" *ngIf="capabilities.canEdit">
                               <mat-icon>edit</mat-icon>
                               <span>Edit</span>
                             </button>
-                            <button mat-menu-item class="text-danger" (click)="deleteQuestion(element)">
+                            <button mat-menu-item class="text-danger" (click)="deleteQuestion(element)" *ngIf="capabilities.canDelete">
                               <mat-icon class="text-danger">delete</mat-icon>
                               <span>Delete</span>
                             </button>

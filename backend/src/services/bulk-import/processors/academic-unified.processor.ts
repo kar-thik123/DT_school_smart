@@ -1,5 +1,6 @@
 import { BulkImportProcessor, ResolvedDataMap, ValidationResult, CommitResult } from '../bulk-import.types';
 import prisma from '../../../prisma';
+import { getActiveAcademicYearId } from '../../../utils/academic-helper';
 
 /**
  * Unified Academic Structure Processor
@@ -12,11 +13,7 @@ export class AcademicUnifiedProcessor implements BulkImportProcessor {
   constructor(private organizationId: string, private userId: string) {}
 
   async resolveRelations(rows: any[]): Promise<ResolvedDataMap> {
-    const activeYear = await prisma.academicYear.findFirst({
-      where: { organization_id: this.organizationId, is_active: true },
-      select: { id: true }
-    });
-    this.activeAcademicYearId = activeYear?.id;
+    this.activeAcademicYearId = await getActiveAcademicYearId(this.organizationId);
     return {};
   }
 

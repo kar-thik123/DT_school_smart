@@ -3,8 +3,47 @@ import multer from 'multer';
 import { parse } from 'csv-parse';
 import { getBulkProcessor } from '../services/bulk-import/bulk-import.registry';
 import { authMiddleware } from '../middlewares/auth.middleware';
+import { logAuditEvent } from '../services/audit.service';
 
 const router = Router();
+
+const ENTITY_PERMISSION_MAP: Record<string, { module: string, action: string }> = {
+  'STUDENT_ENROLLMENT': { module: 'USERS', action: 'BULK_IMPORT' },
+  'STUDENT_MAPPING': { module: 'USERS', action: 'BULK_IMPORT' },
+  'TEACHER_ASSIGNMENT': { module: 'TEACHER_ASSIGNMENT', action: 'CREATE' },
+  'SUBJECT_GROUPS': { module: 'ACADEMIC_STRUCTURE', action: 'CREATE' },
+  'QUESTION_BANK': { module: 'QUESTION_BANK', action: 'IMPORT' },
+  'GRADES': { module: 'ACADEMIC_STRUCTURE', action: 'CREATE' },
+  'SECTIONS': { module: 'ACADEMIC_STRUCTURE', action: 'CREATE' },
+  'SUBJECTS': { module: 'ACADEMIC_STRUCTURE', action: 'CREATE' },
+  'UNITS': { module: 'ACADEMIC_STRUCTURE', action: 'CREATE' },
+  'TOPICS': { module: 'ACADEMIC_STRUCTURE', action: 'CREATE' },
+  'ACADEMIC_STRUCTURE_FULL': { module: 'ACADEMIC_STRUCTURE', action: 'CREATE' }
+};
+
+const verifyBulkImportPermission = (entityType: string, req: any): boolean => {
+  if (req.user?.role === 'SYSTEM_ADMIN') return true;
+
+  const perm = ENTITY_PERMISSION_MAP[entityType.toUpperCase()];
+  if (!perm) return false;
+
+  const userPermissions = req.user?.permissions || [];
+  const required = `${perm.module}:${perm.action}`;
+
+  if (userPermissions.includes(required)) return true;
+
+  // Fallback mappings (same as requirePermission)
+  if (perm.module === 'ACADEMIC_STRUCTURE' && (perm.action === 'CREATE' || perm.action === 'EDIT' || perm.action === 'DELETE')) {
+    if (
+      userPermissions.includes('UNITS_LIST:MANAGE_SYLLABUS') ||
+      userPermissions.includes('ACADEMIC:MANAGE_SYLLABUS')
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+};
 router.use(authMiddleware);
 
 // Setup multer for memory storage
@@ -29,6 +68,9 @@ export interface AuthenticatedRequest extends Request {
 router.post('/:entityType/analyze', upload.single('file'), async (req: any, res: Response) => {
   try {
     const { entityType } = req.params;
+    if (!verifyBulkImportPermission(entityType, req)) {
+      return res.status(403).json({ message: `Forbidden: You do not have permission to import ${entityType}.` });
+    }
     const orgId = req.user.organization_id;
     const userId = req.user.user_id;
     const file = req.file;
@@ -80,6 +122,9 @@ router.post('/:entityType/analyze', upload.single('file'), async (req: any, res:
 router.post('/:entityType/commit', async (req: any, res: Response) => {
   try {
     const { entityType } = req.params;
+    if (!verifyBulkImportPermission(entityType, req)) {
+      return res.status(403).json({ message: `Forbidden: You do not have permission to import ${entityType}.` });
+    }
     const orgId = req.user.organization_id;
     const userId = req.user.user_id;
     const { validRows, conflictResolutions } = req.body;
@@ -94,6 +139,17 @@ router.post('/:entityType/commit', async (req: any, res: Response) => {
     }
 
     const result = await processor.commit(validRows, conflictResolutions);
+
+    await logAuditEvent({
+      organization_id: orgId,
+      user_id: userId,
+      user_name: req.user.name,
+      action_type: 'IMPORT',
+      entity_type: entityType.toUpperCase() === 'QUESTION_BANK' ? 'QUESTION' :
+                   entityType.toUpperCase() === 'TEACHER_ASSIGNMENT' ? 'TEACHER_ASSIGNMENT' : 'SYLLABUS',
+      entity_id: 'BULK_IMPORT',
+      metadata: { entity_type: entityType, success_count: result.success_count, failure_count: result.failure_count }
+    });
 
     return res.status(200).json({
       message: `Bulk import completed successfully for ${result.success_count} rows.`,

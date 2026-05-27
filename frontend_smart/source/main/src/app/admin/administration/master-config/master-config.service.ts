@@ -60,6 +60,19 @@ export class MasterConfigService {
     );
   }
 
+  // --- Settings CRUD ---
+  getSettings(moduleName: string): Observable<any> {
+    return this.httpClient.get<any>(`${environment.apiUrl}/settings/${moduleName}`).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  updateSettings(moduleName: string, configData: any): Observable<any> {
+    return this.httpClient.put<any>(`${environment.apiUrl}/settings/${moduleName}`, { config_data: configData }).pipe(
+      catchError(this.handleError)
+    );
+  }
+
   private handleError(error: HttpErrorResponse) {
     let errorMessage = 'Something went wrong; please try again later.';
     if (error.error instanceof ErrorEvent) {

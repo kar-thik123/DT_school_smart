@@ -16,6 +16,7 @@ import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.co
 import { AcademicStructureService, IGrade, ISection } from '../academic-structure/services/academic-structure.service';
 import { AcademicYearService } from '../../academics/academic-year/academic-year.service';
 import { StudentEnrollmentService } from './services/student-enrollment.service';
+import { AcademicContextService } from '@core';
 import { MatMenuModule, MatMenuTrigger, MatMenu } from '@angular/material/menu';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { MatDividerModule } from '@angular/material/divider';
@@ -59,6 +60,7 @@ export class StudentMappingComponent implements OnInit {
   private enrollmentService = inject(StudentEnrollmentService);
   private academicService = inject(AcademicStructureService);
   private academicYearService = inject(AcademicYearService);
+  private academicContextService = inject(AcademicContextService);
   private snackBar = inject(MatSnackBar);
   private dialog = inject(MatDialog);
   private overlayContainer = inject(OverlayContainer);
@@ -93,17 +95,21 @@ export class StudentMappingComponent implements OnInit {
   isBulkSaving = false;
 
   ngOnInit() {
+    // Subscribe to centralized Academic Context
+    this.academicContextService.activeYear$.subscribe((year: any) => {
+      this.activeAcademicYear = year;
+      if (this.activeAcademicYear) {
+        this.loadUnenrolledStudents();
+        this.loadEnrollments();
+      }
+    });
+
     this.loadInitialData();
   }
 
   loadInitialData() {
     this.academicYearService.getAllAcademicYears().subscribe((years: any) => {
       this.academicYears = years;
-      this.activeAcademicYear = years.find((y: any) => y.is_active) || years[0] || null;
-      if (this.activeAcademicYear) {
-        this.loadUnenrolledStudents();
-        this.loadEnrollments();
-      }
     });
 
     this.academicService.getGrades().subscribe((grades) => this.grades = grades);

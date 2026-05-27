@@ -50,6 +50,7 @@ export class QuestionBankDropdownComponent implements OnInit {
   @Input() selectedSubTopicId: string | null = null;
   @Input() selectedSubTopicName: string = '';
   @Input() labelName: string = 'Curriculum';
+  @Input() showUnitsAndBelow: boolean = true;
 
   @Output() selectionChange = new EventEmitter<{
     grade: IGrade,

@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import prisma from '../prisma';
 import { authMiddleware, requirePermission } from '../middlewares/auth.middleware';
+import { getActiveAcademicYearId } from '../utils/academic-helper';
 
 const router = Router();
 router.use(authMiddleware);
@@ -90,6 +91,24 @@ router.use('/boards', createCrudHandlers('Board', prisma.board));
 router.use('/mediums', createCrudHandlers('Medium', prisma.medium));
 router.use('/organization-types', createCrudHandlers('OrganizationType', prisma.organizationType));
 router.use('/academic-years', createCrudHandlers('AcademicYear', prisma.academicYear));
+
+// ── Active Academic Year ─────────────────────────────────────────────────────
+// GET /api/academic/active-year — no special permission required, available to
+// all authenticated users so that modules like Teacher Assignment can read it.
+router.get('/active-year', async (req: any, res: Response) => {
+  try {
+    const activeYearId = await getActiveAcademicYearId(req.user.organization_id);
+    const activeYear = await prisma.academicYear.findUnique({
+      where: { id: activeYearId }
+    });
+    if (!activeYear) {
+      return res.status(404).json({ message: 'No active academic year configured' });
+    }
+    res.json(activeYear);
+  } catch (error: any) {
+    res.status(500).json({ message: 'Error fetching active academic year', error: error.message });
+  }
+});
 
 // ── Generic Reorder Endpoint ────────────────────────────────────────────────
 router.put('/reorder/:model', requirePermission('ACADEMIC_STRUCTURE', 'EDIT'), async (req: any, res: Response) => {
@@ -187,23 +206,8 @@ gradeRouter.post('/', requirePermission('ACADEMIC_STRUCTURE', 'CREATE'), async (
     let yearId = academic_year_id;
 
     if (!yearId) {
-      // Auto-resolve: use the active academic year, or create a default one
-      let activeYear = await prisma.academicYear.findFirst({
-        where: { organization_id: req.user.organization_id, is_active: true }
-      });
-
-      if (!activeYear) {
-        const now = new Date();
-        const yearLabel = `${now.getFullYear()}-${now.getFullYear() + 1}`;
-        activeYear = await prisma.academicYear.create({
-          data: {
-            name: yearLabel,
-            organization_id: req.user.organization_id,
-            is_active: true
-          }
-        });
-      }
-      yearId = activeYear.id;
+      // Auto-resolve: use the centralized active academic year
+      yearId = await getActiveAcademicYearId(req.user.organization_id);
     }
 
     const data = await prisma.grade.create({
@@ -532,14 +536,7 @@ router.post('/bulk-setup', requirePermission('ACADEMIC_STRUCTURE', 'CREATE'), as
       return res.status(400).json({ message: '`subjects` must be a non-empty array' });
 
     // ── Resolve active academic year ──────────────────────────────────────
-    let activeYear = await prisma.academicYear.findFirst({ where: { organization_id: org_id, is_active: true } });
-    if (!activeYear) {
-      const now = new Date();
-      activeYear = await prisma.academicYear.create({
-        data: { name: `${now.getFullYear()}-${now.getFullYear() + 1}`, organization_id: org_id, is_active: true }
-      });
-    }
-    const academic_year_id = activeYear.id;
+    const academic_year_id = await getActiveAcademicYearId(org_id);
 
     // ── Helper: resolve sections for a given grade name ───────────────────
     const getSectionsForGrade = (gradeName: string): string[] => {

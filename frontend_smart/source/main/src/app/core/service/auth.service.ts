@@ -31,6 +31,8 @@ export class AuthService {
         if (response && response.token) {
           // Permissions are in res.user.permissions per backend alignment
           const permissions = response.user.permissions || [];
+          console.log('Logged User', response.user);
+          console.log('Permissions', response.user.permissions);
           this.setSession(response.token, response.user, permissions);
         }
       })
@@ -100,23 +102,83 @@ export class AuthService {
     const user = this.user$.value;
     if (!user || Object.keys(user).length === 0) return false;
 
-    // SYSTEM_ADMIN and SUPER_ADMIN bypass all permission checks.
-    // SYSTEM_ADMIN owns the platform; SUPER_ADMIN owns their tenant.
-    // Both are identity-level roles, not permission-driven.
-    const role = user.role || user.roles?.[0]?.name;
-    if (role === 'SYSTEM_ADMIN' || role === 'SUPER_ADMIN') return true;
+    // SYSTEM_ADMIN bypasses all permission checks.
+    // SYSTEM_ADMIN owns the platform; other roles are permission-driven.
+    const role = (user.role || user.roles?.[0]?.name || '').toUpperCase();
+    if (role === 'SYSTEM_ADMIN') return true;
 
-    const permissions = this.getPermissions();
+    const permissions = this.getPermissions() || [];
+    
+    // Normalize both user permissions and the permission to check
+    const normalizedUserPermissions = new Set<string>();
+    permissions.forEach(p => {
+      if (p) {
+        normalizedUserPermissions.add(p);
+        normalizedUserPermissions.add(p.replace(':', '_'));
+      }
+    });
+
     const permissionToCheck = action ? `${moduleOrPermission}:${action}` : moduleOrPermission;
+    const permissionToCheckUnderscore = action ? `${moduleOrPermission}_${action}` : moduleOrPermission.replace(':', '_');
 
-    if (permissions.includes(permissionToCheck)) return true;
+    if (normalizedUserPermissions.has(permissionToCheck) || normalizedUserPermissions.has(permissionToCheckUnderscore)) {
+      return true;
+    }
 
     // Fallback: If DB permissions are empty, check the base role string
-    if (role === 'MANAGEMENT' && permissionToCheck === 'IDENTITY:IS_MANAGEMENT') return true;
-    if (role === 'TEACHER' && permissionToCheck === 'IDENTITY:IS_TEACHER') return true;
-    if (role === 'STUDENT' && permissionToCheck === 'IDENTITY:IS_STUDENT') return true;
+    if (role === 'MANAGEMENT' && (permissionToCheck === 'IDENTITY:IS_MANAGEMENT' || permissionToCheckUnderscore === 'IDENTITY_IS_MANAGEMENT')) return true;
+    if (role === 'TEACHER' && (permissionToCheck === 'IDENTITY:IS_TEACHER' || permissionToCheckUnderscore === 'IDENTITY_IS_TEACHER')) return true;
+    if (role === 'STUDENT' && (permissionToCheck === 'IDENTITY:IS_STUDENT' || permissionToCheckUnderscore === 'IDENTITY_IS_STUDENT')) return true;
 
     return false;
+  }
+
+  hasAdminNamespaceAccess(): boolean {
+    const user = this.user$.value;
+    if (!user || Object.keys(user).length === 0) return false;
+    const role = (user.role || '').toUpperCase();
+    if (role === 'SYSTEM_ADMIN' || role === 'SUPER_ADMIN' || role === 'MANAGEMENT') {
+      return true;
+    }
+    // Or check if they have any admin sub-module permission
+    const adminPermissions = [
+      'USERS:VIEW', 'USERS_VIEW',
+      'ROLES_AND_PERMISSIONS:VIEW', 'ROLES_AND_PERMISSIONS_VIEW',
+      'ORGANIZATION:MANAGE_CONFIG', 'ORGANIZATION_MANAGE_CONFIG',
+      'ACADEMIC_STRUCTURE:READ', 'ACADEMIC_STRUCTURE_READ',
+      'ACADEMIC_STRUCTURE:VIEW', 'ACADEMIC_STRUCTURE_VIEW',
+      'ACADEMIC:MANAGE_SYLLABUS', 'UNITS_LIST:MANAGE_SYLLABUS',
+      'TEACHER_ASSIGNMENT:VIEW', 'TEACHER_ASSIGNMENT_VIEW',
+      'MASTER_CONFIGURATION:VIEW', 'MASTER_CONFIGURATION_VIEW',
+      'QUESTION_BANK:VIEW', 'QUESTION_BANK_VIEW',
+      'COMPLETION_TRACKING:VIEW', 'COMPLETION_TRACKING_VIEW',
+      'COMPLETION:VIEW', 'COMPLETION_VIEW'
+    ];
+    return adminPermissions.some(perm => this.hasPermission(perm));
+  }
+
+  hasTeacherNamespaceAccess(): boolean {
+    const user = this.user$.value;
+    if (!user || Object.keys(user).length === 0) return false;
+    const role = (user.role || '').toUpperCase();
+    if (role === 'TEACHER') {
+      return true;
+    }
+    // Or check if they have teacher sub-module permissions
+    const teacherPermissions = [
+      'QUESTION_BANK:VIEW', 'QUESTION_BANK_VIEW',
+      'COMPLETION_TRACKING:VIEW', 'COMPLETION_TRACKING_VIEW',
+      'COMPLETION:VIEW', 'COMPLETION_VIEW',
+      'ANALYTICS:VIEW_OWN', 'ANALYTICS_VIEW_OWN'
+    ];
+    return teacherPermissions.some(perm => this.hasPermission(perm));
+  }
+
+  hasStudentNamespaceAccess(): boolean {
+    const user = this.user$.value;
+    if (!user || Object.keys(user).length === 0) return false;
+    const role = (user.role || '').toUpperCase();
+    return role === 'STUDENT';
   }
 
   logout(): Observable<any> {

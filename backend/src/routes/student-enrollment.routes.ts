@@ -69,12 +69,28 @@ router.get('/unenrolled', requirePermission('ACADEMIC_STRUCTURE', 'READ'), async
       ]
     } : {};
 
-    // Find all active students matching the search
+    // Find all active students matching the search — exclude teachers and admins
     const students = await prisma.user.findMany({
       where: {
         organization_id: req.user.organization_id,
-        role: { permissions: { some: { permission: { module: 'IDENTITY', action: 'IS_STUDENT' } } } },
         is_active: true,
+        role: {
+          permissions: {
+            some: { permission: { module: 'IDENTITY', action: 'IS_STUDENT' } }
+          },
+          AND: [
+            {
+              permissions: {
+                none: { permission: { module: 'IDENTITY', action: 'IS_TEACHER' } }
+              }
+            },
+            {
+              permissions: {
+                none: { permission: { module: 'IDENTITY', action: 'IS_MANAGEMENT' } }
+              }
+            }
+          ]
+        },
         ...searchFilter
       },
       select: {

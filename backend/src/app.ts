@@ -14,6 +14,8 @@ import bulkImportRoutes from './routes/bulk-import.routes';
 import mailRoutes from './routes/mail.routes';
 import notificationRoutes from './routes/notification.routes';
 import curriculumRoutes from './routes/curriculum.routes';
+import settingsRoutes from './routes/settings.routes';
+import completionRoutes from './routes/completion.routes';
 
 const app = express();
 console.log('Starting application, mounting routes...');
@@ -43,6 +45,8 @@ app.use('/api/bulk-import', bulkImportRoutes);
 app.use('/api/mails', mailRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/curriculum', curriculumRoutes);
+app.use('/api/settings', settingsRoutes);
+app.use('/api/completion', completionRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });

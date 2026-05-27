@@ -6,6 +6,7 @@
 
 import { BulkImportProcessor, ResolvedDataMap, ValidationResult, CommitResult } from '../bulk-import.types';
 import prisma from '../../../prisma';
+import { getActiveAcademicYearId } from '../../../utils/academic-helper';
 
 // ────────────────────────────────────────────────────────────────────────────
 // GRADES
@@ -20,11 +21,7 @@ export class GradeProcessor implements BulkImportProcessor {
 
   async resolveRelations(rows: any[]): Promise<ResolvedDataMap> {
     // Look up the active academic year (required for grade creation)
-    const activeYear = await prisma.academicYear.findFirst({
-      where: { organization_id: this.organizationId, is_active: true },
-      select: { id: true }
-    });
-    this.activeAcademicYearId = activeYear?.id;
+    this.activeAcademicYearId = await getActiveAcademicYearId(this.organizationId);
 
     // Pre-load existing grade names for this org+year to detect duplicates
     if (this.activeAcademicYearId) {

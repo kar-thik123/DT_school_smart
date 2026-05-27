@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const prisma_1 = __importDefault(require("../prisma"));
 const auth_middleware_1 = require("../middlewares/auth.middleware");
+const academic_helper_1 = require("../utils/academic-helper");
 const router = (0, express_1.Router)();
 router.use(auth_middleware_1.authMiddleware);
 // A helper function to create generic CRUD handlers
@@ -88,6 +89,24 @@ router.use('/boards', createCrudHandlers('Board', prisma_1.default.board));
 router.use('/mediums', createCrudHandlers('Medium', prisma_1.default.medium));
 router.use('/organization-types', createCrudHandlers('OrganizationType', prisma_1.default.organizationType));
 router.use('/academic-years', createCrudHandlers('AcademicYear', prisma_1.default.academicYear));
+// ── Active Academic Year ─────────────────────────────────────────────────────
+// GET /api/academic/active-year — no special permission required, available to
+// all authenticated users so that modules like Teacher Assignment can read it.
+router.get('/active-year', async (req, res) => {
+    try {
+        const activeYearId = await (0, academic_helper_1.getActiveAcademicYearId)(req.user.organization_id);
+        const activeYear = await prisma_1.default.academicYear.findUnique({
+            where: { id: activeYearId }
+        });
+        if (!activeYear) {
+            return res.status(404).json({ message: 'No active academic year configured' });
+        }
+        res.json(activeYear);
+    }
+    catch (error) {
+        res.status(500).json({ message: 'Error fetching active academic year', error: error.message });
+    }
+});
 // ── Generic Reorder Endpoint ────────────────────────────────────────────────
 router.put('/reorder/:model', (0, auth_middleware_1.requirePermission)('ACADEMIC_STRUCTURE', 'EDIT'), async (req, res) => {
     try {
@@ -171,22 +190,8 @@ gradeRouter.post('/', (0, auth_middleware_1.requirePermission)('ACADEMIC_STRUCTU
         const { academic_year_id } = req.body;
         let yearId = academic_year_id;
         if (!yearId) {
-            // Auto-resolve: use the active academic year, or create a default one
-            let activeYear = await prisma_1.default.academicYear.findFirst({
-                where: { organization_id: req.user.organization_id, is_active: true }
-            });
-            if (!activeYear) {
-                const now = new Date();
-                const yearLabel = `${now.getFullYear()}-${now.getFullYear() + 1}`;
-                activeYear = await prisma_1.default.academicYear.create({
-                    data: {
-                        name: yearLabel,
-                        organization_id: req.user.organization_id,
-                        is_active: true
-                    }
-                });
-            }
-            yearId = activeYear.id;
+            // Auto-resolve: use the centralized active academic year
+            yearId = await (0, academic_helper_1.getActiveAcademicYearId)(req.user.organization_id);
         }
         const data = await prisma_1.default.grade.create({
             data: { name, academic_year_id: yearId, organization_id: req.user.organization_id }
@@ -480,14 +485,7 @@ router.post('/bulk-setup', (0, auth_middleware_1.requirePermission)('ACADEMIC_ST
         if (!Array.isArray(subjects) || subjects.length === 0)
             return res.status(400).json({ message: '`subjects` must be a non-empty array' });
         // ── Resolve active academic year ──────────────────────────────────────
-        let activeYear = await prisma_1.default.academicYear.findFirst({ where: { organization_id: org_id, is_active: true } });
-        if (!activeYear) {
-            const now = new Date();
-            activeYear = await prisma_1.default.academicYear.create({
-                data: { name: `${now.getFullYear()}-${now.getFullYear() + 1}`, organization_id: org_id, is_active: true }
-            });
-        }
-        const academic_year_id = activeYear.id;
+        const academic_year_id = await (0, academic_helper_1.getActiveAcademicYearId)(org_id);
         // ── Helper: resolve sections for a given grade name ───────────────────
         const getSectionsForGrade = (gradeName) => {
             if (Array.isArray(section_mapping) && section_mapping.length > 0) {

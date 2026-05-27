@@ -45,6 +45,7 @@ export class StartupService {
     if (roleName) {
       const role: any = {};
       role[roleName] = permissions || [];
+      role[roleName.toUpperCase()] = permissions || [];
       this.rolesService.addRolesWithPermissions(role);
     }
   }

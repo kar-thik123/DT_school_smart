@@ -30,6 +30,12 @@ export class AcademicYearService {
     );
   }
 
+  /** GET: Fetch the currently active academic year for this organization */
+  getActiveAcademicYear(): Observable<any> {
+    return this.http.get<any>(`${environment.apiUrl}/academic/active-year`);
+  }
+
+
   /** POST: Add a new academic year */
   addAcademicYear(academicYear: AcademicYear): Observable<AcademicYear> {
     return this.http.post<AcademicYear>(this.apiUrl, academicYear);

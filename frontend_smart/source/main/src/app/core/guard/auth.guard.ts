@@ -21,10 +21,27 @@ export class AuthGuard {
   canActivate(route: ActivatedRouteSnapshot, _state: RouterStateSnapshot) {
     const currentUser = this.store.get('currentUser') as User;
     if (currentUser) {
-      // Support checking route permission capability
-      if (route.data['permission'] && !this.authService.hasPermission(route.data['permission'])) {
-        this.router.navigate(['/authentication/signin']);
-        return false;
+      const permission = route.data['permission'];
+      if (permission) {
+        if (permission === 'IDENTITY:IS_MANAGEMENT') {
+          if (!this.authService.hasPermission('IDENTITY:IS_MANAGEMENT') && !this.authService.hasAdminNamespaceAccess()) {
+            this.router.navigate(['/authentication/signin']);
+            return false;
+          }
+        } else if (permission === 'IDENTITY:IS_TEACHER') {
+          if (!this.authService.hasPermission('IDENTITY:IS_TEACHER') && !this.authService.hasTeacherNamespaceAccess()) {
+            this.router.navigate(['/authentication/signin']);
+            return false;
+          }
+        } else if (permission === 'IDENTITY:IS_STUDENT') {
+          if (!this.authService.hasPermission('IDENTITY:IS_STUDENT') && !this.authService.hasStudentNamespaceAccess()) {
+            this.router.navigate(['/authentication/signin']);
+            return false;
+          }
+        } else if (!this.authService.hasPermission(permission)) {
+          this.router.navigate(['/authentication/signin']);
+          return false;
+        }
       }
       return true;
     }

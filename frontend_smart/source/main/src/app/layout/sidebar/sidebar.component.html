@@ -18,7 +18,6 @@
           </li>
           <!-- Top Most level menu -->
           @for (sidebarItem of sidebarItems; track sidebarItem) {
-          <ng-template [ngxPermissionsOnly]="sidebarItem.role">
             <li [routerLinkActive]="sidebarItem.submenu.length !== 0 ? 'active' : 'active-top'">
               @if (sidebarItem.groupTitle === true) {
               <div class="header">{{sidebarItem.title | translate}}</div>
@@ -76,7 +75,6 @@
               </ul>
               }
             </li>
-          </ng-template>
           }
           <li>
             <a class="" (click)="logout()" class="menu-top">
