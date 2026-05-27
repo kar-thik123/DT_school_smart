@@ -12,6 +12,9 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "prisma": {
+    "seed": "ts-node prisma/master.seed.ts"
+  },
   "dependencies": {
     "@types/multer": "^2.1.0",
     "bcrypt": "^6.0.0",

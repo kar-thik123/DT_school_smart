@@ -219,5 +219,36 @@ export const PLATFORM_MODULES: RouteInfo[] = [
     submenu: [],
     showInSidebar: true,
     domain: 'TENANT'
+  },
+  
+  // 5. STUDENT MODULES
+  {
+    path: '',
+    title: 'MENUITEMS.ACADEMICS.TEXT',
+    iconType: 'material-icons-outlined',
+    icon: 'school',
+    class: 'menu-toggle',
+    groupTitle: false,
+    badge: '',
+    badgeClass: '',
+    role: ['STUDENT'],
+    showInSidebar: true,
+    domain: 'TENANT',
+    submenu: [
+      {
+        path: '/student/academics/mcq',
+        title: 'MCQ Practice',
+        iconType: '',
+        icon: '',
+        class: 'ml-menu',
+        groupTitle: false,
+        badge: '',
+        badgeClass: '',
+        role: ['STUDENT'],
+        submenu: [],
+        showInSidebar: true,
+        domain: 'TENANT'
+      }
+    ]
   }
 ];

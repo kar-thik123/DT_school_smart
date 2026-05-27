@@ -25,6 +25,7 @@ import { SyllabusComponent } from './academics/syllabus/syllabus.component';
 import { AssignmentsComponent } from './academics/assignments/assignments.component';
 import { StudyMaterialsComponent } from './academics/study-materials/study-materials.component';
 import { AcademicCalendarComponent } from './academics/academic-calendar/academic-calendar.component';
+import { McqComponent } from './academics/mcq/mcq.component';
 import { MonthlySummaryComponent } from './attendance/monthly-summary/monthly-summary.component';
 import { MyAttendanceComponent } from './attendance/my-attendance/my-attendance.component';
 import { MySubjectsComponent } from './academics/my-subjects/my-subjects.component';
@@ -66,6 +67,7 @@ export const STUDENT_ROUTE: Route[] = [
       { path: 'study-materials', component: StudyMaterialsComponent },
       { path: 'academic-calendar', component: AcademicCalendarComponent },
       { path: 'my-subjects', component: MySubjectsComponent },
+      { path: 'mcq', component: McqComponent },
     ],
   },
   {
