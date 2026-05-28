@@ -52,7 +52,7 @@ export class AudienceResolver {
 
     // Separate Global Audience (SUPER_ADMIN or MANAGE permission) from Context-Bound (VIEW only)
     for (const u of usersWithPermission) {
-      const isGlobal = u.role.name === 'SUPER_ADMIN' || u.role.permissions.some((p: any) => 
+      const isGlobal = String(u.role.name) === 'SUPER_ADMIN' || u.role.permissions.some((p: any) => 
         (p.permission.module === 'IDENTITY' && p.permission.action === 'IS_SUPER_ADMIN') ||
         (p.permission.module === requiredModule && p.permission.action === 'MANAGE') ||
         (p.permission.module === requiredModule && p.permission.action === 'VIEW_ALL')

@@ -49,6 +49,18 @@ router.post('/login', loginLimiter, async (req, res) => {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
         const permissions = user.role.permissions.map((rp) => `${rp.permission.module}:${rp.permission.action}`);
+        // Inject identity fallbacks
+        const roleName = user.role.name || '';
+        if (roleName === 'SYSTEM_ADMIN') {
+            permissions.push('IDENTITY:IS_SYSTEM_ADMIN');
+        }
+        if (roleName === 'SUPER_ADMIN') {
+            permissions.push('IDENTITY:IS_SUPER_ADMIN');
+            permissions.push('IDENTITY:IS_MANAGEMENT');
+        }
+        if (roleName === 'MANAGEMENT') {
+            permissions.push('IDENTITY:IS_MANAGEMENT');
+        }
         const token = jsonwebtoken_1.default.sign({
             user_id: user.id,
             organization_id: user.organization_id
@@ -98,6 +110,17 @@ router.get('/me', auth_middleware_1.authMiddleware, async (req, res) => {
         if (!user)
             return res.status(404).json({ message: 'User not found' });
         const permissions = user.role.permissions.map((rp) => `${rp.permission.module}:${rp.permission.action}`);
+        const roleName = user.role.name || '';
+        if (roleName === 'SYSTEM_ADMIN') {
+            permissions.push('IDENTITY:IS_SYSTEM_ADMIN');
+        }
+        if (roleName === 'SUPER_ADMIN') {
+            permissions.push('IDENTITY:IS_SUPER_ADMIN');
+            permissions.push('IDENTITY:IS_MANAGEMENT');
+        }
+        if (roleName === 'MANAGEMENT') {
+            permissions.push('IDENTITY:IS_MANAGEMENT');
+        }
         res.json({
             user_id: user.id,
             role: user.role.name,

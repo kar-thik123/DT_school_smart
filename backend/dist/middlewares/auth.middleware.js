@@ -32,6 +32,18 @@ const authMiddleware = async (req, res, next) => {
             return res.status(401).json({ message: 'Unauthorized: User account no longer exists.' });
         }
         const freshPermissions = dbUser.role?.permissions?.map((rp) => `${rp.permission.module}:${rp.permission.action}`) || [];
+        // Inject identity fallbacks for system roles that might lack explicit DB mapping
+        const roleName = dbUser.role?.name || '';
+        if (roleName === 'SYSTEM_ADMIN') {
+            freshPermissions.push('IDENTITY:IS_SYSTEM_ADMIN');
+        }
+        if (roleName === 'SUPER_ADMIN') {
+            freshPermissions.push('IDENTITY:IS_SUPER_ADMIN');
+            freshPermissions.push('IDENTITY:IS_MANAGEMENT');
+        }
+        if (roleName === 'MANAGEMENT') {
+            freshPermissions.push('IDENTITY:IS_MANAGEMENT');
+        }
         req.user = {
             user_id: dbUser.id,
             name: dbUser.name,

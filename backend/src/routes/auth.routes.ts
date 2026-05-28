@@ -54,6 +54,19 @@ router.post('/login', loginLimiter, async (req: any, res: Response) => {
     }
 
     const permissions = user.role.permissions.map((rp: any) => `${rp.permission.module}:${rp.permission.action}`);
+    
+    // Inject identity fallbacks
+    const roleName = user.role.name || '';
+    if (roleName === 'SYSTEM_ADMIN') {
+      permissions.push('IDENTITY:IS_SYSTEM_ADMIN');
+    }
+    if (roleName === 'SUPER_ADMIN') {
+      permissions.push('IDENTITY:IS_SUPER_ADMIN');
+      permissions.push('IDENTITY:IS_MANAGEMENT');
+    }
+    if (roleName === 'MANAGEMENT') {
+      permissions.push('IDENTITY:IS_MANAGEMENT');
+    }
 
     const token = jwt.sign(
       { 
@@ -109,6 +122,18 @@ router.get('/me', authMiddleware, async (req: any, res: Response) => {
     if (!user) return res.status(404).json({ message: 'User not found' });
 
     const permissions = user.role.permissions.map((rp: any) => `${rp.permission.module}:${rp.permission.action}`);
+    
+    const roleName = user.role.name || '';
+    if (roleName === 'SYSTEM_ADMIN') {
+      permissions.push('IDENTITY:IS_SYSTEM_ADMIN');
+    }
+    if (roleName === 'SUPER_ADMIN') {
+      permissions.push('IDENTITY:IS_SUPER_ADMIN');
+      permissions.push('IDENTITY:IS_MANAGEMENT');
+    }
+    if (roleName === 'MANAGEMENT') {
+      permissions.push('IDENTITY:IS_MANAGEMENT');
+    }
 
     res.json({
       user_id: user.id,
