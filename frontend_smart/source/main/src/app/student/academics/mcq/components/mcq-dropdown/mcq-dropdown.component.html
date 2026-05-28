@@ -1,0 +1,106 @@
+<div class="hierarchy-container">
+  <!-- Trigger Button -->
+  <button class="hierarchy-trigger" [class.open]="isHierarchyOpen" (click)="toggleDropdown()"
+    [attr.aria-expanded]="isHierarchyOpen">
+    <div class="trigger-content">
+      <span class="trigger-text" *ngIf="selectedSubjectId; else emptyState">
+        <span class="label">{{ labelName }}:</span>
+        <span class="value">
+          <span class="subject-val">{{ selectedSubjectName }}</span>
+          <span *ngIf="selectedUnitName" class="unit-val"> > {{ selectedUnitName }}</span>
+          <span *ngIf="selectedTopicName" class="topic-val"> > {{ selectedTopicName }}</span>
+          <span *ngIf="selectedSubTopicName" class="subtopic-val"> > {{ selectedSubTopicName }}</span>
+        </span>
+      </span>
+      <ng-template #emptyState>
+        <span class="trigger-text empty">Select {{ labelName }}</span>
+      </ng-template>
+    </div>
+    <mat-icon class="trigger-icon-right"
+      [@iconRotate]="isHierarchyOpen ? 'expanded' : 'collapsed'">chevron_right</mat-icon>
+  </button>
+
+  <!-- Dropdown Panel -->
+  <div class="hierarchy-panel" *ngIf="isHierarchyOpen" [@dropdownAnimation]>
+    <div class="hierarchy-scroll-area" (click)="$event.stopPropagation()">
+
+      <ng-container *ngIf="subjects && subjects.length > 0; else noSubjects">
+        <div class="subjects-tree">
+          
+          <div *ngFor="let subject of subjects">
+            <div class="subject-row" 
+                 [class.active]="selectedSubjectId === subject.id && !selectedUnitId">
+              <div class="tree-line"></div>
+              <div *ngIf="showUnitsAndBelow" (click)="toggleSubject(subject.id, $event)" class="d-inline-flex align-items-center">
+                <mat-icon class="expand-chevron" [@iconRotate]="expandedSubject === subject.id ? 'expanded' : 'collapsed'">chevron_right</mat-icon>
+              </div>
+              <span class="subject-name flex-grow-1" (click)="selectSubject(subject, $event)">{{ subject.name }}</span>
+            </div>
+
+            <!-- UNITS -->
+            <div *ngIf="showUnitsAndBelow" class="units-container" [@expandAnimation]="expandedSubject === subject.id ? 'expanded' : 'collapsed'">
+              <div class="units-tree">
+                <ng-container *ngIf="getUnitsForSubject(subject.id).length > 0; else noUnits">
+                  <div *ngFor="let unit of getUnitsForSubject(subject.id)">
+                    <div class="unit-row" 
+                         [class.active]="selectedSubjectId === subject.id && selectedUnitId === unit.id && !selectedTopicId">
+                      <div class="tree-line"></div>
+                      <div (click)="toggleUnit(unit.id, $event)" class="d-inline-flex align-items-center">
+                        <mat-icon class="expand-chevron" [@iconRotate]="expandedUnit === unit.id ? 'expanded' : 'collapsed'">chevron_right</mat-icon>
+                      </div>
+                      <span class="unit-name flex-grow-1" (click)="selectNode(subject, unit, null, null, $event)">{{ unit.name }}</span>
+                    </div>
+
+                    <!-- TOPICS -->
+                    <div class="topics-container" [@expandAnimation]="expandedUnit === unit.id ? 'expanded' : 'collapsed'">
+                      <div class="topics-tree">
+                        <ng-container *ngIf="getTopicsForUnit(unit.id).length > 0; else noTopics">
+                          <div *ngFor="let topic of getTopicsForUnit(unit.id)">
+                            <div class="topic-row" 
+                                 [class.active]="selectedUnitId === unit.id && selectedTopicId === topic.id && !selectedSubTopicId">
+                              <div class="tree-line"></div>
+                              <div (click)="toggleTopic(topic.id, $event)" class="d-inline-flex align-items-center">
+                                <mat-icon class="expand-chevron" [@iconRotate]="expandedTopic === topic.id ? 'expanded' : 'collapsed'">chevron_right</mat-icon>
+                              </div>
+                              <span class="topic-name flex-grow-1" (click)="selectNode(subject, unit, topic, null, $event)">{{ topic.name }}</span>
+                            </div>
+
+                            <!-- SUBTOPICS -->
+                            <div class="subtopics-container" [@expandAnimation]="expandedTopic === topic.id ? 'expanded' : 'collapsed'">
+                              <div class="subtopics-tree">
+                                <ng-container *ngIf="getSubTopicsForTopic(topic.id).length > 0; else noSubTopics">
+                                  <div class="subtopic-row" *ngFor="let subtopic of getSubTopicsForTopic(topic.id)"
+                                       [class.active]="selectedTopicId === topic.id && selectedSubTopicId === subtopic.id">
+                                    <div class="tree-line"></div>
+                                    <span class="subtopic-name flex-grow-1 ms-4" (click)="selectNode(subject, unit, topic, subtopic, $event)">{{ subtopic.name }}</span>
+                                  </div>
+                                </ng-container>
+                                <ng-template #noSubTopics><div class="subtopic-row empty"><span class="subtopic-name text-muted ms-4">No subtopics available</span></div></ng-template>
+                              </div>
+                            </div>
+
+                          </div>
+                        </ng-container>
+                        <ng-template #noTopics><div class="topic-row empty"><span class="topic-name text-muted ms-4">No topics available</span></div></ng-template>
+                      </div>
+                    </div>
+                    
+                  </div>
+                </ng-container>
+                <ng-template #noUnits><div class="unit-row empty"><span class="unit-name text-muted ms-4">No units available</span></div></ng-template>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </ng-container>
+
+      <ng-template #noSubjects>
+        <div class="empty-state">
+          <span class="text-muted">No curriculum data available for your enrollment.</span>
+        </div>
+      </ng-template>
+
+    </div>
+  </div>
+</div>

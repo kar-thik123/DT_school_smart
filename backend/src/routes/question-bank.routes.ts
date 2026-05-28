@@ -615,7 +615,7 @@ router.post('/bulk/preview', requirePermission('QUESTION_BANK', 'IMPORT'), uploa
       resolved_data: r.resolved_data
     }));
 
-    await (prisma as any).previewQuestion.createMany({ data: previewData });
+    await (prisma as any).previewImportData.createMany({ data: previewData });
 
     const summary = {
       total: resolvedRows.length,
@@ -652,7 +652,7 @@ router.post('/bulk/discard', requirePermission('QUESTION_BANK', 'IMPORT'), async
       deleteWhere.created_by = req.user.user_id;
     }
 
-    const deleteResult = await (prisma as any).previewQuestion.deleteMany({ where: deleteWhere });
+    const deleteResult = await (prisma as any).previewImportData.deleteMany({ where: deleteWhere });
     if (deleteResult.count === 0 && !isGlobalAdmin) {
       return res.status(403).json({ message: 'You are not authorized to discard this preview session.' });
     }
@@ -679,7 +679,7 @@ router.post('/bulk/confirm', requirePermission('QUESTION_BANK', 'IMPORT'), async
       if (!hasElevatedTenantAccess) {
         previewWhere.created_by = req.user.user_id;
       }
-      const previews = await (prisma as any).previewQuestion.findMany({ where: previewWhere });
+      const previews = await (prisma as any).previewImportData.findMany({ where: previewWhere });
       if (!previews || previews.length === 0) return res.status(404).json({ message: 'Session not found or empty' });
       records = previews.map((p: any) => p.raw_data);
     }
@@ -823,7 +823,7 @@ router.post('/bulk/confirm', requirePermission('QUESTION_BANK', 'IMPORT'), async
     // Delete the preview records now that they are processed
     const deleteWhere: any = { session_id, organization_id: org_id };
     if (!hasElevatedTenantAccess) deleteWhere.created_by = req.user.user_id;
-    await (prisma as any).previewQuestion.deleteMany({ where: deleteWhere });
+    await (prisma as any).previewImportData.deleteMany({ where: deleteWhere });
 
     await logAuditEvent({
       organization_id: org_id,

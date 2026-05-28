@@ -16,6 +16,7 @@ import notificationRoutes from './routes/notification.routes';
 import curriculumRoutes from './routes/curriculum.routes';
 import settingsRoutes from './routes/settings.routes';
 import completionRoutes from './routes/completion.routes';
+import studentMcqRoutes from './routes/student-mcq.routes';
 
 const app = express();
 console.log('Starting application, mounting routes...');
@@ -47,6 +48,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/curriculum', curriculumRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/completion', completionRoutes);
+app.use('/api/student-mcq', studentMcqRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
