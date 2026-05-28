@@ -21,6 +21,7 @@ const notification_routes_1 = __importDefault(require("./routes/notification.rou
 const curriculum_routes_1 = __importDefault(require("./routes/curriculum.routes"));
 const settings_routes_1 = __importDefault(require("./routes/settings.routes"));
 const completion_routes_1 = __importDefault(require("./routes/completion.routes"));
+const student_mcq_routes_1 = __importDefault(require("./routes/student-mcq.routes"));
 const app = (0, express_1.default)();
 console.log('Starting application, mounting routes...');
 // app.use(cors());
@@ -49,6 +50,7 @@ app.use('/api/notifications', notification_routes_1.default);
 app.use('/api/curriculum', curriculum_routes_1.default);
 app.use('/api/settings', settings_routes_1.default);
 app.use('/api/completion', completion_routes_1.default);
+app.use('/api/student-mcq', student_mcq_routes_1.default);
 app.get('/health', (req, res) => {
     res.json({ status: 'ok' });
 });

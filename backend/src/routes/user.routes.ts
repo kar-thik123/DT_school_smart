@@ -7,6 +7,7 @@ import { checkSeatAvailability } from '../utils/license-check';
 import multer = require('multer');
 import path = require('path');
 import fs = require('fs');
+import { AuthorizationService } from '../services/authorization.service';
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -407,7 +408,8 @@ router.post('/:id/reset-password', async (req: any, res: Response) => {
     }
 
     // Role restriction check: Protect SYSTEM_ADMIN from being reset by standard tenant admins
-    if (targetUser.role?.name === 'SYSTEM_ADMIN' && req.user.role !== 'SYSTEM_ADMIN') {
+    const isSystemAdmin = AuthorizationService.hasIdentity(req.user.permissions || [], 'IS_SYSTEM_ADMIN');
+    if (targetUser.role?.name === 'SYSTEM_ADMIN' && !isSystemAdmin) {
       return res.status(403).json({ message: 'Cannot reset password for SYSTEM_ADMIN' });
     }
 

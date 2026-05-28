@@ -9,6 +9,24 @@ const prisma_1 = __importDefault(require("../prisma"));
 const zod_1 = require("zod");
 const auth_middleware_1 = require("../middlewares/auth.middleware");
 const license_check_1 = require("../utils/license-check");
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
+const authorization_service_1 = require("../services/authorization.service");
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        const dir = path.join(process.cwd(), 'uploads', 'profile');
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+        }
+        cb(null, dir);
+    },
+    filename: function (req, file, cb) {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, uniqueSuffix + path.extname(file.originalname));
+    }
+});
+const upload = multer({ storage: storage });
 const router = (0, express_1.Router)();
 router.use(auth_middleware_1.authMiddleware);
 router.use((0, auth_middleware_1.requirePermission)('IDENTITY', 'IS_MANAGEMENT'));
@@ -387,7 +405,8 @@ router.post('/:id/reset-password', async (req, res) => {
             return res.status(404).json({ message: 'User not found' });
         }
         // Role restriction check: Protect SYSTEM_ADMIN from being reset by standard tenant admins
-        if (targetUser.role?.name === 'SYSTEM_ADMIN' && req.user.role !== 'SYSTEM_ADMIN') {
+        const isSystemAdmin = authorization_service_1.AuthorizationService.hasIdentity(req.user.permissions || [], 'IS_SYSTEM_ADMIN');
+        if (targetUser.role?.name === 'SYSTEM_ADMIN' && !isSystemAdmin) {
             return res.status(403).json({ message: 'Cannot reset password for SYSTEM_ADMIN' });
         }
         // Self-protection: SUPER_ADMIN cannot admin-reset their own password via user management
@@ -441,6 +460,98 @@ router.post('/:id/reset-password', async (req, res) => {
     }
     catch (error) {
         console.error('Password reset error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+router.get('/profile/:id', async (req, res) => {
+    try {
+        const user = await prisma_1.default.user.findUnique({
+            where: { id: req.params.id },
+            include: { role: true, user_profile: true }
+        });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        const profileData = user.user_profile ? {
+            phone: user.user_profile.phone,
+            city: user.user_profile.city,
+            country: user.user_profile.country,
+            address: user.user_profile.address,
+            about: user.user_profile.about,
+            profile_image: user.user_profile.profile_image,
+            academic_profiles: user.user_profile.academic_profiles || [],
+            skills: user.user_profile.skills || []
+        } : {
+            academic_profiles: [],
+            skills: []
+        };
+        res.json({ ...user, ...profileData });
+    }
+    catch (error) {
+        console.error('Error fetching profile:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+router.put('/profile/:id', upload.single('profile_image'), async (req, res) => {
+    try {
+        let { name, email, phone, city, country, address, about, academic_profiles, skills } = req.body;
+        // Handle multipart/form-data where JSON arrays are sent as strings
+        if (typeof academic_profiles === 'string') {
+            try {
+                academic_profiles = JSON.parse(academic_profiles);
+            }
+            catch (e) {
+                academic_profiles = [];
+            }
+        }
+        if (typeof skills === 'string') {
+            try {
+                skills = JSON.parse(skills);
+            }
+            catch (e) {
+                skills = [];
+            }
+        }
+        let profile_image = undefined;
+        if (req.file) {
+            profile_image = `/uploads/profile/${req.file.filename}`;
+        }
+        const user = await prisma_1.default.user.findUnique({
+            where: { id: req.params.id }
+        });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        // Update core User fields
+        await prisma_1.default.user.update({
+            where: { id: req.params.id },
+            data: { name, email }
+        });
+        // Upsert UserProfile fields
+        const updateData = { phone, city, country, address, about, academic_profiles, skills };
+        if (profile_image) {
+            updateData.profile_image = profile_image;
+        }
+        await prisma_1.default.userProfile.upsert({
+            where: { user_id: req.params.id },
+            update: updateData,
+            create: {
+                user_id: req.params.id,
+                organization_id: user.organization_id,
+                phone,
+                city,
+                country,
+                address,
+                about,
+                profile_image,
+                academic_profiles: academic_profiles || [],
+                skills: skills || []
+            }
+        });
+        res.json({ message: 'Profile updated successfully', user_profile: { profile_image } });
+    }
+    catch (error) {
+        console.error('Error updating profile:', error);
         res.status(500).json({ message: 'Server error' });
     }
 });

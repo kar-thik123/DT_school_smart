@@ -1,5 +1,6 @@
 import { Route } from '@angular/router';
 import { Page404Component } from 'app/authentication/page404/page404.component';
+import { AuthGuard } from '@core/guard/auth.guard';
 
 export const ADMIN_ROUTE: Route[] = [
   {
@@ -120,6 +121,8 @@ export const ADMIN_ROUTE: Route[] = [
     children: [
       {
         path: 'roles',
+        canActivate: [AuthGuard],
+        data: { permission: 'ROLES_AND_PERMISSIONS:VIEW' },
         loadComponent: () =>
           import('./settings/role-permissions/role-permissions.component').then(
             (m) => m.RolePermissionsComponent
@@ -127,6 +130,8 @@ export const ADMIN_ROUTE: Route[] = [
       },
       {
         path: 'users',
+        canActivate: [AuthGuard],
+        data: { permission: 'USERS:VIEW' },
         loadComponent: () =>
           import('./settings/user-management/user-management.component').then(
             (m) => m.UserManagementComponent
@@ -134,6 +139,8 @@ export const ADMIN_ROUTE: Route[] = [
       },
       {
         path: 'master-config',
+        canActivate: [AuthGuard],
+        data: { permission: 'MASTER_CONFIGURATION:VIEW' },
         loadComponent: () =>
           import('./administration/master-config/master-config.component').then(
             (m) => m.MasterConfigComponent
@@ -141,6 +148,8 @@ export const ADMIN_ROUTE: Route[] = [
       },
       {
         path: 'academic-structure',
+        canActivate: [AuthGuard],
+        data: { permission: 'ACADEMIC_STRUCTURE:VIEW' },
         loadComponent: () =>
           import('./administration/academic-structure/academic-structure.component').then(
             (m) => m.AcademicStructureComponent
@@ -148,6 +157,8 @@ export const ADMIN_ROUTE: Route[] = [
       },
       {
         path: 'units-list',
+        canActivate: [AuthGuard],
+        data: { permission: 'UNITS_LIST:MANAGE_SYLLABUS' },
         loadComponent: () =>
           import('./administration/units-list/units.component').then(
             (m) => m.UnitsListComponent
@@ -155,6 +166,8 @@ export const ADMIN_ROUTE: Route[] = [
       },
       {
         path: 'question-bank',
+        canActivate: [AuthGuard],
+        data: { permission: 'QUESTION_BANK:VIEW' },
         loadComponent: () =>
           import('./administration/question-bank/question-bank.component').then(
             (m) => m.QuestionBankComponent
@@ -162,6 +175,8 @@ export const ADMIN_ROUTE: Route[] = [
       },
       {
         path: 'teacher-assignment',
+        canActivate: [AuthGuard],
+        data: { permission: 'TEACHER_ASSIGNMENT:VIEW' },
         loadComponent: () =>
           import('./administration/teacher-assignment/teacher-assignment.component').then(
             (m) => m.TeacherAssignmentComponent
@@ -169,6 +184,8 @@ export const ADMIN_ROUTE: Route[] = [
       },
       {
         path: 'student-mapping',
+        canActivate: [AuthGuard],
+        data: { permission: 'STUDENT_ENROLLMENT:VIEW' },
         loadComponent: () =>
           import('./administration/student-mapping/student-mapping.component').then(
             (m) => m.StudentMappingComponent
@@ -176,6 +193,8 @@ export const ADMIN_ROUTE: Route[] = [
       },
       {
         path: 'completion-mgmt',
+        canActivate: [AuthGuard],
+        data: { permission: 'COMPLETION_TRACKING:VIEW' },
         loadComponent: () =>
           import('./administration/completion-mgmt/completion-mgmt.component').then(
             (m) => m.CompletionMgmtComponent
@@ -183,6 +202,8 @@ export const ADMIN_ROUTE: Route[] = [
       },
       {
         path: 'settings',
+        canActivate: [AuthGuard],
+        data: { permission: 'SETTINGS:VIEW' },
         loadComponent: () =>
           import('./administration/settings/settings.component').then(
             (m) => m.SettingsComponent

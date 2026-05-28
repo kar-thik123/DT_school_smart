@@ -8,6 +8,7 @@ import multer from 'multer';
 import path from 'path';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
+import { AuthorizationService } from '../services/authorization.service';
 
 const router = Router();
 
@@ -597,8 +598,9 @@ router.patch('/:id/branding', authMiddleware, async (req: any, res: Response) =>
   try {
     const { school_name, logo_url, contact_email, contact_phone, address } = req.body;
     // Only allow SUPER_ADMIN of the org or SYSTEM_ADMIN
-    const isSelf = req.user.role === 'SUPER_ADMIN' && req.user.organization_id === req.params.id;
-    const isIT = req.user.role === 'SYSTEM_ADMIN';
+    const userPermissions = req.user.permissions || [];
+    const isSelf = AuthorizationService.hasIdentity(userPermissions, 'IS_SUPER_ADMIN') && req.user.organization_id === req.params.id;
+    const isIT = AuthorizationService.hasIdentity(userPermissions, 'IS_SYSTEM_ADMIN');
     if (!isSelf && !isIT) return res.status(403).json({ message: 'Forbidden' });
 
     const updated = await prisma.organization.update({

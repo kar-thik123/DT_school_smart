@@ -23,7 +23,10 @@ router.get('/', requirePermission('TEACHER_ASSIGNMENT', 'VIEW'), async (req: any
   res.setHeader('Expires', '0');
   try {
     const assignments = await prisma.teacherAssignment.findMany({
-      where: { organization_id: req.user.organization_id },
+      where: { 
+        organization_id: req.user.organization_id,
+        academic_year_id: req.academic_year_id
+      },
       include: {
         teacher: { select: { id: true, name: true, email: true } },
         grade: { select: { id: true, name: true } },

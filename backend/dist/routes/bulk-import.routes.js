@@ -24,8 +24,7 @@ const ENTITY_PERMISSION_MAP = {
     'ACADEMIC_STRUCTURE_FULL': { module: 'ACADEMIC_STRUCTURE', action: 'CREATE' }
 };
 const verifyBulkImportPermission = (entityType, req) => {
-    if (req.user?.role === 'SYSTEM_ADMIN')
-        return true;
+    // SYSTEM_ADMIN no longer bypasses. Rely on database permissions.
     const perm = ENTITY_PERMISSION_MAP[entityType.toUpperCase()];
     if (!perm)
         return false;

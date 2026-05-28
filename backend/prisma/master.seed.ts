@@ -149,8 +149,8 @@ async function main() {
     { module: 'IDENTITY', action: 'IS_MANAGEMENT', description: 'Management role identifier' },
     { module: 'IDENTITY', action: 'IS_TEACHER', description: 'Teacher role identifier' },
     { module: 'IDENTITY', action: 'IS_STUDENT', description: 'Student role identifier' },
-    { module: 'ACADEMIC_STRUCTURE', action: 'READ', description: 'Read academic data' },
-    { module: 'ACADEMIC_STRUCTURE', action: 'EDIT', description: 'Edit academic data' },
+    { module: 'ACADEMIC_STRUCTURE', action: 'VIEW', description: 'Read academic data' },
+    { module: 'ACADEMIC_STRUCTURE', action: 'UPDATE', description: 'Edit academic data' },
   ];
 
   const permissions = [];
@@ -165,10 +165,10 @@ async function main() {
 
   // 4. Roles
   const rolesData = [
-    { name: 'SUPER_ADMIN', permissions: ['IS_MANAGEMENT', 'READ', 'EDIT'] },
-    { name: 'MANAGEMENT', permissions: ['IS_MANAGEMENT', 'READ', 'EDIT'] },
-    { name: 'TEACHER', permissions: ['IS_TEACHER', 'READ'] },
-    { name: 'STUDENT', permissions: ['IS_STUDENT', 'READ'] }
+    { name: 'SUPER_ADMIN', permissions: ['IS_MANAGEMENT', 'VIEW', 'UPDATE'] },
+    { name: 'MANAGEMENT', permissions: ['IS_MANAGEMENT', 'VIEW', 'UPDATE'] },
+    { name: 'TEACHER', permissions: ['IS_TEACHER', 'VIEW'] },
+    { name: 'STUDENT', permissions: ['IS_STUDENT', 'VIEW'] }
   ];
 
   const roleMap: Record<string, string> = {};

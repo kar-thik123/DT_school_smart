@@ -1,21 +1,32 @@
 import { Router, Request, Response } from 'express';
 import prisma from '../prisma';
-import { authMiddleware } from '../middlewares/auth.middleware';
+import { authMiddleware, requirePermission } from '../middlewares/auth.middleware';
 import { getActiveAcademicYearId } from '../utils/academic-helper';
 
 const router = Router();
 router.use(authMiddleware);
 
-// Middleware to ensure only students can access
-router.use((req: any, res: Response, next) => {
-  if (req.user.role !== 'STUDENT') {
-    return res.status(403).json({ message: 'Only students can access this module' });
+async function isMcqModuleEnabled(org_id: string): Promise<boolean> {
+  const config = await prisma.moduleConfig.findUnique({
+    where: {
+      organization_id_module_name: { organization_id: org_id, module_name: 'mcq' }
+    }
+  });
+  if (!config || !config.config_data) return true; // default: on
+  const data = config.config_data as Record<string, unknown>;
+  return data['enable_module'] !== false;
+}
+
+const checkMcqEnabled = async (req: any, res: Response, next: any) => {
+  const enabled = await isMcqModuleEnabled(req.user.organization_id);
+  if (!enabled) {
+    return res.status(503).json({ message: 'MCQ module is currently disabled for this organization.' });
   }
   next();
-});
+};
 
 // GET /student-mcq/curriculum
-router.get('/curriculum', async (req: any, res: Response) => {
+router.get('/curriculum', requirePermission('MCQ', 'VIEW'), checkMcqEnabled, async (req: any, res: Response) => {
   try {
     const org_id = req.user.organization_id;
     const student_id = req.user.user_id;
@@ -113,7 +124,7 @@ router.get('/curriculum', async (req: any, res: Response) => {
 });
 
 // GET /student-mcq/questions
-router.get('/questions', async (req: any, res: Response) => {
+router.get('/questions', requirePermission('MCQ', 'VIEW'), checkMcqEnabled, async (req: any, res: Response) => {
   try {
     const org_id = req.user.organization_id;
     const { sub_topic_id, topic_id, unit_id, subject_id } = req.query;
@@ -155,7 +166,7 @@ router.get('/questions', async (req: any, res: Response) => {
 });
 
 // POST /student-mcq/attempts
-router.post('/attempts', async (req: any, res: Response) => {
+router.post('/attempts', requirePermission('MCQ', 'ATTEMPT'), checkMcqEnabled, async (req: any, res: Response) => {
   try {
     const org_id = req.user.organization_id;
     const student_id = req.user.user_id;

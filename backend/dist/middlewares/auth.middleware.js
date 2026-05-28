@@ -6,6 +6,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.requirePermission = exports.authMiddleware = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const prisma_1 = __importDefault(require("../prisma"));
+const academic_context_resolver_1 = require("../utils/academic-context.resolver");
+const authorization_service_1 = require("../services/authorization.service");
 const authMiddleware = async (req, res, next) => {
     try {
         const authHeader = req.headers.authorization;
@@ -46,6 +48,13 @@ const authMiddleware = async (req, res, next) => {
         if (!req.organization_id && req.user.organization_id) {
             req.organization_id = req.user.organization_id;
         }
+        // Attempt to resolve the active academic year context globally
+        try {
+            req.academic_year_id = await academic_context_resolver_1.AcademicContextResolver.resolveAcademicYearId(req);
+        }
+        catch (err) {
+            console.error('[AuthMiddleware] Error resolving academic year context', err);
+        }
         next();
     }
     catch (error) {
@@ -55,61 +64,12 @@ const authMiddleware = async (req, res, next) => {
 exports.authMiddleware = authMiddleware;
 const requirePermission = (module, action) => {
     return (req, res, next) => {
-        // SYSTEM_ADMIN bypasses globally; other roles are permission-driven.
-        if (req.user?.role === 'SYSTEM_ADMIN') {
-            return next();
-        }
+        // Note: SYSTEM_ADMIN no longer bypasses globally. Permissions must be explicitly mapped in the database.
         const userPermissions = req.user?.permissions || [];
-        const requiredPermission = `${module}:${action}`;
-        if (userPermissions.includes(requiredPermission)) {
+        if (authorization_service_1.AuthorizationService.hasPermission(userPermissions, module, action)) {
             return next();
         }
-        // Dynamic mapping for backward-compatibility with old route permission checks
-        let mappedModule = module;
-        let mappedAction = action;
-        if (module === 'ORGANIZATION') {
-            mappedModule = 'MASTER_CONFIGURATION';
-        }
-        else if (module === 'ROLES') {
-            mappedModule = 'ROLES_AND_PERMISSIONS';
-        }
-        else if (module === 'COMPLETION') {
-            mappedModule = 'COMPLETION_TRACKING';
-        }
-        else if (module === 'ACADEMIC' && action === 'MANAGE_SYLLABUS') {
-            mappedModule = 'UNITS_LIST';
-        }
-        else if (module === 'QUESTION_BANK' && action === 'READ') {
-            mappedModule = 'QUESTION_BANK';
-            mappedAction = 'VIEW';
-        }
-        const mappedPermission = `${mappedModule}:${mappedAction}`;
-        if (userPermissions.includes(mappedPermission)) {
-            return next();
-        }
-        // Allow academic structure create/edit/delete for syllabus managers
-        if (module === 'ACADEMIC_STRUCTURE' && (action === 'CREATE' || action === 'EDIT' || action === 'DELETE')) {
-            if (userPermissions.includes('UNITS_LIST:MANAGE_SYLLABUS') ||
-                userPermissions.includes('ACADEMIC:MANAGE_SYLLABUS')) {
-                return next();
-            }
-        }
-        // Allow read-only access to academic structure for users who have question bank or completion tracking view permissions
-        if (module === 'ACADEMIC_STRUCTURE' && action === 'READ') {
-            if (userPermissions.includes('QUESTION_BANK:VIEW') ||
-                userPermissions.includes('COMPLETION_TRACKING:VIEW') ||
-                userPermissions.includes('UNITS_LIST:MANAGE_SYLLABUS')) {
-                return next();
-            }
-        }
-        // Allow PRACTICE:MANAGE legacy action for completion tracking permission holders
-        if (module === 'PRACTICE' && action === 'MANAGE') {
-            if (userPermissions.includes('COMPLETION_TRACKING:VIEW') ||
-                userPermissions.includes('COMPLETION_TRACKING:MANAGE')) {
-                return next();
-            }
-        }
-        return res.status(403).json({ message: `Forbidden: Requires ${requiredPermission}` });
+        return res.status(403).json({ message: `Forbidden: Requires ${module}:${action}` });
     };
 };
 exports.requirePermission = requirePermission;

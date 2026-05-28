@@ -94,7 +94,7 @@ router.post('/', requirePermission('QUESTION_BANK', 'CREATE'), async (req: any, 
   try {
     const parsed = questionSchema.parse(req.body);
     const org_id = req.user.organization_id;
-    const isGlobalAdmin = ['SUPER_ADMIN', 'MANAGEMENT'].includes(req.user.role);
+    const isGlobalAdmin = req.user.permissions?.includes('IDENTITY:IS_MANAGEMENT') || req.user.permissions?.includes('IDENTITY:IS_SUPER_ADMIN');
 
     if (!isGlobalAdmin) {
       if (parsed.subject_id) {
@@ -157,7 +157,7 @@ router.get('/', requirePermission('QUESTION_BANK', 'READ'), async (req: any, res
       ];
     }
 
-    const isGlobalAdmin = ['SUPER_ADMIN', 'MANAGEMENT'].includes(req.user.role);
+    const isGlobalAdmin = req.user.permissions?.includes('IDENTITY:IS_MANAGEMENT') || req.user.permissions?.includes('IDENTITY:IS_SUPER_ADMIN');
     if (!isGlobalAdmin) {
       const assignments = await prisma.teacherAssignment.findMany({
         where: { teacher_id: req.user.user_id, organization_id: req.user.organization_id }
@@ -232,7 +232,7 @@ router.put('/:id', requirePermission('QUESTION_BANK', 'EDIT'), async (req: any, 
     const existing = await prisma.question.findFirst({ where: { id: req.params.id, organization_id: org_id } });
     if (!existing) return res.status(404).json({ message: 'Question not found' });
 
-    const isGlobalAdmin = ['SUPER_ADMIN', 'MANAGEMENT'].includes(req.user.role);
+    const isGlobalAdmin = req.user.permissions?.includes('IDENTITY:IS_MANAGEMENT') || req.user.permissions?.includes('IDENTITY:IS_SUPER_ADMIN');
     if (!isGlobalAdmin && existing.created_by !== req.user.user_id) {
       return res.status(403).json({ message: 'Only creator or admins can edit' });
     }
@@ -275,7 +275,7 @@ router.delete('/:id', requirePermission('QUESTION_BANK', 'DELETE'), async (req: 
     const existing = await prisma.question.findFirst({ where: { id: req.params.id, organization_id: req.user.organization_id } });
     if (!existing) return res.status(404).json({ message: 'Question not found' });
 
-    const isGlobalAdmin = ['SUPER_ADMIN', 'MANAGEMENT'].includes(req.user.role);
+    const isGlobalAdmin = req.user.permissions?.includes('IDENTITY:IS_MANAGEMENT') || req.user.permissions?.includes('IDENTITY:IS_SUPER_ADMIN');
     if (!isGlobalAdmin && existing.created_by !== req.user.user_id) {
       return res.status(403).json({ message: 'Only creator or admins can delete' });
     }
@@ -646,7 +646,7 @@ router.post('/bulk/discard', requirePermission('QUESTION_BANK', 'IMPORT'), async
     const { session_id } = req.body;
     if (!session_id) return res.status(400).json({ message: 'Missing session_id' });
     
-    const isGlobalAdmin = ['SUPER_ADMIN', 'MANAGEMENT'].includes(req.user.role);
+    const isGlobalAdmin = req.user.permissions?.includes('IDENTITY:IS_MANAGEMENT') || req.user.permissions?.includes('IDENTITY:IS_SUPER_ADMIN');
     const deleteWhere: any = { session_id, organization_id: req.user.organization_id };
     if (!isGlobalAdmin) {
       deleteWhere.created_by = req.user.user_id;
@@ -670,7 +670,7 @@ router.post('/bulk/confirm', requirePermission('QUESTION_BANK', 'IMPORT'), async
     if (!session_id) return res.status(400).json({ message: 'Missing session_id' });
 
     const org_id = req.user.organization_id;
-    const hasElevatedTenantAccess = ['SUPER_ADMIN', 'MANAGEMENT'].includes(req.user.role);
+    const hasElevatedTenantAccess = req.user.permissions?.includes('IDENTITY:IS_MANAGEMENT') || req.user.permissions?.includes('IDENTITY:IS_SUPER_ADMIN');
     let records: any[] = [];
     if (modified_records && Array.isArray(modified_records) && modified_records.length > 0) {
       records = modified_records;
@@ -858,7 +858,7 @@ router.post('/bulk', requirePermission('QUESTION_BANK', 'IMPORT'), upload.single
     if (!records || records.length === 0) return res.status(400).json({ message: 'Empty or invalid CSV spreadsheet' });
 
     const org_id = req.user.organization_id;
-    const hasElevatedTenantAccess = ['SUPER_ADMIN', 'MANAGEMENT'].includes(req.user.role);
+    const hasElevatedTenantAccess = req.user.permissions?.includes('IDENTITY:IS_MANAGEMENT') || req.user.permissions?.includes('IDENTITY:IS_SUPER_ADMIN');
 
     const activeYearId = await getActiveAcademicYearId(org_id);
 

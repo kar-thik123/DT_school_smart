@@ -8,14 +8,15 @@ const prisma_1 = __importDefault(require("../prisma"));
 const auth_middleware_1 = require("../middlewares/auth.middleware");
 const security_log_service_1 = require("../services/security-log.service");
 const zod_1 = require("zod");
+const authorization_service_1 = require("../services/authorization.service");
 const router = (0, express_1.Router)();
 // Middleware: Only Admins can manage roles
 router.use(auth_middleware_1.authMiddleware);
 router.use((req, res, next) => {
     // Allow SUPER_ADMIN or anyone with ROLES_AND_PERMISSIONS:VIEW to access these routes
     const userPermissions = req.user?.permissions || [];
-    if (req.user.role === 'SYSTEM_ADMIN' ||
-        req.user.role === 'SUPER_ADMIN' ||
+    if (authorization_service_1.AuthorizationService.hasIdentity(userPermissions, 'IS_SYSTEM_ADMIN') ||
+        authorization_service_1.AuthorizationService.hasIdentity(userPermissions, 'IS_SUPER_ADMIN') ||
         userPermissions.includes('ROLES_AND_PERMISSIONS:VIEW') ||
         userPermissions.includes('ROLES_AND_PERMISSIONS:MANAGE')) {
         return next();
@@ -35,7 +36,7 @@ const permissionSyncSchema = zod_1.z.object({
  */
 router.get('/', async (req, res) => {
     try {
-        const isSystemAdmin = req.user.role === 'SYSTEM_ADMIN';
+        const isSystemAdmin = authorization_service_1.AuthorizationService.hasIdentity(req.user.permissions || [], 'IS_SYSTEM_ADMIN');
         const roles = await prisma_1.default.role.findMany({
             where: {
                 ...(isSystemAdmin ? {} : {
@@ -130,15 +131,16 @@ router.post('/:id/sync-permissions', async (req, res) => {
         if (!role)
             return res.status(404).json({ message: 'Role not found' });
         // Security check: tenant isolation
-        if (role.organization_id && role.organization_id !== req.user.organization_id && req.user.role !== 'SYSTEM_ADMIN') {
+        const isSystemAdmin = authorization_service_1.AuthorizationService.hasIdentity(req.user.permissions || [], 'IS_SYSTEM_ADMIN');
+        if (role.organization_id && role.organization_id !== req.user.organization_id && !isSystemAdmin) {
             return res.status(403).json({ message: 'Forbidden' });
         }
         // Security check: Global platform roles (org=null) can only be modified by SYSTEM_ADMIN
-        if (role.is_system && !role.organization_id && req.user.role !== 'SYSTEM_ADMIN') {
+        if (role.is_system && !role.organization_id && !isSystemAdmin) {
             return res.status(403).json({ message: 'Cannot modify global platform roles' });
         }
         // Security check: Prevent locking out SUPER_ADMIN role
-        if (role.name === 'SUPER_ADMIN' && req.user.role !== 'SYSTEM_ADMIN') {
+        if (role.name === String('SUPER_ADMIN') && !isSystemAdmin) {
             return res.status(403).json({ message: 'The SUPER_ADMIN role permissions are locked for safety.' });
         }
         // Transactional sync

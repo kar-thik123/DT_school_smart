@@ -7,6 +7,7 @@ const express_1 = require("express");
 const prisma_1 = __importDefault(require("../prisma"));
 const auth_middleware_1 = require("../middlewares/auth.middleware");
 const client_1 = require("@prisma/client");
+const assignment_visibility_resolver_1 = require("../utils/assignment-visibility.resolver");
 const router = (0, express_1.Router)();
 router.use(auth_middleware_1.authMiddleware);
 // Helper to check capacity
@@ -23,17 +24,60 @@ async function checkSectionCapacity(sectionId, orgId, addedCount = 1) {
     }
     return { allowed: true };
 }
+// Helper to check if section has groups
+async function sectionHasGroups(organizationId, academicYearId, gradeId, sectionId) {
+    const groupCount = await prisma_1.default.subjectGroup.count({
+        where: {
+            organization_id: organizationId,
+            grade_id: gradeId,
+            section_id: sectionId
+        }
+    });
+    return groupCount > 0;
+}
+// Helper to validate the group assignment
+async function validateGroupAssignment(organizationId, academicYearId, gradeId, sectionId, subjectGroupId) {
+    if (!sectionId) {
+        if (subjectGroupId) {
+            return { allowed: false, message: 'subject_group_id cannot be provided without a section' };
+        }
+        return { allowed: true };
+    }
+    const hasGroups = await sectionHasGroups(organizationId, academicYearId, gradeId, sectionId);
+    if (hasGroups && !subjectGroupId) {
+        return { allowed: false, message: 'subject_group_id is required for grouped sections' };
+    }
+    if (subjectGroupId) {
+        const group = await prisma_1.default.subjectGroup.findUnique({
+            where: { id: subjectGroupId }
+        });
+        if (!group || group.organization_id !== organizationId) {
+            return { allowed: false, message: 'Invalid subject_group_id: does not exist or belongs to another organization' };
+        }
+        if (group.section_id !== sectionId) {
+            return { allowed: false, message: 'Invalid subject_group_id: belongs to another section' };
+        }
+    }
+    return { allowed: true };
+}
 // GET enrollments
 router.get('/', (0, auth_middleware_1.requirePermission)('ACADEMIC_STRUCTURE', 'READ'), async (req, res) => {
     try {
-        const { academic_year_id, grade_id, section_id } = req.query;
-        const filter = { organization_id: req.user.organization_id };
-        if (academic_year_id)
-            filter.academic_year_id = String(academic_year_id);
+        const { grade_id, section_id } = req.query;
+        const filter = {
+            organization_id: req.user.organization_id,
+            academic_year_id: req.academic_year_id
+        };
         if (grade_id)
             filter.grade_id = String(grade_id);
         if (section_id)
             filter.section_id = String(section_id);
+        const isGlobalAdmin = req.user.permissions?.includes('IDENTITY:IS_MANAGEMENT') || req.user.permissions?.includes('IDENTITY:IS_SUPER_ADMIN');
+        if (!isGlobalAdmin) {
+            const visibilityFilter = await assignment_visibility_resolver_1.AssignmentVisibilityResolver.buildTeacherSectionWhereClause(req);
+            if (visibilityFilter.id)
+                filter.section_id = visibilityFilter.id; // Either IN array or no-access
+        }
         const enrollments = await prisma_1.default.studentEnrollment.findMany({
             where: filter,
             include: {
@@ -60,9 +104,8 @@ router.get('/', (0, auth_middleware_1.requirePermission)('ACADEMIC_STRUCTURE', '
 // GET active students without enrollment for a specific year
 router.get('/unenrolled', (0, auth_middleware_1.requirePermission)('ACADEMIC_STRUCTURE', 'READ'), async (req, res) => {
     try {
-        const { academic_year_id, search } = req.query;
-        if (!academic_year_id)
-            return res.status(400).json({ message: 'academic_year_id required' });
+        const { search } = req.query;
+        const academic_year_id = req.academic_year_id;
         const searchFilter = search ? {
             OR: [
                 { name: { contains: String(search), mode: 'insensitive' } },
@@ -124,6 +167,11 @@ router.post('/map', (0, auth_middleware_1.requirePermission)('ACADEMIC_STRUCTURE
         if (!student_id || !academic_year_id || !grade_id) {
             return res.status(400).json({ message: 'student_id, academic_year_id, grade_id required' });
         }
+        // Group requirement validation
+        const groupValidation = await validateGroupAssignment(orgId, academic_year_id, grade_id, section_id, subject_group_id);
+        if (!groupValidation.allowed) {
+            return res.status(400).json({ message: groupValidation.message });
+        }
         // Capacity check if section provided
         if (section_id) {
             // Find existing enrollment to see if section is changing
@@ -167,6 +215,11 @@ router.post('/bulk-enroll', (0, auth_middleware_1.requirePermission)('ACADEMIC_S
         if (!Array.isArray(student_ids) || student_ids.length === 0 || !academic_year_id || !grade_id) {
             return res.status(400).json({ message: 'Invalid payload' });
         }
+        // Group requirement validation
+        const groupValidation = await validateGroupAssignment(orgId, academic_year_id, grade_id, section_id, subject_group_id);
+        if (!groupValidation.allowed) {
+            return res.status(400).json({ message: groupValidation.message });
+        }
         if (section_id) {
             const cap = await checkSectionCapacity(section_id, orgId, student_ids.length);
             if (!cap.allowed)
@@ -199,6 +252,13 @@ router.post('/promote', (0, auth_middleware_1.requirePermission)('ACADEMIC_STRUC
         // promotions: [{ student_id, from_grade_id, to_grade_id, to_section_id, to_subject_group_id }]
         if (!from_academic_year_id || !to_academic_year_id || !Array.isArray(promotions)) {
             return res.status(400).json({ message: 'Invalid payload' });
+        }
+        // Group validation for each promotion
+        for (const promo of promotions) {
+            const groupValidation = await validateGroupAssignment(orgId, to_academic_year_id, promo.to_grade_id, promo.to_section_id, promo.to_subject_group_id);
+            if (!groupValidation.allowed) {
+                return res.status(400).json({ message: `Validation failed for student ${promo.student_id}: ${groupValidation.message}` });
+            }
         }
         await prisma_1.default.$transaction(async (tx) => {
             for (const promo of promotions) {
@@ -278,6 +338,12 @@ router.put('/:id', (0, auth_middleware_1.requirePermission)('ACADEMIC_STRUCTURE'
         if (!existing || existing.organization_id !== orgId) {
             return res.status(404).json({ message: 'Enrollment not found' });
         }
+        const targetGradeId = grade_id || existing.grade_id;
+        // Group validation
+        const groupValidation = await validateGroupAssignment(orgId, existing.academic_year_id, targetGradeId, section_id, subject_group_id);
+        if (!groupValidation.allowed) {
+            return res.status(400).json({ message: groupValidation.message });
+        }
         if (section_id && section_id !== existing.section_id) {
             const cap = await checkSectionCapacity(section_id, orgId, 1);
             if (!cap.allowed)
@@ -308,6 +374,11 @@ router.post('/:id/transfer', (0, auth_middleware_1.requirePermission)('ACADEMIC_
         const existing = await prisma_1.default.studentEnrollment.findUnique({ where: { id: req.params.id } });
         if (!existing || existing.organization_id !== orgId) {
             return res.status(404).json({ message: 'Enrollment not found' });
+        }
+        // Group validation
+        const groupValidation = await validateGroupAssignment(orgId, existing.academic_year_id, to_grade_id, to_section_id, to_subject_group_id);
+        if (!groupValidation.allowed) {
+            return res.status(400).json({ message: groupValidation.message });
         }
         if (to_section_id && to_section_id !== existing.section_id) {
             const cap = await checkSectionCapacity(to_section_id, orgId, 1);

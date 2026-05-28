@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import prisma from '../prisma';
 import { authMiddleware, requirePermission } from '../middlewares/auth.middleware';
 import { getActiveAcademicYearId } from '../utils/academic-helper';
+import { AssignmentVisibilityResolver } from '../utils/assignment-visibility.resolver';
 
 const router = Router();
 router.use(authMiddleware);
@@ -17,19 +18,10 @@ const createCrudHandlers = (modelName: string, prismaModel: any) => {
       
       let filter: any = { organization_id: req.user.organization_id };
       
-      const isGlobalAdmin = ['SUPER_ADMIN', 'MANAGEMENT'].includes(req.user.role);
+      const isGlobalAdmin = req.user.permissions?.includes('ACADEMIC_STRUCTURE:READ') || req.user.permissions?.includes('ACADEMIC_STRUCTURE:VIEW');
       if (!isGlobalAdmin && modelName === 'Section') {
-        const activeYearId = req.query.academic_year_id ? String(req.query.academic_year_id) : await getActiveAcademicYearId(req.user.organization_id);
-        const assignments = await (prisma as any).teacherAssignment.findMany({
-          where: { 
-            teacher_id: req.user.user_id, 
-            organization_id: req.user.organization_id,
-            academic_year_id: activeYearId
-          },
-          select: { section_id: true }
-        });
-        const sectionIds = assignments.map((a: any) => a.section_id).filter(Boolean);
-        filter.id = { in: sectionIds };
+        const visibilityFilter = await AssignmentVisibilityResolver.buildTeacherSectionWhereClause(req);
+        if (visibilityFilter.id) filter.id = visibilityFilter.id;
       }
 
       const data = await prismaModel.findMany({
@@ -167,28 +159,16 @@ const gradeRouter = Router();
 
 gradeRouter.get('/', requirePermission('ACADEMIC_STRUCTURE', 'READ'), async (req: any, res: Response) => {
   try {
-    const isGlobalAdmin = ['SUPER_ADMIN', 'MANAGEMENT'].includes(req.user.role);
+    const isGlobalAdmin = req.user.permissions?.includes('ACADEMIC_STRUCTURE:READ') || req.user.permissions?.includes('ACADEMIC_STRUCTURE:VIEW');
+    
+    let filter: any = { organization_id: req.user.organization_id };
     if (!isGlobalAdmin) {
-      const activeYearId = req.query.academic_year_id ? String(req.query.academic_year_id) : await getActiveAcademicYearId(req.user.organization_id);
-      const assignments = await prisma.teacherAssignment.findMany({
-        where: {
-          teacher_id: req.user.user_id,
-          organization_id: req.user.organization_id,
-          academic_year_id: activeYearId
-        },
-        include: { grade: { include: { academic_year: true } } }
-      });
-      const gradesMap = new Map();
-      assignments.forEach((a: any) => {
-        if (a.grade && !gradesMap.has(a.grade_id)) {
-          gradesMap.set(a.grade_id, a.grade);
-        }
-      });
-      return res.json(Array.from(gradesMap.values()));
+      const visibilityFilter = await AssignmentVisibilityResolver.buildTeacherGradeWhereClause(req);
+      if (visibilityFilter.id) filter.id = visibilityFilter.id;
     }
 
     const data = await prisma.grade.findMany({
-      where: { organization_id: req.user.organization_id },
+      where: filter,
       include: { academic_year: true },
       orderBy: { sort_order: 'asc' }
     });
@@ -200,36 +180,20 @@ gradeRouter.get('/', requirePermission('ACADEMIC_STRUCTURE', 'READ'), async (req
 
 gradeRouter.get('/assigned', async (req: any, res: Response) => {
   try {
-    const isGlobalAdmin = ['SUPER_ADMIN', 'MANAGEMENT'].includes(req.user.role);
-    if (isGlobalAdmin) {
-      const data = await prisma.grade.findMany({
-        where: { organization_id: req.user.organization_id },
-        include: { academic_year: true },
-        orderBy: { sort_order: 'asc' }
-      });
-      return res.json(data);
+    const isGlobalAdmin = req.user.permissions?.includes('ACADEMIC_STRUCTURE:READ') || req.user.permissions?.includes('ACADEMIC_STRUCTURE:VIEW');
+    
+    let filter: any = { organization_id: req.user.organization_id };
+    if (!isGlobalAdmin) {
+      const visibilityFilter = await AssignmentVisibilityResolver.buildTeacherGradeWhereClause(req);
+      if (visibilityFilter.id) filter.id = visibilityFilter.id;
     }
 
-    // For teachers
-    const activeYearId = req.query.academic_year_id ? String(req.query.academic_year_id) : await getActiveAcademicYearId(req.user.organization_id);
-    const assignments = await prisma.teacherAssignment.findMany({
-      where: {
-        teacher_id: req.user.user_id,
-        organization_id: req.user.organization_id,
-        academic_year_id: activeYearId
-      },
-      include: { grade: { include: { academic_year: true } } }
+    const data = await prisma.grade.findMany({
+      where: filter,
+      include: { academic_year: true },
+      orderBy: { sort_order: 'asc' }
     });
-
-    // Deduplicate grades
-    const gradesMap = new Map();
-    assignments.forEach((a: any) => {
-      if (a.grade && !gradesMap.has(a.grade_id)) {
-        gradesMap.set(a.grade_id, a.grade);
-      }
-    });
-
-    res.json(Array.from(gradesMap.values()));
+    res.json(data);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching assigned Grades' });
   }
@@ -377,30 +341,14 @@ subjectRouter.get('/', requirePermission('ACADEMIC_STRUCTURE', 'READ'), async (r
       filter.grade_id = String(req.query.grade_id);
     }
 
-    const isGlobalAdmin = ['SUPER_ADMIN', 'MANAGEMENT'].includes(req.user.role);
+    const isGlobalAdmin = req.user.permissions?.includes('ACADEMIC_STRUCTURE:READ') || req.user.permissions?.includes('ACADEMIC_STRUCTURE:VIEW');
     if (!isGlobalAdmin) {
-      const activeYearId = req.query.academic_year_id ? String(req.query.academic_year_id) : await getActiveAcademicYearId(req.user.organization_id);
-      const assignments = await prisma.teacherAssignment.findMany({
-        where: { 
-          teacher_id: req.user.user_id, 
-          organization_id: req.user.organization_id,
-          academic_year_id: activeYearId
-        }
-      });
-
-      const inchargeGradeIds = assignments
-        .filter((a: any) => a.assignment_type === 'CLASS_TEACHER' || a.assignment_type === 'CLASS_INCHARGE')
-        .map((a: any) => a.grade_id);
-
-      const specificSubjectIds = assignments
-        .filter((a: any) => a.assignment_type === 'SUBJECT_TEACHER')
-        .map((a: any) => a.subject_id)
-        .filter(Boolean);
-
-      filter.OR = [
-        { grade_id: { in: inchargeGradeIds } },
-        { id: { in: specificSubjectIds } }
-      ];
+      const visibilityFilter = await AssignmentVisibilityResolver.buildTeacherSubjectWhereClause(req);
+      if (visibilityFilter.OR) {
+        filter.OR = visibilityFilter.OR;
+      } else if (visibilityFilter.id) {
+        filter.id = visibilityFilter.id; // Fallback for no-access
+      }
     }
 
     const data = await prisma.subject.findMany({

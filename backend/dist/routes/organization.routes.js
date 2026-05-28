@@ -12,6 +12,7 @@ const multer_1 = __importDefault(require("multer"));
 const path_1 = __importDefault(require("path"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
+const authorization_service_1 = require("../services/authorization.service");
 const router = (0, express_1.Router)();
 // Configure Multer for Logo Uploads
 const storage = multer_1.default.diskStorage({
@@ -547,8 +548,9 @@ router.patch('/:id/branding', auth_middleware_1.authMiddleware, async (req, res)
     try {
         const { school_name, logo_url, contact_email, contact_phone, address } = req.body;
         // Only allow SUPER_ADMIN of the org or SYSTEM_ADMIN
-        const isSelf = req.user.role === 'SUPER_ADMIN' && req.user.organization_id === req.params.id;
-        const isIT = req.user.role === 'SYSTEM_ADMIN';
+        const userPermissions = req.user.permissions || [];
+        const isSelf = authorization_service_1.AuthorizationService.hasIdentity(userPermissions, 'IS_SUPER_ADMIN') && req.user.organization_id === req.params.id;
+        const isIT = authorization_service_1.AuthorizationService.hasIdentity(userPermissions, 'IS_SYSTEM_ADMIN');
         if (!isSelf && !isIT)
             return res.status(403).json({ message: 'Forbidden' });
         const updated = await prisma_1.default.organization.update({

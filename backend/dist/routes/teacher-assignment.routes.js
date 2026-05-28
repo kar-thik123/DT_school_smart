@@ -19,10 +19,16 @@ const assignmentSchema = zod_1.z.object({
     subject_id: zod_1.z.string().uuid().optional().nullable()
 });
 // Read all assignments
-router.get('/', (0, auth_middleware_1.requirePermission)('TEACHER_ASSIGNMENT', 'READ'), async (req, res) => {
+router.get('/', (0, auth_middleware_1.requirePermission)('TEACHER_ASSIGNMENT', 'VIEW'), async (req, res) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
     try {
         const assignments = await prisma_1.default.teacherAssignment.findMany({
-            where: { organization_id: req.user.organization_id },
+            where: {
+                organization_id: req.user.organization_id,
+                academic_year_id: req.academic_year_id
+            },
             include: {
                 teacher: { select: { id: true, name: true, email: true } },
                 grade: { select: { id: true, name: true } },
@@ -85,14 +91,14 @@ router.post('/', (0, auth_middleware_1.requirePermission)('TEACHER_ASSIGNMENT', 
                     const existing = await prisma_1.default.teacherAssignment.findFirst({
                         where: { organization_id: a.organization_id, academic_year_id: a.academic_year_id, section_id: a.section_id, assignment_type: 'CLASS_TEACHER' }
                     });
-                    if (existing)
+                    if (existing && existing.teacher_id !== a.teacher_id)
                         throw new Error(`Section already has a Class Teacher assigned for this academic year`);
                 }
                 if (a.assignment_type === 'SUBJECT_TEACHER' && a.section_id && a.subject_id) {
                     const existing = await prisma_1.default.teacherAssignment.findFirst({
                         where: { organization_id: a.organization_id, academic_year_id: a.academic_year_id, section_id: a.section_id, subject_id: a.subject_id, assignment_type: 'SUBJECT_TEACHER' }
                     });
-                    if (existing)
+                    if (existing && existing.teacher_id !== a.teacher_id)
                         throw new Error(`This subject is already assigned to a teacher in this section for this academic year`);
                 }
             }
@@ -123,14 +129,14 @@ router.post('/', (0, auth_middleware_1.requirePermission)('TEACHER_ASSIGNMENT', 
                 const existing = await prisma_1.default.teacherAssignment.findFirst({
                     where: { organization_id: req.user.organization_id, academic_year_id: parsed.academic_year_id, section_id: parsed.section_id, assignment_type: 'CLASS_TEACHER' }
                 });
-                if (existing)
+                if (existing && existing.teacher_id !== parsed.teacher_id)
                     return res.status(400).json({ message: `Section already has a Class Teacher assigned for this academic year` });
             }
             if (parsed.assignment_type === 'SUBJECT_TEACHER' && parsed.section_id && parsed.subject_id) {
                 const existing = await prisma_1.default.teacherAssignment.findFirst({
                     where: { organization_id: req.user.organization_id, academic_year_id: parsed.academic_year_id, section_id: parsed.section_id, subject_id: parsed.subject_id, assignment_type: 'SUBJECT_TEACHER' }
                 });
-                if (existing)
+                if (existing && existing.teacher_id !== parsed.teacher_id)
                     return res.status(400).json({ message: `This subject is already assigned to a teacher in this section for this academic year` });
             }
             const assignment = await prisma_1.default.teacherAssignment.create({
@@ -155,9 +161,13 @@ router.post('/', (0, auth_middleware_1.requirePermission)('TEACHER_ASSIGNMENT', 
         if (error.code === 'P2002') {
             return res.status(400).json({ message: 'Duplicate assignment detected for this teacher in the specified scope' });
         }
+        const fs = require('fs');
+        fs.appendFileSync('error.log', new Date().toISOString() + ' - Error creating batch assignment: ' + (error.stack || error) + '\n' + (error.errors ? JSON.stringify(error.errors) : '') + '\n');
         if (error?.errors) {
+            console.error('Validation Error in batch assignments:', error.errors);
             return res.status(400).json({ message: 'Validation failed', errors: error.errors });
         }
+        console.error('Error creating assignment:', error);
         res.status(400).json({ message: error.message || 'Error creating assignment' });
     }
 });

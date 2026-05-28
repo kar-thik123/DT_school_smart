@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import prisma from '../prisma';
 import { authMiddleware, requirePermission } from '../middlewares/auth.middleware';
 import { EnrollmentStatus } from '@prisma/client';
+import { AssignmentVisibilityResolver } from '../utils/assignment-visibility.resolver';
 
 const router = Router();
 router.use(authMiddleware);
@@ -78,11 +79,19 @@ async function validateGroupAssignment(
 // GET enrollments
 router.get('/', requirePermission('ACADEMIC_STRUCTURE', 'READ'), async (req: any, res: Response) => {
   try {
-    const { academic_year_id, grade_id, section_id } = req.query;
-    const filter: any = { organization_id: req.user.organization_id };
-    if (academic_year_id) filter.academic_year_id = String(academic_year_id);
+    const { grade_id, section_id } = req.query;
+    const filter: any = { 
+      organization_id: req.user.organization_id,
+      academic_year_id: req.academic_year_id
+    };
     if (grade_id) filter.grade_id = String(grade_id);
     if (section_id) filter.section_id = String(section_id);
+
+    const isGlobalAdmin = req.user.permissions?.includes('IDENTITY:IS_MANAGEMENT') || req.user.permissions?.includes('IDENTITY:IS_SUPER_ADMIN');
+    if (!isGlobalAdmin) {
+      const visibilityFilter = await AssignmentVisibilityResolver.buildTeacherSectionWhereClause(req);
+      if (visibilityFilter.id) filter.section_id = visibilityFilter.id; // Either IN array or no-access
+    }
 
     const enrollments = await prisma.studentEnrollment.findMany({
       where: filter,
@@ -110,8 +119,8 @@ router.get('/', requirePermission('ACADEMIC_STRUCTURE', 'READ'), async (req: any
 // GET active students without enrollment for a specific year
 router.get('/unenrolled', requirePermission('ACADEMIC_STRUCTURE', 'READ'), async (req: any, res: Response) => {
   try {
-    const { academic_year_id, search } = req.query;
-    if (!academic_year_id) return res.status(400).json({ message: 'academic_year_id required' });
+    const { search } = req.query;
+    const academic_year_id = req.academic_year_id;
 
     const searchFilter = search ? {
       OR: [

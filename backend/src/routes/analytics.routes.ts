@@ -208,18 +208,34 @@ router.get('/management/overview', requirePermission('IDENTITY', 'IS_MANAGEMENT'
   try {
     const org_id = req.user.organization_id;
 
-    // 1. Overview Stats
-    const roles = await prisma.role.findMany({
+    // 1. Overview Stats (Permission-based RBAC)
+    const studentRoles = await prisma.role.findMany({
       where: {
         organization_id: org_id,
-        name: { in: ['STUDENT', 'Student', 'TEACHER', 'Teacher'] }
-      }
+        permissions: {
+          some: {
+            permission: { module: 'IDENTITY', action: 'IS_STUDENT' }
+          }
+        }
+      },
+      select: { id: true }
     });
+    const studentRoleIds = studentRoles.map((r: any) => r.id);
 
-    const studentRole = roles.find((r: any) => r.name.toUpperCase() === 'STUDENT');
-    const teacherRole = roles.find((r: any) => r.name.toUpperCase() === 'TEACHER');
+    const teacherRoles = await prisma.role.findMany({
+      where: {
+        organization_id: org_id,
+        permissions: {
+          some: {
+            permission: { module: 'IDENTITY', action: 'IS_TEACHER' }
+          }
+        }
+      },
+      select: { id: true }
+    });
+    const teacherRoleIds = teacherRoles.map((r: any) => r.id);
 
-    if (!studentRole || !teacherRole) {
+    if (studentRoleIds.length === 0 || teacherRoleIds.length === 0) {
       return res.json({
         avg_preparedness: 0,
         total_students: 0,
@@ -241,7 +257,7 @@ router.get('/management/overview', requirePermission('IDENTITY', 'IS_MANAGEMENT'
     const avgPreparedness = allAttempts.length > 0 ? Math.round(totalPoints / allAttempts.length) : 0;
 
     const totalStudents = await prisma.user.count({
-      where: { organization_id: org_id, role_id: studentRole?.id, is_active: true }
+      where: { organization_id: org_id, role_id: { in: studentRoleIds }, is_active: true }
     });
 
     // Pre-index attempts by subject_id and student_id for O(1) lookups
@@ -258,7 +274,7 @@ router.get('/management/overview', requirePermission('IDENTITY', 'IS_MANAGEMENT'
 
     // 2. Teacher Performance (no more per-teacher DB queries)
     const teachers = await prisma.user.findMany({
-      where: { organization_id: org_id, role_id: teacherRole?.id, is_active: true },
+      where: { organization_id: org_id, role_id: { in: teacherRoleIds }, is_active: true },
       include: {
         teacher_assignments: {
           include: {
@@ -293,7 +309,7 @@ router.get('/management/overview', requirePermission('IDENTITY', 'IS_MANAGEMENT'
 
     // 3. High Risk Students (no more per-student DB queries)
     const allStudents = await prisma.user.findMany({
-      where: { organization_id: org_id, role_id: studentRole?.id, is_active: true },
+      where: { organization_id: org_id, role_id: { in: studentRoleIds }, is_active: true },
       include: { section: { select: { name: true } } }
     });
 

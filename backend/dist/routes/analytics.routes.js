@@ -194,16 +194,32 @@ router.get('/teacher', (0, auth_middleware_1.requirePermission)('IDENTITY', 'IS_
 router.get('/management/overview', (0, auth_middleware_1.requirePermission)('IDENTITY', 'IS_MANAGEMENT'), async (req, res) => {
     try {
         const org_id = req.user.organization_id;
-        // 1. Overview Stats
-        const roles = await prisma_1.default.role.findMany({
+        // 1. Overview Stats (Permission-based RBAC)
+        const studentRoles = await prisma_1.default.role.findMany({
             where: {
                 organization_id: org_id,
-                name: { in: ['STUDENT', 'Student', 'TEACHER', 'Teacher'] }
-            }
+                permissions: {
+                    some: {
+                        permission: { module: 'IDENTITY', action: 'IS_STUDENT' }
+                    }
+                }
+            },
+            select: { id: true }
         });
-        const studentRole = roles.find((r) => r.name.toUpperCase() === 'STUDENT');
-        const teacherRole = roles.find((r) => r.name.toUpperCase() === 'TEACHER');
-        if (!studentRole || !teacherRole) {
+        const studentRoleIds = studentRoles.map((r) => r.id);
+        const teacherRoles = await prisma_1.default.role.findMany({
+            where: {
+                organization_id: org_id,
+                permissions: {
+                    some: {
+                        permission: { module: 'IDENTITY', action: 'IS_TEACHER' }
+                    }
+                }
+            },
+            select: { id: true }
+        });
+        const teacherRoleIds = teacherRoles.map((r) => r.id);
+        if (studentRoleIds.length === 0 || teacherRoleIds.length === 0) {
             return res.json({
                 avg_preparedness: 0,
                 total_students: 0,
@@ -222,7 +238,7 @@ router.get('/management/overview', (0, auth_middleware_1.requirePermission)('IDE
         allAttempts.forEach((a) => totalPoints += (a.correct_answers / Math.max(a.total_questions, 1)) * 100);
         const avgPreparedness = allAttempts.length > 0 ? Math.round(totalPoints / allAttempts.length) : 0;
         const totalStudents = await prisma_1.default.user.count({
-            where: { organization_id: org_id, role_id: studentRole?.id, is_active: true }
+            where: { organization_id: org_id, role_id: { in: studentRoleIds }, is_active: true }
         });
         // Pre-index attempts by subject_id and student_id for O(1) lookups
         const attemptsBySubject = new Map();
@@ -239,7 +255,7 @@ router.get('/management/overview', (0, auth_middleware_1.requirePermission)('IDE
         }
         // 2. Teacher Performance (no more per-teacher DB queries)
         const teachers = await prisma_1.default.user.findMany({
-            where: { organization_id: org_id, role_id: teacherRole?.id, is_active: true },
+            where: { organization_id: org_id, role_id: { in: teacherRoleIds }, is_active: true },
             include: {
                 teacher_assignments: {
                     include: {
@@ -270,7 +286,7 @@ router.get('/management/overview', (0, auth_middleware_1.requirePermission)('IDE
         }
         // 3. High Risk Students (no more per-student DB queries)
         const allStudents = await prisma_1.default.user.findMany({
-            where: { organization_id: org_id, role_id: studentRole?.id, is_active: true },
+            where: { organization_id: org_id, role_id: { in: studentRoleIds }, is_active: true },
             include: { section: { select: { name: true } } }
         });
         const riskStudents = [];

@@ -126,7 +126,7 @@ export const PLATFORM_MODULES: RouteInfo[] = [
         groupTitle: false,
         badge: '',
         badgeClass: '',
-        role: ['ACADEMIC_STRUCTURE:READ', 'ACADEMIC_STRUCTURE_READ', 'ACADEMIC_STRUCTURE:VIEW', 'ACADEMIC_STRUCTURE_VIEW'],
+        role: ['ACADEMIC_STRUCTURE:VIEW', 'ACADEMIC_STRUCTURE_VIEW'],
         submenu: [],
         showInSidebar: true,
         domain: 'TENANT'
@@ -168,7 +168,7 @@ export const PLATFORM_MODULES: RouteInfo[] = [
         groupTitle: false,
         badge: '',
         badgeClass: '',
-        role: ['STUDENT_ENROLLMENT:READ', 'ACADEMIC_STRUCTURE:READ', 'ACADEMIC_STRUCTURE_READ'],
+        role: ['STUDENT_ENROLLMENT:VIEW', 'ACADEMIC_STRUCTURE:VIEW', 'ACADEMIC_STRUCTURE_VIEW'],
         submenu: [],
         showInSidebar: true,
         domain: 'TENANT'
@@ -244,10 +244,11 @@ export const PLATFORM_MODULES: RouteInfo[] = [
         groupTitle: false,
         badge: '',
         badgeClass: '',
-        role: ['STUDENT'],
+        role: ['MCQ:VIEW', 'MCQ_VIEW'],
         submenu: [],
         showInSidebar: true,
-        domain: 'TENANT'
+        domain: 'TENANT',
+        moduleKey: 'mcq'
       }
     ]
   }

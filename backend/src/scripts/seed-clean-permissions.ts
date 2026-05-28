@@ -71,9 +71,13 @@ async function main() {
       }
     }
 
-    // STUDENT gets IDENTITY:IS_STUDENT
+    // STUDENT gets IDENTITY:IS_STUDENT, MCQ:VIEW, MCQ:ATTEMPT
     else if (roleNameUpper === 'STUDENT') {
-      const studentPermKeys = ['IDENTITY:IS_STUDENT'];
+      const studentPermKeys = [
+        'IDENTITY:IS_STUDENT',
+        'MCQ:VIEW',
+        'MCQ:ATTEMPT'
+      ];
       const rpData = studentPermKeys
         .map(key => ({ role_id: role.id, permission_id: permissionMap[key] }))
         .filter(x => x.permission_id !== undefined);

@@ -45,6 +45,10 @@ export const CENTRAL_PERMISSION_REGISTRY: IRegistryPermission[] = [
     permissions: ['VIEW', 'MANAGE']
   },
   {
+    module: 'MCQ',
+    permissions: ['VIEW', 'ATTEMPT']
+  },
+  {
     module: 'IDENTITY',
     permissions: ['IS_TEACHER', 'IS_STUDENT', 'IS_PARENT', 'IS_MANAGEMENT']
   }

@@ -7,6 +7,7 @@ const express_1 = require("express");
 const prisma_1 = __importDefault(require("../prisma"));
 const auth_middleware_1 = require("../middlewares/auth.middleware");
 const academic_helper_1 = require("../utils/academic-helper");
+const assignment_visibility_resolver_1 = require("../utils/assignment-visibility.resolver");
 const router = (0, express_1.Router)();
 router.use(auth_middleware_1.authMiddleware);
 // A helper function to create generic CRUD handlers
@@ -16,8 +17,15 @@ const createCrudHandlers = (modelName, prismaModel) => {
     modelRouter.get('/', (0, auth_middleware_1.requirePermission)('ACADEMIC_STRUCTURE', 'READ'), async (req, res) => {
         try {
             const hasSortOrder = ['Section', 'Unit', 'Topic'].includes(modelName);
+            let filter = { organization_id: req.user.organization_id };
+            const isGlobalAdmin = req.user.permissions?.includes('ACADEMIC_STRUCTURE:READ') || req.user.permissions?.includes('ACADEMIC_STRUCTURE:VIEW');
+            if (!isGlobalAdmin && modelName === 'Section') {
+                const visibilityFilter = await assignment_visibility_resolver_1.AssignmentVisibilityResolver.buildTeacherSectionWhereClause(req);
+                if (visibilityFilter.id)
+                    filter.id = visibilityFilter.id;
+            }
             const data = await prismaModel.findMany({
-                where: { organization_id: req.user.organization_id },
+                where: filter,
                 ...(hasSortOrder ? { orderBy: { sort_order: 'asc' } } : {})
             });
             res.json(data);
@@ -137,8 +145,15 @@ router.put('/reorder/:model', (0, auth_middleware_1.requirePermission)('ACADEMIC
 const gradeRouter = (0, express_1.Router)();
 gradeRouter.get('/', (0, auth_middleware_1.requirePermission)('ACADEMIC_STRUCTURE', 'READ'), async (req, res) => {
     try {
+        const isGlobalAdmin = req.user.permissions?.includes('ACADEMIC_STRUCTURE:READ') || req.user.permissions?.includes('ACADEMIC_STRUCTURE:VIEW');
+        let filter = { organization_id: req.user.organization_id };
+        if (!isGlobalAdmin) {
+            const visibilityFilter = await assignment_visibility_resolver_1.AssignmentVisibilityResolver.buildTeacherGradeWhereClause(req);
+            if (visibilityFilter.id)
+                filter.id = visibilityFilter.id;
+        }
         const data = await prisma_1.default.grade.findMany({
-            where: { organization_id: req.user.organization_id },
+            where: filter,
             include: { academic_year: true },
             orderBy: { sort_order: 'asc' }
         });
@@ -150,31 +165,19 @@ gradeRouter.get('/', (0, auth_middleware_1.requirePermission)('ACADEMIC_STRUCTUR
 });
 gradeRouter.get('/assigned', async (req, res) => {
     try {
-        const isGlobalAdmin = ['SYSTEM_ADMIN', 'SUPER_ADMIN', 'MANAGEMENT'].includes(req.user.role);
-        if (isGlobalAdmin) {
-            const data = await prisma_1.default.grade.findMany({
-                where: { organization_id: req.user.organization_id },
-                include: { academic_year: true },
-                orderBy: { sort_order: 'asc' }
-            });
-            return res.json(data);
+        const isGlobalAdmin = req.user.permissions?.includes('ACADEMIC_STRUCTURE:READ') || req.user.permissions?.includes('ACADEMIC_STRUCTURE:VIEW');
+        let filter = { organization_id: req.user.organization_id };
+        if (!isGlobalAdmin) {
+            const visibilityFilter = await assignment_visibility_resolver_1.AssignmentVisibilityResolver.buildTeacherGradeWhereClause(req);
+            if (visibilityFilter.id)
+                filter.id = visibilityFilter.id;
         }
-        // For teachers
-        const assignments = await prisma_1.default.teacherAssignment.findMany({
-            where: {
-                teacher_id: req.user.user_id,
-                organization_id: req.user.organization_id
-            },
-            include: { grade: { include: { academic_year: true } } }
+        const data = await prisma_1.default.grade.findMany({
+            where: filter,
+            include: { academic_year: true },
+            orderBy: { sort_order: 'asc' }
         });
-        // Deduplicate grades
-        const gradesMap = new Map();
-        assignments.forEach((a) => {
-            if (a.grade && !gradesMap.has(a.grade_id)) {
-                gradesMap.set(a.grade_id, a.grade);
-            }
-        });
-        res.json(Array.from(gradesMap.values()));
+        res.json(data);
     }
     catch (error) {
         res.status(500).json({ message: 'Error fetching assigned Grades' });
@@ -312,21 +315,15 @@ subjectRouter.get('/', (0, auth_middleware_1.requirePermission)('ACADEMIC_STRUCT
         if (req.query.grade_id) {
             filter.grade_id = String(req.query.grade_id);
         }
-        const isGlobalAdmin = ['SYSTEM_ADMIN', 'SUPER_ADMIN', 'MANAGEMENT'].includes(req.user.role);
+        const isGlobalAdmin = req.user.permissions?.includes('ACADEMIC_STRUCTURE:READ') || req.user.permissions?.includes('ACADEMIC_STRUCTURE:VIEW');
         if (!isGlobalAdmin) {
-            const assignments = await prisma_1.default.teacherAssignment.findMany({
-                where: { teacher_id: req.user.user_id, organization_id: req.user.organization_id }
-            });
-            const inchargeGradeIds = assignments
-                .filter((a) => a.assignment_type === 'CLASS_INCHARGE')
-                .map((a) => a.grade_id);
-            const specificSubjectIds = assignments
-                .filter((a) => a.subject_id)
-                .map((a) => a.subject_id);
-            filter.OR = [
-                { grade_id: { in: inchargeGradeIds } },
-                { id: { in: specificSubjectIds } }
-            ];
+            const visibilityFilter = await assignment_visibility_resolver_1.AssignmentVisibilityResolver.buildTeacherSubjectWhereClause(req);
+            if (visibilityFilter.OR) {
+                filter.OR = visibilityFilter.OR;
+            }
+            else if (visibilityFilter.id) {
+                filter.id = visibilityFilter.id; // Fallback for no-access
+            }
         }
         const data = await prisma_1.default.subject.findMany({
             where: filter,

@@ -94,7 +94,7 @@ router.post('/', (0, auth_middleware_1.requirePermission)('QUESTION_BANK', 'CREA
     try {
         const parsed = questionSchema.parse(req.body);
         const org_id = req.user.organization_id;
-        const isGlobalAdmin = ['SYSTEM_ADMIN', 'SUPER_ADMIN', 'MANAGEMENT'].includes(req.user.role);
+        const isGlobalAdmin = req.user.permissions?.includes('IDENTITY:IS_MANAGEMENT') || req.user.permissions?.includes('IDENTITY:IS_SUPER_ADMIN');
         if (!isGlobalAdmin) {
             if (parsed.subject_id) {
                 const canAccess = await hasSubjectAccess(req.user.user_id, parsed.subject_id, org_id);
@@ -156,7 +156,7 @@ router.get('/', (0, auth_middleware_1.requirePermission)('QUESTION_BANK', 'READ'
                 { subject: { grade_id: String(grade_id) } }
             ];
         }
-        const isGlobalAdmin = ['SYSTEM_ADMIN', 'SUPER_ADMIN', 'MANAGEMENT'].includes(req.user.role);
+        const isGlobalAdmin = req.user.permissions?.includes('IDENTITY:IS_MANAGEMENT') || req.user.permissions?.includes('IDENTITY:IS_SUPER_ADMIN');
         if (!isGlobalAdmin) {
             const assignments = await prisma_1.default.teacherAssignment.findMany({
                 where: { teacher_id: req.user.user_id, organization_id: req.user.organization_id }
@@ -227,7 +227,7 @@ router.put('/:id', (0, auth_middleware_1.requirePermission)('QUESTION_BANK', 'ED
         const existing = await prisma_1.default.question.findFirst({ where: { id: req.params.id, organization_id: org_id } });
         if (!existing)
             return res.status(404).json({ message: 'Question not found' });
-        const isGlobalAdmin = ['SYSTEM_ADMIN', 'SUPER_ADMIN', 'MANAGEMENT'].includes(req.user.role);
+        const isGlobalAdmin = req.user.permissions?.includes('IDENTITY:IS_MANAGEMENT') || req.user.permissions?.includes('IDENTITY:IS_SUPER_ADMIN');
         if (!isGlobalAdmin && existing.created_by !== req.user.user_id) {
             return res.status(403).json({ message: 'Only creator or admins can edit' });
         }
@@ -266,7 +266,7 @@ router.delete('/:id', (0, auth_middleware_1.requirePermission)('QUESTION_BANK', 
         const existing = await prisma_1.default.question.findFirst({ where: { id: req.params.id, organization_id: req.user.organization_id } });
         if (!existing)
             return res.status(404).json({ message: 'Question not found' });
-        const isGlobalAdmin = ['SYSTEM_ADMIN', 'SUPER_ADMIN', 'MANAGEMENT'].includes(req.user.role);
+        const isGlobalAdmin = req.user.permissions?.includes('IDENTITY:IS_MANAGEMENT') || req.user.permissions?.includes('IDENTITY:IS_SUPER_ADMIN');
         if (!isGlobalAdmin && existing.created_by !== req.user.user_id) {
             return res.status(403).json({ message: 'Only creator or admins can delete' });
         }
@@ -586,7 +586,7 @@ router.post('/bulk/preview', (0, auth_middleware_1.requirePermission)('QUESTION_
             match_status: r.match_status,
             resolved_data: r.resolved_data
         }));
-        await prisma_1.default.previewQuestion.createMany({ data: previewData });
+        await prisma_1.default.previewImportData.createMany({ data: previewData });
         const summary = {
             total: resolvedRows.length,
             valid: resolvedRows.filter(r => r.match_status === 'VALID').length,
@@ -615,12 +615,12 @@ router.post('/bulk/discard', (0, auth_middleware_1.requirePermission)('QUESTION_
         const { session_id } = req.body;
         if (!session_id)
             return res.status(400).json({ message: 'Missing session_id' });
-        const isGlobalAdmin = ['SYSTEM_ADMIN', 'SUPER_ADMIN', 'MANAGEMENT'].includes(req.user.role);
+        const isGlobalAdmin = req.user.permissions?.includes('IDENTITY:IS_MANAGEMENT') || req.user.permissions?.includes('IDENTITY:IS_SUPER_ADMIN');
         const deleteWhere = { session_id, organization_id: req.user.organization_id };
         if (!isGlobalAdmin) {
             deleteWhere.created_by = req.user.user_id;
         }
-        const deleteResult = await prisma_1.default.previewQuestion.deleteMany({ where: deleteWhere });
+        const deleteResult = await prisma_1.default.previewImportData.deleteMany({ where: deleteWhere });
         if (deleteResult.count === 0 && !isGlobalAdmin) {
             return res.status(403).json({ message: 'You are not authorized to discard this preview session.' });
         }
@@ -637,7 +637,7 @@ router.post('/bulk/confirm', (0, auth_middleware_1.requirePermission)('QUESTION_
         if (!session_id)
             return res.status(400).json({ message: 'Missing session_id' });
         const org_id = req.user.organization_id;
-        const hasElevatedTenantAccess = ['SYSTEM_ADMIN', 'SUPER_ADMIN', 'MANAGEMENT'].includes(req.user.role);
+        const hasElevatedTenantAccess = req.user.permissions?.includes('IDENTITY:IS_MANAGEMENT') || req.user.permissions?.includes('IDENTITY:IS_SUPER_ADMIN');
         let records = [];
         if (modified_records && Array.isArray(modified_records) && modified_records.length > 0) {
             records = modified_records;
@@ -647,7 +647,7 @@ router.post('/bulk/confirm', (0, auth_middleware_1.requirePermission)('QUESTION_
             if (!hasElevatedTenantAccess) {
                 previewWhere.created_by = req.user.user_id;
             }
-            const previews = await prisma_1.default.previewQuestion.findMany({ where: previewWhere });
+            const previews = await prisma_1.default.previewImportData.findMany({ where: previewWhere });
             if (!previews || previews.length === 0)
                 return res.status(404).json({ message: 'Session not found or empty' });
             records = previews.map((p) => p.raw_data);
@@ -786,7 +786,7 @@ router.post('/bulk/confirm', (0, auth_middleware_1.requirePermission)('QUESTION_
         const deleteWhere = { session_id, organization_id: org_id };
         if (!hasElevatedTenantAccess)
             deleteWhere.created_by = req.user.user_id;
-        await prisma_1.default.previewQuestion.deleteMany({ where: deleteWhere });
+        await prisma_1.default.previewImportData.deleteMany({ where: deleteWhere });
         await (0, audit_service_1.logAuditEvent)({
             organization_id: org_id,
             user_id: req.user.user_id,
@@ -818,7 +818,7 @@ router.post('/bulk', (0, auth_middleware_1.requirePermission)('QUESTION_BANK', '
         if (!records || records.length === 0)
             return res.status(400).json({ message: 'Empty or invalid CSV spreadsheet' });
         const org_id = req.user.organization_id;
-        const hasElevatedTenantAccess = ['SYSTEM_ADMIN', 'SUPER_ADMIN', 'MANAGEMENT'].includes(req.user.role);
+        const hasElevatedTenantAccess = req.user.permissions?.includes('IDENTITY:IS_MANAGEMENT') || req.user.permissions?.includes('IDENTITY:IS_SUPER_ADMIN');
         const activeYearId = await (0, academic_helper_1.getActiveAcademicYearId)(org_id);
         // ── Pre-fetch all org-scoped academic data (mutable arrays — updated as we create) ──
         const allGrades = await prisma_1.default.grade.findMany({ where: { organization_id: org_id }, select: { id: true, name: true } });

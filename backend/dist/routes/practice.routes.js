@@ -219,7 +219,7 @@ router.post('/activations/toggle', (0, auth_middleware_1.requirePermission)('PRA
         const teacher_role = req.user.role;
         const parsed = toggleActivationSchema.parse(req.body);
         // Teacher RBAC: verify the teacher is allowed to activate topics for this group
-        const isAdmin = ['SYSTEM_ADMIN', 'SUPER_ADMIN', 'MANAGEMENT'].includes(teacher_role);
+        const isAdmin = ['SUPER_ADMIN', 'MANAGEMENT'].includes(teacher_role);
         if (!isAdmin) {
             // Resolve subjects in this group
             const groupSubjects = await prisma_1.default.subjectGroupSubject.findMany({

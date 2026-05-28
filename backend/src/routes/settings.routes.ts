@@ -72,6 +72,8 @@ router.get('/:module_name', async (req: any, res: Response) => {
         requiredPerm = 'COMPLETION_TRACKING:VIEW';
       } else if (module_name === 'question-bank') {
         requiredPerm = 'QUESTION_BANK:VIEW';
+      } else if (module_name === 'mcq') {
+        requiredPerm = 'MCQ:VIEW';
       }
 
       const userPermissions: string[] = req.user?.permissions || [];
@@ -115,6 +117,8 @@ router.put('/:module_name', async (req: any, res: Response) => {
         requiredPerm = 'COMPLETION_TRACKING:MANAGE';
       } else if (module_name === 'question-bank') {
         requiredPerm = 'QUESTION_BANK:IMPORT';
+      } else if (module_name === 'mcq') {
+        requiredPerm = 'MASTER_CONFIGURATION:MANAGE_CONFIG';
       }
 
       const userPermissions: string[] = req.user?.permissions || [];
@@ -132,6 +136,8 @@ router.put('/:module_name', async (req: any, res: Response) => {
     if (module_name === 'completion') {
       if (typeof config_data.enable_module === 'boolean') sanitizedConfig['enable_module'] = config_data.enable_module;
       if (typeof config_data.enable_notifications === 'boolean') sanitizedConfig['enable_notifications'] = config_data.enable_notifications;
+    } else if (module_name === 'mcq') {
+      if (typeof config_data.enable_module === 'boolean') sanitizedConfig['enable_module'] = config_data.enable_module;
     } else {
       // For other modules, pass through as-is
       Object.assign(sanitizedConfig, config_data);

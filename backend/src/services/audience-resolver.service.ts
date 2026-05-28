@@ -1,5 +1,6 @@
 import prisma from '../prisma';
 import { NotificationEventPayload } from './events.service';
+import { AssignmentVisibilityResolver } from '../utils/assignment-visibility.resolver';
 
 export class AudienceResolver {
   
@@ -30,47 +31,74 @@ export class AudienceResolver {
           }
         }
       },
-      select: { id: true, role: { select: { is_system: true, name: true } } }
+      select: { 
+        id: true, 
+        role: { 
+          select: { 
+            is_system: true, 
+            name: true,
+            permissions: {
+              select: {
+                permission: { select: { module: true, action: true } }
+              }
+            }
+          } 
+        } 
+      }
     });
 
-    // Extract user IDs, deliberately excluding SYSTEM_ADMIN and platform operators
-    const candidateUserIds = usersWithPermission
-      .filter(u => !u.role.is_system && u.role.name !== 'SYSTEM_ADMIN')
-      .map(u => u.id);
-
-    if (candidateUserIds.length === 0) return [];
-
-    // 2. Filter candidates by actual Academic Context enrollment
     const finalUserIds = new Set<string>();
+    const contextBoundUserIds = new Set<string>();
 
-    // Check Student Enrollments
+    // Separate Global Audience (SUPER_ADMIN or MANAGE permission) from Context-Bound (VIEW only)
+    for (const u of usersWithPermission) {
+      const isGlobal = u.role.name === 'SUPER_ADMIN' || u.role.permissions.some((p: any) => 
+        (p.permission.module === 'IDENTITY' && p.permission.action === 'IS_SUPER_ADMIN') ||
+        (p.permission.module === requiredModule && p.permission.action === 'MANAGE') ||
+        (p.permission.module === requiredModule && p.permission.action === 'VIEW_ALL')
+      );
+
+      if (isGlobal) {
+        finalUserIds.add(u.id);
+      } else {
+        contextBoundUserIds.add(u.id);
+      }
+    }
+
+    if (contextBoundUserIds.size === 0) return Array.from(finalUserIds);
+
+    // Filter context-bound candidates by actual Academic Context enrollment
+    
+    // 1. Check Student Enrollments
     const enrollments = await prisma.studentEnrollment.findMany({
       where: {
         organization_id,
         academic_year_id: context.academic_year_id,
         grade_id: context.grade_id,
         ...(context.section_id ? { section_id: context.section_id } : {}),
-        student_id: { in: candidateUserIds },
+        student_id: { in: Array.from(contextBoundUserIds) },
         status: 'ACTIVE'
       },
       select: { student_id: true }
     });
     
-    enrollments.forEach(e => finalUserIds.add(e.student_id));
+    enrollments.forEach((e: any) => finalUserIds.add(e.student_id));
 
-    // Optional: Check Teacher Assignments if teachers should also receive it
-    const teacherAssignments = await prisma.teacherAssignment.findMany({
-      where: {
-        organization_id,
-        academic_year_id: context.academic_year_id,
-        grade_id: context.grade_id,
-        ...(context.section_id ? { section_id: context.section_id } : {}),
-        teacher_id: { in: candidateUserIds }
-      },
-      select: { teacher_id: true }
+    // 2. Check Teacher Assignments using the AssignmentVisibilityResolver
+    const authorizedTeachers = await AssignmentVisibilityResolver.getTeachersForContext(
+      organization_id,
+      context.academic_year_id,
+      context.grade_id,
+      context.section_id,
+      context.subject_id
+    );
+
+    // Intersect authorized teachers with the context-bound candidates
+    authorizedTeachers.forEach(tId => {
+      if (contextBoundUserIds.has(tId)) {
+        finalUserIds.add(tId);
+      }
     });
-
-    teacherAssignments.forEach(t => finalUserIds.add(t.teacher_id));
 
     return Array.from(finalUserIds);
   }

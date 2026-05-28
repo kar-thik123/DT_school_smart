@@ -10,6 +10,7 @@ import { provideAnimations } from '@angular/platform-browser/animations';
 import { HashLocationStrategy, LocationStrategy } from '@angular/common';
 import { ErrorInterceptor } from '@core/interceptor/error.interceptor';
 import { JwtInterceptor } from './core/interceptor/jwt.interceptor';
+import { AcademicContextInterceptor } from './core/interceptor/academic-context.interceptor';
 import { GlobalErrorHandler } from './core/service/global-error-handler.service';
 import { DirectionService, LanguageService } from '@core';
 import { provideTranslateService } from '@ngx-translate/core';
@@ -71,6 +72,11 @@ export const appConfig: ApplicationConfig = {
     {
       provide: HTTP_INTERCEPTORS,
       useClass: ErrorInterceptor,
+      multi: true,
+    },
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: AcademicContextInterceptor,
       multi: true,
     },
     { provide: ErrorHandler, useClass: GlobalErrorHandler },

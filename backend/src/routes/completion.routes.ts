@@ -4,6 +4,7 @@ import { authMiddleware, requirePermission } from '../middlewares/auth.middlewar
 import { z } from 'zod';
 import { logAuditEvent } from '../services/audit.service';
 import { emitNotificationEvent, EventTypes, NotificationEventPayload } from '../services/events.service';
+import { AuthorizationService } from '../services/authorization.service';
 
 const router = Router();
 router.use(authMiddleware);
@@ -42,22 +43,21 @@ async function getTeacherAssignments(teacher_id: string, org_id: string, academi
 // GET assigned hierarchy for a teacher
 router.get('/hierarchy', requirePermission('COMPLETION_TRACKING', 'VIEW'), async (req: any, res: Response) => {
   try {
-    const { academic_year_id } = req.query;
-    if (!academic_year_id) return res.status(400).json({ message: 'academic_year_id required' });
+    const academic_year_id = req.academic_year_id;
+    if (!academic_year_id) return res.status(400).json({ message: 'academic_year_id context missing' });
 
     const org_id = req.user.organization_id;
     const teacher_id = req.user.user_id;
 
-    // Enforce module-level enable_module flag (SYSTEM_ADMIN bypasses)
-    if (req.user.role !== 'SYSTEM_ADMIN') {
-      const moduleEnabled = await isCompletionModuleEnabled(org_id);
-      if (!moduleEnabled) {
-        return res.status(503).json({ message: 'Completion Management module is currently disabled for this organization.' });
-      }
+    // Enforce module-level enable_module flag
+    const moduleEnabled = await isCompletionModuleEnabled(org_id);
+    if (!moduleEnabled) {
+      return res.status(503).json({ message: 'Completion Management module is currently disabled for this organization.' });
     }
 
     // Check if user is admin (sees all)
-    const isAdmin = ['SUPER_ADMIN', 'MANAGEMENT'].includes(req.user.role);
+    const isAdmin = AuthorizationService.hasIdentity(req.user.permissions || [], 'IS_SUPER_ADMIN') || 
+                    (req.user.permissions || []).includes('COMPLETION_TRACKING:MANAGE');
 
     if (isAdmin) {
       // Return full organization hierarchy for this academic year
@@ -84,22 +84,22 @@ router.get('/hierarchy', requirePermission('COMPLETION_TRACKING', 'VIEW'), async
 // GET topics and subtopics with completion status
 router.get('/topics', requirePermission('COMPLETION_TRACKING', 'VIEW'), async (req: any, res: Response) => {
   try {
-    const { academic_year_id, grade_id, section_id, subject_id } = req.query;
+    const { grade_id, section_id, subject_id } = req.query;
+    const academic_year_id = req.academic_year_id;
     if (!academic_year_id || !grade_id || !subject_id) {
       return res.status(400).json({ message: 'Missing required context (academic_year_id, grade_id, subject_id)' });
     }
 
     const org_id = req.user.organization_id;
 
-    // Enforce module-level enable_module flag (SYSTEM_ADMIN bypasses)
-    if (req.user.role !== 'SYSTEM_ADMIN') {
-      const moduleEnabled = await isCompletionModuleEnabled(org_id);
-      if (!moduleEnabled) {
-        return res.status(503).json({ message: 'Completion Management module is currently disabled for this organization.' });
-      }
+    // Enforce module-level enable_module flag
+    const moduleEnabled = await isCompletionModuleEnabled(org_id);
+    if (!moduleEnabled) {
+      return res.status(503).json({ message: 'Completion Management module is currently disabled for this organization.' });
     }
 
-    const isGlobalAdmin = ['SUPER_ADMIN', 'MANAGEMENT'].includes(req.user.role);
+    const isGlobalAdmin = AuthorizationService.hasIdentity(req.user.permissions || [], 'IS_SUPER_ADMIN') || 
+                          (req.user.permissions || []).includes('COMPLETION_TRACKING:MANAGE');
     if (!isGlobalAdmin) {
       const subjectCondition: any = { subject_id: String(subject_id) };
       if (section_id) subjectCondition.section_id = String(section_id);
@@ -176,25 +176,26 @@ const toggleSchema = z.object({
 router.post('/toggle', requirePermission('COMPLETION_TRACKING', 'MANAGE'), async (req: any, res: Response) => {
   try {
     const parsed = toggleSchema.parse(req.body);
+    // Enforce academic year from context header
+    const academic_year_id = req.academic_year_id;
     const org_id = req.user.organization_id;
     const teacher_id = req.user.user_id;
 
-    // Enforce module-level enable_module flag (SYSTEM_ADMIN bypasses)
-    if (req.user.role !== 'SYSTEM_ADMIN') {
-      const moduleEnabled = await isCompletionModuleEnabled(org_id);
-      if (!moduleEnabled) {
-        return res.status(503).json({ message: 'Completion Management module is currently disabled for this organization.' });
-      }
+    // Enforce module-level enable_module flag
+    const moduleEnabled = await isCompletionModuleEnabled(org_id);
+    if (!moduleEnabled) {
+      return res.status(503).json({ message: 'Completion Management module is currently disabled for this organization.' });
     }
 
     // Admin check vs Teacher assignment check
-    const isAdmin = ['SUPER_ADMIN', 'MANAGEMENT'].includes(req.user.role);
+    const isAdmin = AuthorizationService.hasIdentity(req.user.permissions || [], 'IS_SUPER_ADMIN') || 
+                    (req.user.permissions || []).includes('COMPLETION_TRACKING:MANAGE');
     if (!isAdmin) {
       const validAssignment = await prisma.teacherAssignment.findFirst({
         where: {
           teacher_id,
           organization_id: org_id,
-          academic_year_id: parsed.academic_year_id,
+          academic_year_id: academic_year_id,
           OR: [
             { assignment_type: 'SUBJECT_TEACHER', subject_id: parsed.subject_id },
             { assignment_type: 'CLASS_TEACHER', section_id: parsed.section_id ?? undefined }
@@ -212,7 +213,7 @@ router.post('/toggle', requirePermission('COMPLETION_TRACKING', 'MANAGE'), async
       const buildWhere = (lvl: string, target_id: string) => {
         const base = {
           organization_id: org_id,
-          academic_year_id: parsed.academic_year_id,
+          academic_year_id: academic_year_id,
           grade_id: parsed.grade_id,
           section_id: parsed.section_id,
           subject_id: parsed.subject_id,
@@ -226,7 +227,7 @@ router.post('/toggle', requirePermission('COMPLETION_TRACKING', 'MANAGE'), async
       const buildCreate = (lvl: string, target_id: string) => {
         const base = {
           organization_id: org_id,
-          academic_year_id: parsed.academic_year_id,
+          academic_year_id: academic_year_id,
           grade_id: parsed.grade_id,
           section_id: parsed.section_id,
           subject_id: parsed.subject_id,
@@ -313,7 +314,7 @@ router.post('/toggle', requirePermission('COMPLETION_TRACKING', 'MANAGE'), async
              name: 'Academic Content' // Could query DB for actual name if needed
            },
            context: {
-             academic_year_id: parsed.academic_year_id,
+             academic_year_id: academic_year_id,
              grade_id: parsed.grade_id,
              section_id: parsed.section_id,
              subject_id: parsed.subject_id

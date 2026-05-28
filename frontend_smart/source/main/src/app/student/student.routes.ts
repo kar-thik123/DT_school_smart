@@ -1,3 +1,4 @@
+import { AuthGuard } from '@core/guard/auth.guard';
 import { Page404Component } from '../authentication/page404/page404.component';
 import { Route } from '@angular/router';
 import { DashboardComponent } from './dashboard/dashboard.component';
@@ -67,7 +68,7 @@ export const STUDENT_ROUTE: Route[] = [
       { path: 'study-materials', component: StudyMaterialsComponent },
       { path: 'academic-calendar', component: AcademicCalendarComponent },
       { path: 'my-subjects', component: MySubjectsComponent },
-      { path: 'mcq', component: McqComponent },
+      { path: 'mcq', component: McqComponent, canActivate: [AuthGuard], data: { permission: 'MCQ:VIEW' } },
     ],
   },
   {
