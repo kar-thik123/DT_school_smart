@@ -38,12 +38,7 @@
               <mat-icon class="grade-chevron"
                 [@iconRotate]="expandedGrade === grade.id ? 'expanded' : 'collapsed'">chevron_right</mat-icon>
             </div>
-<<<<<<< Updated upstream:frontend_smart/source/main/src/app/admin/administration/question-bank/questionBank-dropdown/questionBank-dropdown.component.html
             <span class="grade-name flex-grow-1" (click)="selectNode(grade, null, null, null, null, null, $event)">{{ grade.name }}</span>
-=======
-            <span class="grade-name flex-grow-1"
-              (click)="selectNode(grade, null, null, null, null, null, null, $event)">{{ grade.name }}</span>
->>>>>>> Stashed changes:frontend_smart/source/main/src/app/shared/components/academic-context-selector/academic-context-selector.component.html
           </div>
 
           <!-- Sections Wrapper (Collapsible) -->
@@ -59,7 +54,6 @@
                     <mat-icon class="section-chevron"
                       [@iconRotate]="expandedSection === ('ALL_' + grade.id) ? 'expanded' : 'collapsed'">chevron_right</mat-icon>
                   </div>
-<<<<<<< Updated upstream:frontend_smart/source/main/src/app/admin/administration/question-bank/questionBank-dropdown/questionBank-dropdown.component.html
                   <span class="section-name flex-grow-1" (click)="selectNode(grade, 'ALL', null, null, null, null, $event)">All Sections</span>
                 </div>
 
@@ -67,18 +61,6 @@
                 <div class="subjects-container" [@expandAnimation]="expandedSection === ('ALL_' + grade.id) ? 'expanded' : 'collapsed'">
                   <div class="subjects-tree">
                     <ng-container *ngTemplateOutlet="subjectListTpl; context: { $implicit: getSubjectsForGrade(grade.id), grade: grade, section: 'ALL' }"></ng-container>
-=======
-                  <span class="section-name flex-grow-1"
-                    (click)="selectNode(grade, 'ALL', null, null, null, null, null, $event)">All Sections</span>
-                </div>
-
-                <!-- Subjects under All Sections -->
-                <div *ngIf="showSubjects" class="subjects-container"
-                  [@expandAnimation]="expandedSection === ('ALL_' + grade.id) ? 'expanded' : 'collapsed'">
-                  <div class="subjects-tree">
-                    <ng-container
-                      *ngTemplateOutlet="subjectListTpl; context: { $implicit: getSubjectsForGrade(grade.id), grade: grade, section: 'ALL', group: null }"></ng-container>
->>>>>>> Stashed changes:frontend_smart/source/main/src/app/shared/components/academic-context-selector/academic-context-selector.component.html
                   </div>
                 </div>
 
@@ -91,7 +73,6 @@
                       <mat-icon class="section-chevron"
                         [@iconRotate]="expandedSection === section.id ? 'expanded' : 'collapsed'">chevron_right</mat-icon>
                     </div>
-<<<<<<< Updated upstream:frontend_smart/source/main/src/app/admin/administration/question-bank/questionBank-dropdown/questionBank-dropdown.component.html
                     <span class="section-name flex-grow-1" (click)="selectNode(grade, section, null, null, null, null, $event)">{{ section.name }}</span>
                   </div>
 
@@ -100,57 +81,24 @@
                     <div class="subjects-tree">
                       
                       <ng-container *ngIf="getGroupsForSection(grade.id, section.id).length > 0; else noGroups">
-=======
-                    <span class="section-name flex-grow-1"
-                      (click)="selectNode(grade, section, null, null, null, null, null, $event)">{{ section.name
-                      }}</span>
-                  </div>
-
-                  <!-- Subjects/Groups under Section -->
-                  <div *ngIf="showGroups || showSubjects" class="subjects-container"
-                    [@expandAnimation]="expandedSection === section.id ? 'expanded' : 'collapsed'">
-                    <div class="subjects-tree">
-
-                      <ng-container
-                        *ngIf="showGroups && getGroupsForSection(grade.id, section.id).length > 0; else noGroups">
->>>>>>> Stashed changes:frontend_smart/source/main/src/app/shared/components/academic-context-selector/academic-context-selector.component.html
                         <div class="group-item" *ngFor="let group of getGroupsForSection(grade.id, section.id)">
                           <div class="group-row" [class.expanded]="expandedGroup === group.id">
                             <div (click)="toggleGroup(group.id, $event)" class="d-inline-flex align-items-center">
                               <mat-icon class="group-chevron"
                                 [@iconRotate]="expandedGroup === group.id ? 'expanded' : 'collapsed'">chevron_right</mat-icon>
                             </div>
-<<<<<<< Updated upstream:frontend_smart/source/main/src/app/admin/administration/question-bank/questionBank-dropdown/questionBank-dropdown.component.html
                             <span class="group-name flex-grow-1" (click)="selectNode(grade, section, null, null, null, null, $event)">{{ group.name }}</span>
                           </div>
                           <div class="group-subjects-container" [@expandAnimation]="expandedGroup === group.id ? 'expanded' : 'collapsed'">
                             <div class="group-subjects-tree">
                               <ng-container *ngTemplateOutlet="subjectListTpl; context: { $implicit: group.subjects, grade: grade, section: section }"></ng-container>
-=======
-                            <span class="group-name flex-grow-1"
-                              (click)="selectNode(grade, section, null, group, null, null, null, $event)">{{ group.name
-                              }}</span>
-                          </div>
-                          <div *ngIf="showSubjects" class="group-subjects-container"
-                            [@expandAnimation]="expandedGroup === group.id ? 'expanded' : 'collapsed'">
-                            <div class="group-subjects-tree">
-                              <ng-container
-                                *ngTemplateOutlet="subjectListTpl; context: { $implicit: group.subjects, grade: grade, section: section, group: group }"></ng-container>
->>>>>>> Stashed changes:frontend_smart/source/main/src/app/shared/components/academic-context-selector/academic-context-selector.component.html
                             </div>
                           </div>
                         </div>
                       </ng-container>
 
                       <ng-template #noGroups>
-<<<<<<< Updated upstream:frontend_smart/source/main/src/app/admin/administration/question-bank/questionBank-dropdown/questionBank-dropdown.component.html
                         <ng-container *ngTemplateOutlet="subjectListTpl; context: { $implicit: getSubjectsForSection(grade.id, section.id), grade: grade, section: section }"></ng-container>
-=======
-                        <ng-container *ngIf="showSubjects">
-                          <ng-container
-                            *ngTemplateOutlet="subjectListTpl; context: { $implicit: getSubjectsForSection(grade.id, section.id), grade: grade, section: section, group: null }"></ng-container>
-                        </ng-container>
->>>>>>> Stashed changes:frontend_smart/source/main/src/app/shared/components/academic-context-selector/academic-context-selector.component.html
                       </ng-template>
 
                     </div>
@@ -188,7 +136,6 @@
       <div class="subject-row"
         [class.active]="selectedGradeId === grade.id && (section === 'ALL' ? selectedSectionId === 'ALL' : selectedSectionId === section.id) && selectedSubjectId === subject.id && !selectedUnitId">
         <div class="tree-line"></div>
-<<<<<<< Updated upstream:frontend_smart/source/main/src/app/admin/administration/question-bank/questionBank-dropdown/questionBank-dropdown.component.html
         <div *ngIf="showUnitsAndBelow" (click)="toggleSubject(subject.id, $event)" class="d-inline-flex align-items-center">
           <mat-icon class="expand-chevron" [@iconRotate]="expandedSubject === subject.id ? 'expanded' : 'collapsed'">chevron_right</mat-icon>
         </div>
@@ -197,26 +144,12 @@
 
       <!-- UNITS -->
       <div *ngIf="showUnitsAndBelow" class="units-container" [@expandAnimation]="expandedSubject === subject.id ? 'expanded' : 'collapsed'">
-=======
-        <div *ngIf="showUnits" (click)="toggleSubject(subject.id, $event)" class="d-inline-flex align-items-center">
-          <mat-icon class="expand-chevron"
-            [@iconRotate]="expandedSubject === subject.id ? 'expanded' : 'collapsed'">chevron_right</mat-icon>
-        </div>
-        <span class="subject-name flex-grow-1" (click)="selectSubject(grade, section, subject, group, $event)">{{
-          subject.name }}</span>
-      </div>
-
-      <!-- UNITS -->
-      <div *ngIf="showUnits" class="units-container"
-        [@expandAnimation]="expandedSubject === subject.id ? 'expanded' : 'collapsed'">
->>>>>>> Stashed changes:frontend_smart/source/main/src/app/shared/components/academic-context-selector/academic-context-selector.component.html
         <div class="units-tree">
           <ng-container *ngIf="getUnitsForSubject(subject.id).length > 0; else noUnits">
             <div *ngFor="let unit of getUnitsForSubject(subject.id)">
               <div class="unit-row"
                 [class.active]="selectedSubjectId === subject.id && selectedUnitId === unit.id && !selectedTopicId">
                 <div class="tree-line"></div>
-<<<<<<< Updated upstream:frontend_smart/source/main/src/app/admin/administration/question-bank/questionBank-dropdown/questionBank-dropdown.component.html
                 <div (click)="toggleUnit(unit.id, $event)" class="d-inline-flex align-items-center">
                   <mat-icon class="expand-chevron" [@iconRotate]="expandedUnit === unit.id ? 'expanded' : 'collapsed'">chevron_right</mat-icon>
                 </div>
@@ -225,26 +158,12 @@
 
               <!-- TOPICS -->
               <div class="topics-container" [@expandAnimation]="expandedUnit === unit.id ? 'expanded' : 'collapsed'">
-=======
-                <div *ngIf="showTopics" (click)="toggleUnit(unit.id, $event)" class="d-inline-flex align-items-center">
-                  <mat-icon class="expand-chevron"
-                    [@iconRotate]="expandedUnit === unit.id ? 'expanded' : 'collapsed'">chevron_right</mat-icon>
-                </div>
-                <span class="unit-name flex-grow-1"
-                  (click)="selectNode(grade, section, subject, group, unit, null, null, $event)">{{ unit.name }}</span>
-              </div>
-
-              <!-- TOPICS -->
-              <div *ngIf="showTopics" class="topics-container"
-                [@expandAnimation]="expandedUnit === unit.id ? 'expanded' : 'collapsed'">
->>>>>>> Stashed changes:frontend_smart/source/main/src/app/shared/components/academic-context-selector/academic-context-selector.component.html
                 <div class="topics-tree">
                   <ng-container *ngIf="getTopicsForUnit(unit.id).length > 0; else noTopics">
                     <div *ngFor="let topic of getTopicsForUnit(unit.id)">
                       <div class="topic-row"
                         [class.active]="selectedUnitId === unit.id && selectedTopicId === topic.id && !selectedSubTopicId">
                         <div class="tree-line"></div>
-<<<<<<< Updated upstream:frontend_smart/source/main/src/app/admin/administration/question-bank/questionBank-dropdown/questionBank-dropdown.component.html
                         <div (click)="toggleTopic(topic.id, $event)" class="d-inline-flex align-items-center">
                           <mat-icon class="expand-chevron" [@iconRotate]="expandedTopic === topic.id ? 'expanded' : 'collapsed'">chevron_right</mat-icon>
                         </div>
@@ -253,33 +172,12 @@
 
                       <!-- SUBTOPICS -->
                       <div class="subtopics-container" [@expandAnimation]="expandedTopic === topic.id ? 'expanded' : 'collapsed'">
-=======
-                        <div *ngIf="showSubTopics" (click)="toggleTopic(topic.id, $event)"
-                          class="d-inline-flex align-items-center">
-                          <mat-icon class="expand-chevron"
-                            [@iconRotate]="expandedTopic === topic.id ? 'expanded' : 'collapsed'">chevron_right</mat-icon>
-                        </div>
-                        <span class="topic-name flex-grow-1"
-                          (click)="selectNode(grade, section, subject, group, unit, topic, null, $event)">{{ topic.name
-                          }}</span>
-                      </div>
-
-                      <!-- SUBTOPICS -->
-                      <div *ngIf="showSubTopics" class="subtopics-container"
-                        [@expandAnimation]="expandedTopic === topic.id ? 'expanded' : 'collapsed'">
->>>>>>> Stashed changes:frontend_smart/source/main/src/app/shared/components/academic-context-selector/academic-context-selector.component.html
                         <div class="subtopics-tree">
                           <ng-container *ngIf="getSubTopicsForTopic(topic.id).length > 0; else noSubTopics">
                             <div class="subtopic-row" *ngFor="let subtopic of getSubTopicsForTopic(topic.id)"
                               [class.active]="selectedTopicId === topic.id && selectedSubTopicId === subtopic.id">
                               <div class="tree-line"></div>
-<<<<<<< Updated upstream:frontend_smart/source/main/src/app/admin/administration/question-bank/questionBank-dropdown/questionBank-dropdown.component.html
                               <span class="subtopic-name flex-grow-1 ms-4" (click)="selectNode(grade, section, subject, unit, topic, subtopic, $event)">{{ subtopic.name }}</span>
-=======
-                              <span class="subtopic-name flex-grow-1 ms-4"
-                                (click)="selectNode(grade, section, subject, group, unit, topic, subtopic, $event)">{{
-                                subtopic.name }}</span>
->>>>>>> Stashed changes:frontend_smart/source/main/src/app/shared/components/academic-context-selector/academic-context-selector.component.html
                             </div>
                           </ng-container>
                           <ng-template #noSubTopics>
@@ -307,11 +205,5 @@
       </div>
     </div>
   </ng-container>
-<<<<<<< Updated upstream:frontend_smart/source/main/src/app/admin/administration/question-bank/questionBank-dropdown/questionBank-dropdown.component.html
   <ng-template #noSubjects><div class="subject-row empty"><span class="subject-name text-muted ms-4">No subjects available</span></div></ng-template>
-=======
-  <ng-template #noSubjects>
-    <div class="subject-row empty"><span class="subject-name text-muted ms-4">No subjects available</span></div>
-  </ng-template>
->>>>>>> Stashed changes:frontend_smart/source/main/src/app/shared/components/academic-context-selector/academic-context-selector.component.html
 </ng-template>
