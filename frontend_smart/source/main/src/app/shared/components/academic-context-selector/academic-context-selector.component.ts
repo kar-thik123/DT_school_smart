@@ -5,6 +5,7 @@ import { trigger, state, style, transition, animate } from '@angular/animations'
 
 import { AcademicStructureService, IGrade, ISection, ISubject, ISubjectGroup, ISubjectGroupSubject } from '../../../admin/administration/units-list/services/units.service';
 import { CurriculumService, ICurriculumUnit, ICurriculumTopic, ICurriculumSubTopic } from '../../../admin/administration/units-list/services/curriculum.service';
+import { AuthService } from '@core/service/auth.service';
 
 export interface IAcademicContextSelection {
   grade?: IGrade | null;
@@ -72,6 +73,7 @@ export class AcademicContextSelectorComponent implements OnInit {
 
   private academicService = inject(AcademicStructureService);
   private curriculumService = inject(CurriculumService);
+  private authService = inject(AuthService);
 
   isHierarchyOpen = false;
   expandedGrade: string | null = null;
@@ -189,7 +191,14 @@ export class AcademicContextSelectorComponent implements OnInit {
   }
 
   getSubjectsForSection(gradeId: string, sectionId: string): ISubject[] {
-    return this.subjects.filter(s => s.grade_id === gradeId && (!s.section_ids || s.section_ids.length === 0 || s.section_ids.includes(sectionId)));
+    const isTeacher = this.authService?.currentUserValue?.role === 'TEACHER';
+    return this.subjects.filter(s => {
+      if (s.grade_id !== gradeId) return false;
+      // Teachers always see subjects they are explicitly assigned to (returned by backend)
+      // regardless of SubjectGroup section mappings
+      if (isTeacher) return true;
+      return (!s.section_ids || s.section_ids.length === 0 || s.section_ids.includes(sectionId));
+    });
   }
 
   getSubjectsForGrade(gradeId: string): ISubject[] {

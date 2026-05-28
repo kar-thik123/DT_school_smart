@@ -256,6 +256,12 @@ export class SidebarComponent
         return false;
       }
     }
+    
+    if (item.domain === 'TENANT') {
+      if (userRoleUpper === 'SYSTEM_ADMIN') {
+        return false;
+      }
+    }
 
     // Handle group header "Administration"
     if (item.title === 'MENUITEMS.ADMINISTRATION.TEXT') {

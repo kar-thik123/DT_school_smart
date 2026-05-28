@@ -97,7 +97,7 @@ describe('School SaaS Pre-Production Stabilization & QA Suite', () => {
 
     // 5. Ensure System Admin User exists
     const sysAdminUser = await prisma.user.upsert({
-      where: { email: 'sysadmin@platform.com' },
+      where: { email: 'test-sysadmin@platform.com' },
       update: {
         password_hash: passwordHash,
         role_id: sysAdminRoleId,
@@ -106,7 +106,7 @@ describe('School SaaS Pre-Production Stabilization & QA Suite', () => {
       },
       create: {
         name: 'System Admin Tester',
-        email: 'sysadmin@platform.com',
+        email: 'test-sysadmin@platform.com',
         password_hash: passwordHash,
         role_id: sysAdminRoleId,
         organization_id: sysOrgId,
@@ -118,7 +118,7 @@ describe('School SaaS Pre-Production Stabilization & QA Suite', () => {
     // Get SYSTEM_ADMIN Token
     const sysLoginRes = await supertest(app)
       .post('/api/auth/login')
-      .send({ email: 'sysadmin@platform.com', password: passwordPlain });
+      .send({ email: 'test-sysadmin@platform.com', password: passwordPlain });
     sysAdminToken = sysLoginRes.body.token;
 
     // PRE-RUN CLEANUP: Delete stale test orgs from any previous failed run

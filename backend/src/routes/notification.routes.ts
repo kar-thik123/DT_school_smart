@@ -11,39 +11,30 @@ router.get('/', async (req: any, res: Response) => {
     const userId = req.user.user_id;
     const orgId = req.user.organization_id;
 
-    let notifications = await prisma.notification.findMany({
-      where: { userId, organization_id: orgId },
-      orderBy: { created_at: 'desc' },
+    const recipients = await prisma.notificationRecipient.findMany({
+      where: { 
+        user_id: userId,
+        notification: { organization_id: orgId }
+      },
+      include: {
+        notification: true
+      },
+      orderBy: { notification: { created_at: 'desc' } },
       take: 50
     });
 
-    // Cleanup orphaned notifications for deleted emails
-    const emailNotifs = notifications.filter((n: any) => n.type === 'email' && n.referenceId);
-    if (emailNotifs.length > 0) {
-      const mailIds = emailNotifs.map((n: any) => n.referenceId as string);
-      const mails = await prisma.internalMail.findMany({
-        where: { id: { in: mailIds } },
-        select: { id: true, deletedByReceiver: true, receiverId: true, deletedBySender: true, senderId: true }
-      });
-      
-      const mailsToDeleteNotifsFor = mails.filter((m: any) => {
-        if (m.receiverId === userId && m.deletedByReceiver) return true;
-        if (m.senderId === userId && m.deletedBySender) return true;
-        return false;
-      }).map((m: any) => m.id);
-
-      // Also clean up notifications where the mail doesn't exist at all anymore
-      const existingMailIds = mails.map((m: any) => m.id);
-      const nonExistentMailIds = mailIds.filter((id: string) => !existingMailIds.includes(id));
-      const allIdsToDelete = [...mailsToDeleteNotifsFor, ...nonExistentMailIds];
-
-      if (allIdsToDelete.length > 0) {
-        await prisma.notification.deleteMany({
-          where: { referenceId: { in: allIdsToDelete }, userId }
-        });
-        notifications = notifications.filter((n: any) => n.referenceId && !allIdsToDelete.includes(n.referenceId));
-      }
-    }
+    // Flatten to match old response format for UI compatibility
+    const notifications = recipients.map((r: any) => ({
+      ...r.notification,
+      id: r.id, // using recipient id as the identifier for marking read
+      notification_id: r.notification_id,
+      isRead: r.is_read,
+      userId: r.user_id,
+      referenceId: r.notification.entity_id,
+      type: r.notification.event_type === 'INTERNAL_MAIL' ? 'email' : r.notification.event_type,
+      icon: (r.notification.context_data as any)?.icon || 'bell',
+      color: (r.notification.context_data as any)?.color || 'text-primary'
+    }));
 
     res.json(notifications);
   } catch (error) {
@@ -58,8 +49,12 @@ router.get('/unread-count', async (req: any, res: Response) => {
     const userId = req.user.user_id;
     const orgId = req.user.organization_id;
 
-    const count = await prisma.notification.count({
-      where: { userId, organization_id: orgId, isRead: false }
+    const count = await prisma.notificationRecipient.count({
+      where: { 
+        user_id: userId, 
+        is_read: false,
+        notification: { organization_id: orgId }
+      }
     });
 
     res.json({ count });
@@ -75,14 +70,14 @@ router.patch('/:id/read', async (req: any, res: Response) => {
     const { id } = req.params;
     const userId = req.user.user_id;
 
-    const notification = await prisma.notification.findUnique({ where: { id } });
-    if (!notification || notification.userId !== userId) {
+    const recipient = await prisma.notificationRecipient.findUnique({ where: { id } });
+    if (!recipient || recipient.user_id !== userId) {
       return res.status(404).json({ message: 'Notification not found' });
     }
 
-    const updated = await prisma.notification.update({
+    const updated = await prisma.notificationRecipient.update({
       where: { id },
-      data: { isRead: true }
+      data: { is_read: true, read_at: new Date() }
     });
 
     res.json({ message: 'Notification marked as read', notification: updated });
@@ -98,9 +93,13 @@ router.patch('/read-all', async (req: any, res: Response) => {
     const userId = req.user.user_id;
     const orgId = req.user.organization_id;
 
-    await prisma.notification.updateMany({
-      where: { userId, organization_id: orgId, isRead: false },
-      data: { isRead: true }
+    await prisma.notificationRecipient.updateMany({
+      where: { 
+        user_id: userId, 
+        is_read: false,
+        notification: { organization_id: orgId }
+      },
+      data: { is_read: true, read_at: new Date() }
     });
 
     res.json({ message: 'All notifications marked as read' });
@@ -116,12 +115,12 @@ router.delete('/:id', async (req: any, res: Response) => {
     const { id } = req.params;
     const userId = req.user.user_id;
 
-    const notification = await prisma.notification.findUnique({ where: { id } });
-    if (!notification || notification.userId !== userId) {
+    const recipient = await prisma.notificationRecipient.findUnique({ where: { id } });
+    if (!recipient || recipient.user_id !== userId) {
       return res.status(404).json({ message: 'Notification not found' });
     }
 
-    await prisma.notification.delete({ where: { id } });
+    await prisma.notificationRecipient.delete({ where: { id } });
 
     res.json({ message: 'Notification deleted' });
   } catch (error) {

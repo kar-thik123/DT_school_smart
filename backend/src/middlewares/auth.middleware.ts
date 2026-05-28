@@ -70,10 +70,7 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
 
 export const requirePermission = (module: string, action: string) => {
   return (req: AuthRequest, res: Response, next: NextFunction) => {
-    // SYSTEM_ADMIN bypasses globally; other roles are permission-driven.
-    if (req.user?.role === 'SYSTEM_ADMIN') {
-      return next();
-    }
+    // Note: SYSTEM_ADMIN no longer bypasses globally. Permissions must be explicitly mapped in the database.
 
     const userPermissions = req.user?.permissions || [];
     const requiredPermission = `${module}:${action}`;

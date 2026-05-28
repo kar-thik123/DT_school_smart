@@ -11,8 +11,8 @@ router.get('/system-logs', async (req: any, res: Response) => {
   try {
     const org_id = req.user.organization_id;
 
-    // Authorize: Only allow System Admins, Super Admins, and Management
-    const isAuthorized = ['SYSTEM_ADMIN', 'SUPER_ADMIN', 'MANAGEMENT'].includes(req.user.role);
+    // Authorize: Only allow Super Admins and Management
+    const isAuthorized = ['SUPER_ADMIN', 'MANAGEMENT'].includes(req.user.role);
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Forbidden: Requires administrative or management role to view audit logs.' });
     }
@@ -63,8 +63,8 @@ router.get('/:module_name', async (req: any, res: Response) => {
     const { module_name } = req.params;
     const org_id = req.user.organization_id;
 
-    // SYSTEM_ADMIN has unconditional read access to all config
-    const isSystemAdmin = req.user.role === 'SYSTEM_ADMIN';
+    // SYSTEM_ADMIN bypass removed. Rely on explicit permissions.
+    const isSystemAdmin = false;
     if (!isSystemAdmin) {
       // All other roles (including SUPER_ADMIN, MANAGEMENT) must have explicit permission
       let requiredPerm = 'MASTER_CONFIGURATION:VIEW';
@@ -106,8 +106,8 @@ router.put('/:module_name', async (req: any, res: Response) => {
     const { config_data } = req.body;
     const org_id = req.user.organization_id;
 
-    // SYSTEM_ADMIN has unconditional write access to all config
-    const isSystemAdmin = req.user.role === 'SYSTEM_ADMIN';
+    // SYSTEM_ADMIN bypass removed. Rely on explicit permissions.
+    const isSystemAdmin = false;
     if (!isSystemAdmin) {
       // All other roles (including SUPER_ADMIN, MANAGEMENT) must have explicit permission
       let requiredPerm = 'MASTER_CONFIGURATION:MANAGE_CONFIG';

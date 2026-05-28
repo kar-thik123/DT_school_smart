@@ -57,6 +57,7 @@ model Organization {
   completion_trackings   CompletionTracking[]
   module_configs         ModuleConfig[]
   audit_logs             AuditLog[]
+  notification_preferences NotificationPreference[]
 
   @@index([subdomain])
   @@map("organizations")
@@ -108,7 +109,7 @@ model User {
   organization                Organization             @relation(fields: [organization_id], references: [id], onDelete: Cascade)
   role                        Role                     @relation(fields: [role_id], references: [id])
   section                     Section?                 @relation(fields: [section_id], references: [id])
-  notifications               Notification[]
+  notification_recipients     NotificationRecipient[]
   // completed_by isn't strict referential integrity for Users to keep schema clean, or we can use relation. I'll omit it and not use relation to avoid User model clutter.
 
   @@index([organization_id])
@@ -805,21 +806,48 @@ enum MailStatus {
 model Notification {
   id              String   @id @default(uuid()) @db.Uuid
   organization_id String   @db.Uuid
-  userId          String   @db.Uuid
-  type            String
+  event_type      String
+  entity_type     String
+  entity_id       String   @db.Uuid
   title           String
   message         String
-  isRead          Boolean  @default(false)
-  referenceId     String?  @db.Uuid
+  actor_id        String?  @db.Uuid
+  context_data    Json     @default("{}")
   created_at      DateTime @default(now())
 
   organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipients   NotificationRecipient[]
 
   @@index([organization_id])
-  @@index([userId])
-  @@index([referenceId])
+  @@index([entity_id])
   @@map("notifications")
+}
+
+model NotificationRecipient {
+  id               String   @id @default(uuid()) @db.Uuid
+  notification_id  String   @db.Uuid
+  user_id          String   @db.Uuid
+  is_read          Boolean  @default(false)
+  read_at          DateTime?
+
+  notification     Notification @relation(fields: [notification_id], references: [id], onDelete: Cascade)
+  user             User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([notification_id, user_id])
+  @@index([user_id, is_read])
+  @@map("notification_recipients")
+}
+
+model NotificationPreference {
+  organization_id  String   @db.Uuid
+  event_type       String
+  is_enabled       Boolean  @default(true)
+  audience_config  Json     @default("{}")
+
+  organization     Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+
+  @@id([organization_id, event_type])
+  @@map("notification_preferences")
 }
 
 model PreviewQuestion {

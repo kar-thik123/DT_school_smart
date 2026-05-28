@@ -170,13 +170,18 @@ router.post('/send', upload.array('attachments'), async (req: any, res: Response
       const notification = await prisma.notification.create({
         data: {
           organization_id: orgId,
-          userId: receiverId,
-          type: 'email',
+          event_type: 'INTERNAL_MAIL',
+          entity_type: 'INTERNAL_MAIL',
+          entity_id: mail.id,
           title: `New email from ${senderName}`,
           message: subject,
-          icon: 'mail',
-          color: 'notification-green',
-          referenceId: mail.id,
+          actor_id: senderId,
+          context_data: { icon: 'mail', color: 'notification-green' },
+          recipients: {
+            create: {
+              user_id: receiverId
+            }
+          }
         }
       });
 
@@ -295,8 +300,12 @@ router.patch('/:id/action', async (req: any, res: Response) => {
         try {
           await prisma.notification.deleteMany({
             where: {
-              referenceId: id,
-              userId: userId
+              entity_id: id,
+              recipients: {
+                some: {
+                  user_id: userId
+                }
+              }
             }
           });
           const { io } = require('../server');

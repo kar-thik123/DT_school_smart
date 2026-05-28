@@ -102,10 +102,9 @@ export class AuthService {
     const user = this.user$.value;
     if (!user || Object.keys(user).length === 0) return false;
 
-    // SYSTEM_ADMIN bypasses all permission checks.
     // SYSTEM_ADMIN owns the platform; other roles are permission-driven.
+    // NOTE: Removed global bypass for SYSTEM_ADMIN to enforce strict tenant isolation
     const role = (user.role || user.roles?.[0]?.name || '').toUpperCase();
-    if (role === 'SYSTEM_ADMIN') return true;
 
     const permissions = this.getPermissions() || [];
     
@@ -137,7 +136,7 @@ export class AuthService {
     const user = this.user$.value;
     if (!user || Object.keys(user).length === 0) return false;
     const role = (user.role || '').toUpperCase();
-    if (role === 'SYSTEM_ADMIN' || role === 'SUPER_ADMIN' || role === 'MANAGEMENT') {
+    if (role === 'SUPER_ADMIN' || role === 'MANAGEMENT') {
       return true;
     }
     // Or check if they have any admin sub-module permission

@@ -3,6 +3,7 @@ import prisma from '../prisma';
 import { authMiddleware, requirePermission } from '../middlewares/auth.middleware';
 import { z } from 'zod';
 import { logAuditEvent } from '../services/audit.service';
+import { emitNotificationEvent, EventTypes, NotificationEventPayload } from '../services/events.service';
 
 const router = Router();
 router.use(authMiddleware);
@@ -56,7 +57,7 @@ router.get('/hierarchy', requirePermission('COMPLETION_TRACKING', 'VIEW'), async
     }
 
     // Check if user is admin (sees all)
-    const isAdmin = ['SYSTEM_ADMIN', 'SUPER_ADMIN', 'MANAGEMENT'].includes(req.user.role);
+    const isAdmin = ['SUPER_ADMIN', 'MANAGEMENT'].includes(req.user.role);
 
     if (isAdmin) {
       // Return full organization hierarchy for this academic year
@@ -98,16 +99,22 @@ router.get('/topics', requirePermission('COMPLETION_TRACKING', 'VIEW'), async (r
       }
     }
 
-    const isGlobalAdmin = ['SYSTEM_ADMIN', 'SUPER_ADMIN', 'MANAGEMENT'].includes(req.user.role);
+    const isGlobalAdmin = ['SUPER_ADMIN', 'MANAGEMENT'].includes(req.user.role);
     if (!isGlobalAdmin) {
+      const subjectCondition: any = { subject_id: String(subject_id) };
+      if (section_id) subjectCondition.section_id = String(section_id);
+      
+      const classTeacherCondition: any = { grade_id: String(grade_id), assignment_type: 'CLASS_TEACHER' };
+      if (section_id) classTeacherCondition.section_id = String(section_id);
+
       const validAssignment = await prisma.teacherAssignment.findFirst({
         where: {
           teacher_id: req.user.user_id,
           organization_id: org_id,
           academic_year_id: String(academic_year_id),
           OR: [
-            { subject_id: String(subject_id) },
-            { grade_id: String(grade_id), assignment_type: 'CLASS_TEACHER' }
+            subjectCondition,
+            classTeacherCondition
           ]
         }
       });
@@ -181,7 +188,7 @@ router.post('/toggle', requirePermission('COMPLETION_TRACKING', 'MANAGE'), async
     }
 
     // Admin check vs Teacher assignment check
-    const isAdmin = ['SYSTEM_ADMIN', 'SUPER_ADMIN', 'MANAGEMENT'].includes(req.user.role);
+    const isAdmin = ['SUPER_ADMIN', 'MANAGEMENT'].includes(req.user.role);
     if (!isAdmin) {
       const validAssignment = await prisma.teacherAssignment.findFirst({
         where: {
@@ -289,9 +296,30 @@ router.post('/toggle', requirePermission('COMPLETION_TRACKING', 'MANAGE'), async
         }
       }
       
-      // 4. Send Notifications (Simulated for now, would integrate with Notification table)
+      // 4. Send Notifications via Event Bus
       if (parsed.is_completed && parsed.send_notification) {
-         // Create notification logic here based on ModuleConfig settings...
+         let eventType: EventTypes;
+         let typeStr: string;
+         if (parsed.level === 'UNIT') { eventType = EventTypes.COMPLETION_UNIT_ENABLED; typeStr = 'UNIT'; }
+         else if (parsed.level === 'TOPIC') { eventType = EventTypes.COMPLETION_TOPIC_ENABLED; typeStr = 'TOPIC'; }
+         else { eventType = EventTypes.COMPLETION_SUBTOPIC_ENABLED; typeStr = 'SUBTOPIC'; }
+         
+         const payload: NotificationEventPayload = {
+           organization_id: org_id,
+           actor_id: teacher_id,
+           entity: {
+             type: typeStr,
+             id: parsed.id,
+             name: 'Academic Content' // Could query DB for actual name if needed
+           },
+           context: {
+             academic_year_id: parsed.academic_year_id,
+             grade_id: parsed.grade_id,
+             section_id: parsed.section_id,
+             subject_id: parsed.subject_id
+           }
+         };
+         emitNotificationEvent(eventType, payload);
       }
       
     });
