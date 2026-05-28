@@ -1,13 +1,17 @@
 <section class="content">
   <div class="content-block">
     <div class="block-header d-flex justify-content-between align-items-center">
-      <app-breadcrumb [title]="breadscrums[0].title" [items]="breadscrums[0].items" [active_item]="breadscrums[0].active">
+      <app-breadcrumb [title]="breadscrums[0].title" [items]="breadscrums[0].items"
+        [active_item]="breadscrums[0].active">
       </app-breadcrumb>
-      
+
       <!-- Option B: Quick Setup Wizard Launch Action -->
-      <button mat-stroked-button color="primary" class="border-dashed" (click)="openBulkSetupWizard()">
-        <mat-icon class="me-2">auto_fix_high</mat-icon> Quick Setup Wizard
-      </button>
+      <div class="responsive-wizard-container mt-2 mt-sm-0">
+        <button mat-stroked-button color="primary" class="border-dashed responsive-wizard-btn"
+          (click)="openBulkSetupWizard()">
+          <mat-icon class="me-2">auto_fix_high</mat-icon> Quick Setup Wizard
+        </button>
+      </div>
     </div>
 
     <div *ngIf="isLoading" class="p-5 text-center">
@@ -18,7 +22,7 @@
     <div class="row" *ngIf="!isLoading">
       <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12">
         <mat-tab-group animationDuration="0ms" color="primary">
-          
+
           <!-- Tab 1: Grades & Sections -->
           <mat-tab>
             <ng-template mat-tab-label>
@@ -27,7 +31,7 @@
             </ng-template>
             <div class="p-4">
               <div class="row">
-                
+
                 <!-- Grades List (Draggable) -->
                 <div class="col-md-4">
                   <mat-card class="h-100">
@@ -39,27 +43,28 @@
                         <mat-label>Quick Add Grade</mat-label>
                         <input matInput #newGrade placeholder="e.g. Grade 1">
                       </mat-form-field>
-                      <button mat-icon-button color="primary" class="mt-2" (click)="addGrade(newGrade.value); newGrade.value=''">
+                      <button mat-icon-button color="primary" class="mt-2"
+                        (click)="addGrade(newGrade.value); newGrade.value=''">
                         <mat-icon>add_circle</mat-icon>
                       </button>
                     </div>
                     <mat-divider></mat-divider>
-                    
+
                     <div class="card-body p-0" cdkDropList (cdkDropListDropped)="dropGrade($event)">
                       <div class="list-group list-group-flush">
-                        <div *ngFor="let grade of grades" 
-                             cdkDrag
-                             class="list-group-item list-group-item-action d-flex justify-content-between align-items-center cursor-pointer transition"
-                             [class.active]="selectedGrade?.id === grade.id"
-                             [class.bg-light]="!grade.is_active"
-                             (click)="selectGrade(grade)">
-                             
+                        <div *ngFor="let grade of grades" cdkDrag
+                          class="list-group-item list-group-item-action d-flex justify-content-between align-items-center cursor-pointer transition"
+                          [class.active]="selectedGrade?.id === grade.id" [class.bg-light]="!grade.is_active"
+                          (click)="selectGrade(grade)">
+
                           <div class="d-flex align-items-center">
-                            <mat-icon cdkDragHandle class="cursor-move text-muted me-2" style="font-size: 18px; width: 18px; height: 18px;">drag_indicator</mat-icon>
+                            <mat-icon cdkDragHandle class="cursor-move text-muted me-2"
+                              style="font-size: 18px; width: 18px; height: 18px;">drag_indicator</mat-icon>
                             <span [class.text-decoration-line-through]="!grade.is_active">{{ grade.name }}</span>
-                            <span *ngIf="!grade.is_active" class="badge bg-secondary ms-2" style="font-size: 0.65em;">Archived</span>
+                            <span *ngIf="!grade.is_active" class="badge bg-secondary ms-2"
+                              style="font-size: 0.65em;">Archived</span>
                           </div>
-                          
+
                           <button mat-icon-button [matMenuTriggerFor]="gradeMenu" (click)="$event.stopPropagation()">
                             <mat-icon>more_vert</mat-icon>
                           </button>
@@ -93,12 +98,13 @@
                         <mat-label>Quick Add Section</mat-label>
                         <input matInput #newSection placeholder="e.g. A">
                       </mat-form-field>
-                      <button mat-icon-button color="primary" class="mt-2" (click)="addSection(newSection.value); newSection.value=''">
+                      <button mat-icon-button color="primary" class="mt-2"
+                        (click)="addSection(newSection.value); newSection.value=''">
                         <mat-icon>add_circle</mat-icon>
                       </button>
                     </div>
                     <mat-divider></mat-divider>
-                    
+
                     <div class="card-body p-0" cdkDropList (cdkDropListDropped)="dropSection($event)">
                       <table class="table mb-0 table-hover">
                         <thead>
@@ -110,11 +116,14 @@
                           </tr>
                         </thead>
                         <tbody>
-                          <tr *ngFor="let section of sectionsForSelectedGrade" cdkDrag [class.bg-light]="!section.is_active">
+                          <tr *ngFor="let section of sectionsForSelectedGrade" cdkDrag
+                            [class.bg-light]="!section.is_active">
                             <td class="align-middle">
-                              <mat-icon cdkDragHandle class="cursor-move text-muted mt-1" style="font-size: 18px; width: 18px; height: 18px;">drag_indicator</mat-icon>
+                              <mat-icon cdkDragHandle class="cursor-move text-muted mt-1"
+                                style="font-size: 18px; width: 18px; height: 18px;">drag_indicator</mat-icon>
                             </td>
-                            <td class="align-middle" [class.text-decoration-line-through]="!section.is_active">{{ section.name }}</td>
+                            <td class="align-middle" [class.text-decoration-line-through]="!section.is_active">{{
+                              section.name }}</td>
                             <td class="align-middle">
                               <span [class]="section.is_active ? 'badge badge-solid-green' : 'badge badge-solid-red'">
                                 {{ section.is_active ? 'Active' : 'Archived' }}
@@ -143,7 +152,8 @@
                       </table>
                     </div>
                   </mat-card>
-                  <div *ngIf="!selectedGrade" class="d-flex align-items-center justify-content-center h-100 text-muted p-5 bg-white border rounded">
+                  <div *ngIf="!selectedGrade"
+                    class="d-flex align-items-center justify-content-center h-100 text-muted p-5 bg-white border rounded">
                     Select a grade to view its sections.
                   </div>
                 </div>
@@ -172,13 +182,14 @@
                     </div>
                     <div class="col-md-8 text-end" *ngIf="subjectFilterGradeId">
                       <div class="d-flex justify-content-end align-items-center">
-                         <mat-form-field appearance="outline" class="mb-0 me-2" style="max-width: 300px;">
-                            <mat-label>Quick Add Subject</mat-label>
-                            <input matInput #newSubject placeholder="e.g. Mathematics">
-                         </mat-form-field>
-                         <button mat-raised-button color="primary" (click)="addSubject(newSubject.value); newSubject.value=''">
-                            Add
-                         </button>
+                        <mat-form-field appearance="outline" class="mb-0 me-2" style="max-width: 300px;">
+                          <mat-label>Quick Add Subject</mat-label>
+                          <input matInput #newSubject placeholder="e.g. Mathematics">
+                        </mat-form-field>
+                        <button mat-raised-button color="primary"
+                          (click)="addSubject(newSubject.value); newSubject.value=''">
+                          Add
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -198,9 +209,11 @@
                       <tbody>
                         <tr *ngFor="let subject of subjects" cdkDrag [class.bg-light]="!subject.is_active">
                           <td class="align-middle">
-                            <mat-icon cdkDragHandle class="cursor-move text-muted mt-1" style="font-size: 18px; width: 18px; height: 18px;">drag_indicator</mat-icon>
+                            <mat-icon cdkDragHandle class="cursor-move text-muted mt-1"
+                              style="font-size: 18px; width: 18px; height: 18px;">drag_indicator</mat-icon>
                           </td>
-                          <td class="align-middle" [class.text-decoration-line-through]="!subject.is_active">{{ subject.name }}</td>
+                          <td class="align-middle" [class.text-decoration-line-through]="!subject.is_active">{{
+                            subject.name }}</td>
                           <td class="align-middle">
                             <span [class]="subject.is_active ? 'badge badge-solid-green' : 'badge badge-solid-red'">
                               {{ subject.is_active ? 'Active' : 'Archived' }}
@@ -235,7 +248,7 @@
                 </div>
               </mat-card>
             </div>
-        </mat-tab>
+          </mat-tab>
 
           <!-- Tab 3: Groups / Streams -->
           <mat-tab>
@@ -259,19 +272,21 @@
                       <mat-form-field appearance="outline" class="w-100 mb-0" *ngIf="groupFilterGradeId">
                         <mat-label>Select Section</mat-label>
                         <mat-select [(ngModel)]="groupFilterSectionId" (selectionChange)="loadGroups()">
-                          <mat-option *ngFor="let section of sectionsForGroupFilter" [value]="section.id">{{ section.name }}</mat-option>
+                          <mat-option *ngFor="let section of sectionsForGroupFilter" [value]="section.id">{{
+                            section.name }}</mat-option>
                         </mat-select>
                       </mat-form-field>
                     </div>
                     <div class="col-md-6 text-end" *ngIf="groupFilterGradeId && groupFilterSectionId">
                       <div class="d-flex justify-content-end align-items-center">
-                         <mat-form-field appearance="outline" class="mb-0 me-2" style="width: 250px;">
-                            <mat-label>New Group / Stream Name</mat-label>
-                            <input matInput #newGroup placeholder="e.g. Pure Science">
-                         </mat-form-field>
-                         <button mat-flat-button color="primary" class="py-1" style="height: 50px;" (click)="addGroup(newGroup.value); newGroup.value=''">
-                            <mat-icon>add</mat-icon> Create
-                         </button>
+                        <mat-form-field appearance="outline" class="mb-0 me-2" style="width: 250px;">
+                          <mat-label>New Group / Stream Name</mat-label>
+                          <input matInput #newGroup placeholder="e.g. Pure Science">
+                        </mat-form-field>
+                        <button mat-flat-button color="primary" class="py-1" style="height: 50px;"
+                          (click)="addGroup(newGroup.value); newGroup.value=''">
+                          <mat-icon>add</mat-icon> Create
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -281,7 +296,8 @@
                   <div class="row">
                     <div class="col-md-6 col-lg-4 mb-4" *ngFor="let group of groupsForSelectedSection">
                       <mat-card class="h-100 shadow-sm border-0">
-                        <div class="card-header bg-transparent border-bottom d-flex justify-content-between align-items-center py-2 px-3">
+                        <div
+                          class="card-header bg-transparent border-bottom d-flex justify-content-between align-items-center py-2 px-3">
                           <h4 class="mb-0 fw-bold text-dark">{{ group.name }}</h4>
                           <button mat-icon-button [matMenuTriggerFor]="groupMenu" class="text-muted">
                             <mat-icon>more_vert</mat-icon>
@@ -301,7 +317,8 @@
                           <div class="d-flex justify-content-between mb-3 bg-light p-2 rounded border">
                             <div class="text-center px-2">
                               <div class="h5 mb-0 fw-bold text-dark">{{ group.subjects.length }}</div>
-                              <small class="text-muted" style="font-size: 11px; text-transform: uppercase;">Total</small>
+                              <small class="text-muted"
+                                style="font-size: 11px; text-transform: uppercase;">Total</small>
                             </div>
                             <div class="text-center px-2 border-start">
                               <div class="h5 mb-0 fw-bold text-primary">{{ getSubjectCount(group, 'MANDATORY') }}</div>
@@ -309,19 +326,20 @@
                             </div>
                             <div class="text-center px-2 border-start">
                               <div class="h5 mb-0 fw-bold text-info">{{ getSubjectCount(group, 'ELECTIVE') }}</div>
-                              <small class="text-muted" style="font-size: 11px; text-transform: uppercase;">Elective</small>
+                              <small class="text-muted"
+                                style="font-size: 11px; text-transform: uppercase;">Elective</small>
                             </div>
                           </div>
-                          
+
                           <div class="d-flex flex-wrap gap-2 mt-2">
-                            <span *ngFor="let s of group.subjects" 
-                                  class="badge shadow-sm"
-                                  [ngClass]="{
+                            <span *ngFor="let s of group.subjects" class="badge shadow-sm" [ngClass]="{
                                     'bg-primary text-white': s.subject_type === 'MANDATORY',
                                     'bg-info text-dark': s.subject_type === 'ELECTIVE',
                                     'bg-secondary text-white': s.subject_type === 'OPTIONAL'
-                                  }" style="font-size: 12px; font-weight: 500; padding: 6px 12px; letter-spacing: 0.3px;">
-                              {{ s.name }} <span class="fw-normal opacity-75 ms-1">({{ s.subject_type === 'MANDATORY' ? 'Core' : (s.subject_type | titlecase) }})</span>
+                                  }"
+                              style="font-size: 12px; font-weight: 500; padding: 6px 12px; letter-spacing: 0.3px;">
+                              {{ s.name }} <span class="fw-normal opacity-75 ms-1">({{ s.subject_type === 'MANDATORY' ?
+                                'Core' : (s.subject_type | titlecase) }})</span>
                             </span>
                             <span *ngIf="group.subjects.length === 0" class="text-muted fst-italic small">
                               No subjects mapped yet.
@@ -335,7 +353,7 @@
                         </div>
                       </mat-card>
                     </div>
-                    
+
                     <div class="col-12" *ngIf="groupsForSelectedSection.length === 0">
                       <div class="p-5 text-center text-muted bg-white border rounded border-dashed">
                         <mat-icon class="display-4 text-light mb-3">category</mat-icon>

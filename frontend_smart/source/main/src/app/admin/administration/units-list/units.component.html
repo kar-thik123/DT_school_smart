@@ -1,12 +1,12 @@
 <section class="content">
   <div class="content-block">
-    <div class="d-flex justify-content-between align-items-center">
-      <div class="block-header">
+    <div class="d-flex justify-content-between align-items-center flex-nowrap header-responsive-wrapper gap-2 mb-3">
+      <div class="block-header m-0 responsive-breadcrumb" style="min-width: 0; flex: 1 1 auto;">
         <app-breadcrumb [title]="breadscrums[0].title" [items]="breadscrums[0].items"
           [active_item]="breadscrums[0].active"></app-breadcrumb>
       </div>
 
-      <div class="hierarchy-dropdown-wrapper">
+      <div class="hierarchy-dropdown-wrapper d-flex align-items-center" style="flex-shrink: 0;">
         <app-hierarchy-dropdown [grades]="grades" [allSections]="allSections" [selectedGradeId]="selectedGradeId"
           [selectedSectionId]="selectedSectionId" [selectedGradeName]="selectedGradeName"
           [selectedSectionName]="selectedSectionName"

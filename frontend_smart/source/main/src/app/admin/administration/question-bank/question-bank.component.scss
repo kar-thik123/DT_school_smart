@@ -381,3 +381,78 @@
     border-top: 1px solid #2d3748;
   }
 }
+
+/* Responsive Header Tweaks for single row */
+@media (max-width: 768px) {
+  .header-responsive-wrapper {
+    gap: 8px !important;
+  }
+  
+  .responsive-breadcrumb {
+    ::ng-deep {
+      .breadcrumb {
+        margin-bottom: 0;
+        flex-wrap: wrap !important;
+        overflow-x: hidden;
+        padding-bottom: 2px;
+        
+        &::-webkit-scrollbar {
+          display: none;
+        }
+
+        li {
+          font-size: 12px !important;
+          white-space: normal;
+        }
+        .page-title {
+          font-size: 14px !important;
+          margin-bottom: 0;
+        }
+        .breadcrumb-icon {
+          width: 14px;
+          height: 14px;
+        }
+      }
+    }
+  }
+
+  ::ng-deep .hierarchy-dropdown-wrapper .hierarchy-trigger {
+    height: 32px !important;
+    padding: 0 8px !important;
+    border-radius: 8px !important;
+    
+    .trigger-content .trigger-text {
+      font-size: 12px !important;
+      
+      .label {
+        display: none !important; /* Hide "Curriculum:" on very small screens to save space */
+      }
+    }
+    
+    .trigger-icon-right {
+      font-size: 16px !important;
+      width: 16px !important;
+      height: 16px !important;
+      margin-left: 4px !important;
+    }
+  }
+
+  .header-actions-wrapper {
+    gap: 4px !important;
+  }
+
+  .import-excel-btn {
+    height: 32px !important;
+    width: 32px !important;
+    padding: 0 !important;
+    border-radius: 8px !important;
+    font-size: 0 !important; /* Hide text to save space */
+    
+    mat-icon {
+      margin-right: 0 !important;
+      font-size: 18px !important;
+      width: 18px !important;
+      height: 18px !important;
+    }
+  }
+}

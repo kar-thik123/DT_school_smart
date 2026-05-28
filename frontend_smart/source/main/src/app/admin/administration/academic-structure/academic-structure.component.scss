@@ -31,3 +31,26 @@
     font-weight: 500;
   }
 }
+
+.responsive-wizard-container {
+  flex-shrink: 0;
+}
+
+.responsive-wizard-btn {
+  transition: all 0.3s ease;
+  
+  @media (max-width: 768px) {
+    height: 32px !important;
+    line-height: 30px !important;
+    font-size: 12px !important;
+    padding: 0 12px !important;
+
+    ::ng-deep .mat-icon {
+      font-size: 16px !important;
+      width: 16px !important;
+      height: 16px !important;
+      line-height: 16px !important;
+      margin-right: 4px !important;
+    }
+  }
+}

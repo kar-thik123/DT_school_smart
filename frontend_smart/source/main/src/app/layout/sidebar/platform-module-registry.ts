@@ -248,6 +248,20 @@ export const PLATFORM_MODULES: RouteInfo[] = [
         submenu: [],
         showInSidebar: true,
         domain: 'TENANT'
+      },
+      {
+        path: '/student/academics/single-mcq-practice',
+        title: 'Single MCQ Practice',
+        iconType: '',
+        icon: '',
+        class: 'ml-menu',
+        groupTitle: false,
+        badge: '',
+        badgeClass: '',
+        role: ['STUDENT'],
+        submenu: [],
+        showInSidebar: true,
+        domain: 'TENANT'
       }
     ]
   }

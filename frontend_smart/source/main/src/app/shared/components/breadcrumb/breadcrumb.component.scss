@@ -1,0 +1,64 @@
+.breadcrumb {
+  background-color: transparent;
+  font-size: 15px;
+  align-items: center;
+  margin: 1rem 0 2rem;
+  padding: 0px;
+  color: #555;
+}
+
+@media (max-width: 768px) {
+  :host {
+    display: block;
+    width: 100%;
+  }
+
+  .breadcrumb {
+    margin: 0 !important;
+    flex-wrap: wrap !important;
+    padding: 0 !important;
+    align-items: center;
+    display: flex;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+
+    li {
+      font-size: 10px !important;
+      display: none !important;
+      /* Hide title, home, and intermediate items */
+    }
+
+    li.active {
+      display: flex !important;
+      /* Show only the active item */
+      align-items: center;
+      padding-left: 0 !important;
+      font-size: 16px !important;
+      /* Adjusted size */
+      font-weight: 700;
+      /* Bolder to look like a title */
+      color: #495057;
+      margin: 0;
+      line-height: 1.3;
+      white-space: normal;
+      /* Allow wrap so it doesn't get cut off */
+
+      &::before {
+        display: none !important;
+        /* Hide the separator */
+      }
+    }
+
+    .page-title {
+      font-size: 14px !important;
+      margin-bottom: 0;
+    }
+
+    .breadcrumb-icon {
+      width: 14px;
+      height: 14px;
+    }
+  }
+}
