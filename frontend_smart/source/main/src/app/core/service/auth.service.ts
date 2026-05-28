@@ -125,6 +125,8 @@ export class AuthService {
     }
 
     // Fallback: If DB permissions are empty, check the base role string
+    if (role === 'SYSTEM_ADMIN' && (permissionToCheck === 'IDENTITY:IS_SYSTEM_ADMIN' || permissionToCheckUnderscore === 'IDENTITY_IS_SYSTEM_ADMIN')) return true;
+    if (role === 'SUPER_ADMIN' && (permissionToCheck === 'IDENTITY:IS_SUPER_ADMIN' || permissionToCheckUnderscore === 'IDENTITY_IS_SUPER_ADMIN' || permissionToCheck === 'IDENTITY:IS_MANAGEMENT' || permissionToCheckUnderscore === 'IDENTITY_IS_MANAGEMENT')) return true;
     if (role === 'MANAGEMENT' && (permissionToCheck === 'IDENTITY:IS_MANAGEMENT' || permissionToCheckUnderscore === 'IDENTITY_IS_MANAGEMENT')) return true;
     if (role === 'TEACHER' && (permissionToCheck === 'IDENTITY:IS_TEACHER' || permissionToCheckUnderscore === 'IDENTITY_IS_TEACHER')) return true;
     if (role === 'STUDENT' && (permissionToCheck === 'IDENTITY:IS_STUDENT' || permissionToCheckUnderscore === 'IDENTITY_IS_STUDENT')) return true;
