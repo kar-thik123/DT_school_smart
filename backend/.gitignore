@@ -10,3 +10,10 @@ yarn-error.log*
 .idea/
 .DS_Store
 Thumbs.db
+
+# Ignore uploaded images
+uploads/**/*
+!uploads/.gitkeep
+
+# Ignore specific master seed file
+master.seed.ts

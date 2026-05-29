@@ -41,6 +41,7 @@
     "apexcharts": "^5.10.6",
     "base64-js": "^1.5.1",
     "bootstrap": "^5.3.7",
+    "browser-image-compression": "^2.0.2",
     "browser-sync": "^3.0.4",
     "canvas-confetti": "^1.9.4",
     "chart.js": "^4.5.0",

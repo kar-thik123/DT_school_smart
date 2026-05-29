@@ -11,22 +11,9 @@ const auth_middleware_1 = require("../middlewares/auth.middleware");
 const license_check_1 = require("../utils/license-check");
 const multer = require("multer");
 const path = require("path");
-const fs = require("fs");
 const authorization_service_1 = require("../services/authorization.service");
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        const dir = path.join(process.cwd(), 'uploads', 'profile');
-        if (!fs.existsSync(dir)) {
-            fs.mkdirSync(dir, { recursive: true });
-        }
-        cb(null, dir);
-    },
-    filename: function (req, file, cb) {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, uniqueSuffix + path.extname(file.originalname));
-    }
-});
-const upload = multer({ storage: storage });
+const image_compression_util_1 = require("../utils/image-compression.util");
+const upload = multer({ storage: multer.memoryStorage() });
 const router = (0, express_1.Router)();
 router.use(auth_middleware_1.authMiddleware);
 router.use((0, auth_middleware_1.requirePermission)('IDENTITY', 'IS_MANAGEMENT'));
@@ -514,7 +501,16 @@ router.put('/profile/:id', upload.single('profile_image'), async (req, res) => {
         }
         let profile_image = undefined;
         if (req.file) {
-            profile_image = `/uploads/profile/${req.file.filename}`;
+            const outputDir = path.join(process.cwd(), 'uploads', 'profile');
+            const processed = await (0, image_compression_util_1.processImage)(req.file.buffer, req.file.originalname, {
+                outputDirectory: outputDir,
+                width: 800,
+                height: 800,
+                quality: 80,
+                format: 'webp',
+                skipIfSmall: true
+            });
+            profile_image = `/uploads/profile/${processed.filename}`;
         }
         const user = await prisma_1.default.user.findUnique({
             where: { id: req.params.id }

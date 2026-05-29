@@ -42,7 +42,7 @@
             </div>
           </div>
         </div>
-        <div class="card">
+        <div class="card Skill-card-bg">
           <!-- <mat-tab-group mat-align-tabs="start"> -->
 
           <!-- <div label="Skills">
@@ -79,21 +79,56 @@
             </ul>
           </div> -->
 
-          <div class="skills-card">
+          <div class="skills-card" *ngIf="academicSkills.length > 0">
             <div class="skills-header">
-              <h5 class="skills-title">Skills</h5>
+              <h5 class="skills-title">Academic Skills</h5>
             </div>
 
             <ul class="skills-list">
-              <li class="skill-item" *ngFor="let s of userDetails?.skills">
+              <li class="skill-item" *ngFor="let s of academicSkills">
                 <div class="skill-info">
-                  <span class="skill-name">{{s.name}}</span>
-                  <span class="skill-percent">{{s.level}}</span>
+                  <span class="skill-name">{{s.skill_name}}</span>
+                  <span class="skill-percent" [ngClass]="{
+                    'text-warning': s.status === 'pending',
+                    'text-success': s.status === 'approved',
+                    'text-danger': s.status === 'rejected'
+                  }">{{ s.status | titlecase }}</span>
                 </div>
 
                 <div class="progress skill-progress">
-                  <div class="progress-bar bg-primary" role="progressbar"
-                    [style.width]="s.level + (s.level?.includes('%') ? '' : '%')">
+                  <div class="progress-bar" role="progressbar" [ngClass]="{
+                      'bg-warning': s.status === 'pending',
+                      'bg-success': s.status === 'approved',
+                      'bg-danger': s.status === 'rejected'
+                    }" [style.width]="s.status === 'approved' ? '100%' : (s.status === 'pending' ? '50%' : '15%')">
+                  </div>
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <div class="skills-card" *ngIf="extraCurricularSkills.length > 0">
+            <div class="skills-header mt-4">
+              <h5 class="skills-title">Extra Curricular Skills</h5>
+            </div>
+
+            <ul class="skills-list">
+              <li class="skill-item" *ngFor="let s of extraCurricularSkills">
+                <div class="skill-info">
+                  <span class="skill-name">{{s.skill_name}}</span>
+                  <span class="skill-percent" [ngClass]="{
+                    'text-warning': s.status === 'pending',
+                    'text-success': s.status === 'approved',
+                    'text-danger': s.status === 'rejected'
+                  }">{{ s.status | titlecase }}</span>
+                </div>
+
+                <div class="progress skill-progress">
+                  <div class="progress-bar" role="progressbar" [ngClass]="{
+                      'bg-warning': s.status === 'pending',
+                      'bg-success': s.status === 'approved',
+                      'bg-danger': s.status === 'rejected'
+                    }" [style.width]="s.status === 'approved' ? '100%' : (s.status === 'pending' ? '50%' : '15%')">
                   </div>
                 </div>
               </li>
@@ -193,8 +228,19 @@
               <div class="body">
 
                 <div class="row clearfix">
-                  <div class="col-md-12">
-                    <input type="file" (change)="onFileSelected($event)">
+                  <div class="col-md-12 mb-4 d-flex justify-content-center">
+                    <div class="profile-image-upload">
+                      <div class="image-wrapper" (click)="fileInput.click()">
+                        <img [src]="getUserProfileImage()" class="rounded-circle shadow-sm" alt="Profile"
+                          (error)="onImageError($event)">
+                        <div class="upload-overlay">
+                          <mat-icon>camera_alt</mat-icon>
+                          <span>Change</span>
+                        </div>
+                      </div>
+                      <input #fileInput type="file" style="display: none;" (change)="onFileSelected($event)"
+                        accept="image/*">
+                    </div>
                   </div>
                   <div class="col-lg-6 col-md-12">
                     <div class="form-group">
@@ -311,27 +357,107 @@
 
                   <!-- Skills settings-->
                   <div class="col-md-12 mb-2">
-                    <div class="d-flex justify-content-between">
+                    <div class="d-flex justify-content-between mb-2">
                       <h5 class="mb-2">Skills Settings</h5>
-                      <button mat-raised-button color="primary" (click)="addSkill()">Add Skill</button>
                     </div>
-                    <div class="row align-items-center mb-2 mt-2" *ngFor="let skill of skills; let i = index">
-                      <div class="col-md-5">
-                        <mat-form-field class="example-full-width" appearance="fill">
-                          <mat-label>Skill</mat-label>
-                          <input matInput [(ngModel)]="skill.name">
+                    <div class="skills-add-container-wrapper mb-4">
+                      <div class="skills-add-container">
+                        <mat-form-field class="skills-dropdown" appearance="outline">
+                          <mat-label>Select Skill Type</mat-label>
+                          <mat-select [(ngModel)]="selectedSkill" (selectionChange)="onSkillTypeChange()"
+                            panelClass="polished-select-panel">
+                            <mat-select-trigger>
+                              <span class="selected-skill-text">
+                                <mat-icon class="skill-icon-small">star</mat-icon>
+                                {{ selectedSkill }}
+                              </span>
+                            </mat-select-trigger>
+                            <mat-option *ngFor="let s of availableSkills" [value]="s">
+                              <mat-icon class="skill-icon-small text-muted">star_border</mat-icon>
+                              {{s}}
+                            </mat-option>
+                          </mat-select>
                         </mat-form-field>
-                      </div>
-                      <div class="col-md-5">
-                        <mat-form-field class="example-full-width" appearance="fill">
-                          <mat-label>Level</mat-label>
-                          <input matInput [(ngModel)]="skill.level">
+
+                        <mat-form-field class="skills-input" appearance="outline">
+                          <mat-label>Enter Skill</mat-label>
+                          <input matInput [(ngModel)]="customSkill" placeholder="E.g., Problem Solving">
                         </mat-form-field>
-                      </div>
-                      <div class="col-md-2 text-right">
-                        <button mat-icon-button color="warn" (click)="removeSkill(i)">
-                          <mat-icon>delete</mat-icon>
+
+                        <button mat-icon-button color="primary" class="upload-skill-img-btn"
+                          (click)="skillImageInput.click()" title="Upload Skill Image">
+                          <mat-icon>cloud_upload</mat-icon>
                         </button>
+                        <input #skillImageInput type="file" style="display: none;"
+                          (change)="onSkillImageSelected($event)" accept="image/*" multiple>
+
+                        <button mat-raised-button color="primary" class="add-skill-btn ms-2" (click)="addSelectedSkill()"
+                          [disabled]="!selectedSkill || !customSkill.trim()">
+                          {{ editingSkillId ? 'Update' : 'Add' }}
+                        </button>
+                        <button *ngIf="editingSkillId" mat-stroked-button color="warn" class="ms-2"
+                          (click)="cancelEditSkill()">
+                          Cancel
+                        </button>
+                      </div>
+
+                      <div class="skill-image-preview-row" *ngIf="skillImagePreviews.length > 0">
+                        <div class="preview-box" *ngFor="let preview of skillImagePreviews; let i = index">
+                          <img [src]="preview" alt="Skill Preview" class="shadow-sm">
+                          <button mat-mini-fab color="warn" class="remove-preview-btn" (click)="removeSkillImage(i)">
+                            <mat-icon>close</mat-icon>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="skills-list-container mt-4">
+                      <div class="skill-premium-list-item" *ngFor="let skill of skills">
+                        <div class="skill-info-section">
+                          <h5 class="skill-title text-truncate">{{ skill.skill_name }}</h5>
+                          <span class="skill-category-badge">{{ skill.skill_type }}</span>
+                        </div>
+
+                        <div class="skill-images-section">
+                          <div class="skill-images-flex" *ngIf="skill.images && skill.images.length > 0">
+                            <div class="img-wrapper" *ngFor="let img of skill.images">
+                              <img [src]="getSkillImageUrl(img)" alt="Proof">
+                            </div>
+                          </div>
+                          <div class="no-images-placeholder" *ngIf="!skill.images || skill.images.length === 0">
+                            <span class="text-muted small">No proofs</span>
+                          </div>
+                        </div>
+
+                        <div class="skill-status-section">
+                          <span class="status-indicator" [ngClass]="{
+                            'status-pending': skill.status === 'pending',
+                            'status-approved': skill.status === 'approved',
+                            'status-rejected': skill.status === 'rejected'
+                          }">
+                            <i class="fas" [ngClass]="{
+                              'fa-hourglass-half': skill.status === 'pending',
+                              'fa-check-circle': skill.status === 'approved',
+                              'fa-times-circle': skill.status === 'rejected'
+                            }"></i>
+                            {{ skill.status | uppercase }}
+                          </span>
+                        </div>
+
+                        <div class="skill-action-section">
+                          <button mat-icon-button class="text-muted" [matMenuTriggerFor]="skillMenu">
+                            <mat-icon>more_vert</mat-icon>
+                          </button>
+                          <mat-menu #skillMenu="matMenu">
+                            <button mat-menu-item (click)="editSkill(skill)">
+                              <mat-icon>edit</mat-icon>
+                              <span>Edit</span>
+                            </button>
+                            <button mat-menu-item (click)="removeSkill(skill)">
+                              <mat-icon color="warn">delete</mat-icon>
+                              <span class="text-danger">Delete</span>
+                            </button>
+                          </mat-menu>
+                        </div>
                       </div>
                     </div>
                   </div>

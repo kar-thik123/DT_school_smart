@@ -144,12 +144,20 @@ router.post('/', (0, auth_middleware_1.requirePermission)('QUESTION_BANK', 'CREA
 // READ QUESTIONS
 router.get('/', (0, auth_middleware_1.requirePermission)('QUESTION_BANK', 'READ'), async (req, res) => {
     try {
-        const { grade_id, subject_id, difficulty } = req.query;
+        const { grade_id, subject_id, difficulty, section_id, unit_id, topic_id, sub_topic_id } = req.query;
         const filter = { organization_id: req.user.organization_id };
         if (subject_id)
             filter.subject_id = String(subject_id);
         if (difficulty)
             filter.difficulty = String(difficulty);
+        if (section_id)
+            filter.section_id = String(section_id);
+        if (unit_id)
+            filter.unit_id = String(unit_id);
+        if (topic_id)
+            filter.topic_id = String(topic_id);
+        if (sub_topic_id)
+            filter.sub_topic_id = String(sub_topic_id);
         if (grade_id) {
             filter.OR = [
                 { grade_id: String(grade_id) },

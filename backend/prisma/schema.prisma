@@ -112,6 +112,8 @@ model User {
   role                        Role                     @relation(fields: [role_id], references: [id])
   section                     Section?                 @relation(fields: [section_id], references: [id])
   notification_recipients     NotificationRecipient[]
+  skills                      Skill[]                  @relation("SkillOwner")
+  verified_skills             Skill[]                  @relation("SkillVerifier")
   // completed_by isn't strict referential integrity for Users to keep schema clean, or we can use relation. I'll omit it and not use relation to avoid User model clutter.
 
   @@index([organization_id])
@@ -148,7 +150,6 @@ model UserProfile {
   about             String?
   profile_image     String?
   academic_profiles Json?   @default("[]")
-  skills            Json?   @default("[]")
 
   user         User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
   organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
@@ -971,3 +972,22 @@ model AuditLog {
   @@index([entity_type, entity_id])
   @@map("audit_logs")
 }
+
+model Skill {
+  id          String   @id @default(uuid()) @db.Uuid
+  user_id     String   @db.Uuid
+  skill_type  String
+  skill_name  String
+  images      String[]
+  status      String   @default("pending")
+  verified_by String?  @db.Uuid
+  created_at  DateTime @default(now())
+  updated_at  DateTime @default(now()) @updatedAt
+
+  user        User     @relation("SkillOwner", fields: [user_id], references: [id], onDelete: Cascade)
+  verifier    User?    @relation("SkillVerifier", fields: [verified_by], references: [id], onDelete: SetNull)
+
+  @@index([user_id])
+  @@map("skills")
+}
+

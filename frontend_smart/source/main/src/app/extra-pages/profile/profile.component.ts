@@ -6,12 +6,16 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
 import { MatTabsModule } from '@angular/material/tabs';
+import { MatSelectModule } from '@angular/material/select';
+import { MatMenuModule } from '@angular/material/menu';
 import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.component';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '@core/service/auth.service';
+import { ImageCompressionService } from '@core/service/image-compression.service';
 import { environment } from '../../../environments/environment';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-profile',
@@ -25,6 +29,8 @@ import { FormsModule } from '@angular/forms';
     MatInputModule,
     MatButtonModule,
     MatCheckboxModule,
+    MatSelectModule,
+    MatMenuModule,
     CommonModule,
     FormsModule
   ]
@@ -40,7 +46,20 @@ export class ProfileComponent implements OnInit {
 
   userDetails: any = {};
   academicProfiles: { title: string, listItems: string[] }[] = [];
-  skills: { name: string, level: string }[] = [];
+  skills: any[] = [];
+  availableSkills: string[] = [
+    'Academic Skills',
+    'Extra Curricular Skills',
+    // 'Athletic Skills',
+    // 'Arts & Culture',
+    // 'Technical Skills',
+    // 'Soft Skills',
+    // 'Leadership Skills'
+  ];
+  selectedSkill: string = '';
+  customSkill: string = '';
+  editingSkillId: string | null = null;
+  editingSkillIndex: number | null = null;
   oldPassword = '';
   newPassword = '';
   selectedProfileImage: File | null = null;
@@ -48,11 +67,27 @@ export class ProfileComponent implements OnInit {
   private http = inject(HttpClient);
   private authService = inject(AuthService);
   private snackBar = inject(MatSnackBar);
+  private imageCompressionService = inject(ImageCompressionService);
 
   constructor() { }
 
   ngOnInit(): void {
     this.fetchUserDetails();
+    this.fetchUserSkills();
+  }
+
+  fetchUserSkills(): void {
+    const currentUser = this.authService.getUser();
+    if (currentUser && currentUser.id) {
+      this.http.get<any[]>(`${environment.apiUrl}/skills/user/${currentUser.id}`).subscribe({
+        next: (data) => {
+          this.skills = data;
+        },
+        error: (err) => {
+          console.error('Failed to fetch user skills:', err);
+        }
+      });
+    }
   }
 
   fetchUserDetails(): void {
@@ -65,7 +100,7 @@ export class ProfileComponent implements OnInit {
             title: p.title || '',
             listItems: Array.isArray(p.listItems) ? p.listItems : (p.list ? [p.list] : [''])
           }));
-          this.skills = data.skills || [];
+          // skills removed from UserProfile in DB
         },
         error: (err) => {
           console.error('Failed to fetch user details:', err);
@@ -95,12 +130,187 @@ export class ProfileComponent implements OnInit {
     return index;
   }
 
-  addSkill() {
-    this.skills.push({ name: '', level: '' });
+  addSelectedSkill() {
+    const skillName = this.customSkill.trim();
+    const skillType = this.selectedSkill;
+    
+    if (!skillName) {
+      this.showNotification('snackbar-danger', 'Please enter a skill name.', 'bottom', 'center');
+      return;
+    }
+
+    // You can format this however you want to store it, for example: "HTML5 (Extra Curricular Skills)"
+    // We are now storing skill_type and skill_name directly in DB!
+    const formData = new FormData();
+    formData.append('skill_type', skillType);
+    formData.append('skill_name', skillName);
+
+    if (this.selectedSkillImages.length > 0) {
+      this.selectedSkillImages.forEach(file => {
+        formData.append('images', file);
+      });
+    }
+
+    if (this.editingSkillId !== null && this.editingSkillIndex !== null) {
+      // Update existing skill
+      this.http.put<any>(`${environment.apiUrl}/skills/${this.editingSkillId}`, formData).subscribe({
+        next: (updatedSkill) => {
+          const index = this.skills.findIndex(s => s.id === this.editingSkillId);
+          if (index !== -1) {
+            this.skills[index] = updatedSkill;
+          }
+          this.cancelEditSkill();
+          this.showNotification('snackbar-success', 'Skill updated successfully!', 'bottom', 'center');
+        },
+        error: (err) => {
+          console.error('Failed to update skill:', err);
+          this.showNotification('snackbar-danger', err.error?.error || 'Failed to update skill', 'bottom', 'center');
+        }
+      });
+    } else {
+      // Create new skill
+      this.http.post<any>(`${environment.apiUrl}/skills`, formData).subscribe({
+        next: (newSkill) => {
+          this.skills.unshift(newSkill);
+          this.selectedSkill = '';
+          this.customSkill = '';
+          this.clearSkillImages();
+          this.showNotification('snackbar-success', 'Skill added successfully!', 'bottom', 'center');
+        },
+        error: (err) => {
+          console.error('Failed to add skill:', err);
+          this.showNotification('snackbar-danger', err.error?.error || 'Failed to add skill', 'bottom', 'center');
+        }
+      });
+    }
   }
 
-  removeSkill(index: number) {
-    this.skills.splice(index, 1);
+  get academicSkills() {
+    return this.skills.filter(s => s.skill_type === 'Academic Skills');
+  }
+
+  get extraCurricularSkills() {
+    return this.skills.filter(s => s.skill_type === 'Extra Curricular Skills');
+  }
+
+  editSkill(skill: any) {
+    this.editingSkillId = skill.id;
+    this.editingSkillIndex = null; // No longer using index
+    
+    if (this.availableSkills.includes(skill.skill_type)) {
+      this.selectedSkill = skill.skill_type;
+    } else {
+      this.selectedSkill = '';
+    }
+    
+    this.customSkill = skill.skill_name;
+    this.skillImagePreviews = skill.images ? skill.images.map((img: string) => this.getSkillImageUrl(img)) : [];
+    this.selectedSkillImages = []; // We clear the actual file array so if user saves without changes, no files are sent
+  }
+
+  cancelEditSkill() {
+    this.editingSkillId = null;
+    this.editingSkillIndex = null;
+    this.selectedSkill = '';
+    this.customSkill = '';
+    this.clearSkillImages();
+  }
+
+  skillImagePreviews: string[] = [];
+  selectedSkillImages: File[] = [];
+
+  async onSkillImageSelected(event: any): Promise<void> {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    const skillType = this.selectedSkill; // The limit is based on the selected skill category
+    let maxImages = 1; // Default
+    if (skillType === 'Academic Skills') {
+      maxImages = 2;
+    } else if (skillType === 'Extra Curricular Skills') {
+      maxImages = 3;
+    }
+
+    const currentCount = this.selectedSkillImages.length;
+    const remainingSlots = maxImages - currentCount;
+
+    if (remainingSlots <= 0) {
+      this.showNotification('snackbar-warning', `Maximum ${maxImages} images allowed for ${skillType || 'this skill'}.`, 'bottom', 'center');
+      return;
+    }
+
+    const filesToProcess = Array.from(files).slice(0, remainingSlots) as File[];
+    if (files.length > remainingSlots) {
+      this.showNotification('snackbar-warning', `Only ${remainingSlots} more image(s) can be added.`, 'bottom', 'center');
+    }
+
+    for (const file of filesToProcess) {
+      const compressedFile = await this.imageCompressionService.compressImage(file, {
+        maxSizeMB: 1,
+        maxWidthOrHeight: 800
+      });
+      this.selectedSkillImages.push(compressedFile);
+      
+      const reader = new FileReader();
+      reader.onload = (e: any) => {
+        this.skillImagePreviews.push(e.target.result);
+      };
+      reader.readAsDataURL(compressedFile);
+    }
+    
+    // Clear the input value so the same file can be selected again if removed
+    event.target.value = '';
+  }
+
+  onSkillTypeChange() {
+    const skillType = this.selectedSkill;
+    let maxImages = 1; // Default
+    if (skillType === 'Academic Skills') {
+      maxImages = 2;
+    } else if (skillType === 'Extra Curricular Skills') {
+      maxImages = 3;
+    }
+
+    if (this.selectedSkillImages.length > maxImages) {
+      this.selectedSkillImages = this.selectedSkillImages.slice(0, maxImages);
+      this.skillImagePreviews = this.skillImagePreviews.slice(0, maxImages);
+      this.showNotification('snackbar-warning', `Images trimmed to ${maxImages} due to category change.`, 'bottom', 'center');
+    }
+  }
+
+  removeSkillImage(index: number) {
+    this.selectedSkillImages.splice(index, 1);
+    this.skillImagePreviews.splice(index, 1);
+  }
+
+  clearSkillImages() {
+    this.selectedSkillImages = [];
+    this.skillImagePreviews = [];
+  }
+
+  removeSkill(skill: any) {
+    Swal.fire({
+      title: 'Are you sure?',
+      text: `Do you want to delete the skill "${skill.skill_name}"?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, delete it!'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.http.delete(`${environment.apiUrl}/skills/${skill.id}`).subscribe({
+          next: () => {
+            this.skills = this.skills.filter(s => s.id !== skill.id);
+            this.showNotification('snackbar-success', 'Skill deleted successfully!', 'bottom', 'center');
+          },
+          error: (err) => {
+            console.error('Failed to delete skill:', err);
+            this.showNotification('snackbar-danger', 'Failed to delete skill', 'bottom', 'center');
+          }
+        });
+      }
+    });
   }
 
   getUserProfileImage(): string {
@@ -108,34 +318,54 @@ export class ProfileComponent implements OnInit {
       return this.previewImageUrl;
     }
     if (this.userDetails?.profile_image) {
-      // Assuming environment.apiUrl is something like 'http://localhost:3000/api'
+      if (this.userDetails.profile_image.startsWith('http')) {
+        return this.userDetails.profile_image;
+      }
       const baseUrl = environment.apiUrl.replace('/api', '');
-      return baseUrl + this.userDetails.profile_image;
+      return `${baseUrl}${this.userDetails.profile_image}`;
     }
-    return 'assets/images/user/user3.jpg';
+    return 'assets/images/user/user.jpg';
+  }
+
+  getSkillImageUrl(imagePath: string): string {
+    if (!imagePath) return '';
+    if (imagePath.startsWith('http')) return imagePath;
+    const baseUrl = environment.apiUrl.replace('/api', '');
+    return `${baseUrl}${imagePath}`;
   }
 
   onImageError(event: any) {
     event.target.src = 'assets/images/user/user3.jpg';
   }
 
-  onFileSelected(event: any): void {
+  async onFileSelected(event: any): Promise<void> {
     const file = event.target.files[0];
     if (file) {
-      this.selectedProfileImage = file;
+      // Compress the selected image before setting it
+      const compressedFile = await this.imageCompressionService.compressImage(file, {
+        maxSizeMB: 1, // Target max size 1MB for profile picture
+        maxWidthOrHeight: 800
+      });
+
+      this.selectedProfileImage = compressedFile;
       const reader = new FileReader();
       reader.onload = (e: any) => {
         this.previewImageUrl = e.target.result;
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(compressedFile);
     }
   }
 
   saveChanges(): void {
     const currentUser = this.authService.getUser();
+
+    // Automatically save any pending skill inputs if they clicked Save Changes instead of Add/Update
+    if (this.selectedSkill && this.customSkill.trim()) {
+      this.addSelectedSkill();
+    }
+
     if (currentUser && currentUser.id) {
       this.userDetails.academic_profiles = this.academicProfiles;
-      this.userDetails.skills = this.skills;
 
       const formData = new FormData();
       formData.append('name', this.userDetails.name || '');
@@ -146,7 +376,6 @@ export class ProfileComponent implements OnInit {
       formData.append('address', this.userDetails.address || '');
       formData.append('about', this.userDetails.about || '');
       formData.append('academic_profiles', JSON.stringify(this.academicProfiles));
-      formData.append('skills', JSON.stringify(this.skills));
 
       if (this.selectedProfileImage) {
         formData.append('profile_image', this.selectedProfileImage);

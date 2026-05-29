@@ -46,20 +46,20 @@ export const PLATFORM_MODULES: RouteInfo[] = [
   },
 
   // 2. MAIN HEADER (ADMIN, SUPER_ADMIN, MANAGEMENT)
-  {
-    path: '',
-    title: 'MENUITEMS.MAIN.TEXT',
-    iconType: '',
-    icon: '',
-    class: '',
-    groupTitle: true,
-    badge: '',
-    badgeClass: '',
-    role: ['ADMIN', 'SUPER_ADMIN', 'MANAGEMENT'],
-    submenu: [],
-    showInSidebar: true,
-    domain: 'TENANT'
-  },
+  // {
+  //   path: '',
+  //   title: 'MENUITEMS.MAIN.TEXT',
+  //   iconType: '',
+  //   icon: '',
+  //   class: '',
+  //   groupTitle: true,
+  //   badge: '',
+  //   badgeClass: '',
+  //   role: ['ADMIN', 'SUPER_ADMIN', 'MANAGEMENT'],
+  //   submenu: [],
+  //   showInSidebar: true,
+  //   domain: 'TENANT'
+  // },
 
   // 3. ADMINISTRATION GROUP
   {
