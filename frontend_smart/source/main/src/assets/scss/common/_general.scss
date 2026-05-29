@@ -1,9 +1,10 @@
-﻿/*
+/*
  *  Document   : _general.scss
  *  Author     : RedStar Template
  *  Description: This scss file for all common style classes
  */
 @use "mixins" as mix;
+
 body.light {
   background-color: #f0f3fb;
 }
@@ -61,6 +62,7 @@ section {
     margin: 35px 27px 0 260px;
     min-height: calc(100vh - 76px);
     @include mix.transition(0.5s);
+
     .content-block {
       padding: 25px 0px 0px 25px;
     }
@@ -88,15 +90,19 @@ section {
 .msl-1 {
   margin-left: 0.25rem !important;
 }
+
 .msl-2 {
   margin-left: 0.5rem !important;
 }
+
 .msl-3 {
   margin-left: 1rem !important;
 }
+
 .msl-4 {
   margin-left: 1.5rem !important;
 }
+
 .msl-5 {
   margin-left: 3rem !important;
 }
@@ -104,15 +110,19 @@ section {
 .msr-1 {
   margin-right: 0.25rem !important;
 }
+
 .msr-2 {
   margin-right: 0.5rem !important;
 }
+
 .msr-3 {
   margin-right: 1rem !important;
 }
+
 .msr-4 {
   margin-right: 1.5rem !important;
 }
+
 .msr-5 {
   margin-right: 3rem !important;
 }
@@ -120,15 +130,19 @@ section {
 .psl-1 {
   padding-left: 0.25rem !important;
 }
+
 .psl-2 {
   padding-left: 0.5rem !important;
 }
+
 .psl-3 {
   padding-left: 1rem !important;
 }
+
 .psl-4 {
   padding-left: 1.5rem !important;
 }
+
 .psl-5 {
   padding-left: 3rem !important;
 }
@@ -136,18 +150,23 @@ section {
 .psr-1 {
   padding-right: 0.25rem !important;
 }
+
 .psr-2 {
   padding-right: 0.5rem !important;
 }
+
 .psr-3 {
   padding-right: 1rem !important;
 }
+
 .psr-4 {
   padding-right: 1.5rem !important;
 }
+
 .psr-5 {
   padding-right: 3rem !important;
 }
+
 .cursor-pointer {
   cursor: pointer;
 }
@@ -160,7 +179,7 @@ section {
 
 table {
   .checkbox {
-    [type="checkbox"] + label {
+    [type="checkbox"]+label {
       margin: 0;
       height: 20px;
       padding-left: 20px;
@@ -201,6 +220,7 @@ table {
 }
 
 .horizontal-layout {
+
   .sidebar,
   .nav-left-menu {
     display: none;
@@ -231,6 +251,7 @@ table {
 }
 
 .logo-white {
+
   .navbar-toggle,
   .bars:before,
   .bars:after {
@@ -239,6 +260,7 @@ table {
 }
 
 .logo-black {
+
   .navbar-toggle,
   .bars:before,
   .bars:after {
@@ -252,8 +274,8 @@ table {
   }
 
   .nav {
-    > li {
-      > a {
+    >li {
+      >a {
         color: #fff;
       }
     }
@@ -266,8 +288,8 @@ table {
   }
 
   .nav {
-    > li {
-      > a {
+    >li {
+      >a {
         color: #0d091d;
       }
     }
@@ -361,26 +383,33 @@ textarea:-ms-input-placeholder {
 .deshboard-echart-height {
   height: 250px;
 }
+
 .pill-style {
   font-size: 17px;
   color: #a9a6a6;
   padding-right: 15px;
 }
+
 .pill-timing {
   width: 30%;
 }
+
 .dot1 {
   color: #5a5faf;
 }
+
 .dot2 {
   color: #f7bf31;
 }
+
 .dot3 {
   color: #ea6e6c;
 }
+
 .dot4 {
   color: #28bdb8;
 }
+
 @media screen and (max-width: 1169px) {
   .horizontal-layout {
     .sidebar {
@@ -396,12 +425,19 @@ textarea:-ms-input-placeholder {
     }
   }
 }
+
 .light-bg {
   background: #f1f5ff;
 }
+
 @media screen and (min-width: 1400px) {
   .boxed-layout .container {
     width: 1370px;
     max-width: 100%;
   }
+}
+
+.content-block>div:has(app-breadcrumb) {
+  margin-top: 1rem !important;
+  margin-bottom: 1rem !important;
 }

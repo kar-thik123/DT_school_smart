@@ -144,17 +144,17 @@ $themes: (
   max-width: 100%;
   background-color: $bg-white;
   border: 1px solid $border-color;
-  border-radius: 14px;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  border-radius: $radius-btn;
+  box-shadow: $shadow-sm;
   cursor: pointer;
   outline: none;
   transition: $transition-smooth;
 
   &:hover,
   &.open {
-    border-color: #d1d5db;
-    background-color: #f9fafb;
-    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    border-color: #c7d2fe;
+    background-color: #f8fafc;
+    box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.1);
   }
 
   .trigger-content {
@@ -162,36 +162,37 @@ $themes: (
     align-items: center;
     gap: 6px;
     overflow: hidden;
+    min-width: 0;
 
     .trigger-icon-left {
-      color: #6b7280;
-      font-size: 20px;
-      width: 20px;
-      height: 20px;
+      color: $primary-color;
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
     }
 
     .trigger-text {
-      font-size: 14px;
-      color: #1f2937;
+      font-size: 13px;
+      color: $text-main;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      font-weight: 500;
 
       .label {
-        color: #1c1919;
+        font-weight: 500;
+        color: $text-muted;
         margin-right: 4px;
-        font-weight: 600;
       }
 
       .value {
-        font-weight: 500;
-        color: #1f2937;
+        font-weight: 600;
+        color: $text-main;
       }
 
       &.empty {
         color: $text-muted;
         font-weight: 500;
+        font-size: medium;
       }
     }
   }
@@ -373,11 +374,18 @@ $themes: (
 // Responsive Breakpoints
 @media (max-width: 768px) {
   .hierarchy-trigger {
+    height: 36px;
+    padding: 0 10px;
+
     .trigger-content {
       gap: 4px;
 
       .trigger-icon-left {
         display: none; // Hide icon on small screens to save space
+      }
+
+      .trigger-text {
+        font-size: 12px;
       }
     }
   }

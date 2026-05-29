@@ -7,7 +7,8 @@
         <span class="label">{{ labelName }}:</span>
         <span class="value">
           {{ selectedGradeName }}
-          <span *ngIf="selectedSectionName && selectedSectionName !== 'All Sections'"> - Sec {{ selectedSectionName }}</span>
+          <span *ngIf="selectedSectionName && selectedSectionName !== 'All Sections'"> - Sec {{ selectedSectionName
+            }}</span>
           <span *ngIf="selectedSubjectName" class="subject-val"> > {{ selectedSubjectName }}</span>
           <span *ngIf="selectedUnitName" class="unit-val"> > {{ selectedUnitName }}</span>
           <span *ngIf="selectedTopicName" class="topic-val"> > {{ selectedTopicName }}</span>
@@ -15,7 +16,7 @@
         </span>
       </span>
       <ng-template #emptyState>
-        <span class="trigger-text empty">Select {{ labelName }}</span>
+        <span class="trigger-text empty">{{ labelName }}</span>
       </ng-template>
     </div>
     <mat-icon class="trigger-icon-right"
@@ -31,9 +32,11 @@
         <div class="grade-item" *ngFor="let grade of grades">
 
           <!-- Grade Row -->
-          <div class="grade-row" [class.expanded]="expandedGrade === grade.id" [class.active]="selectedGradeId === grade.id && !selectedSectionId">
+          <div class="grade-row" [class.expanded]="expandedGrade === grade.id"
+            [class.active]="selectedGradeId === grade.id && !selectedSectionId">
             <div (click)="toggleGrade(grade.id, $event)" class="d-inline-flex align-items-center">
-              <mat-icon class="grade-chevron" [@iconRotate]="expandedGrade === grade.id ? 'expanded' : 'collapsed'">chevron_right</mat-icon>
+              <mat-icon class="grade-chevron"
+                [@iconRotate]="expandedGrade === grade.id ? 'expanded' : 'collapsed'">chevron_right</mat-icon>
             </div>
             <span class="grade-name flex-grow-1" (click)="selectNode(grade, null, null, null, null, null, null, $event)">{{ grade.name }}</span>
           </div>
@@ -48,7 +51,8 @@
                   [class.active]="selectedGradeId === grade.id && selectedSectionId === 'ALL' && !selectedSubjectId">
                   <div class="tree-line"></div>
                   <div (click)="toggleSection('ALL_' + grade.id, $event)" class="d-inline-flex align-items-center">
-                    <mat-icon class="section-chevron" [@iconRotate]="expandedSection === ('ALL_' + grade.id) ? 'expanded' : 'collapsed'">chevron_right</mat-icon>
+                    <mat-icon class="section-chevron"
+                      [@iconRotate]="expandedSection === ('ALL_' + grade.id) ? 'expanded' : 'collapsed'">chevron_right</mat-icon>
                   </div>
                   <span class="section-name flex-grow-1" (click)="selectNode(grade, 'ALL', null, null, null, null, null, $event)">All Sections</span>
                 </div>
@@ -66,7 +70,8 @@
                     [class.active]="selectedGradeId === grade.id && selectedSectionId === section.id && !selectedSubjectId">
                     <div class="tree-line" [class.last]="last"></div>
                     <div (click)="toggleSection(section.id, $event)" class="d-inline-flex align-items-center">
-                      <mat-icon class="section-chevron" [@iconRotate]="expandedSection === section.id ? 'expanded' : 'collapsed'">chevron_right</mat-icon>
+                      <mat-icon class="section-chevron"
+                        [@iconRotate]="expandedSection === section.id ? 'expanded' : 'collapsed'">chevron_right</mat-icon>
                     </div>
                     <span class="section-name flex-grow-1" (click)="selectNode(grade, section, null, null, null, null, null, $event)">{{ section.name }}</span>
                   </div>
@@ -79,7 +84,8 @@
                         <div class="group-item" *ngFor="let group of getGroupsForSection(grade.id, section.id)">
                           <div class="group-row" [class.expanded]="expandedGroup === group.id">
                             <div (click)="toggleGroup(group.id, $event)" class="d-inline-flex align-items-center">
-                              <mat-icon class="group-chevron" [@iconRotate]="expandedGroup === group.id ? 'expanded' : 'collapsed'">chevron_right</mat-icon>
+                              <mat-icon class="group-chevron"
+                                [@iconRotate]="expandedGroup === group.id ? 'expanded' : 'collapsed'">chevron_right</mat-icon>
                             </div>
                             <span class="group-name flex-grow-1" (click)="selectNode(grade, section, null, group, null, null, null, $event)">{{ group.name }}</span>
                           </div>
@@ -129,8 +135,8 @@
 <ng-template #subjectListTpl let-subjects let-grade="grade" let-section="section" let-group="group">
   <ng-container *ngIf="subjects?.length > 0; else noSubjects">
     <div *ngFor="let subject of subjects">
-      <div class="subject-row" 
-           [class.active]="selectedGradeId === grade.id && (section === 'ALL' ? selectedSectionId === 'ALL' : selectedSectionId === section.id) && selectedSubjectId === subject.id && !selectedUnitId">
+      <div class="subject-row"
+        [class.active]="selectedGradeId === grade.id && (section === 'ALL' ? selectedSectionId === 'ALL' : selectedSectionId === section.id) && selectedSubjectId === subject.id && !selectedUnitId">
         <div class="tree-line"></div>
         <div *ngIf="showUnits" (click)="toggleSubject(subject.id, $event)" class="d-inline-flex align-items-center">
           <mat-icon class="expand-chevron" [@iconRotate]="expandedSubject === subject.id ? 'expanded' : 'collapsed'">chevron_right</mat-icon>
@@ -143,8 +149,8 @@
         <div class="units-tree">
           <ng-container *ngIf="getUnitsForSubject(subject.id).length > 0; else noUnits">
             <div *ngFor="let unit of getUnitsForSubject(subject.id)">
-              <div class="unit-row" 
-                   [class.active]="selectedSubjectId === subject.id && selectedUnitId === unit.id && !selectedTopicId">
+              <div class="unit-row"
+                [class.active]="selectedSubjectId === subject.id && selectedUnitId === unit.id && !selectedTopicId">
                 <div class="tree-line"></div>
                 <div *ngIf="showTopics" (click)="toggleUnit(unit.id, $event)" class="d-inline-flex align-items-center">
                   <mat-icon class="expand-chevron" [@iconRotate]="expandedUnit === unit.id ? 'expanded' : 'collapsed'">chevron_right</mat-icon>
@@ -157,8 +163,8 @@
                 <div class="topics-tree">
                   <ng-container *ngIf="getTopicsForUnit(unit.id).length > 0; else noTopics">
                     <div *ngFor="let topic of getTopicsForUnit(unit.id)">
-                      <div class="topic-row" 
-                           [class.active]="selectedUnitId === unit.id && selectedTopicId === topic.id && !selectedSubTopicId">
+                      <div class="topic-row"
+                        [class.active]="selectedUnitId === unit.id && selectedTopicId === topic.id && !selectedSubTopicId">
                         <div class="tree-line"></div>
                         <div *ngIf="showSubTopics" (click)="toggleTopic(topic.id, $event)" class="d-inline-flex align-items-center">
                           <mat-icon class="expand-chevron" [@iconRotate]="expandedTopic === topic.id ? 'expanded' : 'collapsed'">chevron_right</mat-icon>
@@ -171,24 +177,32 @@
                         <div class="subtopics-tree">
                           <ng-container *ngIf="getSubTopicsForTopic(topic.id).length > 0; else noSubTopics">
                             <div class="subtopic-row" *ngFor="let subtopic of getSubTopicsForTopic(topic.id)"
-                                 [class.active]="selectedTopicId === topic.id && selectedSubTopicId === subtopic.id">
+                              [class.active]="selectedTopicId === topic.id && selectedSubTopicId === subtopic.id">
                               <div class="tree-line"></div>
                               <span class="subtopic-name flex-grow-1 ms-4" (click)="selectNode(grade, section, subject, group, unit, topic, subtopic, $event)">{{ subtopic.name }}</span>
                             </div>
                           </ng-container>
-                          <ng-template #noSubTopics><div class="subtopic-row empty"><span class="subtopic-name text-muted ms-4">No subtopics available</span></div></ng-template>
+                          <ng-template #noSubTopics>
+                            <div class="subtopic-row empty"><span class="subtopic-name text-muted ms-4">No subtopics
+                                available</span></div>
+                          </ng-template>
                         </div>
                       </div>
 
                     </div>
                   </ng-container>
-                  <ng-template #noTopics><div class="topic-row empty"><span class="topic-name text-muted ms-4">No topics available</span></div></ng-template>
+                  <ng-template #noTopics>
+                    <div class="topic-row empty"><span class="topic-name text-muted ms-4">No topics available</span>
+                    </div>
+                  </ng-template>
                 </div>
               </div>
-              
+
             </div>
           </ng-container>
-          <ng-template #noUnits><div class="unit-row empty"><span class="unit-name text-muted ms-4">No units available</span></div></ng-template>
+          <ng-template #noUnits>
+            <div class="unit-row empty"><span class="unit-name text-muted ms-4">No units available</span></div>
+          </ng-template>
         </div>
       </div>
     </div>

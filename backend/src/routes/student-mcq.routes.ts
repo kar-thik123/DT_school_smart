@@ -165,6 +165,41 @@ router.get('/questions', requirePermission('MCQ', 'VIEW'), checkMcqEnabled, asyn
   }
 });
 
+// GET /student-mcq/attempts/count
+router.get('/attempts/count', async (req: any, res: Response) => {
+  try {
+    const org_id = req.user.organization_id;
+    const student_id = req.user.user_id;
+    const { sub_topic_id, topic_id, unit_id, subject_id } = req.query;
+
+    if (!subject_id) {
+      return res.status(400).json({ message: 'subject_id is required' });
+    }
+
+    const filter: any = {
+      organization_id: org_id,
+      student_id: student_id,
+      subject_id: String(subject_id)
+    };
+
+    if (sub_topic_id) filter.sub_topic_id = String(sub_topic_id);
+    else if (topic_id) filter.topic_id = String(topic_id);
+    else if (unit_id) filter.unit_id = String(unit_id);
+
+    const maxAttempt = await (prisma as any).studentAssessmentAttempt.aggregate({
+      where: filter,
+      _max: {
+        attempt_count: true
+      }
+    });
+
+    res.json({ attempt_count: maxAttempt._max.attempt_count || 0 });
+  } catch (error: any) {
+    console.error('Error fetching attempt count:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // POST /student-mcq/attempts
 router.post('/attempts', requirePermission('MCQ', 'ATTEMPT'), checkMcqEnabled, async (req: any, res: Response) => {
   try {

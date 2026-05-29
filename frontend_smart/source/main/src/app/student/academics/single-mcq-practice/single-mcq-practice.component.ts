@@ -17,9 +17,9 @@ import { McqPreviewComponent } from './mcq-preview/mcq-preview.component';
 import confetti from 'canvas-confetti';
 
 @Component({
-  selector: 'app-student-mcq',
-  templateUrl: './mcq.component.html',
-  styleUrls: ['./mcq.component.scss'],
+  selector: 'app-single-mcq-practice',
+  templateUrl: './single-mcq-practice.component.html',
+  styleUrls: ['./single-mcq-practice.component.scss'],
   standalone: true,
   imports: [
     CommonModule,
@@ -38,7 +38,7 @@ import confetti from 'canvas-confetti';
     McqPreviewComponent
   ]
 })
-export class McqComponent implements OnInit {
+export class SingleMcqPracticeComponent implements OnInit {
   // Dropdown states
   grades: any[] = [];
   allSections: any[] = [];
@@ -238,12 +238,33 @@ export class McqComponent implements OnInit {
     }, 1000);
   }
 
+  // Navigation for single-question view
+  currentQuestionIndex: number = 0;
+
+  nextQuestion() {
+    if (this.currentQuestionIndex < this.questions.length - 1) {
+      this.currentQuestionIndex++;
+    }
+  }
+
+  prevQuestion() {
+    if (this.currentQuestionIndex > 0) {
+      this.currentQuestionIndex--;
+    }
+  }
+
+  // Helper to get current question
+  get currentQuestion() {
+    return this.questions[this.currentQuestionIndex];
+  }
+
   resetQuiz() {
     this.showResults = false;
     this.studentAnswers = {};
     this.quizStarted = false;
     this.elapsedSeconds = 0;
     if (this.timerInterval) clearInterval(this.timerInterval);
+    this.currentQuestionIndex = 0;
   }
 
   blastConfetti() {

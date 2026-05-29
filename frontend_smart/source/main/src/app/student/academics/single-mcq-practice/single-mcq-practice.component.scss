@@ -70,6 +70,43 @@
     border-top: 1px solid #e9ecef;
     margin: 16px 0;
   }
+  
+  .option-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 10px 14px;
+    transition: all 0.2s ease;
+    background-color: #f8fafc;
+    cursor: pointer;
+    
+    &:hover {
+      background-color: #f1f5f9;
+      border-color: #cbd5e1;
+    }
+    
+    &.selected-option {
+      background-color: #e0e7ff;
+      border-color: #818cf8;
+      
+      ::ng-deep .mdc-form-field {
+        color: #3730a3;
+      }
+    }
+    
+    ::ng-deep .mdc-form-field {
+      width: 100%;
+      margin: 0;
+    }
+    
+    ::ng-deep .mat-mdc-radio-button, ::ng-deep .mat-mdc-checkbox {
+      width: 100%;
+    }
+    ::ng-deep .mdc-label {
+      white-space: normal;
+      padding-left: 8px;
+      line-height: 1.4;
+    }
+  }
 }
 
 :host-context(.dark) .question-card-modern {
@@ -111,33 +148,7 @@
     gap: 8px !important;
   }
   
-  .responsive-breadcrumb {
-    ::ng-deep {
-      .breadcrumb {
-        margin-bottom: 0;
-        flex-wrap: wrap !important;
-        overflow-x: hidden;
-        padding-bottom: 2px;
-        
-        &::-webkit-scrollbar {
-          display: none;
-        }
 
-        li {
-          font-size: 12px !important;
-          white-space: normal;
-        }
-        .page-title {
-          font-size: 14px !important;
-          margin-bottom: 0;
-        }
-        .breadcrumb-icon {
-          width: 14px;
-          height: 14px;
-        }
-      }
-    }
-  }
 
   ::ng-deep .hierarchy-dropdown-wrapper .hierarchy-trigger {
     height: 32px !important;

@@ -247,8 +247,26 @@ export const PLATFORM_MODULES: RouteInfo[] = [
         role: ['MCQ:VIEW', 'MCQ_VIEW'],
         submenu: [],
         showInSidebar: true,
+<<<<<<< HEAD
         domain: 'TENANT',
         moduleKey: 'mcq'
+=======
+        domain: 'TENANT'
+      },
+      {
+        path: '/student/academics/single-mcq-practice',
+        title: 'Single MCQ Practice',
+        iconType: '',
+        icon: '',
+        class: 'ml-menu',
+        groupTitle: false,
+        badge: '',
+        badgeClass: '',
+        role: ['STUDENT'],
+        submenu: [],
+        showInSidebar: true,
+        domain: 'TENANT'
+>>>>>>> messaging-system
       }
     ]
   }

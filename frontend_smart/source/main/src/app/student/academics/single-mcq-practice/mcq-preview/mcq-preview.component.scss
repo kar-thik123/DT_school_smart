@@ -72,6 +72,22 @@
   }
 }
 
+.option-wrapper {
+  border-radius: 6px;
+  padding: 4px 8px;
+  transition: background-color 0.2s;
+}
+
+.question-card-modern.card-correct {
+  background-color: #e8f5e9; /* Light green */
+  border-color: #c8e6c9;
+}
+
+.question-card-modern.card-wrong {
+  background-color: #ffebee; /* Light red */
+  border-color: #ffcdd2;
+}
+
 :host-context(.dark) .question-card-modern {
   background: #1a202e;
   border: 1px solid #2d3748;
@@ -105,58 +121,14 @@
   }
 }
 
-/* Responsive Header Tweaks for single row */
-@media (max-width: 768px) {
-  .header-responsive-wrapper {
-    gap: 8px !important;
-  }
-  
-  .responsive-breadcrumb {
-    ::ng-deep {
-      .breadcrumb {
-        margin-bottom: 0;
-        flex-wrap: wrap !important;
-        overflow-x: hidden;
-        padding-bottom: 2px;
-        
-        &::-webkit-scrollbar {
-          display: none;
-        }
-
-        li {
-          font-size: 12px !important;
-          white-space: normal;
-        }
-        .page-title {
-          font-size: 14px !important;
-          margin-bottom: 0;
-        }
-        .breadcrumb-icon {
-          width: 14px;
-          height: 14px;
-        }
-      }
-    }
+:host-context(.dark) .question-card-modern {
+  &.card-correct {
+    background-color: rgba(76, 175, 80, 0.15);
+    border-color: rgba(76, 175, 80, 0.3);
   }
 
-  ::ng-deep .hierarchy-dropdown-wrapper .hierarchy-trigger {
-    height: 32px !important;
-    padding: 0 8px !important;
-    border-radius: 8px !important;
-    
-    .trigger-content .trigger-text {
-      font-size: 12px !important;
-      
-      .label {
-        display: none !important; /* Hide "Curriculum:" on very small screens to save space */
-      }
-    }
-    
-    .trigger-icon-right {
-      font-size: 16px !important;
-      width: 16px !important;
-      height: 16px !important;
-      margin-left: 4px !important;
-    }
+  &.card-wrong {
+    background-color: rgba(244, 67, 54, 0.15);
+    border-color: rgba(244, 67, 54, 0.3);
   }
 }

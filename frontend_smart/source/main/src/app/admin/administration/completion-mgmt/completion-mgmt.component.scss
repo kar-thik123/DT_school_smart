@@ -19,18 +19,18 @@
   .mat-expansion-panel {
     border-radius: 8px !important;
     margin-bottom: 1rem;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
     border: 1px solid #e9ecef;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
-    
+
     &:hover {
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
     }
-    
+
     .mat-expansion-panel-header {
       padding: 0 24px;
       height: 64px !important;
-      
+
       &:hover {
         background: #f8f9fa;
       }
@@ -39,10 +39,10 @@
 
   .topic-item {
     transition: transform 0.2s ease, box-shadow 0.2s ease;
-    
+
     &:hover {
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
     }
   }
 }
@@ -60,21 +60,90 @@
     }
   }
 
-  .topics-list, .subtopics-list {
+  .topics-list,
+  .subtopics-list {
     background: #1a202e !important;
     border-color: #2d3748 !important;
   }
-  
+
   .topic-item {
     background: #232b3e !important;
     border-color: #2d3748 !important;
   }
-  
+
   .text-muted {
     color: #cbd5e1 !important;
   }
 }
 
-.hierarchy-dropdown-wrapper {
-  min-width: 280px;
+// .hierarchy-dropdown-wrapper {
+//   min-width: 280px;
+// }
+
+.header-responsive-wrapper {
+  margin-top: 20px !important;
+  /* Global top space for this module */
+}
+
+/* Responsive Header Tweaks for single row */
+@media (max-width: 768px) {
+  .header-responsive-wrapper {
+    gap: 8px !important;
+  }
+
+  .responsive-breadcrumb {
+    ::ng-deep {
+      .breadcrumb {
+        margin-bottom: 0;
+        flex-wrap: wrap !important;
+        overflow-x: hidden;
+        padding-bottom: 2px;
+
+        &::-webkit-scrollbar {
+          display: none;
+        }
+
+        li {
+          font-size: 12px !important;
+          white-space: normal;
+        }
+
+        .page-title {
+          font-size: 14px !important;
+          margin-bottom: 0;
+        }
+
+        .breadcrumb-icon {
+          width: 14px;
+          height: 14px;
+        }
+      }
+    }
+  }
+
+  ::ng-deep .hierarchy-dropdown-wrapper .hierarchy-trigger {
+    height: 32px !important;
+    padding: 0 8px !important;
+    border-radius: 8px !important;
+
+    .trigger-content .trigger-text {
+      font-size: 12px !important;
+
+      .label {
+        display: none !important;
+        /* Hide "Curriculum:" on very small screens to save space */
+      }
+    }
+
+    .trigger-icon-right {
+      font-size: 16px !important;
+      width: 16px !important;
+      height: 16px !important;
+      margin-left: 4px !important;
+    }
+  }
+
+  .header-actions-wrapper {
+    gap: 4px !important;
+  }
 }

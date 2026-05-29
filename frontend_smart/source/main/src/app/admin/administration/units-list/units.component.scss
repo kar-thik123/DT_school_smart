@@ -104,3 +104,59 @@
     }
   }
 }
+
+/* Responsive Header Tweaks for single row */
+@media (max-width: 768px) {
+  .header-responsive-wrapper {
+    gap: 8px !important;
+  }
+  
+  .responsive-breadcrumb {
+    ::ng-deep {
+      .breadcrumb {
+        margin-bottom: 0;
+        flex-wrap: wrap !important;
+        overflow-x: hidden;
+        padding-bottom: 2px;
+        
+        &::-webkit-scrollbar {
+          display: none;
+        }
+
+        li {
+          font-size: 12px !important;
+          white-space: normal;
+        }
+        .page-title {
+          font-size: 14px !important;
+          margin-bottom: 0;
+        }
+        .breadcrumb-icon {
+          width: 14px;
+          height: 14px;
+        }
+      }
+    }
+  }
+
+  ::ng-deep .hierarchy-dropdown-wrapper .hierarchy-trigger {
+    height: 32px !important;
+    padding: 0 8px !important;
+    border-radius: 8px !important;
+    
+    .trigger-content .trigger-text {
+      font-size: 12px !important;
+      
+      .label {
+        display: none !important; /* Hide "Curriculum:" on very small screens to save space */
+      }
+    }
+    
+    .trigger-icon-right {
+      font-size: 16px !important;
+      width: 16px !important;
+      height: 16px !important;
+      margin-left: 4px !important;
+    }
+  }
+}

@@ -28,7 +28,7 @@ router.post('/login', loginLimiter, async (req: any, res: Response) => {
 
     const user = await prisma.user.findFirst({
       where: { email: parsed.email },
-      include: { 
+      include: {
         organization: true,
         role: {
           include: {
@@ -69,8 +69,8 @@ router.post('/login', loginLimiter, async (req: any, res: Response) => {
     }
 
     const token = jwt.sign(
-      { 
-        user_id: user.id, 
+      {
+        user_id: user.id,
         organization_id: user.organization_id
       },
       process.env.JWT_SECRET || 'supersecret_jwt_key_for_dev_only',
@@ -95,8 +95,8 @@ router.post('/login', loginLimiter, async (req: any, res: Response) => {
     });
   } catch (error: any) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ 
-        message: 'Validation failed', 
+      return res.status(400).json({
+        message: 'Validation failed',
         errors: error.issues
       });
     }
@@ -108,7 +108,7 @@ router.get('/me', authMiddleware, async (req: any, res: Response) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.user?.user_id },
-      include: { 
+      include: {
         organization: true,
         role: {
           include: {
@@ -246,7 +246,7 @@ router.post('/reset-password', async (req: Request, res: Response) => {
     }
 
     const password_hash = await bcrypt.hash(parsed.new_password, 10);
-    
+
     await prisma.$transaction([
       prisma.user.update({ where: { id: resetEntry.user_id }, data: { password_hash } }),
       prisma.passwordReset.update({ where: { id: resetEntry.id }, data: { used: true } })
