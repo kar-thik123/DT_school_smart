@@ -69,12 +69,8 @@ export const STUDENT_ROUTE: Route[] = [
       { path: 'study-materials', component: StudyMaterialsComponent },
       { path: 'academic-calendar', component: AcademicCalendarComponent },
       { path: 'my-subjects', component: MySubjectsComponent },
-<<<<<<< HEAD
       { path: 'mcq', component: McqComponent, canActivate: [AuthGuard], data: { permission: 'MCQ:VIEW' } },
-=======
-      { path: 'mcq', component: McqComponent },
-      { path: 'single-mcq-practice', component: SingleMcqPracticeComponent },
->>>>>>> messaging-system
+      { path: 'single-mcq-practice', component: SingleMcqPracticeComponent, canActivate: [AuthGuard], data: { permission: 'MCQ:VIEW' } },
     ],
   },
   {

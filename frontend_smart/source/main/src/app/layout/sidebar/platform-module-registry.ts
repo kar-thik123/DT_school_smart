@@ -220,7 +220,7 @@ export const PLATFORM_MODULES: RouteInfo[] = [
     showInSidebar: true,
     domain: 'TENANT'
   },
-  
+
   // 5. STUDENT MODULES
   {
     path: '',
@@ -247,11 +247,8 @@ export const PLATFORM_MODULES: RouteInfo[] = [
         role: ['MCQ:VIEW', 'MCQ_VIEW'],
         submenu: [],
         showInSidebar: true,
-<<<<<<< HEAD
         domain: 'TENANT',
         moduleKey: 'mcq'
-=======
-        domain: 'TENANT'
       },
       {
         path: '/student/academics/single-mcq-practice',
@@ -266,7 +263,6 @@ export const PLATFORM_MODULES: RouteInfo[] = [
         submenu: [],
         showInSidebar: true,
         domain: 'TENANT'
->>>>>>> messaging-system
       }
     ]
   }
