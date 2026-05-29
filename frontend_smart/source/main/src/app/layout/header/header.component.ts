@@ -13,6 +13,8 @@ import { UnsubscribeOnDestroyAdapter } from '@shared';
 import { LocalStorageService } from '@shared/services';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 import { NotificationListComponent } from '../components/notification-list/notification-list.component';
 import { MatMenuModule } from '@angular/material/menu';
 import { LanguageListComponent } from '../components/language-list/language-list.component';
@@ -48,9 +50,11 @@ export class HeaderComponent
   private router = inject(Router);
   languageService = inject(LanguageService);
   private localStorageService = inject(LocalStorageService);
+  private http = inject(HttpClient);
 
   public config!: InConfiguration;
   userImg?: string;
+  userName?: string;
   homePage?: string;
   isNavbarCollapsed = true;
   flagvalue: string | string[] | undefined;
@@ -71,8 +75,11 @@ export class HeaderComponent
   notifications: Notification[] = [];
   ngOnInit() {
     this.config = this.configService.configData;
-    this.userImg =
-      './assets/images/user/' + this.authService.currentUserValue.avatar;
+    const currentUser = this.authService.currentUserValue;
+    this.userName = currentUser?.name || 'User';
+    this.userImg = './assets/images/user/' + (currentUser?.avatar || 'admin.jpg');
+    this.fetchProfileImage();
+
     this.docElement = document.documentElement;
 
     if (this.authService.hasPermission('IDENTITY', 'IS_SUPER_ADMIN') || this.authService.hasPermission('IDENTITY', 'IS_MANAGEMENT') || this.authService.hasPermission('IDENTITY', 'IS_SYSTEM_ADMIN')) {
@@ -102,6 +109,25 @@ export class HeaderComponent
     this.subs.sink = this.notificationService.notifications$.subscribe(
       (notifs) => (this.notifications = notifs)
     );
+  }
+
+  fetchProfileImage(): void {
+    const currentUser = this.authService.currentUserValue;
+
+    if (currentUser?.id) {
+      this.http.get<any>(`${environment.apiUrl}/users/profile/${currentUser.id}`)
+        .subscribe({
+          next: (data) => {
+            if (data.profile_image) {
+              const baseUrl = environment.apiUrl.replace('/api', '');
+              this.userImg = `${baseUrl}${data.profile_image.startsWith('/') ? '' : '/'}${data.profile_image}`;
+            }
+          },
+          error: (err) => {
+            console.error('Failed to fetch profile image:', err);
+          }
+        });
+    }
   }
 
   onMarkAllNotificationsRead() {
