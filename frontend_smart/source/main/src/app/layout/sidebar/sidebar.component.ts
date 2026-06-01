@@ -351,8 +351,12 @@ export class SidebarComponent
     }
     if (path.includes('/student-mapping')) {
       return this.authService.hasPermission('STUDENT_ENROLLMENT', 'READ') ||
+        this.authService.hasPermission('STUDENT_ENROLLMENT', 'VIEW') ||
+        this.authService.hasPermission('STUDENT_ENROLLMENT_VIEW') ||
         this.authService.hasPermission('ACADEMIC_STRUCTURE', 'READ') ||
-        this.authService.hasPermission('ACADEMIC_STRUCTURE_READ');
+        this.authService.hasPermission('ACADEMIC_STRUCTURE_READ') ||
+        this.authService.hasPermission('ACADEMIC_STRUCTURE', 'VIEW') ||
+        this.authService.hasPermission('ACADEMIC_STRUCTURE_VIEW');
     }
     if (path.includes('/analytics')) {
       return this.authService.hasPermission('ANALYTICS', 'VIEW_OWN') ||
@@ -363,6 +367,10 @@ export class SidebarComponent
     if (path.includes('/practice')) {
       return this.authService.hasPermission('PRACTICE', 'VIEW_OWN') ||
         this.authService.hasPermission('PRACTICE_VIEW_OWN');
+    }
+    if (path.includes('/mcq')) {
+      return this.authService.hasPermission('MCQ', 'VIEW') ||
+        this.authService.hasPermission('MCQ_VIEW');
     }
     if (path.includes('/settings')) {
       return this.authService.hasPermission('MASTER_CONFIGURATION', 'VIEW') ||

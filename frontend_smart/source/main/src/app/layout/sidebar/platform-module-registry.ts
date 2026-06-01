@@ -231,7 +231,7 @@ export const PLATFORM_MODULES: RouteInfo[] = [
     groupTitle: false,
     badge: '',
     badgeClass: '',
-    role: ['STUDENT'],
+    role: [],
     showInSidebar: true,
     domain: 'TENANT',
     submenu: [

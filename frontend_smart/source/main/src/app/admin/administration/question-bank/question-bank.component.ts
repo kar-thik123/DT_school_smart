@@ -143,15 +143,15 @@ export class QuestionBankComponent implements OnInit {
 
     // Cascading selection logic for form
     this.questionForm.get('subject_id')?.valueChanges.subscribe(subjectId => {
-      this.questionForm.patchValue({ unit_id: '', topic_id: '', sub_topic_id: null });
+      this.questionForm.patchValue({ unit_id: '', topic_id: '', sub_topic_id: null }, { emitEvent: false });
     });
 
     this.questionForm.get('unit_id')?.valueChanges.subscribe(unitId => {
-      this.questionForm.patchValue({ topic_id: '', sub_topic_id: null });
+      this.questionForm.patchValue({ topic_id: '', sub_topic_id: null }, { emitEvent: false });
     });
 
     this.questionForm.get('topic_id')?.valueChanges.subscribe(topicId => {
-      this.questionForm.patchValue({ sub_topic_id: null });
+      this.questionForm.patchValue({ sub_topic_id: null }, { emitEvent: false });
     });
 
     // Dynamic Option and Answer validation logic
@@ -386,7 +386,7 @@ export class QuestionBankComponent implements OnInit {
           unit_id: unit?.id || '',
           topic_id: topic?.id || '',
           sub_topic_id: subTopic?.id || null
-        });
+        }, { emitEvent: false });
       });
     }
 
@@ -509,58 +509,53 @@ export class QuestionBankComponent implements OnInit {
     // Set the values. Because of cascading subscriptions, we need to carefully patch.
     this.questionForm.patchValue({
       subject_id: question.subject_id,
-    });
-    setTimeout(() => {
-      this.questionForm.patchValue({ unit_id: question.unit_id });
-      setTimeout(() => {
-        this.questionForm.patchValue({ topic_id: question.topic_id });
-        setTimeout(() => {
-          this.options.clear();
-          let correctMcq = 0;
-          let correctMulti: number[] = [];
-          let correctTF = true;
-          let answerText = question.answer || '';
+      unit_id: question.unit_id,
+      topic_id: question.topic_id,
+      sub_topic_id: question.sub_topic_id || null,
+      question_text: question.question_text,
+      type: question.type,
+      marks: question.marks,
+      difficulty: question.difficulty,
+      is_important: question.is_important
+    }, { emitEvent: false });
 
-          if (question.answer_config) {
-            const config = question.answer_config as any;
-            if (config.options && Array.isArray(config.options)) {
-              config.options.forEach((optText: string, i: number) => {
-                let isCorrect = false;
-                if (question.type === 'MCQ_SINGLE') {
-                  isCorrect = (Number(config.correct_answer) === i);
-                } else if (question.type === 'MCQ_MULTI') {
-                  isCorrect = (Array.isArray(config.correct_answers) && config.correct_answers.includes(i));
-                }
-                this.options.push(this.fb.group({ text: [optText, Validators.required], isCorrect: [isCorrect] }));
-              });
-            }
-            if (config.correct_answer !== undefined) {
-              if (question.type === 'TRUE_FALSE') {
-                correctTF = config.correct_answer === true || String(config.correct_answer) === 'true';
-              } else {
-                correctMcq = Number(config.correct_answer);
-              }
-            }
-            if (config.correct_answers) {
-              correctMulti = config.correct_answers;
-            }
+    this.options.clear();
+    let correctMcq = 0;
+    let correctMulti: number[] = [];
+    let correctTF = true;
+    let answerText = question.answer || '';
+
+    if (question.answer_config) {
+      const config = question.answer_config as any;
+      if (config.options && Array.isArray(config.options)) {
+        config.options.forEach((optText: string, i: number) => {
+          let isCorrect = false;
+          if (question.type === 'MCQ_SINGLE') {
+            isCorrect = (Number(config.correct_answer) === i);
+          } else if (question.type === 'MCQ_MULTI') {
+            isCorrect = (Array.isArray(config.correct_answers) && config.correct_answers.includes(i));
           }
+          this.options.push(this.fb.group({ text: [optText, Validators.required], isCorrect: [isCorrect] }));
+        });
+      }
+      if (config.correct_answer !== undefined) {
+        if (question.type === 'TRUE_FALSE') {
+          correctTF = config.correct_answer === true || String(config.correct_answer) === 'true';
+        } else {
+          correctMcq = Number(config.correct_answer);
+        }
+      }
+      if (config.correct_answers) {
+        correctMulti = config.correct_answers;
+      }
+    }
 
-          this.questionForm.patchValue({
-            sub_topic_id: question.sub_topic_id || null,
-            question_text: question.question_text,
-            type: question.type,
-            marks: question.marks,
-            difficulty: question.difficulty,
-            is_important: question.is_important,
-            correct_answer_mcq: correctMcq,
-            correct_answers_multi: correctMulti,
-            correct_answer_tf: correctTF,
-            answer_text: answerText
-          });
-        }, 50);
-      }, 50);
-    }, 50);
+    this.questionForm.patchValue({
+      correct_answer_mcq: correctMcq,
+      correct_answers_multi: correctMulti,
+      correct_answer_tf: correctTF,
+      answer_text: answerText
+    }, { emitEvent: false });
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -580,11 +575,16 @@ export class QuestionBankComponent implements OnInit {
         subject_id, unit_id, topic_id, sub_topic_id,
         type: 'MCQ_SINGLE', marks: 1, difficulty: 'MEDIUM', is_important: false
       });
+      // We still need to patch without emitting to fix the form directive bug 
+      // where it triggers valueChanges after resetForm
+      this.questionForm.patchValue({
+        subject_id, unit_id, topic_id, sub_topic_id
+      }, { emitEvent: false });
     } else if (this.questionForm) {
       this.questionForm.reset({
         subject_id, unit_id, topic_id, sub_topic_id,
         type: 'MCQ_SINGLE', marks: 1, difficulty: 'MEDIUM', is_important: false
-      });
+      }, { emitEvent: false });
     }
   }
 

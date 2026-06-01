@@ -203,7 +203,7 @@ export const ADMIN_ROUTE: Route[] = [
       {
         path: 'settings',
         canActivate: [AuthGuard],
-        data: { permission: 'SETTINGS:VIEW' },
+        data: { permission: 'MASTER_CONFIGURATION:VIEW' },
         loadComponent: () =>
           import('./administration/settings/settings.component').then(
             (m) => m.SettingsComponent
