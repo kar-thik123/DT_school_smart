@@ -3,6 +3,7 @@ import prisma from '../prisma';
 import { z } from 'zod';
 import { authMiddleware, requirePermission } from '../middlewares/auth.middleware';
 import { validateStudentSectionAccess } from '../services/academic-compatibility.service';
+import { AcademicContextResolver } from '../utils/academic-context.resolver';
 
 const router = Router();
 router.use(authMiddleware);
@@ -13,10 +14,11 @@ router.get('/available-topics', requirePermission('PRACTICE', 'ATTEMPT'), async 
   try {
     const org_id = req.user.organization_id;
     const student_id = req.user.user_id;
+    const yearId = req.academic_year_id;
 
     // 1. Fetch student's groups
-    const mappings = await (prisma as any).studentGroupMapping.findMany({
-      where: { student_id, organization_id: org_id }
+    const mappings = await prisma.studentGroupMapping.findMany({
+      where: { student_id, organization_id: org_id, academic_year_id: yearId }
     });
     
     if (mappings.length === 0) {
@@ -28,6 +30,7 @@ router.get('/available-topics', requirePermission('PRACTICE', 'ATTEMPT'), async 
       where: {
         subject_group_id: { in: groupIds },
         organization_id: org_id,
+        academic_year_id: yearId,
         is_active: true
       },
       include: {
@@ -64,10 +67,11 @@ router.get('/topics/:topic_id/questions', requirePermission('PRACTICE', 'ATTEMPT
   try {
     const org_id = req.user.organization_id;
     const student_id = req.user.user_id;
+    const yearId = req.academic_year_id;
 
     // 1. Verify mappings
-    const mappings = await (prisma as any).studentGroupMapping.findMany({
-      where: { student_id, organization_id: org_id }
+    const mappings = await prisma.studentGroupMapping.findMany({
+      where: { student_id, organization_id: org_id, academic_year_id: yearId }
     });
     if (mappings.length === 0) return res.status(403).json({ message: 'Student is not mapped to any Subject Groups' });
     const groupIds = mappings.map((m: any) => m.group_id);
@@ -76,7 +80,7 @@ router.get('/topics/:topic_id/questions', requirePermission('PRACTICE', 'ATTEMPT
 
     if (searchTopicId === 'default_topic') {
        const firstActive = await prisma.topicActivation.findFirst({
-         where: { subject_group_id: { in: groupIds }, organization_id: org_id, is_active: true }
+         where: { subject_group_id: { in: groupIds }, organization_id: org_id, academic_year_id: yearId, is_active: true }
        });
        if (!firstActive) return res.status(404).json({ message: 'No active topics available for practice' });
        searchTopicId = firstActive.topic_id;
@@ -88,6 +92,7 @@ router.get('/topics/:topic_id/questions', requirePermission('PRACTICE', 'ATTEMPT
         topic_id: searchTopicId,
         subject_group_id: { in: groupIds },
         organization_id: org_id,
+        academic_year_id: yearId,
         is_active: true
       }
     });
@@ -129,9 +134,10 @@ router.post('/topics/:topic_id/submit', requirePermission('PRACTICE', 'ATTEMPT')
     const org_id = req.user.organization_id;
     const student_id = req.user.user_id;
     const parsed = submitAnswersSchema.parse(req.body);
+    const yearId = req.academic_year_id;
 
-    const mappings = await (prisma as any).studentGroupMapping.findMany({
-      where: { student_id, organization_id: org_id }
+    const mappings = await prisma.studentGroupMapping.findMany({
+      where: { student_id, organization_id: org_id, academic_year_id: yearId }
     });
     if (mappings.length === 0) return res.status(403).json({ message: 'Student is not mapped to any Subject Groups' });
 
@@ -185,6 +191,7 @@ router.post('/topics/:topic_id/submit', requirePermission('PRACTICE', 'ATTEMPT')
     const attempt = await prisma.practiceAttempt.create({
       data: {
         organization_id: org_id,
+        academic_year_id: yearId,
         student_id:      student_id,
         subject_id:      parsed.subject_id,
         topic_id:        req.params.topic_id,
@@ -208,8 +215,9 @@ router.post('/topics/:topic_id/submit', requirePermission('PRACTICE', 'ATTEMPT')
 // READ HISTORY
 router.get('/history', requirePermission('PRACTICE', 'READ'), async (req: any, res: Response) => {
   try {
+    const yearId = req.academic_year_id;
     const attempts = await prisma.practiceAttempt.findMany({
-      where: { student_id: req.user.user_id, organization_id: req.user.organization_id },
+      where: { student_id: req.user.user_id, organization_id: req.user.organization_id, academic_year_id: yearId },
       include: {
         topic: { select: { id: true, name: true } },
         subject: { select: { id: true, name: true } }
@@ -269,11 +277,13 @@ router.post('/activations/toggle', requirePermission('PRACTICE', 'MANAGE'), asyn
       }
     }
 
+    const yearId = req.academic_year_id;
     const existing = await prisma.topicActivation.findFirst({
       where: {
         topic_id: parsed.topic_id,
         subject_group_id: parsed.subject_group_id,
-        organization_id: org_id
+        organization_id: org_id,
+        academic_year_id: yearId
       }
     });
 
@@ -289,6 +299,7 @@ router.post('/activations/toggle', requirePermission('PRACTICE', 'MANAGE'), asyn
           topic_id: parsed.topic_id,
           subject_group_id: parsed.subject_group_id,
           organization_id: org_id,
+          academic_year_id: yearId,
           is_active: parsed.is_active
         }
       });
@@ -303,8 +314,9 @@ router.post('/activations/toggle', requirePermission('PRACTICE', 'MANAGE'), asyn
 // GET ACTIVATIONS BY SUBJECT GROUP
 router.get('/activations/:group_id', requirePermission('PRACTICE', 'MANAGE'), async (req: any, res: Response) => {
   try {
+    const yearId = req.academic_year_id;
     const activations = await prisma.topicActivation.findMany({
-      where: { subject_group_id: req.params.group_id, organization_id: req.user.organization_id }
+      where: { subject_group_id: req.params.group_id, organization_id: req.user.organization_id, academic_year_id: yearId }
     });
     res.json(activations);
   } catch (error) {

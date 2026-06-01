@@ -10,24 +10,24 @@ import { AcademicUnifiedProcessor } from './processors/academic-unified.processo
 
 // Map of registered processors. 
 // A factory function is provided so that each request can instantiate a fresh processor bound to the user's organization context.
-export const processorRegistry: Record<string, (organizationId: string, userId: string) => BulkImportProcessor> = {
-  'STUDENT_ENROLLMENT': (orgId, userId) => new StudentEnrollmentProcessor(orgId, userId),
-  'STUDENT_MAPPING': (orgId, userId) => new StudentMappingProcessor(orgId, userId),
-  'TEACHER_ASSIGNMENT': (orgId, userId) => new TeacherAssignmentProcessor(orgId, userId),
-  'SUBJECT_GROUPS': (orgId, userId) => new SubjectGroupProcessor(orgId, userId),
-  'QUESTION_BANK': (orgId, userId) => new QuestionBankProcessor(orgId, userId),
-  'GRADES': (orgId, userId) => new GradeProcessor(orgId, userId),
-  'SECTIONS': (orgId, userId) => new SectionProcessor(orgId, userId),
-  'SUBJECTS': (orgId, userId) => new SubjectProcessor(orgId, userId),
-  'UNITS': (orgId, userId) => new UnitProcessor(orgId, userId),
-  'TOPICS': (orgId, userId) => new TopicProcessor(orgId, userId),
-  'ACADEMIC_STRUCTURE_FULL': (orgId, userId) => new AcademicUnifiedProcessor(orgId, userId),
+export const processorRegistry: Record<string, (organizationId: string, userId: string, academicYearId: string) => BulkImportProcessor> = {
+  'STUDENT_ENROLLMENT': (orgId, userId, yearId) => new StudentEnrollmentProcessor(orgId, userId, yearId),
+  'STUDENT_MAPPING': (orgId, userId, yearId) => new StudentMappingProcessor(orgId, userId, yearId),
+  'TEACHER_ASSIGNMENT': (orgId, userId, yearId) => new TeacherAssignmentProcessor(orgId, userId, yearId),
+  'SUBJECT_GROUPS': (orgId, userId, yearId) => new SubjectGroupProcessor(orgId, userId, yearId),
+  'QUESTION_BANK': (orgId, userId, yearId) => new QuestionBankProcessor(orgId, userId, yearId),
+  'GRADES': (orgId, userId, yearId) => new GradeProcessor(orgId, userId, yearId),
+  'SECTIONS': (orgId, userId, yearId) => new SectionProcessor(orgId, userId, yearId),
+  'SUBJECTS': (orgId, userId, yearId) => new SubjectProcessor(orgId, userId, yearId),
+  'UNITS': (orgId, userId, yearId) => new UnitProcessor(orgId, userId, yearId),
+  'TOPICS': (orgId, userId, yearId) => new TopicProcessor(orgId, userId, yearId),
+  'ACADEMIC_STRUCTURE_FULL': (orgId, userId, yearId) => new AcademicUnifiedProcessor(orgId, userId, yearId),
 };
 
-export const getBulkProcessor = (entityType: string, organizationId: string, userId: string): BulkImportProcessor | null => {
+export const getBulkProcessor = (entityType: string, organizationId: string, userId: string, academicYearId: string): BulkImportProcessor | null => {
   const factory = processorRegistry[entityType];
   if (!factory) {
     return null;
   }
-  return factory(organizationId, userId);
+  return factory(organizationId, userId, academicYearId);
 };

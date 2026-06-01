@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import prisma from '../prisma';
+import { z } from 'zod';
 import { authMiddleware, requirePermission } from '../middlewares/auth.middleware';
-import { getActiveAcademicYearId } from '../utils/academic-helper';
 
 const router = Router();
 router.use(authMiddleware);
@@ -31,7 +31,7 @@ router.get('/curriculum', requirePermission('MCQ', 'VIEW'), checkMcqEnabled, asy
     const org_id = req.user.organization_id;
     const student_id = req.user.user_id;
 
-    const academic_year_id = await getActiveAcademicYearId(org_id);
+    const academic_year_id = req.academic_year_id;
     if (!academic_year_id) {
       return res.status(400).json({ message: 'No active academic year found' });
     }
@@ -170,6 +170,7 @@ router.get('/attempts/count', async (req: any, res: Response) => {
   try {
     const org_id = req.user.organization_id;
     const student_id = req.user.user_id;
+    const yearId = req.academic_year_id;
     const { sub_topic_id, topic_id, unit_id, subject_id } = req.query;
 
     if (!subject_id) {
@@ -178,6 +179,7 @@ router.get('/attempts/count', async (req: any, res: Response) => {
 
     const filter: any = {
       organization_id: org_id,
+      academic_year_id: yearId,
       student_id: student_id,
       subject_id: String(subject_id)
     };
@@ -186,7 +188,7 @@ router.get('/attempts/count', async (req: any, res: Response) => {
     else if (topic_id) filter.topic_id = String(topic_id);
     else if (unit_id) filter.unit_id = String(unit_id);
 
-    const maxAttempt = await (prisma as any).studentAssessmentAttempt.aggregate({
+    const maxAttempt = await prisma.studentAssessmentAttempt.aggregate({
       where: filter,
       _max: {
         attempt_count: true
@@ -205,6 +207,7 @@ router.post('/attempts', requirePermission('MCQ', 'ATTEMPT'), checkMcqEnabled, a
   try {
     const org_id = req.user.organization_id;
     const student_id = req.user.user_id;
+    const yearId = req.academic_year_id;
 
     const {
       subject_id,
@@ -222,9 +225,10 @@ router.post('/attempts', requirePermission('MCQ', 'ATTEMPT'), checkMcqEnabled, a
       return res.status(400).json({ message: 'Missing required fields for attempt' });
     }
 
-    const newAttempt = await (prisma as any).studentAssessmentAttempt.create({
+    const newAttempt = await prisma.studentAssessmentAttempt.create({
       data: {
         organization_id: org_id,
+        academic_year_id: yearId,
         student_id: student_id,
         subject_id: subject_id,
         unit_id: unit_id || null,

@@ -52,7 +52,7 @@ async function runTests() {
   console.log('Created user with Scholar role_id. User ID:', user.id);
 
   // 4. Test Bulk Import Student Mapping Processor (Phase B)
-  const mappingProcessor = new StudentMappingProcessor(org.id, 'test_user');
+  const mappingProcessor = new StudentMappingProcessor(org.id, 'test_user', 'dummy-year-id');
   const mockMappingRows = [{
     student_email: userEmail,
     grade_name: 'Grade 10', // Assuming exists, but we only care about role resolution
@@ -70,7 +70,7 @@ async function runTests() {
   }
 
   // 5. Test Bulk Import Student Enrollment Processor (Phase B)
-  const enrollmentProcessor = new StudentEnrollmentProcessor(org.id, 'test_user');
+  const enrollmentProcessor = new StudentEnrollmentProcessor(org.id, 'test_user', 'dummy-year-id');
   const mockEnrollmentRows = [{
     student_email: userEmail,
     academic_year: '2025',
@@ -89,7 +89,7 @@ async function runTests() {
   }
 
   // 6. Test Teacher Assignment Processor (Negative Test)
-  const teacherProcessor = new TeacherAssignmentProcessor(org.id, 'test_user');
+  const teacherProcessor = new TeacherAssignmentProcessor(org.id, 'test_user', 'dummy-year-id');
   const mockTeacherRows = [{
     teacher_email: userEmail,
     assignment_type: 'CLASS_INCHARGE',

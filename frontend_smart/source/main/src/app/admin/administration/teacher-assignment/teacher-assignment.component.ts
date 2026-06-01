@@ -135,10 +135,8 @@ export class TeacherAssignmentComponent implements OnInit {
 
   loadAssignmentsForSection() {
     this.assignmentService.getAllAssignments().subscribe((assignments) => {
-      // Filter for this section and year
       const sectionAssignments = assignments.filter(a => 
-        a.section_id === this.selectedSectionId && 
-        a.academic_year_id === this.activeAcademicYear?.id
+        a.section_id === this.selectedSectionId
       );
 
       // Class Teacher
@@ -221,7 +219,6 @@ export class TeacherAssignmentComponent implements OnInit {
 
     const payload = {
       teacher_id: this.currentClassTeacherId,
-      academic_year_id: this.activeAcademicYear.id,
       assignment_type: AssignmentType.CLASS_TEACHER,
       grade_id: this.selectedGradeId,
       section_id: this.selectedSectionId
@@ -292,9 +289,8 @@ export class TeacherAssignmentComponent implements OnInit {
       });
 
       const createPromises = Object.keys(groupedByTeacher).map(teacherId => {
-        const payload: IBatchTeacherAssignmentPayload = {
+        const payload: any = {
           teacher_id: teacherId,
-          academic_year_id: this.activeAcademicYear.id,
           assignments: groupedByTeacher[teacherId]
         };
         return this.assignmentService.createBatchAssignments(payload).toPromise();

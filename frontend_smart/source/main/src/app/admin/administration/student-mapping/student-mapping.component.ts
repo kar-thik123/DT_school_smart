@@ -124,7 +124,7 @@ export class StudentMappingComponent implements OnInit {
   loadEnrollments() {
     if (!this.activeAcademicYear) return;
     this.isLoading = true;
-    const params: any = { academic_year_id: this.activeAcademicYear.id };
+    const params: any = {};
     if (this.globalGradeId) params.grade_id = this.globalGradeId;
     if (this.globalSectionId) params.section_id = this.globalSectionId;
 
@@ -175,7 +175,7 @@ export class StudentMappingComponent implements OnInit {
 
   loadUnenrolledStudents() {
     if (!this.activeAcademicYear) return;
-    this.enrollmentService.getUnenrolledStudents(this.activeAcademicYear.id, this.bulkSearchQuery).subscribe((data) => {
+    this.enrollmentService.getUnenrolledStudents(this.bulkSearchQuery).subscribe((data) => {
       this.unenrolledStudents = data;
     });
   }
@@ -231,7 +231,6 @@ export class StudentMappingComponent implements OnInit {
     
     this.isBulkSaving = true;
     const payload = {
-      academic_year_id: this.activeAcademicYear.id,
       grade_id: this.globalGradeId,
       section_id: this.globalSectionId,
       subject_group_id: this.globalGroupId,
@@ -344,7 +343,7 @@ export class StudentMappingComponent implements OnInit {
   unassignStudent(enrollment: any) {
     if (!confirm(`Are you sure you want to unassign ${enrollment.student.name}?`)) return;
     
-    this.enrollmentService.unassignStudent(enrollment.student_id, enrollment.academic_year_id).subscribe({
+    this.enrollmentService.unassignStudent(enrollment.student_id).subscribe({
       next: () => {
         this.showNotification('success', 'Student unassigned successfully');
         this.loadEnrollments();

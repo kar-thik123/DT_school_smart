@@ -12,7 +12,7 @@ export class TeacherAssignmentProcessor implements BulkImportProcessor {
   };
   private fileUniqueSet: Set<string> = new Set();
 
-  constructor(private organizationId: string, private userId: string) {}
+  constructor(private organizationId: string, private userId: string, private academicYearId: string) {}
 
   async resolveRelations(rows: any[]): Promise<ResolvedDataMap> {
     const emails = Array.from(new Set(rows.map((r: any) => r.teacher_email?.trim().toLowerCase()).filter(Boolean)));
@@ -156,6 +156,7 @@ export class TeacherAssignmentProcessor implements BulkImportProcessor {
           await tx.teacherAssignment.createMany({
             data: [{
               organization_id: this.organizationId,
+              academic_year_id: this.academicYearId,
               teacher_id: row.resolved_teacher_id,
               assignment_type: row.assignment_type,
               grade_id: row.resolved_grade_id,

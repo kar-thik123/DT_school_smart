@@ -3,6 +3,7 @@ import prisma from '../prisma';
 import { authMiddleware, requirePermission } from '../middlewares/auth.middleware';
 import { EnrollmentStatus } from '@prisma/client';
 import { AssignmentVisibilityResolver } from '../utils/assignment-visibility.resolver';
+import { AcademicContextResolver } from '../utils/academic-context.resolver';
 
 const router = Router();
 router.use(authMiddleware);
@@ -80,9 +81,10 @@ async function validateGroupAssignment(
 router.get('/', requirePermission('ACADEMIC_STRUCTURE', 'READ'), async (req: any, res: Response) => {
   try {
     const { grade_id, section_id } = req.query;
+    const yearId = await AcademicContextResolver.resolveAcademicYearId(req);
     const filter: any = { 
       organization_id: req.user.organization_id,
-      academic_year_id: req.academic_year_id
+      academic_year_id: yearId
     };
     if (grade_id) filter.grade_id = String(grade_id);
     if (section_id) filter.section_id = String(section_id);
@@ -120,7 +122,7 @@ router.get('/', requirePermission('ACADEMIC_STRUCTURE', 'READ'), async (req: any
 router.get('/unenrolled', requirePermission('ACADEMIC_STRUCTURE', 'READ'), async (req: any, res: Response) => {
   try {
     const { search } = req.query;
-    const academic_year_id = req.academic_year_id;
+    const academic_year_id = await AcademicContextResolver.resolveAcademicYearId(req);
 
     const searchFilter = search ? {
       OR: [
@@ -181,11 +183,12 @@ router.get('/unenrolled', requirePermission('ACADEMIC_STRUCTURE', 'READ'), async
 // POST individual enrollment mapping
 router.post('/map', requirePermission('ACADEMIC_STRUCTURE', 'EDIT'), async (req: any, res: Response) => {
   try {
-    const { student_id, academic_year_id, grade_id, section_id, subject_group_id, status } = req.body;
+    const { student_id, grade_id, section_id, subject_group_id, status } = req.body;
     const orgId = req.user.organization_id;
+    const academic_year_id = req.academic_year_id;
 
-    if (!student_id || !academic_year_id || !grade_id) {
-      return res.status(400).json({ message: 'student_id, academic_year_id, grade_id required' });
+    if (!student_id || !grade_id) {
+      return res.status(400).json({ message: 'student_id and grade_id required' });
     }
 
     // Group requirement validation
@@ -234,10 +237,11 @@ router.post('/map', requirePermission('ACADEMIC_STRUCTURE', 'EDIT'), async (req:
 // POST bulk enroll
 router.post('/bulk-enroll', requirePermission('ACADEMIC_STRUCTURE', 'EDIT'), async (req: any, res: Response) => {
   try {
-    const { student_ids, academic_year_id, grade_id, section_id, subject_group_id } = req.body;
+    const { student_ids, grade_id, section_id, subject_group_id } = req.body;
     const orgId = req.user.organization_id;
+    const academic_year_id = req.academic_year_id;
 
-    if (!Array.isArray(student_ids) || student_ids.length === 0 || !academic_year_id || !grade_id) {
+    if (!Array.isArray(student_ids) || student_ids.length === 0 || !grade_id) {
       return res.status(400).json({ message: 'Invalid payload' });
     }
 
@@ -276,7 +280,8 @@ router.post('/bulk-enroll', requirePermission('ACADEMIC_STRUCTURE', 'EDIT'), asy
 // POST promote
 router.post('/promote', requirePermission('ACADEMIC_STRUCTURE', 'EDIT'), async (req: any, res: Response) => {
   try {
-    const { from_academic_year_id, to_academic_year_id, promotions } = req.body;
+    const { from_academic_year_id, promotions } = req.body;
+    const to_academic_year_id = req.academic_year_id;
     const orgId = req.user.organization_id;
 
     // promotions: [{ student_id, from_grade_id, to_grade_id, to_section_id, to_subject_group_id }]
@@ -337,7 +342,8 @@ router.post('/promote', requirePermission('ACADEMIC_STRUCTURE', 'EDIT'), async (
 // DELETE unassign enrollment
 router.delete('/:student_id/:academic_year_id', requirePermission('ACADEMIC_STRUCTURE', 'EDIT'), async (req: any, res: Response) => {
   try {
-    const { student_id, academic_year_id } = req.params;
+    const { student_id } = req.params;
+    const academic_year_id = req.academic_year_id;
     const orgId = req.user.organization_id;
 
     await prisma.$transaction(async (tx: any) => {
@@ -434,7 +440,6 @@ router.post('/:id/transfer', requirePermission('ACADEMIC_STRUCTURE', 'EDIT'), as
     }
 
     await prisma.$transaction(async (tx: any) => {
-      // @ts-ignore - Prisma client needs regeneration by user later
       await tx.studentTransferHistory.create({
         data: {
           organization_id: orgId,

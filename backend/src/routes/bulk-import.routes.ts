@@ -79,7 +79,7 @@ router.post('/:entityType/analyze', upload.single('file'), async (req: any, res:
       return res.status(400).json({ message: 'No CSV file provided.' });
     }
 
-    const processor = getBulkProcessor(entityType, orgId, userId);
+    const processor = getBulkProcessor(entityType, orgId, userId, req.academic_year_id);
     if (!processor) {
       return res.status(400).json({ message: `Bulk import for entity type '${entityType}' is not supported.` });
     }
@@ -133,7 +133,7 @@ router.post('/:entityType/commit', async (req: any, res: Response) => {
       return res.status(400).json({ message: 'No valid rows provided for commit.' });
     }
 
-    const processor = getBulkProcessor(entityType, orgId, userId);
+    const processor = getBulkProcessor(entityType, orgId, userId, req.academic_year_id);
     if (!processor) {
       return res.status(400).json({ message: `Bulk import for entity type '${entityType}' is not supported.` });
     }

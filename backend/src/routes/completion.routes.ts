@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { logAuditEvent } from '../services/audit.service';
 import { emitNotificationEvent, EventTypes, NotificationEventPayload } from '../services/events.service';
 import { AuthorizationService } from '../services/authorization.service';
+import { AcademicContextResolver } from '../utils/academic-context.resolver';
 
 const router = Router();
 router.use(authMiddleware);
@@ -44,7 +45,6 @@ async function getTeacherAssignments(teacher_id: string, org_id: string, academi
 router.get('/hierarchy', requirePermission('COMPLETION_TRACKING', 'VIEW'), async (req: any, res: Response) => {
   try {
     const academic_year_id = req.academic_year_id;
-    if (!academic_year_id) return res.status(400).json({ message: 'academic_year_id context missing' });
 
     const org_id = req.user.organization_id;
     const teacher_id = req.user.user_id;
@@ -86,8 +86,8 @@ router.get('/topics', requirePermission('COMPLETION_TRACKING', 'VIEW'), async (r
   try {
     const { grade_id, section_id, subject_id } = req.query;
     const academic_year_id = req.academic_year_id;
-    if (!academic_year_id || !grade_id || !subject_id) {
-      return res.status(400).json({ message: 'Missing required context (academic_year_id, grade_id, subject_id)' });
+    if (!grade_id || !subject_id) {
+      return res.status(400).json({ message: 'Missing required context (grade_id, subject_id)' });
     }
 
     const org_id = req.user.organization_id;

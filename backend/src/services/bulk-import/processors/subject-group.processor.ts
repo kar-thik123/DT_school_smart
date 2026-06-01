@@ -9,7 +9,7 @@ export class SubjectGroupProcessor implements BulkImportProcessor {
   };
   private fileUniqueSet: Set<string> = new Set();
 
-  constructor(private organizationId: string, private userId: string) {}
+  constructor(private organizationId: string, private userId: string, private academicYearId: string) {}
 
   async resolveRelations(rows: any[]): Promise<ResolvedDataMap> {
     const gradeNames = Array.from(new Set(rows.map((r: any) => r.grade_name?.trim().toLowerCase()).filter(Boolean)));

@@ -15,8 +15,8 @@ export class StudentEnrollmentService {
     return this.http.get<any[]>(this.apiUrl, { params });
   }
 
-  getUnenrolledStudents(academic_year_id: string, search?: string): Observable<any[]> {
-    let params: any = { academic_year_id };
+  getUnenrolledStudents(search?: string): Observable<any[]> {
+    let params: any = {};
     if (search) {
       params.search = search;
     }
@@ -35,8 +35,8 @@ export class StudentEnrollmentService {
     return this.http.post<any>(`${this.apiUrl}/promote`, payload);
   }
 
-  unassignStudent(student_id: string, academic_year_id: string): Observable<any> {
-    return this.http.delete<any>(`${this.apiUrl}/${student_id}/${academic_year_id}`);
+  unassignStudent(student_id: string): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/${student_id}/_frontend_dummy_year_id`);
   }
 
   updateEnrollment(id: string, payload: any): Observable<any> {

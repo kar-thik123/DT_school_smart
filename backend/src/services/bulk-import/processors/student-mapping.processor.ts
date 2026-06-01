@@ -11,7 +11,7 @@ export class StudentMappingProcessor implements BulkImportProcessor {
   };
   private fileUniqueSet: Set<string> = new Set();
   
-  constructor(private organizationId: string, private userId: string) {}
+  constructor(private organizationId: string, private userId: string, private academicYearId: string) {}
 
   async resolveRelations(rows: any[]): Promise<ResolvedDataMap> {
     // Pre-normalize incoming row keys
@@ -187,7 +187,8 @@ export class StudentMappingProcessor implements BulkImportProcessor {
                 create: {
                   organization_id: this.organizationId,
                   student_id: res.row.student_id,
-                  group_id: res.row.target_group_id
+                  group_id: res.row.target_group_id,
+                  academic_year_id: this.academicYearId
                 }
               });
               success++;
@@ -219,7 +220,8 @@ export class StudentMappingProcessor implements BulkImportProcessor {
             create: {
               organization_id: this.organizationId,
               student_id: row.resolved_student_id,
-              group_id: row.resolved_group_id
+              group_id: row.resolved_group_id,
+              academic_year_id: this.academicYearId
             }
           });
           success++;

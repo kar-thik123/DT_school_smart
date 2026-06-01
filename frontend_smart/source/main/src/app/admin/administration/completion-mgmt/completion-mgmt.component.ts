@@ -163,7 +163,7 @@ export class CompletionMgmtComponent implements OnInit {
     
     this.isLoading = true;
     const secParam = (this.selectedSectionId && this.selectedSectionId !== 'ALL') ? `&section_id=${this.selectedSectionId}` : '';
-    const url = `${environment.apiUrl}/completion/topics?academic_year_id=${this.academicYearId}&grade_id=${this.selectedGradeId}&subject_id=${this.selectedSubjectId}${secParam}`;
+    const url = `${environment.apiUrl}/completion/topics?grade_id=${this.selectedGradeId}&subject_id=${this.selectedSubjectId}${secParam}`;
     
     this.http.get<any>(url).subscribe({
       next: (res) => {
@@ -304,7 +304,6 @@ export class CompletionMgmtComponent implements OnInit {
     }
 
     const payload = {
-      academic_year_id: this.academicYearId,
       grade_id: this.selectedGradeId,
       section_id: (this.selectedSectionId && this.selectedSectionId !== 'ALL') ? this.selectedSectionId : null,
       subject_id: this.selectedSubjectId,

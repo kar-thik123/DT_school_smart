@@ -6,7 +6,6 @@
 
 import { BulkImportProcessor, ResolvedDataMap, ValidationResult, CommitResult } from '../bulk-import.types';
 import prisma from '../../../prisma';
-import { getActiveAcademicYearId } from '../../../utils/academic-helper';
 
 // ────────────────────────────────────────────────────────────────────────────
 // GRADES
@@ -17,11 +16,11 @@ export class GradeProcessor implements BulkImportProcessor {
   private fileUniqueSet = new Set<string>();
   private existingNames = new Set<string>();
 
-  constructor(private organizationId: string, private userId: string) {}
+  constructor(private organizationId: string, private userId: string, private academicYearId: string) {
+    this.activeAcademicYearId = academicYearId;
+  }
 
   async resolveRelations(rows: any[]): Promise<ResolvedDataMap> {
-    // Look up the active academic year (required for grade creation)
-    this.activeAcademicYearId = await getActiveAcademicYearId(this.organizationId);
 
     // Pre-load existing grade names for this org+year to detect duplicates
     if (this.activeAcademicYearId) {
@@ -84,7 +83,7 @@ export class SectionProcessor implements BulkImportProcessor {
   private gradesMap: Record<string, any> = {};
   private fileUniqueSet = new Set<string>();
 
-  constructor(private organizationId: string, private userId: string) {}
+  constructor(private organizationId: string, private userId: string, private academicYearId: string) {}
 
   async resolveRelations(rows: any[]): Promise<ResolvedDataMap> {
     const gradeNames = Array.from(new Set(rows.map((r: any) => r.grade_name?.trim()).filter(Boolean)));
@@ -145,7 +144,7 @@ export class SubjectProcessor implements BulkImportProcessor {
   private gradesMap: Record<string, any> = {};
   private fileUniqueSet = new Set<string>();
 
-  constructor(private organizationId: string, private userId: string) {}
+  constructor(private organizationId: string, private userId: string, private academicYearId: string) {}
 
   async resolveRelations(rows: any[]): Promise<ResolvedDataMap> {
     const gradeNames = Array.from(new Set(rows.map((r: any) => r.grade_name?.trim()).filter(Boolean)));
@@ -206,7 +205,7 @@ export class UnitProcessor implements BulkImportProcessor {
   private subjectsMap: Record<string, any> = {};
   private fileUniqueSet = new Set<string>();
 
-  constructor(private organizationId: string, private userId: string) {}
+  constructor(private organizationId: string, private userId: string, private academicYearId: string) {}
 
   async resolveRelations(rows: any[]): Promise<ResolvedDataMap> {
     const subjectNames = Array.from(new Set(rows.map((r: any) => r.subject_name?.trim()).filter(Boolean)));
@@ -271,7 +270,7 @@ export class TopicProcessor implements BulkImportProcessor {
   private unitsMap: Record<string, any> = {};
   private fileUniqueSet = new Set<string>();
 
-  constructor(private organizationId: string, private userId: string) {}
+  constructor(private organizationId: string, private userId: string, private academicYearId: string) {}
 
   async resolveRelations(rows: any[]): Promise<ResolvedDataMap> {
     const unitNames = Array.from(new Set(rows.map((r: any) => r.unit_name?.trim()).filter(Boolean)));
