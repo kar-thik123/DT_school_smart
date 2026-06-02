@@ -1,1 +1,15 @@
 /* You can add global styles to this file, and also import other style files */
+
+/* Fix SweetAlert z-index behind Material Dialog */
+.swal2-container {
+  z-index: 100000 !important;
+}
+
+/* Image preview dialog styles */
+.image-preview-dialog .mat-mdc-dialog-container .mdc-dialog__surface {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.image-preview-backdrop {
+  background: rgba(0, 0, 0, 0.8) !important;
+}

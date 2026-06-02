@@ -1,0 +1,127 @@
+<section class="content">
+  <!-- Force angular hot reload trigger -->
+  <div class="content-block">
+    <div class="block-header">
+      <app-breadcrumb [title]="breadscrum.title" [items]="breadscrum.items"
+        [active_item]="breadscrum.active"></app-breadcrumb>
+    </div>
+
+    <div class="row">
+      <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+        <mat-card>
+          <mat-card-header
+            class="d-flex flex-column flex-xl-row align-items-start align-items-xl-center justify-content-between w-100 mb-3">
+            <mat-card-title class="mb-3 mb-xl-0">Student Skills</mat-card-title>
+            <div class="header-actions d-flex flex-wrap gap-2 w-100 justify-content-start justify-content-xl-end">
+              <mat-form-field appearance="outline" class="mt-3 filter-field" *ngIf="isSuperAdmin">
+                <mat-label>Academic Year</mat-label>
+                <mat-select [(ngModel)]="academicYearFilter" (selectionChange)="onFilterChange()">
+                  <mat-option value="">All</mat-option>
+                  <mat-option *ngFor="let ay of academicYears" [value]="ay.id">{{ay.name}}</mat-option>
+                </mat-select>
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="mt-3 filter-field" *ngIf="isSuperAdmin">
+                <mat-label>Grade</mat-label>
+                <mat-select [(ngModel)]="gradeFilter" (selectionChange)="onGradeChange()">
+                  <mat-option value="">All</mat-option>
+                  <mat-option *ngFor="let g of grades" [value]="g.id">{{g.name}}</mat-option>
+                </mat-select>
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="mt-3 filter-field" *ngIf="isSuperAdmin">
+                <mat-label>Section</mat-label>
+                <mat-select [(ngModel)]="sectionFilter" (selectionChange)="onFilterChange()" [disabled]="!gradeFilter">
+                  <mat-option value="">All</mat-option>
+                  <mat-option *ngFor="let s of filteredSections" [value]="s.id">{{s.name}}</mat-option>
+                </mat-select>
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="mt-3 filter-field" *ngIf="isSuperAdmin">
+                <mat-label>Skill Type</mat-label>
+                <mat-select [(ngModel)]="skillTypeFilter" (selectionChange)="onFilterChange()">
+                  <mat-option value="all">All</mat-option>
+                  <mat-option *ngFor="let type of skillTypes" [value]="type">{{type}}</mat-option>
+                </mat-select>
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="mt-3 filter-field">
+                <mat-label>Filter by Status</mat-label>
+                <mat-select [(ngModel)]="statusFilter" (selectionChange)="onFilterChange()">
+                  <mat-option value="all">All</mat-option>
+                  <mat-option value="pending">Pending</mat-option>
+                  <mat-option value="approved">Approved</mat-option>
+                  <mat-option value="rejected">Rejected</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+          </mat-card-header>
+
+          <mat-card-content>
+            <div class="table-responsive">
+              <table mat-table [dataSource]="students" class="mat-elevation-z0 w-100">
+                <!-- Name Column -->
+                <ng-container matColumnDef="name">
+                  <th mat-header-cell *matHeaderCellDef> Student Name </th>
+                  <td mat-cell *matCellDef="let studentData">
+                    <strong>{{ studentData.user?.name }}</strong>
+                  </td>
+                </ng-container>
+
+                <!-- Email/Roll No Column -->
+                <ng-container matColumnDef="email">
+                  <th mat-header-cell *matHeaderCellDef> Email / Roll No </th>
+                  <td mat-cell *matCellDef="let studentData">
+                    <small class="text-muted">{{studentData.user?.email || '-'}}/{{studentData.user?.roll_no ||
+                      '-'}}</small>
+                  </td>
+                </ng-container>
+
+                <!-- Grade Column -->
+                <ng-container matColumnDef="grade">
+                  <th mat-header-cell *matHeaderCellDef> Grade </th>
+                  <td mat-cell *matCellDef="let studentData">
+                    {{ studentData.user?.grade?.name || '-' }}
+                  </td>
+                </ng-container>
+
+                <!-- Section Column -->
+                <ng-container matColumnDef="section">
+                  <th mat-header-cell *matHeaderCellDef> Section </th>
+                  <td mat-cell *matCellDef="let studentData">
+                    {{ studentData.user?.section?.name || '-' }}
+                  </td>
+                </ng-container>
+
+                <!-- Total Skills Column -->
+                <ng-container matColumnDef="totalSkills">
+                  <th mat-header-cell *matHeaderCellDef> Total Skills </th>
+                  <td mat-cell *matCellDef="let studentData">
+                    <span class="badge bg-primary">{{ studentData.skills?.length || 0 }}</span>
+                  </td>
+                </ng-container>
+
+                <!-- Actions Column -->
+                <ng-container matColumnDef="actions">
+                  <th mat-header-cell *matHeaderCellDef> Actions </th>
+                  <td mat-cell *matCellDef="let studentData">
+                    <button mat-stroked-button color="primary" (click)="viewStudentSkills(studentData)">
+                      View
+                    </button>
+                  </td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+              </table>
+
+              <div *ngIf="isLoading" class="text-center p-4">
+                Loading students...
+              </div>
+
+              <div *ngIf="!isLoading && students.length === 0" class="text-center p-4 text-muted">
+                No students found.
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+  </div>
+</section>

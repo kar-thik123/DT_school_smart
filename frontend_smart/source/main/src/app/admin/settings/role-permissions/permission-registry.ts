@@ -49,7 +49,11 @@ export const CENTRAL_PERMISSION_REGISTRY: IRegistryPermission[] = [
     permissions: ['VIEW', 'ATTEMPT']
   },
   {
+    module: 'SKILLS_VERIFY_ASSIGNMENT',
+    permissions: ['VIEW', 'ASSIGN', 'DELETE']
+  },
+  {
     module: 'IDENTITY',
     permissions: ['IS_TEACHER', 'IS_STUDENT', 'IS_PARENT', 'IS_MANAGEMENT']
-  }
+  },
 ];

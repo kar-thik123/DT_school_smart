@@ -186,11 +186,39 @@ export const PLATFORM_MODULES: RouteInfo[] = [
         submenu: [],
         showInSidebar: true,
         domain: 'TENANT'
+      },
+      {
+        path: '/admin/administration/skills-verify-assignment',
+        title: 'MENUITEMS.ADMINISTRATION.LIST.SKILLS-VERIFY-ASSIGNMENT',
+        iconType: '',
+        icon: '',
+        class: 'ml-menu',
+        groupTitle: false,
+        badge: '',
+        badgeClass: '',
+        role: ['SKILLS_VERIFY_ASSIGNMENT:VIEW', 'SKILLS_VERIFY_ASSIGNMENT_VIEW', 'SUPER_ADMIN'],
+        submenu: [],
+        showInSidebar: true,
+        domain: 'TENANT'
       }
     ]
   },
 
-  // 4. STANDALONE MODULES - QUESTION BANK & COMPLETION TRACKING
+  // 4. STANDALONE MODULES - QUESTION BANK & COMPLETION TRACKING & VERIFICATION
+  {
+    path: '/admin/administration/skills-verify',
+    title: 'MENUITEMS.ADMINISTRATION.LIST.SKILLS-VERIFY',
+    iconType: 'material-icons-outlined',
+    icon: 'verified',
+    class: '',
+    groupTitle: false,
+    badge: '',
+    badgeClass: '',
+    role: ['SUPER_ADMIN', 'IDENTITY:IS_SKILL_VERIFIER'],
+    submenu: [],
+    showInSidebar: true,
+    domain: 'TENANT'
+  },
   // Admin versions:
   {
     path: '/admin/administration/question-bank',

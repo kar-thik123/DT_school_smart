@@ -160,7 +160,9 @@
         "TEACHER-ASSIGNMENT": "Teacher Assignment",
         "STUDENT-ENROLLMENT": "Student Enrollment",
         "COMPLETION-TRACKING": "Completion Tracking",
-        "SETTINGS": "Settings"
+        "SETTINGS": "Settings",
+        "SKILLS-VERIFY": "Skills Verification",
+        "SKILLS-VERIFY-ASSIGNMENT": "Skills Verify Assignment"
       }
     },
     "FEES": {

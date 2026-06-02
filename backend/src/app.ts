@@ -18,6 +18,7 @@ import settingsRoutes from './routes/settings.routes';
 import completionRoutes from './routes/completion.routes';
 import studentMcqRoutes from './routes/student-mcq.routes';
 import skillRoutes from './routes/skill.routes';
+import skillAssignmentRoutes from './routes/skill-assignment.routes';
 
 const app = express();
 console.log('Starting application, mounting routes...');
@@ -51,6 +52,7 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/completion', completionRoutes);
 app.use('/api/student-mcq', studentMcqRoutes);
 app.use('/api/skills', skillRoutes);
+app.use('/api/skill-assignment', skillAssignmentRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });

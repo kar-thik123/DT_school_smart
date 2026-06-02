@@ -68,6 +68,13 @@ router.post('/login', loginLimiter, async (req: any, res: Response) => {
       permissions.push('IDENTITY:IS_MANAGEMENT');
     }
 
+    const verificationAssignments = await prisma.skillVerificationAssignment.findMany({
+      where: { verifier_id: user.id }
+    });
+    if (verificationAssignments.length > 0) {
+      permissions.push('IDENTITY:IS_SKILL_VERIFIER');
+    }
+
     const token = jwt.sign(
       {
         user_id: user.id,
@@ -133,6 +140,13 @@ router.get('/me', authMiddleware, async (req: any, res: Response) => {
     }
     if (roleName === 'MANAGEMENT') {
       permissions.push('IDENTITY:IS_MANAGEMENT');
+    }
+
+    const verificationAssignments = await prisma.skillVerificationAssignment.findMany({
+      where: { verifier_id: user.id }
+    });
+    if (verificationAssignments.length > 0) {
+      permissions.push('IDENTITY:IS_SKILL_VERIFIER');
     }
 
     res.json({

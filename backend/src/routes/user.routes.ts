@@ -14,7 +14,8 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 const router = Router();
 router.use(authMiddleware);
-router.use(requirePermission('IDENTITY', 'IS_MANAGEMENT'));
+
+const requireManagement = requirePermission('IDENTITY', 'IS_MANAGEMENT');
 
 const userSchema = z.object({
   name: z.string().min(1),
@@ -62,7 +63,7 @@ router.get('/teachers', async (req: any, res: Response) => {
 });
 
 // GET all users in org
-router.get('/', async (req: any, res: Response) => {
+router.get('/', requireManagement, async (req: any, res: Response) => {
   try {
     const filter: any = { organization_id: req.user.organization_id };
     if (req.query.grade_id) {
@@ -112,7 +113,7 @@ router.get('/', async (req: any, res: Response) => {
 });
 
 // POST create single user
-router.post('/', async (req: any, res: Response) => {
+router.post('/', requireManagement, async (req: any, res: Response) => {
   try {
     const parsed = userSchema.parse(req.body);
     console.log('[POST /api/users] body:', JSON.stringify(req.body));
@@ -197,7 +198,7 @@ router.post('/', async (req: any, res: Response) => {
 });
 
 // POST bulk import users via JSON array
-router.post('/bulk', async (req: any, res: Response) => {
+router.post('/bulk', requireManagement, async (req: any, res: Response) => {
   try {
     const users: Array<{ name: string; email: string; password?: string; role_id?: string; role?: string; grade_id?: string; section_id?: string; admission_number?: string; mobile_number?: string }> = req.body.users;
     if (!users || !Array.isArray(users) || users.length === 0) {
@@ -282,7 +283,7 @@ router.post('/bulk', async (req: any, res: Response) => {
 });
 
 // PUT update user by id
-router.put('/:id', async (req: any, res: Response) => {
+router.put('/:id', requireManagement, async (req: any, res: Response) => {
   try {
     const user = await prisma.user.findFirst({
       where: { id: req.params.id, organization_id: req.user.organization_id },
@@ -330,7 +331,7 @@ router.put('/:id', async (req: any, res: Response) => {
 });
 
 // PATCH status
-router.patch('/:id/status', async (req: any, res: Response) => {
+router.patch('/:id/status', requireManagement, async (req: any, res: Response) => {
   try {
     const { is_active } = req.body;
     if (typeof is_active !== 'boolean') {
@@ -359,7 +360,7 @@ router.patch('/:id/status', async (req: any, res: Response) => {
 });
 
 // DELETE user
-router.delete('/:id', async (req: any, res: Response) => {
+router.delete('/:id', requireManagement, async (req: any, res: Response) => {
   try {
     const user = await prisma.user.findFirst({
       where: { id: req.params.id, organization_id: req.user.organization_id },
@@ -384,7 +385,7 @@ router.delete('/:id', async (req: any, res: Response) => {
 });
 
 // POST admin-triggered reset password link
-router.post('/:id/reset-password', async (req: any, res: Response) => {
+router.post('/:id/reset-password', requireManagement, async (req: any, res: Response) => {
   try {
     const targetUser = await prisma.user.findFirst({
       where: { id: req.params.id, organization_id: req.user.organization_id },
@@ -466,7 +467,16 @@ router.get('/profile/:id', async (req: any, res: Response) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.params.id },
-      include: { role: true, user_profile: true }
+      include: {
+        role: true,
+        user_profile: true,
+        student_profile: true,
+        enrollments: {
+          where: { status: 'ACTIVE' },
+          take: 1,
+          orderBy: { enrollment_date: 'desc' }
+        }
+      }
     });
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -486,7 +496,11 @@ router.get('/profile/:id', async (req: any, res: Response) => {
       skills: []
     };
 
-    res.json({ ...user, ...profileData });
+    const roll_number = user.enrollments?.[0]?.roll_number || null;
+    const date_of_birth = user.student_profile?.date_of_birth || null;
+    const academic_birth = user.student_profile?.academic_birth || null;
+
+    res.json({ ...user, ...profileData, roll_number, date_of_birth, academic_birth });
   } catch (error: any) {
     console.error('Error fetching profile:', error);
     res.status(500).json({ message: 'Server error' });
@@ -495,7 +509,7 @@ router.get('/profile/:id', async (req: any, res: Response) => {
 
 router.put('/profile/:id', upload.single('profile_image'), async (req: any, res: Response) => {
   try {
-    let { name, email, phone, city, country, address, about, academic_profiles, skills } = req.body;
+    let { name, email, phone, city, country, address, about, academic_profiles, skills, roll_number, date_of_birth, academic_birth } = req.body;
 
     // Handle multipart/form-data where JSON arrays are sent as strings
     if (typeof academic_profiles === 'string') {
@@ -554,6 +568,34 @@ router.put('/profile/:id', upload.single('profile_image'), async (req: any, res:
       }
     });
 
+    if (roll_number !== undefined) {
+      const activeEnrollment = await prisma.studentEnrollment.findFirst({
+        where: { student_id: req.params.id, status: 'ACTIVE' },
+        orderBy: { enrollment_date: 'desc' }
+      });
+      if (activeEnrollment) {
+        await prisma.studentEnrollment.update({
+          where: { id: activeEnrollment.id },
+          data: { roll_number }
+        });
+      }
+    }
+
+    if (date_of_birth !== undefined || academic_birth !== undefined) {
+      await prisma.studentProfile.upsert({
+        where: { user_id: req.params.id },
+        update: {
+          ...(date_of_birth !== undefined && { date_of_birth: date_of_birth ? new Date(date_of_birth) : null }),
+          ...(academic_birth !== undefined && { academic_birth: academic_birth ? new Date(academic_birth) : null })
+        },
+        create: {
+          user_id: req.params.id,
+          organization_id: user.organization_id,
+          ...(date_of_birth !== undefined && { date_of_birth: date_of_birth ? new Date(date_of_birth) : null }),
+          ...(academic_birth !== undefined && { academic_birth: academic_birth ? new Date(academic_birth) : null })
+        }
+      });
+    }
 
     res.json({ message: 'Profile updated successfully', user_profile: { profile_image } });
   } catch (error: any) {

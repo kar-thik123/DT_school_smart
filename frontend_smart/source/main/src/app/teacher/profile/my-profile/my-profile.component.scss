@@ -266,6 +266,9 @@
     font-size: 14px;
     color: #555;
     margin-bottom: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .skill-val {

@@ -179,7 +179,7 @@
                   </div>
                 </div>
               </div>
-              <div class="col-lg-12 col-md-12 col-sm-12 bg-[#f0f3fb]"
+              <div class="col-lg-12 col-md-12 col-sm-12"
                 *ngFor="let profile of userDetails?.academic_profiles">
                 <div class="project_widget">
                   <div class="header">
@@ -255,6 +255,34 @@
                       <mat-form-field class="example-full-width" appearance="fill">
                         <mat-label>Email</mat-label>
                         <input matInput [(ngModel)]="userDetails.email">
+                      </mat-form-field>
+                    </div>
+                  </div>
+                  <div class="col-lg-4 col-md-12">
+                    <div class="form-group">
+                      <mat-form-field class="example-full-width" appearance="fill">
+                        <mat-label>Roll Number</mat-label>
+                        <input matInput [(ngModel)]="userDetails.roll_number">
+                      </mat-form-field>
+                    </div>
+                  </div>
+                  <div class="col-lg-4 col-md-12">
+                    <div class="form-group">
+                      <mat-form-field class="example-full-width" appearance="fill">
+                        <mat-label>Date of Birth</mat-label>
+                        <input matInput [matDatepicker]="dobPicker" [(ngModel)]="userDetails.date_of_birth">
+                        <mat-datepicker-toggle matSuffix [for]="dobPicker"></mat-datepicker-toggle>
+                        <mat-datepicker #dobPicker></mat-datepicker>
+                      </mat-form-field>
+                    </div>
+                  </div>
+                  <div class="col-lg-4 col-md-12">
+                    <div class="form-group">
+                      <mat-form-field class="example-full-width" appearance="fill">
+                        <mat-label>Academic Birth</mat-label>
+                        <input matInput [matDatepicker]="abPicker" [(ngModel)]="userDetails.academic_birth">
+                        <mat-datepicker-toggle matSuffix [for]="abPicker"></mat-datepicker-toggle>
+                        <mat-datepicker #abPicker></mat-datepicker>
                       </mat-form-field>
                     </div>
                   </div>
@@ -368,12 +396,10 @@
                             panelClass="polished-select-panel">
                             <mat-select-trigger>
                               <span class="selected-skill-text">
-                                <mat-icon class="skill-icon-small">star</mat-icon>
                                 {{ selectedSkill }}
                               </span>
                             </mat-select-trigger>
                             <mat-option *ngFor="let s of availableSkills" [value]="s">
-                              <mat-icon class="skill-icon-small text-muted">star_border</mat-icon>
                               {{s}}
                             </mat-option>
                           </mat-select>
@@ -381,7 +407,7 @@
 
                         <mat-form-field class="skills-input" appearance="outline">
                           <mat-label>Enter Skill</mat-label>
-                          <input matInput [(ngModel)]="customSkill" placeholder="E.g., Problem Solving">
+                          <input matInput [(ngModel)]="customSkill" placeholder="E.g., Problem Solving" maxlength="150">
                         </mat-form-field>
 
                         <button mat-icon-button color="primary" class="upload-skill-img-btn"
@@ -391,8 +417,8 @@
                         <input #skillImageInput type="file" style="display: none;"
                           (change)="onSkillImageSelected($event)" accept="image/*" multiple>
 
-                        <button mat-raised-button color="primary" class="add-skill-btn ms-2" (click)="addSelectedSkill()"
-                          [disabled]="!selectedSkill || !customSkill.trim()">
+                        <button mat-raised-button color="primary" class="add-skill-btn ms-2"
+                          (click)="addSelectedSkill()" [disabled]="!selectedSkill || !customSkill.trim()">
                           {{ editingSkillId ? 'Update' : 'Add' }}
                         </button>
                         <button *ngIf="editingSkillId" mat-stroked-button color="warn" class="ms-2"
@@ -411,52 +437,58 @@
                       </div>
                     </div>
                     <div class="skills-list-container mt-4">
-                      <div class="skill-premium-list-item" *ngFor="let skill of skills">
-                        <div class="skill-info-section">
-                          <h5 class="skill-title text-truncate">{{ skill.skill_name }}</h5>
-                          <span class="skill-category-badge">{{ skill.skill_type }}</span>
-                        </div>
+                      <div class="skill-card-wrapper mb-3" *ngFor="let skill of skills">
+                        <div class="skill-premium-list-item">
+                          <div class="skill-info-section">
+                            <h5 class="skill-title text-truncate">{{ skill.skill_name }}</h5>
+                            <span class="skill-category-badge">{{ skill.skill_type }}</span>
+                          </div>
 
-                        <div class="skill-images-section">
-                          <div class="skill-images-flex" *ngIf="skill.images && skill.images.length > 0">
-                            <div class="img-wrapper" *ngFor="let img of skill.images">
-                              <img [src]="getSkillImageUrl(img)" alt="Proof">
+                          <div class="skill-images-section">
+                            <div class="skill-images-flex" *ngIf="skill.images && skill.images.length > 0">
+                              <div class="img-wrapper" *ngFor="let img of skill.images">
+                                <img [src]="getSkillImageUrl(img)" alt="Proof">
+                              </div>
+                            </div>
+                            <div class="no-images-placeholder" *ngIf="!skill.images || skill.images.length === 0">
+                              <span class="text-muted small">No proofs</span>
                             </div>
                           </div>
-                          <div class="no-images-placeholder" *ngIf="!skill.images || skill.images.length === 0">
-                            <span class="text-muted small">No proofs</span>
-                          </div>
-                        </div>
 
-                        <div class="skill-status-section">
-                          <span class="status-indicator" [ngClass]="{
+                          <div class="skill-status-section">
+                            <span class="status-indicator" [ngClass]="{
                             'status-pending': skill.status === 'pending',
                             'status-approved': skill.status === 'approved',
                             'status-rejected': skill.status === 'rejected'
                           }">
-                            <i class="fas" [ngClass]="{
+                              <i class="fas" [ngClass]="{
                               'fa-hourglass-half': skill.status === 'pending',
                               'fa-check-circle': skill.status === 'approved',
                               'fa-times-circle': skill.status === 'rejected'
                             }"></i>
-                            {{ skill.status | uppercase }}
-                          </span>
-                        </div>
+                              <!-- {{ skill.status | uppercase }} -->
+                            </span>
+                          </div>
 
-                        <div class="skill-action-section">
-                          <button mat-icon-button class="text-muted" [matMenuTriggerFor]="skillMenu">
-                            <mat-icon>more_vert</mat-icon>
-                          </button>
-                          <mat-menu #skillMenu="matMenu">
-                            <button mat-menu-item (click)="editSkill(skill)">
-                              <mat-icon>edit</mat-icon>
-                              <span>Edit</span>
+                          <div class="skill-action-section">
+                            <button mat-icon-button class="text-muted" [matMenuTriggerFor]="skillMenu">
+                              <mat-icon>more_vert</mat-icon>
                             </button>
-                            <button mat-menu-item (click)="removeSkill(skill)">
-                              <mat-icon color="warn">delete</mat-icon>
-                              <span class="text-danger">Delete</span>
-                            </button>
-                          </mat-menu>
+                            <mat-menu #skillMenu="matMenu">
+                              <button mat-menu-item (click)="editSkill(skill)">
+                                <mat-icon>edit</mat-icon>
+                                <span>Edit</span>
+                              </button>
+                              <button mat-menu-item (click)="removeSkill(skill)">
+                                <mat-icon color="warn">delete</mat-icon>
+                                <span class="text-danger">Delete</span>
+                              </button>
+                            </mat-menu>
+                          </div>
+                        </div>
+                        <div class="skill-card-footer">
+                          <span class="footer-date">Created: {{ skill.created_at | date:'mediumDate' }}</span>
+                          <span class="footer-date">Modified: {{ skill.updated_at | date:'mediumDate' }}</span>
                         </div>
                       </div>
                     </div>

@@ -322,6 +322,16 @@ export class SidebarComponent
         this.authService.hasPermission('COMPLETION', 'VIEW') ||
         this.authService.hasPermission('COMPLETION_VIEW');
     }
+    if (path.includes('/skills-verify-assignment')) {
+      return this.authService.hasPermission('SKILLS_VERIFY_ASSIGNMENT', 'VIEW') ||
+        this.authService.hasPermission('SKILLS_VERIFY_ASSIGNMENT_VIEW') ||
+        userRoleUpper === 'SUPER_ADMIN';
+    }
+    if (path.includes('/skills-verify')) {
+      return this.authService.hasPermission('IDENTITY', 'IS_SKILL_VERIFIER') ||
+        this.authService.hasPermission('IDENTITY_IS_SKILL_VERIFIER') ||
+        userRoleUpper === 'SUPER_ADMIN';
+    }
     if (path.includes('/teacher-assignment')) {
       return this.authService.hasPermission('TEACHER_ASSIGNMENT', 'VIEW') ||
         this.authService.hasPermission('TEACHER_ASSIGNMENT_VIEW');

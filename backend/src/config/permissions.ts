@@ -21,7 +21,8 @@ export const PERMISSION_REGISTRY = {
   QUESTION_BANK: ['VIEW', 'CREATE', 'EDIT', 'DELETE', 'IMPORT'],
   COMPLETION_TRACKING: ['VIEW', 'MANAGE'],
   MCQ: ['VIEW', 'ATTEMPT'],
-  IDENTITY: ['IS_TEACHER', 'IS_STUDENT', 'IS_PARENT', 'IS_MANAGEMENT', 'IS_SYSTEM_ADMIN', 'IS_SUPER_ADMIN']
+  SKILLS_VERIFY_ASSIGNMENT: ['VIEW', 'ASSIGN', 'DELETE'],
+  IDENTITY: ['IS_TEACHER', 'IS_STUDENT', 'IS_PARENT', 'IS_MANAGEMENT', 'IS_SYSTEM_ADMIN', 'IS_SUPER_ADMIN'],
 };
 
 export const PERMISSION_DOMAINS: Record<string, 'PLATFORM' | 'TENANT'> = {
@@ -37,7 +38,8 @@ export const PERMISSION_DOMAINS: Record<string, 'PLATFORM' | 'TENANT'> = {
   QUESTION_BANK: 'TENANT',
   COMPLETION_TRACKING: 'TENANT',
   MCQ: 'TENANT',
-  IDENTITY: 'TENANT'
+  IDENTITY: 'TENANT',
+  SKILLS_VERIFY_ASSIGNMENT: 'TENANT'
 };
 
 export type PermissionModule = keyof typeof PERMISSION_REGISTRY;
@@ -47,7 +49,7 @@ export type PermissionModule = keyof typeof PERMISSION_REGISTRY;
  */
 export const getFlatPermissions = () => {
   const flat: { module: string; action: string; description: string }[] = [];
-  
+
   for (const [module, actions] of Object.entries(PERMISSION_REGISTRY)) {
     actions.forEach(action => {
       flat.push({
@@ -57,6 +59,6 @@ export const getFlatPermissions = () => {
       });
     });
   }
-  
+
   return flat;
 };
