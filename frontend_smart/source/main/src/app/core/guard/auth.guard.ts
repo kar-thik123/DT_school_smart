@@ -38,6 +38,11 @@ export class AuthGuard {
             this.router.navigate(['/authentication/signin']);
             return false;
           }
+        } else if (permission === 'IDENTITY:IS_SKILL_VERIFIER') {
+          if (!this.authService.hasPermission('IDENTITY:IS_SKILL_VERIFIER') && !this.authService.hasAdminNamespaceAccess()) {
+            this.router.navigate(['/authentication/signin']);
+            return false;
+          }
         } else if (!this.authService.hasPermission(permission)) {
           this.router.navigate(['/authentication/signin']);
           return false;

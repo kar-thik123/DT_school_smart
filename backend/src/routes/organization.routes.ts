@@ -279,7 +279,7 @@ const orgSchema = z.object({
   address: z.string().nullish(),
   logo_url: z.string().url().nullish().or(z.literal('')),
   // Domain
-  domain_type: z.enum(['Platform Domain', 'Subdomain', 'Custom Domain']).default('Subdomain'),
+  domain_type: z.enum(['Platform Domain', 'Subdomain', 'Custom Domain']).default('Platform Domain'),
   subdomain: z.string().nullish().or(z.literal('')),
   custom_domain: z.string().nullish(),
   // Settings
@@ -446,7 +446,7 @@ router.post('/', async (req: any, res: Response) => {
       }
       
       // STEP 3: Create Initial Academic Year
-      await tx.academicYear.create({
+      const initialAcademicYear = await tx.academicYear.create({
         data: {
           name: parsed.initial_academic_year,
           start_date: null,
@@ -457,6 +457,15 @@ router.post('/', async (req: any, res: Response) => {
       });
       console.log(`[TX STEP 3] Initial Academic Year created and activated for org: ${org.id}`);
 
+      // STEP 3.5: Set the initial academic year as the globally active year in ModuleConfig
+      await tx.moduleConfig.create({
+        data: {
+          organization_id: org.id,
+          module_name: 'master-config',
+          config_data: { active_academic_year_id: initialAcademicYear.id }
+        }
+      });
+      console.log(`[TX STEP 3.5] Active Academic Year ID injected into master-config for org: ${org.id}`);
 
       console.log(`[TX COMMITTED] Provisioning complete for org: ${org.id}`);
       return { org, adminUser };

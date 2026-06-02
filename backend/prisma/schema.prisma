@@ -61,6 +61,7 @@ model Organization {
   audit_logs                  AuditLog[]
   notification_preferences    NotificationPreference[]
   SkillVerificationAssignment SkillVerificationAssignment[]
+  Skill                       Skill[]
 
   @@index([subdomain])
   @@map("organizations")
@@ -275,6 +276,7 @@ model AcademicYear {
   assessment_attempts      StudentAssessmentAttempt[]
   student_group_mappings   StudentGroupMapping[]
   topic_activations        TopicActivation[]
+  Skill                    Skill[]
 
   @@unique([name, organization_id])
   @@index([organization_id])
@@ -1020,20 +1022,27 @@ model AuditLog {
 }
 
 model Skill {
-  id          String   @id @default(uuid()) @db.Uuid
-  user_id     String   @db.Uuid
-  skill_type  String
-  skill_name  String
-  images      String[]
-  status      String   @default("pending")
-  verified_by String?  @db.Uuid
-  created_at  DateTime @default(now())
-  updated_at  DateTime @default(now()) @updatedAt
+  id               String   @id @default(uuid()) @db.Uuid
+  user_id          String   @db.Uuid
+  organization_id  String?  @db.Uuid
+  academic_year_id String?  @db.Uuid
+  skill_type       String
+  skill_name       String
+  images           String[]
+  status           String   @default("pending")
+  created_at       DateTime @default(now())
+  updated_at       DateTime @default(now()) @updatedAt
+  verified_by      String?  @db.Uuid
+  remarks          String?
 
-  user     User  @relation("SkillOwner", fields: [user_id], references: [id], onDelete: Cascade)
-  verifier User? @relation("SkillVerifier", fields: [verified_by], references: [id], onDelete: SetNull)
+  user          User          @relation("SkillOwner", fields: [user_id], references: [id], onDelete: Cascade)
+  verifier      User?         @relation("SkillVerifier", fields: [verified_by], references: [id], onDelete: SetNull)
+  organization  Organization? @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  academic_year AcademicYear? @relation(fields: [academic_year_id], references: [id], onDelete: Cascade)
 
   @@index([user_id])
+  @@index([organization_id])
+  @@index([academic_year_id])
   @@map("skills")
 }
 

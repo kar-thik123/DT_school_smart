@@ -71,7 +71,10 @@ router.post('/login', loginLimiter, async (req: any, res: Response) => {
     if (!mappedOrgId) {
       // Platform Domain
       if (user.role?.name !== 'SYSTEM_ADMIN') {
-        return res.status(403).json({ message: 'Please log in through your organization\'s assigned domain.' });
+        const domainType = user.organization?.domain_type?.toLowerCase() || '';
+        if (domainType !== 'platform domain' && domainType !== 'platform_domain' && domainType !== 'on_premise') {
+          return res.status(403).json({ message: 'Please log in through your organization\'s assigned domain.' });
+        }
       }
     } else {
       // Subdomain or Custom Domain

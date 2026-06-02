@@ -256,7 +256,7 @@ const orgSchema = zod_1.z.object({
     address: zod_1.z.string().nullish(),
     logo_url: zod_1.z.string().url().nullish().or(zod_1.z.literal('')),
     // Domain
-    domain_type: zod_1.z.enum(['Platform Domain', 'Subdomain', 'Custom Domain']).default('Subdomain'),
+    domain_type: zod_1.z.enum(['Platform Domain', 'Subdomain', 'Custom Domain']).default('Platform Domain'),
     subdomain: zod_1.z.string().nullish().or(zod_1.z.literal('')),
     custom_domain: zod_1.z.string().nullish(),
     // Settings
@@ -407,7 +407,7 @@ router.post('/', async (req, res) => {
                 console.log(`[TX STEP 2.4] Super admin user created: id=${adminUser.id}, email=${adminUser.email}, role=${superAdminRole.id}`);
             }
             // STEP 3: Create Initial Academic Year
-            await tx.academicYear.create({
+            const initialAcademicYear = await tx.academicYear.create({
                 data: {
                     name: parsed.initial_academic_year,
                     start_date: null,
@@ -417,6 +417,15 @@ router.post('/', async (req, res) => {
                 }
             });
             console.log(`[TX STEP 3] Initial Academic Year created and activated for org: ${org.id}`);
+            // STEP 3.5: Set the initial academic year as the globally active year in ModuleConfig
+            await tx.moduleConfig.create({
+                data: {
+                    organization_id: org.id,
+                    module_name: 'master-config',
+                    config_data: { active_academic_year_id: initialAcademicYear.id }
+                }
+            });
+            console.log(`[TX STEP 3.5] Active Academic Year ID injected into master-config for org: ${org.id}`);
             console.log(`[TX COMMITTED] Provisioning complete for org: ${org.id}`);
             return { org, adminUser };
         }, { timeout: 30000 });

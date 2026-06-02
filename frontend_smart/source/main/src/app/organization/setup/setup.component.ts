@@ -97,7 +97,7 @@ export class SetupComponent implements OnInit {
         logo_url: ['']
       }),
       domain: this.fb.group({
-        deployment_model: ['SaaS', Validators.required],
+        deployment_model: ['Platform Domain', Validators.required],
         subdomain: ['', [Validators.pattern('^[a-z0-9-]+$')]],
         custom_domain: [''],
         on_premise_endpoint: ['']
@@ -205,6 +205,7 @@ export class SetupComponent implements OnInit {
     const payload: ProvisioningPayload = {
       ...rawValue.organization,
       ...rawValue.domain,
+      domain_type: rawValue.domain.deployment_model,
       ...rawValue.admin,
       ...rawValue.license
     };

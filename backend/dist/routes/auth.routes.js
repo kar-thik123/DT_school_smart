@@ -64,7 +64,10 @@ router.post('/login', loginLimiter, async (req, res) => {
         if (!mappedOrgId) {
             // Platform Domain
             if (user.role?.name !== 'SYSTEM_ADMIN') {
-                return res.status(403).json({ message: 'Please log in through your organization\'s assigned domain.' });
+                const domainType = user.organization?.domain_type?.toLowerCase() || '';
+                if (domainType !== 'platform domain' && domainType !== 'platform_domain' && domainType !== 'on_premise') {
+                    return res.status(403).json({ message: 'Please log in through your organization\'s assigned domain.' });
+                }
             }
         }
         else {
@@ -121,7 +124,7 @@ router.post('/login', loginLimiter, async (req, res) => {
                 errors: error.issues
             });
         }
-        res.status(500).json({ message: 'Server error', error: error?.message, stack: error?.stack });
+        res.status(500).json({ message: 'Server error' });
     }
 });
 router.get('/me', auth_middleware_1.authMiddleware, async (req, res) => {
