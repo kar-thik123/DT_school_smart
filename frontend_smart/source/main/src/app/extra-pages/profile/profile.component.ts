@@ -8,6 +8,8 @@ import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatSelectModule } from '@angular/material/select';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
 import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.component';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '@core/service/auth.service';
@@ -31,6 +33,8 @@ import Swal from 'sweetalert2';
     MatCheckboxModule,
     MatSelectModule,
     MatMenuModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
     CommonModule,
     FormsModule
   ]
@@ -58,6 +62,8 @@ export class ProfileComponent implements OnInit {
   ];
   selectedSkill: string = '';
   customSkill: string = '';
+  academicYears: any[] = [];
+  selectedAcademicYear: string = '';
   editingSkillId: string | null = null;
   editingSkillIndex: number | null = null;
   oldPassword = '';
@@ -74,6 +80,18 @@ export class ProfileComponent implements OnInit {
   ngOnInit(): void {
     this.fetchUserDetails();
     this.fetchUserSkills();
+    this.loadActiveAcademicYear();
+  }
+
+  loadActiveAcademicYear() {
+    this.http.get<any>(`${environment.apiUrl}/academic/active-year`).subscribe({
+      next: (data) => {
+        if (data && data.id) {
+          this.selectedAcademicYear = data.id;
+        }
+      },
+      error: (err) => console.error('Failed to fetch active academic year', err)
+    });
   }
 
   fetchUserSkills(): void {
@@ -81,7 +99,19 @@ export class ProfileComponent implements OnInit {
     if (currentUser && currentUser.id) {
       this.http.get<any[]>(`${environment.apiUrl}/skills/user/${currentUser.id}`).subscribe({
         next: (data) => {
-          this.skills = data;
+          const uniqueSkills: any[] = [];
+          const seen = new Set();
+          for (const skill of data) {
+            const key = skill.skill_type + '|' + skill.skill_name.toLowerCase();
+            if (!seen.has(key)) {
+              seen.add(key);
+              uniqueSkills.push(skill);
+            } else {
+              // Auto-cleanup duplicate skill from DB
+              this.http.delete(`${environment.apiUrl}/skills/${skill.id}`).subscribe();
+            }
+          }
+          this.skills = uniqueSkills;
         },
         error: (err) => {
           console.error('Failed to fetch user skills:', err);
@@ -139,11 +169,33 @@ export class ProfileComponent implements OnInit {
       return;
     }
 
+    const isDuplicate = this.skills.some(s => 
+      s.skill_type === skillType && 
+      s.skill_name.toLowerCase() === skillName.toLowerCase() &&
+      s.id !== this.editingSkillId
+    );
+
+    if (isDuplicate) {
+      this.showNotification('snackbar-danger', 'This skill already exists.', 'bottom', 'center');
+      return;
+    }
+
     // You can format this however you want to store it, for example: "HTML5 (Extra Curricular Skills)"
     // We are now storing skill_type and skill_name directly in DB!
     const formData = new FormData();
     formData.append('skill_type', skillType);
     formData.append('skill_name', skillName);
+    if (this.selectedAcademicYear) {
+      formData.append('academic_year_id', this.selectedAcademicYear);
+    }
+
+    if (this.existingImages && this.existingImages.length > 0) {
+      this.existingImages.forEach(img => {
+        formData.append('kept_images', img);
+      });
+    } else {
+      formData.append('kept_images', '[]');
+    }
 
     if (this.selectedSkillImages.length > 0) {
       this.selectedSkillImages.forEach(file => {
@@ -151,7 +203,7 @@ export class ProfileComponent implements OnInit {
       });
     }
 
-    if (this.editingSkillId !== null && this.editingSkillIndex !== null) {
+    if (this.editingSkillId !== null) {
       // Update existing skill
       this.http.put<any>(`${environment.apiUrl}/skills/${this.editingSkillId}`, formData).subscribe({
         next: (updatedSkill) => {
@@ -193,6 +245,8 @@ export class ProfileComponent implements OnInit {
     return this.skills.filter(s => s.skill_type === 'Extra Curricular Skills');
   }
 
+  existingImages: string[] = [];
+
   editSkill(skill: any) {
     this.editingSkillId = skill.id;
     this.editingSkillIndex = null; // No longer using index
@@ -204,6 +258,7 @@ export class ProfileComponent implements OnInit {
     }
     
     this.customSkill = skill.skill_name;
+    this.existingImages = skill.images ? [...skill.images] : [];
     this.skillImagePreviews = skill.images ? skill.images.map((img: string) => this.getSkillImageUrl(img)) : [];
     this.selectedSkillImages = []; // We clear the actual file array so if user saves without changes, no files are sent
   }
@@ -231,7 +286,7 @@ export class ProfileComponent implements OnInit {
       maxImages = 3;
     }
 
-    const currentCount = this.selectedSkillImages.length;
+    const currentCount = this.skillImagePreviews.length;
     const remainingSlots = maxImages - currentCount;
 
     if (remainingSlots <= 0) {
@@ -271,7 +326,7 @@ export class ProfileComponent implements OnInit {
       maxImages = 3;
     }
 
-    if (this.selectedSkillImages.length > maxImages) {
+    if (this.skillImagePreviews.length > maxImages) {
       this.selectedSkillImages = this.selectedSkillImages.slice(0, maxImages);
       this.skillImagePreviews = this.skillImagePreviews.slice(0, maxImages);
       this.showNotification('snackbar-warning', `Images trimmed to ${maxImages} due to category change.`, 'bottom', 'center');
@@ -279,11 +334,16 @@ export class ProfileComponent implements OnInit {
   }
 
   removeSkillImage(index: number) {
-    this.selectedSkillImages.splice(index, 1);
+    if (index < this.existingImages.length) {
+      this.existingImages.splice(index, 1);
+    } else {
+      this.selectedSkillImages.splice(index - this.existingImages.length, 1);
+    }
     this.skillImagePreviews.splice(index, 1);
   }
 
   clearSkillImages() {
+    this.existingImages = [];
     this.selectedSkillImages = [];
     this.skillImagePreviews = [];
   }
@@ -375,6 +435,13 @@ export class ProfileComponent implements OnInit {
       formData.append('country', this.userDetails.country || '');
       formData.append('address', this.userDetails.address || '');
       formData.append('about', this.userDetails.about || '');
+      formData.append('roll_number', this.userDetails.roll_number || '');
+      if (this.userDetails.date_of_birth) {
+        formData.append('date_of_birth', new Date(this.userDetails.date_of_birth).toISOString());
+      }
+      if (this.userDetails.academic_birth) {
+        formData.append('academic_birth', new Date(this.userDetails.academic_birth).toISOString());
+      }
       formData.append('academic_profiles', JSON.stringify(this.academicProfiles));
 
       if (this.selectedProfileImage) {

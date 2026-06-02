@@ -1,0 +1,88 @@
+<!-- IMAGE PREVIEW MODE -->
+<ng-container *ngIf="data.type === 'image'">
+  <div class="image-dialog-container position-relative bg-transparent">
+    <button mat-icon-button (click)="onCancel()" class="position-absolute m-2 bg-white shadow-sm" style="top: 5px; right: 5px; z-index: 10;">
+      <mat-icon>close</mat-icon>
+    </button>
+    <img [src]="data.imageUrl" alt="Skill Proof" class="img-fluid w-100 rounded shadow-lg" style="max-height: 80vh; object-fit: contain; background: white;" />
+  </div>
+</ng-container>
+
+<!-- CONFIRM MODE -->
+<ng-container *ngIf="data.type === 'confirm'">
+  <div class="dialog-container">
+    <div class="dialog-header d-flex justify-content-between align-items-center mb-3">
+      <h3 mat-dialog-title class="m-0 p-0 fw-bold" [style.color]="data.actionColor">{{ data.title }}</h3>
+      <button mat-icon-button (click)="onCancel()" class="close-btn m-0 p-0">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <mat-dialog-content class="p-0 m-0">
+      <p class="text-muted mb-4">{{ data.message }}</p>
+
+      <mat-form-field appearance="outline" class="w-100">
+        <mat-label>Remarks {{ data.requireRemarks ? '(Mandatory)' : '(Optional)' }}</mat-label>
+        <textarea matInput [(ngModel)]="remarks" rows="3" 
+                  [placeholder]="data.requireRemarks ? 'Enter remarks (mandatory)' : 'Enter remarks (optional)'"
+                  (input)="showError = false"></textarea>
+        <mat-error *ngIf="showError">Remarks are mandatory when rejecting!</mat-error>
+      </mat-form-field>
+    </mat-dialog-content>
+
+    <mat-dialog-actions align="end" class="p-0 mt-3 mb-1">
+      <button mat-button (click)="onCancel()" class="me-2 text-muted">Cancel</button>
+      <button mat-flat-button (click)="onConfirm()" [style.backgroundColor]="data.actionColor" class="text-white">
+        {{ data.actionText }}
+      </button>
+    </mat-dialog-actions>
+  </div>
+</ng-container>
+
+<!-- EDIT MODE -->
+<ng-container *ngIf="data.type === 'edit'">
+  <div class="dialog-container">
+    <div class="dialog-header d-flex justify-content-between align-items-center mb-3">
+      <h3 mat-dialog-title class="m-0 p-0 fw-bold text-dark">Edit Verification</h3>
+      <button mat-icon-button (click)="onCancel()" class="close-btn m-0 p-0">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <mat-dialog-content class="m-0 p-0 mb-4">
+      <p class="text-muted mb-4">
+        Update the verification status and remarks for <strong>{{ data.skillName }}</strong>.
+      </p>
+
+      <form #editForm="ngForm" class="w-100">
+        <div class="mb-3">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Verification Status</mat-label>
+            <mat-select [(ngModel)]="status" name="status" required>
+              <mat-option value="pending">Pending</mat-option>
+              <mat-option value="approved">Approved</mat-option>
+              <mat-option value="rejected">Rejected</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div class="mb-2">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Remarks {{ status === 'rejected' ? '(Required)' : '(Optional)' }}</mat-label>
+            <textarea matInput [(ngModel)]="remarks" name="remarks" rows="4" 
+                      [required]="status === 'rejected'"
+                      placeholder="Enter verification remarks..."></textarea>
+            <mat-error *ngIf="editForm.controls['remarks']?.hasError('required')">
+              Remarks are mandatory when rejecting a skill.
+            </mat-error>
+          </mat-form-field>
+        </div>
+      </form>
+    </mat-dialog-content>
+
+    <mat-dialog-actions align="end" class="p-0 m-0 gap-2">
+      <button mat-button (click)="onCancel()">Cancel</button>
+      <button mat-flat-button color="primary" [disabled]="!editForm.form.valid" (click)="onSaveEdit()">Save Changes</button>
+    </mat-dialog-actions>
+  </div>
+</ng-container>

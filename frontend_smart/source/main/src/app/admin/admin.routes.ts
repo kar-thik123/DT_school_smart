@@ -209,6 +209,24 @@ export const ADMIN_ROUTE: Route[] = [
             (m) => m.SettingsComponent
           ),
       },
+      {
+        path: 'skills-verify',
+        canActivate: [AuthGuard],
+        data: { permission: 'IDENTITY:IS_SKILL_VERIFIER' },
+        loadComponent: () =>
+          import('./administration/skills-verify/skills-verify.component').then(
+            (m) => m.SkillsVerifyComponent
+          ),
+      },
+      {
+        path: 'skills-verify-assignment',
+        canActivate: [AuthGuard],
+        data: { permission: 'SKILLS_VERIFY_ASSIGNMENT:VIEW' },
+        loadComponent: () =>
+          import('./administration/skills-verify-assignment/skills-verify-assignment.component').then(
+            (m) => m.SkillsVerifyAssignmentComponent
+          ),
+      },
     ]
   },
 

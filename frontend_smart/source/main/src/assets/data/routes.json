@@ -1867,6 +1867,22 @@
             ""
           ],
           "submenu": []
+        },
+        {
+          "path": "/admin/administration/skills-verify",
+          "title": "MENUITEMS.ADMINISTRATION.LIST.SKILLS-VERIFY",
+          "iconType": "",
+          "icon": "",
+          "class": "ml-menu",
+          "groupTitle": false,
+          "badge": "",
+          "badgeClass": "",
+          "role": [
+            "SKILLS_VERIFY:VIEW",
+            "SKILLS_VERIFY:VERIFY",
+            "SUPER_ADMIN"
+          ],
+          "submenu": []
         }
       ]
     },

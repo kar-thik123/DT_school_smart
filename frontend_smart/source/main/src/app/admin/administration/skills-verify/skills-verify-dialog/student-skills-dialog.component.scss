@@ -1,0 +1,353 @@
+::ng-deep .mat-mdc-dialog-container .mdc-dialog__surface {
+  border-radius: 16px !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
+  padding: 12px !important;
+  /* Some padding around the entire modal inside */
+}
+
+::ng-deep .mat-mdc-dialog-title {
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.dialog-header {
+  padding: 24px 24px 0 24px;
+  background-color: transparent;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex !important;
+  justify-content: space-between;
+  align-items: flex-start;
+  text-align: left;
+
+  .avatar-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    overflow: hidden;
+    background-color: #f3f4f6;
+
+    /* Fallback */
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  .header-text-container {
+    .student-name {
+      font-weight: 700;
+      font-size: 1.15rem;
+      /* Remove hardcoded #000 to support dark mode */
+      margin-bottom: 2px !important;
+    }
+
+    .student-meta {
+      /* Removed hardcoded #6b7280 */
+      font-size: 0.875rem;
+      opacity: 0.7;
+    }
+  }
+
+  .top-close-btn {
+    background-color: #e5e7eb;
+    color: #4b5563;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s;
+
+    &:hover {
+      background-color: #d1d5db;
+    }
+
+    ::ng-deep .mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+      line-height: 20px;
+    }
+  }
+}
+
+.dialog-content-area {
+  padding: 0 24px 24px 24px !important;
+}
+
+.status-filter {
+  width: 180px;
+  
+  ::ng-deep .mat-mdc-text-field-wrapper {
+    background-color: #f8fafc;
+    border-radius: 8px;
+    transition: background-color 0.2s;
+    
+    &:hover {
+      background-color: #f1f5f9;
+    }
+  }
+
+  ::ng-deep .mdc-notched-outline__leading {
+    border-top-left-radius: 8px !important;
+    border-bottom-left-radius: 8px !important;
+  }
+  ::ng-deep .mdc-notched-outline__trailing {
+    border-top-right-radius: 8px !important;
+    border-bottom-right-radius: 8px !important;
+  }
+  
+  ::ng-deep .mat-mdc-select-value {
+    font-weight: 500;
+  }
+  
+  /* Hide the extra space reserved for hints/errors under the dropdown */
+  ::ng-deep .mat-mdc-form-field-subscript-wrapper {
+    display: none;
+  }
+}
+
+/* Minimalist Table */
+.minimalist-table {
+  background-color: transparent;
+
+  th.mat-header-cell {
+    border-bottom: none !important;
+    /* Remove hardcoded #111827 to support dark mode */
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding-bottom: 12px;
+  }
+
+  td.mat-cell {
+    border-bottom: none !important;
+    padding: 12px 0;
+    vertical-align: middle;
+  }
+
+  tr.mat-row {
+    background-color: transparent !important;
+    /* No alternating or hover */
+  }
+}
+
+/* Type Pill */
+.type-pill {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+
+  &.academic {
+    border-color: #93c5fd;
+    color: #3b82f6;
+  }
+
+  &.extra {
+    border-color: #67e8f9;
+    color: #06b6d4;
+  }
+}
+
+/* Status Pill */
+.status-pill {
+  display: inline-block;
+  padding: 4px 16px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: 1px solid #000;
+
+  &.pending {
+    background-color: #fbbf24;
+    color: #000;
+  }
+
+  &.approved {
+    background-color: #10b981;
+    color: #fff;
+    border-color: #10b981;
+  }
+
+  &.rejected {
+    background-color: #ef4444;
+    color: #fff;
+    border-color: #ef4444;
+  }
+}
+
+/* Actions */
+.action-icon-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  ::ng-deep .mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    line-height: 18px;
+  }
+
+  &.approve {
+    background-color: #dcfce7;
+    color: #166534;
+    &:hover { background-color: #bbf7d0; }
+  }
+
+  &.reject {
+    background-color: #fee2e2;
+    color: #991b1b;
+    &:hover { background-color: #fecaca; }
+  }
+
+  &.edit {
+    background-color: #e0f2fe;
+    color: #0369a1;
+    &:hover { background-color: #bae6fd; }
+  }
+}
+
+/* Proofs */
+.proof-img {
+  width: 36px;
+  height: 36px;
+  border-radius: 4px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 1px solid #e5e7eb;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+}
+
+.status-filter {
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .status-filter {
+    width: 250px;
+  }
+}
+
+@media (max-width: 767px) {
+  .dialog-header {
+    padding: 16px 16px 0 16px !important;
+  }
+  
+  .dialog-content-area {
+    padding: 0 16px 16px 16px !important;
+  }
+  
+  .minimalist-table {
+    min-width: 700px; /* Forces horizontal scrolling instead of text squishing */
+  }
+
+  .dialog-header .avatar-circle {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .dialog-header .header-text-container .student-name {
+    font-size: 1rem;
+  }
+  
+  .dialog-header .header-text-container .student-meta {
+    font-size: 0.8rem;
+  }
+  
+  ::ng-deep .mat-mdc-dialog-container .mdc-dialog__surface {
+    padding: 8px !important;
+  }
+}
+
+/* Dark Mode Theme Overrides */
+::ng-deep .dark {
+  .student-name {
+    color: #f8fafc !important;
+  }
+  
+  .student-meta {
+    color: #94a3b8 !important;
+  }
+  
+  .top-close-btn {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #e2e8f0;
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+  }
+  
+  .avatar-circle {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+  
+  .minimalist-table th.mat-header-cell {
+    color: #cbd5e1 !important;
+  }
+  
+  .minimalist-table td.mat-cell {
+    color: #f8fafc;
+  }
+  
+  .status-filter ::ng-deep .mat-mdc-text-field-wrapper {
+    background-color: rgba(255, 255, 255, 0.05);
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+  }
+  
+  .status-filter ::ng-deep .mat-mdc-select-value {
+    color: #f8fafc;
+  }
+  
+  .status-filter ::ng-deep .mat-mdc-select-arrow {
+    color: #94a3b8;
+  }
+  
+  .empty-state h5 {
+    color: #f8fafc !important;
+  }
+  
+  .action-icon-btn {
+    &.approve {
+      background-color: rgba(22, 101, 52, 0.3);
+      color: #4ade80;
+      &:hover { background-color: rgba(22, 101, 52, 0.5); }
+    }
+    &.reject {
+      background-color: rgba(153, 27, 27, 0.3);
+      color: #f87171;
+      &:hover { background-color: rgba(153, 27, 27, 0.5); }
+    }
+    &.edit {
+      background-color: rgba(3, 105, 161, 0.3);
+      color: #38bdf8;
+      &:hover { background-color: rgba(3, 105, 161, 0.5); }
+    }
+  }
+}
