@@ -8,6 +8,7 @@ const prisma_1 = __importDefault(require("../../../prisma"));
 class StudentMappingProcessor {
     organizationId;
     userId;
+    academicYearId;
     resolved = {
         users: {},
         grades: {},
@@ -16,9 +17,10 @@ class StudentMappingProcessor {
         mappings: []
     };
     fileUniqueSet = new Set();
-    constructor(organizationId, userId) {
+    constructor(organizationId, userId, academicYearId) {
         this.organizationId = organizationId;
         this.userId = userId;
+        this.academicYearId = academicYearId;
     }
     async resolveRelations(rows) {
         // Pre-normalize incoming row keys
@@ -180,7 +182,8 @@ class StudentMappingProcessor {
                                 create: {
                                     organization_id: this.organizationId,
                                     student_id: res.row.student_id,
-                                    group_id: res.row.target_group_id
+                                    group_id: res.row.target_group_id,
+                                    academic_year_id: this.academicYearId
                                 }
                             });
                             success++;
@@ -211,7 +214,8 @@ class StudentMappingProcessor {
                         create: {
                             organization_id: this.organizationId,
                             student_id: row.resolved_student_id,
-                            group_id: row.resolved_group_id
+                            group_id: row.resolved_group_id,
+                            academic_year_id: this.academicYearId
                         }
                     });
                     success++;

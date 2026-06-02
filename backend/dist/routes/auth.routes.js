@@ -48,6 +48,32 @@ router.post('/login', loginLimiter, async (req, res) => {
         if (!isMatch) {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
+        // --- HOSTNAME BASED TENANT VALIDATION ---
+        const hostname = req.hostname || '';
+        let mappedOrgId = null;
+        let orgDomain = await prisma_1.default.organization.findFirst({ where: { custom_domain: hostname } });
+        if (!orgDomain) {
+            const parts = hostname.split('.');
+            if (parts.length > 0) {
+                orgDomain = await prisma_1.default.organization.findFirst({ where: { subdomain: parts[0] } });
+            }
+        }
+        if (orgDomain) {
+            mappedOrgId = orgDomain.id;
+        }
+        if (!mappedOrgId) {
+            // Platform Domain
+            if (user.role?.name !== 'SYSTEM_ADMIN') {
+                return res.status(403).json({ message: 'Please log in through your organization\'s assigned domain.' });
+            }
+        }
+        else {
+            // Subdomain or Custom Domain
+            if (user.organization_id !== mappedOrgId) {
+                return res.status(403).json({ message: 'You do not have access to this portal.' });
+            }
+        }
+        // ----------------------------------------
         const permissions = user.role.permissions.map((rp) => `${rp.permission.module}:${rp.permission.action}`);
         // Inject identity fallbacks
         const roleName = user.role.name || '';
@@ -173,7 +199,8 @@ router.post('/forgot-password', async (req, res) => {
         await prisma_1.default.passwordReset.create({
             data: { user_id: user.id, token, expires_at }
         });
-        const resetUrl = `http://localhost:4200/#/authentication/reset-password?token=${token}`;
+        const baseUrl = process.env.FRONTEND_URL || 'https://app.platform.com';
+        const resetUrl = `${baseUrl}/#/authentication/reset-password?token=${token}`;
         const transporter = nodemailer_1.default.createTransport({
             service: 'gmail',
             auth: {

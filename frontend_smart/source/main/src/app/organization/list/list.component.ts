@@ -13,6 +13,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { Router, RouterLink } from '@angular/router';
 import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.component';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { environment } from '../../../environments/environment';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -44,6 +45,7 @@ export class ListComponent implements OnInit {
   organizations: any[] = [];
   displayedColumns: string[] = ['logo', 'name', 'domain', 'superAdmin', 'users', 'status', 'actions'];
   loadingRows: Set<string> = new Set();
+  serverUrl = environment.apiUrl.replace('/api', '');
   
   // Pagination & Search
   totalItems = 0;

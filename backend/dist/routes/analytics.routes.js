@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const prisma_1 = __importDefault(require("../prisma"));
 const auth_middleware_1 = require("../middlewares/auth.middleware");
+const academic_context_resolver_1 = require("../utils/academic-context.resolver");
 const router = (0, express_1.Router)();
 router.use(auth_middleware_1.authMiddleware);
 // --- MANAGEMENT TOPIC ANALYTICS ---
@@ -14,9 +15,10 @@ router.use(auth_middleware_1.authMiddleware);
 router.get('/topic', (0, auth_middleware_1.requirePermission)('IDENTITY', 'IS_MANAGEMENT'), async (req, res) => {
     try {
         const org_id = req.user.organization_id;
+        const yearId = await academic_context_resolver_1.AcademicContextResolver.resolveHistoricalAcademicYearId(req);
         const { grade_id, section_id, subject_id } = req.query;
         // TopicActivation → subjectGroup → section (no direct section relation on the model)
-        const filter = { organization_id: org_id };
+        const filter = { organization_id: org_id, academic_year_id: yearId };
         if (section_id)
             filter.subjectGroup = { section_id: String(section_id) };
         else if (grade_id)
@@ -50,6 +52,7 @@ router.get('/topic', (0, auth_middleware_1.requirePermission)('IDENTITY', 'IS_MA
         const allAttempts = topicIds.length > 0 ? await prisma_1.default.practiceAttempt.findMany({
             where: {
                 organization_id: org_id,
+                academic_year_id: yearId,
                 topic_id: { in: topicIds }
             },
             include: {
@@ -137,9 +140,10 @@ router.get('/teacher', (0, auth_middleware_1.requirePermission)('IDENTITY', 'IS_
     try {
         const org_id = req.user.organization_id;
         const teacher_id = req.user.user_id;
+        const yearId = await academic_context_resolver_1.AcademicContextResolver.resolveHistoricalAcademicYearId(req);
         // Get assigned subjects and classes
         const assignments = await prisma_1.default.teacherAssignment.findMany({
-            where: { teacher_id, organization_id: org_id },
+            where: { teacher_id, organization_id: org_id, academic_year_id: yearId },
             include: {
                 subject: true,
                 section: {
@@ -157,6 +161,7 @@ router.get('/teacher', (0, auth_middleware_1.requirePermission)('IDENTITY', 'IS_
         const attempts = await prisma_1.default.practiceAttempt.findMany({
             where: {
                 organization_id: org_id,
+                academic_year_id: yearId,
                 OR: [
                     { student: { section_id: { in: sectionIds } } },
                     { subject_id: { in: subjectIds } }
@@ -194,6 +199,7 @@ router.get('/teacher', (0, auth_middleware_1.requirePermission)('IDENTITY', 'IS_
 router.get('/management/overview', (0, auth_middleware_1.requirePermission)('IDENTITY', 'IS_MANAGEMENT'), async (req, res) => {
     try {
         const org_id = req.user.organization_id;
+        const yearId = await academic_context_resolver_1.AcademicContextResolver.resolveHistoricalAcademicYearId(req);
         // 1. Overview Stats (Permission-based RBAC)
         const studentRoles = await prisma_1.default.role.findMany({
             where: {
@@ -231,7 +237,7 @@ router.get('/management/overview', (0, auth_middleware_1.requirePermission)('IDE
         }
         // BULK LOAD: All practice attempts for this org in one query
         const allAttempts = await prisma_1.default.practiceAttempt.findMany({
-            where: { organization_id: org_id }
+            where: { organization_id: org_id, academic_year_id: yearId }
         });
         // Overall preparedness
         let totalPoints = 0;
@@ -324,13 +330,14 @@ router.get('/student', (0, auth_middleware_1.requirePermission)('IDENTITY', 'IS_
     try {
         const org_id = req.user.organization_id;
         const student_id = req.user.user_id;
+        const yearId = await academic_context_resolver_1.AcademicContextResolver.resolveHistoricalAcademicYearId(req);
         const user = await prisma_1.default.user.findUnique({
             where: { id: student_id },
             select: { grade_id: true }
         });
         // Fetch subjects scoped to the student's assigned streams (not all grade subjects)
         const groupMappings = await prisma_1.default.studentGroupMapping.findMany({
-            where: { student_id, organization_id: org_id },
+            where: { student_id, organization_id: org_id, academic_year_id: yearId },
             include: {
                 group: {
                     include: {
@@ -350,7 +357,7 @@ router.get('/student', (0, auth_middleware_1.requirePermission)('IDENTITY', 'IS_
         }
         const enrolledSubjects = Array.from(subjectMap.values());
         const attempts = await prisma_1.default.practiceAttempt.findMany({
-            where: { student_id, organization_id: org_id },
+            where: { student_id, organization_id: org_id, academic_year_id: yearId },
             include: {
                 subject: { select: { id: true, name: true } },
                 topic: { select: { id: true, name: true } }

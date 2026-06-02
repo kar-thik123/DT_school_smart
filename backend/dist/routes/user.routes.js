@@ -412,7 +412,8 @@ router.post('/:id/reset-password', async (req, res) => {
         await prisma_1.default.passwordReset.create({
             data: { user_id: targetUser.id, token, expires_at }
         });
-        const resetUrl = `http://localhost:4200/#/authentication/reset-password?token=${token}`;
+        const baseUrl = process.env.FRONTEND_URL || 'https://app.platform.com';
+        const resetUrl = `${baseUrl}/#/authentication/reset-password?token=${token}`;
         const transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
@@ -524,7 +525,7 @@ router.put('/profile/:id', upload.single('profile_image'), async (req, res) => {
             data: { name, email }
         });
         // Upsert UserProfile fields
-        const updateData = { phone, city, country, address, about, academic_profiles, skills };
+        const updateData = { phone, city, country, address, about, academic_profiles };
         if (profile_image) {
             updateData.profile_image = profile_image;
         }
@@ -540,8 +541,7 @@ router.put('/profile/:id', upload.single('profile_image'), async (req, res) => {
                 address,
                 about,
                 profile_image,
-                academic_profiles: academic_profiles || [],
-                skills: skills || []
+                academic_profiles: academic_profiles || []
             }
         });
         res.json({ message: 'Profile updated successfully', user_profile: { profile_image } });

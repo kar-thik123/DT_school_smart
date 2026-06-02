@@ -109,22 +109,22 @@
                       <div class="mb-4">
                         <label class="d-block mb-3 small font-weight-bold text-muted uppercase">Select Deployment Model</label>
                         <div class="d-flex gap-3">
-                           <div class="deployment-option" [class.selected]="domainForm.get('deployment_model')?.value === 'SaaS'" (click)="domainForm.get('deployment_model')?.setValue('SaaS')">
-                             <mat-icon>cloud</mat-icon>
-                             <span>Hosted SaaS</span>
+                           <div class="deployment-option" [class.selected]="domainForm.get('deployment_model')?.value === 'Platform Domain'" (click)="domainForm.get('deployment_model')?.setValue('Platform Domain')">
+                             <mat-icon>dns</mat-icon>
+                             <span>Platform Domain (Default)</span>
                            </div>
-                           <div class="deployment-option" [class.selected]="domainForm.get('deployment_model')?.value === 'Custom'" (click)="domainForm.get('deployment_model')?.setValue('Custom')">
+                           <div class="deployment-option" [class.selected]="domainForm.get('deployment_model')?.value === 'Subdomain'" (click)="domainForm.get('deployment_model')?.setValue('Subdomain')">
+                             <mat-icon>cloud</mat-icon>
+                             <span>Subdomain</span>
+                           </div>
+                           <div class="deployment-option" [class.selected]="domainForm.get('deployment_model')?.value === 'Custom Domain'" (click)="domainForm.get('deployment_model')?.setValue('Custom Domain')">
                              <mat-icon>language</mat-icon>
                              <span>Custom Domain</span>
-                           </div>
-                           <div class="deployment-option" [class.selected]="domainForm.get('deployment_model')?.value === 'On-Premise'" (click)="domainForm.get('deployment_model')?.setValue('On-Premise')">
-                             <mat-icon>dns</mat-icon>
-                             <span>On-Premise</span>
                            </div>
                         </div>
                       </div>
 
-                      <div class="row align-items-center mb-4 animate__animated animate__fadeIn" *ngIf="domainForm.get('deployment_model')?.value === 'SaaS'">
+                      <div class="row align-items-center mb-4 animate__animated animate__fadeIn" *ngIf="domainForm.get('deployment_model')?.value === 'Subdomain'">
                         <div class="col-md-8">
                           <mat-form-field class="w-100" appearance="outline">
                             <mat-label>Subdomain Identifier</mat-label>
@@ -139,7 +139,7 @@
                         </div>
                       </div>
 
-                      <div class="row mb-4 animate__animated animate__fadeIn" *ngIf="domainForm.get('deployment_model')?.value === 'Custom'">
+                      <div class="row mb-4 animate__animated animate__fadeIn" *ngIf="domainForm.get('deployment_model')?.value === 'Custom Domain'">
                         <div class="col-12">
                           <mat-form-field class="w-100" appearance="outline">
                             <mat-label>Full Custom Domain URL</mat-label>
@@ -149,38 +149,7 @@
                         </div>
                       </div>
 
-                      <div class="row mb-4 animate__animated animate__fadeIn" *ngIf="domainForm.get('deployment_model')?.value === 'On-Premise'">
-                        <div class="col-12">
-                          <mat-form-field class="w-100" appearance="outline">
-                            <mat-label>Client Infrastructure Endpoint</mat-label>
-                            <input matInput formControlName="on_premise_endpoint" placeholder="e.g. 192.168.1.10 or internal.school.local">
-                            <mat-hint>System will attempt to provision local database and file storage agents.</mat-hint>
-                          </mat-form-field>
-                        </div>
-                      </div>
-                    </div>
-
-                    <hr class="my-4">
-                    
-                    <div formGroupName="smtp" class="row">
-                      <div class="col-md-8">
-                        <mat-form-field class="w-100" appearance="outline">
-                          <mat-label>SMTP Relay Host</mat-label>
-                          <input matInput formControlName="smtp_host" placeholder="smtp.sendgrid.net">
-                        </mat-form-field>
-                      </div>
-                      <div class="col-md-4">
-                        <mat-form-field class="w-100" appearance="outline">
-                          <mat-label>Port</mat-label>
-                          <input matInput type="number" formControlName="smtp_port" placeholder="587">
-                        </mat-form-field>
-                      </div>
-                      <div class="col-12">
-                        <button mat-stroked-button color="primary" (click)="testSmtp()" [disabled]="!smtpForm.get('smtp_host')?.value">
-                          <mat-icon>settings_ethernet</mat-icon> TEST CONNECTION
-                        </button>
-                      </div>
-                    </div>
+                    </div> <!-- Close domain formGroup -->
 
                     <div class="stepper-actions mt-5 d-flex justify-content-between">
                       <button mat-stroked-button matStepperPrevious>BACK</button>
@@ -284,6 +253,16 @@
                           </mat-form-field>
                         </div>
                       </div>
+
+                      <div class="row mt-3">
+                        <div class="col-md-6">
+                          <mat-form-field class="w-100" appearance="outline">
+                            <mat-label>Initial Academic Year</mat-label>
+                            <input matInput formControlName="initial_academic_year" placeholder="e.g. 2026-2027" required>
+                            <mat-hint>The foundational academic year for this organization.</mat-hint>
+                          </mat-form-field>
+                        </div>
+                      </div>
                     </div>
 
                     <div class="stepper-actions mt-5 d-flex justify-content-between">
@@ -312,7 +291,7 @@
                         </div>
                         <div class="col-md-3 px-3 py-3 border-right">
                            <div class="small text-muted mb-1 uppercase">Connectivity</div>
-                           <div class="h6 mb-0 text-primary">{{ domainForm.get('subdomain')?.value || 'Local' }}</div>
+                           <div class="h6 mb-0 text-primary">{{ domainForm.get('subdomain')?.value || domainForm.get('custom_domain')?.value || 'Platform Domain' }}</div>
                         </div>
                         <div class="col-md-3 px-3 py-3 border-right">
                            <div class="small text-muted mb-1 uppercase">User Limit</div>
@@ -331,11 +310,14 @@
                         <span class="badge" [ngClass]="licenseForm.valid ? 'bg-success' : 'bg-danger'">
                            {{ licenseForm.valid ? 'LICENSE OK' : 'LICENSE INCOMPLETE' }}
                         </span>
-                        <span class="badge" [ngClass]="(readiness.subdomainAvailable || domainForm.get('deployment_model')?.value !== 'SaaS') ? 'bg-success' : 'bg-danger'">
-                           {{ (readiness.subdomainAvailable || domainForm.get('deployment_model')?.value !== 'SaaS') ? 'DOMAIN OK' : 'DOMAIN CONFLICT' }}
+                        <span class="badge" [ngClass]="(readiness.subdomainAvailable || domainForm.get('deployment_model')?.value !== 'Subdomain') ? 'bg-success' : 'bg-danger'">
+                           {{ (readiness.subdomainAvailable || domainForm.get('deployment_model')?.value !== 'Subdomain') ? 'DOMAIN OK' : 'DOMAIN CONFLICT' }}
                         </span>
                         <span class="badge" [ngClass]="adminForm.valid && readiness.adminEmailAvailable ? 'bg-success' : 'bg-danger'">
                            {{ (adminForm.valid && readiness.adminEmailAvailable) ? 'SECURITY OK' : 'SECURITY INCOMPLETE' }}
+                        </span>
+                        <span class="badge" [ngClass]="adminForm.get('initial_academic_year')?.valid ? 'bg-success' : 'bg-danger'">
+                           {{ adminForm.get('initial_academic_year')?.valid ? 'ACADEMIC YR OK' : 'ACADEMIC YR MISSING' }}
                         </span>
                       </div>
                     </div>

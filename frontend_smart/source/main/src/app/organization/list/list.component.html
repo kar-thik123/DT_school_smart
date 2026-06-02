@@ -32,7 +32,7 @@
                   <ng-container matColumnDef="logo">
                     <th mat-header-cell *matHeaderCellDef> Logo </th>
                     <td mat-cell *matCellDef="let row">
-                      <img [src]="row.logo_url || 'assets/images/user/user1.jpg'" width="35" height="35" class="rounded-circle border">
+                      <img [src]="row.logo_url ? serverUrl + row.logo_url : 'assets/images/user/user1.jpg'" width="35" height="35" class="rounded-circle border">
                     </td>
                   </ng-container>
 

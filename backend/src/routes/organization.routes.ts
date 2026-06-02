@@ -229,26 +229,7 @@ router.post('/:id/impersonate', async (req: any, res: Response) => {
   }
 });
 
-// 2. Test SMTP Connection
-router.post('/test-smtp', async (req, res) => {
-  const { smtp_host, smtp_port, smtp_email, smtp_password } = req.body;
-  if (!smtp_host || !smtp_email) return res.status(400).json({ message: 'Host and email required' });
 
-  const nodemailer = require('nodemailer');
-  const transporter = nodemailer.createTransport({
-    host: smtp_host,
-    port: Number(smtp_port),
-    secure: Number(smtp_port) === 465,
-    auth: { user: smtp_email, pass: smtp_password }
-  });
-
-  try {
-    await transporter.verify();
-    res.json({ success: true, message: 'SMTP Connection Successful' });
-  } catch (error: any) {
-    res.status(400).json({ success: false, message: `SMTP Error: ${error.message}` });
-  }
-});
 
 // 3. Pre-flight Provisioning Validation
 router.post('/validate-provisioning', async (req, res) => {
@@ -298,14 +279,9 @@ const orgSchema = z.object({
   address: z.string().nullish(),
   logo_url: z.string().url().nullish().or(z.literal('')),
   // Domain
-  domain_type: z.enum(['subdomain', 'custom', 'on_premise']).default('subdomain'),
+  domain_type: z.enum(['Platform Domain', 'Subdomain', 'Custom Domain']).default('Subdomain'),
   subdomain: z.string().nullish().or(z.literal('')),
   custom_domain: z.string().nullish(),
-  // SMTP
-  smtp_host: z.string().nullish(),
-  smtp_port: z.number().nullish(),
-  smtp_email: z.string().email().nullish().or(z.literal('')),
-  smtp_password: z.string().nullish(),
   // Settings
   backup_enabled: z.boolean().default(false),
   // License Config
@@ -318,6 +294,7 @@ const orgSchema = z.object({
   admin_name: z.string().nullish().or(z.literal('')),
   admin_email: z.string().nullish().or(z.literal('')),
   admin_password: z.string().nullish().or(z.literal('')),
+  initial_academic_year: z.string().min(1, "Initial Academic Year is required"),
 });
 
 // Helper to recursively or flat-clean object values: "" and undefined -> null
@@ -373,13 +350,9 @@ router.post('/', async (req: any, res: Response) => {
           contact_phone: parsed.contact_phone || null,
           address: parsed.address || null,
           logo_url: parsed.logo_url || null,
-          domain_type: parsed.domain_type || 'subdomain',
+          domain_type: parsed.domain_type || 'Platform Domain',
           subdomain: parsed.subdomain || null,
           custom_domain: parsed.custom_domain || null,
-          smtp_host: parsed.smtp_host || null,
-          smtp_port: parsed.smtp_port ? Number(parsed.smtp_port) : null,
-          smtp_email: parsed.smtp_email || null,
-          smtp_password: parsed.smtp_password || null,
           backup_enabled: parsed.backup_enabled === true,
           login_limit: Number(parsed.licensed_seats) || 100,
         }
@@ -471,6 +444,19 @@ router.post('/', async (req: any, res: Response) => {
         });
         console.log(`[TX STEP 2.4] Super admin user created: id=${adminUser.id}, email=${adminUser.email}, role=${superAdminRole.id}`);
       }
+      
+      // STEP 3: Create Initial Academic Year
+      await tx.academicYear.create({
+        data: {
+          name: parsed.initial_academic_year,
+          start_date: null,
+          end_date: null,
+          is_active: true,
+          organization_id: org.id
+        }
+      });
+      console.log(`[TX STEP 3] Initial Academic Year created and activated for org: ${org.id}`);
+
 
       console.log(`[TX COMMITTED] Provisioning complete for org: ${org.id}`);
       return { org, adminUser };

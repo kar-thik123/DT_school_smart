@@ -8,15 +8,17 @@ const prisma_1 = __importDefault(require("../../../prisma"));
 class SubjectGroupProcessor {
     organizationId;
     userId;
+    academicYearId;
     resolved = {
         grades: {},
         sections: {},
         subjects: {}
     };
     fileUniqueSet = new Set();
-    constructor(organizationId, userId) {
+    constructor(organizationId, userId, academicYearId) {
         this.organizationId = organizationId;
         this.userId = userId;
+        this.academicYearId = academicYearId;
     }
     async resolveRelations(rows) {
         const gradeNames = Array.from(new Set(rows.map((r) => r.grade_name?.trim().toLowerCase()).filter(Boolean)));

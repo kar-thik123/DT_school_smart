@@ -10,7 +10,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TopicProcessor = exports.UnitProcessor = exports.SubjectProcessor = exports.SectionProcessor = exports.GradeProcessor = void 0;
 const prisma_1 = __importDefault(require("../../../prisma"));
-const academic_helper_1 = require("../../../utils/academic-helper");
 // ────────────────────────────────────────────────────────────────────────────
 // GRADES
 // CSV: grade_name
@@ -18,16 +17,17 @@ const academic_helper_1 = require("../../../utils/academic-helper");
 class GradeProcessor {
     organizationId;
     userId;
+    academicYearId;
     activeAcademicYearId;
     fileUniqueSet = new Set();
     existingNames = new Set();
-    constructor(organizationId, userId) {
+    constructor(organizationId, userId, academicYearId) {
         this.organizationId = organizationId;
         this.userId = userId;
+        this.academicYearId = academicYearId;
+        this.activeAcademicYearId = academicYearId;
     }
     async resolveRelations(rows) {
-        // Look up the active academic year (required for grade creation)
-        this.activeAcademicYearId = await (0, academic_helper_1.getActiveAcademicYearId)(this.organizationId);
         // Pre-load existing grade names for this org+year to detect duplicates
         if (this.activeAcademicYearId) {
             const existing = await prisma_1.default.grade.findMany({
@@ -89,11 +89,13 @@ exports.GradeProcessor = GradeProcessor;
 class SectionProcessor {
     organizationId;
     userId;
+    academicYearId;
     gradesMap = {};
     fileUniqueSet = new Set();
-    constructor(organizationId, userId) {
+    constructor(organizationId, userId, academicYearId) {
         this.organizationId = organizationId;
         this.userId = userId;
+        this.academicYearId = academicYearId;
     }
     async resolveRelations(rows) {
         const gradeNames = Array.from(new Set(rows.map((r) => r.grade_name?.trim()).filter(Boolean)));
@@ -157,11 +159,13 @@ exports.SectionProcessor = SectionProcessor;
 class SubjectProcessor {
     organizationId;
     userId;
+    academicYearId;
     gradesMap = {};
     fileUniqueSet = new Set();
-    constructor(organizationId, userId) {
+    constructor(organizationId, userId, academicYearId) {
         this.organizationId = organizationId;
         this.userId = userId;
+        this.academicYearId = academicYearId;
     }
     async resolveRelations(rows) {
         const gradeNames = Array.from(new Set(rows.map((r) => r.grade_name?.trim()).filter(Boolean)));
@@ -225,11 +229,13 @@ exports.SubjectProcessor = SubjectProcessor;
 class UnitProcessor {
     organizationId;
     userId;
+    academicYearId;
     subjectsMap = {};
     fileUniqueSet = new Set();
-    constructor(organizationId, userId) {
+    constructor(organizationId, userId, academicYearId) {
         this.organizationId = organizationId;
         this.userId = userId;
+        this.academicYearId = academicYearId;
     }
     async resolveRelations(rows) {
         const subjectNames = Array.from(new Set(rows.map((r) => r.subject_name?.trim()).filter(Boolean)));
@@ -297,11 +303,13 @@ exports.UnitProcessor = UnitProcessor;
 class TopicProcessor {
     organizationId;
     userId;
+    academicYearId;
     unitsMap = {};
     fileUniqueSet = new Set();
-    constructor(organizationId, userId) {
+    constructor(organizationId, userId, academicYearId) {
         this.organizationId = organizationId;
         this.userId = userId;
+        this.academicYearId = academicYearId;
     }
     async resolveRelations(rows) {
         const unitNames = Array.from(new Set(rows.map((r) => r.unit_name?.trim()).filter(Boolean)));

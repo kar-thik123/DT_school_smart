@@ -9,6 +9,7 @@ const client_1 = require("@prisma/client");
 class StudentEnrollmentProcessor {
     organizationId;
     userId;
+    academicYearId;
     resolved = {
         users: {},
         academic_years: {},
@@ -17,9 +18,10 @@ class StudentEnrollmentProcessor {
         subject_groups: {}
     };
     fileUniqueSet = new Set();
-    constructor(organizationId, userId) {
+    constructor(organizationId, userId, academicYearId) {
         this.organizationId = organizationId;
         this.userId = userId;
+        this.academicYearId = academicYearId;
     }
     async resolveRelations(rows) {
         const emails = Array.from(new Set(rows.map((r) => r.student_email?.trim().toLowerCase()).filter(Boolean)));
@@ -53,22 +55,19 @@ class StudentEnrollmentProcessor {
     }
     async validateRow(row) {
         const email = row.student_email?.trim().toLowerCase();
-        const academicYearName = row.academic_year?.trim().toLowerCase();
         const gradeName = row.grade_name?.trim().toLowerCase();
         const sectionName = row.section_name?.trim().toLowerCase();
         const groupName = row.group_name?.trim().toLowerCase();
         const errors = [];
         if (!email)
             errors.push("Missing student_email");
-        if (!academicYearName)
-            errors.push("Missing academic_year");
         if (!gradeName)
             errors.push("Missing grade_name");
         // Intra-file uniqueness check (a student can only be enrolled once per academic year in the file)
-        if (email && academicYearName) {
-            const uniqueKey = `${email}_${academicYearName}`;
+        if (email) {
+            const uniqueKey = `${email}_${this.academicYearId}`;
             if (this.fileUniqueSet.has(uniqueKey)) {
-                errors.push(`Duplicate mapping: Student is mapped multiple times in academic year '${row.academic_year}' within this file.`);
+                errors.push(`Duplicate mapping: Student is mapped multiple times in this file.`);
             }
             this.fileUniqueSet.add(uniqueKey);
         }
@@ -77,9 +76,8 @@ class StudentEnrollmentProcessor {
         const user = this.resolved.users[email];
         if (!user)
             errors.push(`Student with email '${row.student_email}' not found or is not a student.`);
-        const academicYear = this.resolved.academic_years[academicYearName];
-        if (!academicYear)
-            errors.push(`Academic Year '${row.academic_year}' not found.`);
+        if (!this.academicYearId)
+            errors.push(`Active Academic Year is missing.`);
         const grade = this.resolved.grades[gradeName];
         if (!grade)
             errors.push(`Grade '${row.grade_name}' not found.`);
@@ -107,7 +105,7 @@ class StudentEnrollmentProcessor {
             data: {
                 ...row,
                 resolved_student_id: user.id,
-                resolved_academic_year_id: academicYear.id,
+                resolved_academic_year_id: this.academicYearId,
                 resolved_grade_id: grade.id,
                 resolved_section_id: section?.id || null,
                 resolved_group_id: group?.id || null

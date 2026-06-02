@@ -9,6 +9,7 @@ const VALID_ASSIGNMENT_TYPES = ['CLASS_INCHARGE', 'SUBJECT_TEACHER'];
 class TeacherAssignmentProcessor {
     organizationId;
     userId;
+    academicYearId;
     resolved = {
         teachers: {},
         grades: {},
@@ -16,9 +17,10 @@ class TeacherAssignmentProcessor {
         subjects: {}
     };
     fileUniqueSet = new Set();
-    constructor(organizationId, userId) {
+    constructor(organizationId, userId, academicYearId) {
         this.organizationId = organizationId;
         this.userId = userId;
+        this.academicYearId = academicYearId;
     }
     async resolveRelations(rows) {
         const emails = Array.from(new Set(rows.map((r) => r.teacher_email?.trim().toLowerCase()).filter(Boolean)));
@@ -148,6 +150,7 @@ class TeacherAssignmentProcessor {
                     await tx.teacherAssignment.createMany({
                         data: [{
                                 organization_id: this.organizationId,
+                                academic_year_id: this.academicYearId,
                                 teacher_id: row.resolved_teacher_id,
                                 assignment_type: row.assignment_type,
                                 grade_id: row.resolved_grade_id,

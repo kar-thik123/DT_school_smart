@@ -69,7 +69,7 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
     };
     
     // Strict tenant isolation security check: Ensure the token's organization matches the context
-    const contextOrgId = req.organization_id || (req.headers['x-organization-id'] as string);
+    const contextOrgId = req.organization_id;
     if (contextOrgId && req.user!.organization_id !== contextOrgId) {
        return res.status(403).json({ message: 'Forbidden: Cross-tenant access denied' });
     }

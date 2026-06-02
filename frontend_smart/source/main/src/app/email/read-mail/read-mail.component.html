@@ -104,19 +104,19 @@
                     @for (attachment of mail!.attachments!; track attachment.id) {
                     <div class="col-md-2" style="margin-bottom: 15px;">
                       @if (isImage(attachment.mimetype)) {
-                      <a [href]="'http://localhost:3000' + attachment.url" target="_blank">
+                      <a [href]="serverUrl + attachment.url" target="_blank">
                         <img class="img-thumbnail img-responsive" alt="attachment"
-                          [src]="'http://localhost:3000' + attachment.url"
+                          [src]="serverUrl + attachment.url"
                           style="max-height: 100px; object-fit: cover;">
                       </a>
                       } @else {
-                      <a [href]="'http://localhost:3000' + attachment.url" target="_blank"
+                      <a [href]="serverUrl + attachment.url" target="_blank"
                         class="d-block text-center p-t-20 p-b-20 bg-light"
                         style="border: 1px solid #ddd; border-radius: 4px;">
                         <i class="material-icons text-muted" style="font-size: 36px;">insert_drive_file</i>
                       </a>
                       }
-                      <a class="name" [href]="'http://localhost:3000' + attachment.url" target="_blank"
+                      <a class="name" [href]="serverUrl + attachment.url" target="_blank"
                         style="display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
                         [title]="attachment.filename"> {{ attachment.filename }}
                         <span>{{ formatBytes(attachment.size) }}</span>

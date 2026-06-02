@@ -5,7 +5,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AcademicUnifiedProcessor = void 0;
 const prisma_1 = __importDefault(require("../../../prisma"));
-const academic_helper_1 = require("../../../utils/academic-helper");
 /**
  * Unified Academic Structure Processor
  * Handles grade_name, section_name, subject_name, unit_name, topic_name in one flow.
@@ -14,13 +13,15 @@ const academic_helper_1 = require("../../../utils/academic-helper");
 class AcademicUnifiedProcessor {
     organizationId;
     userId;
+    academicYearId;
     activeAcademicYearId;
-    constructor(organizationId, userId) {
+    constructor(organizationId, userId, academicYearId) {
         this.organizationId = organizationId;
         this.userId = userId;
+        this.academicYearId = academicYearId;
+        this.activeAcademicYearId = academicYearId;
     }
     async resolveRelations(rows) {
-        this.activeAcademicYearId = await (0, academic_helper_1.getActiveAcademicYearId)(this.organizationId);
         return {};
     }
     async validateRow(row) {

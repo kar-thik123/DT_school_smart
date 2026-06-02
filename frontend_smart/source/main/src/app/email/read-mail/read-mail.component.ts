@@ -7,6 +7,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.component';
 import { Mail, MailService } from '../../core/service/mail.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-read-mail',
@@ -25,6 +26,7 @@ export class ReadMailComponent implements OnInit {
 
   mail: Mail | null = null;
   folder: string = 'inbox';
+  serverUrl = environment.apiUrl.replace('/api', '');
 
   currentUserId: string;
 

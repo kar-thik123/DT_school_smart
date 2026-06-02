@@ -22,6 +22,7 @@ const MATCH_TYPES = ['MATCH_FOLLOWING', 'DRAG_DROP_MATCH'];
 class QuestionBankProcessor {
     organizationId;
     userId;
+    academicYearId;
     resolved = {
         grades: {},
         subjects: {},
@@ -29,9 +30,10 @@ class QuestionBankProcessor {
         topics: {}
     };
     fileUniqueSet = new Set();
-    constructor(organizationId, userId) {
+    constructor(organizationId, userId, academicYearId) {
         this.organizationId = organizationId;
         this.userId = userId;
+        this.academicYearId = academicYearId;
     }
     async resolveRelations(rows) {
         const gradeNames = Array.from(new Set(rows.map((r) => r.grade_name?.trim()).filter(Boolean)));

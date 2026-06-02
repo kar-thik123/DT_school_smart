@@ -102,18 +102,11 @@ export class SetupComponent implements OnInit {
         custom_domain: [''],
         on_premise_endpoint: ['']
       }),
-      smtp: this.fb.group({
-        smtp_host: [''],
-        smtp_port: [587],
-        smtp_email: ['', Validators.email],
-        smtp_password: [''],
-        backup_enabled: [false],
-        login_limit: [100]
-      }),
       admin: this.fb.group({
         admin_name: ['School Admin', Validators.required],
         admin_email: ['', [Validators.required, Validators.email]],
-        admin_password: ['', [Validators.required, Validators.minLength(6)]]
+        admin_password: ['', [Validators.required, Validators.minLength(6)]],
+        initial_academic_year: ['', Validators.required]
       }),
       license: this.fb.group({
         licensed_seats: [100, [Validators.required, Validators.min(1)]],
@@ -137,12 +130,12 @@ export class SetupComponent implements OnInit {
     // Deployment specific validation
     const model = this.domainForm.get('deployment_model')?.value;
     let deploymentOk = false;
-    if (model === 'SaaS') deploymentOk = !!this.domainForm.get('subdomain')?.value;
-    else if (model === 'Custom') deploymentOk = !!this.domainForm.get('custom_domain')?.value;
-    else if (model === 'On-Premise') deploymentOk = true; // Always allow Local/On-Premise launch
+    if (model === 'Platform Domain') deploymentOk = true;
+    else if (model === 'Subdomain') deploymentOk = !!this.domainForm.get('subdomain')?.value;
+    else if (model === 'Custom Domain') deploymentOk = !!this.domainForm.get('custom_domain')?.value;
 
     // Must have all data, NO known conflicts, and not currently submitting
-    const subdomainConflict = (model === 'SaaS') && !this.readiness.subdomainAvailable;
+    const subdomainConflict = (model === 'Subdomain') && !this.readiness.subdomainAvailable;
     const adminConflict = !this.readiness.adminEmailAvailable;
     const noConflicts = !subdomainConflict && !adminConflict;
     
@@ -157,7 +150,6 @@ export class SetupComponent implements OnInit {
 
   get orgForm() { return this.provisioningForm.get('organization') as FormGroup; }
   get domainForm() { return this.provisioningForm.get('domain') as FormGroup; }
-  get smtpForm() { return this.provisioningForm.get('smtp') as FormGroup; }
   get adminForm() { return this.provisioningForm.get('admin') as FormGroup; }
   get licenseForm() { return this.provisioningForm.get('license') as FormGroup; }
 
@@ -200,18 +192,7 @@ export class SetupComponent implements OnInit {
     }
   }
 
-  testSmtp() {
-    if (this.smtpForm.invalid) return;
-    this.snackBar.open('Testing SMTP connection...', 'Wait');
-    this.orgService.testSmtpConnection(this.smtpForm.value).subscribe({
-      next: (res) => {
-        this.snackBar.open(res.message, 'Close', { duration: 3000 });
-      },
-      error: (err) => {
-        this.snackBar.open(err.error?.message || 'SMTP Connection failed', 'Close', { duration: 5000 });
-      }
-    });
-  }
+
 
   launchProvisioning() {
     if (!this.canLaunch) {
@@ -224,7 +205,6 @@ export class SetupComponent implements OnInit {
     const payload: ProvisioningPayload = {
       ...rawValue.organization,
       ...rawValue.domain,
-      ...rawValue.smtp,
       ...rawValue.admin,
       ...rawValue.license
     };

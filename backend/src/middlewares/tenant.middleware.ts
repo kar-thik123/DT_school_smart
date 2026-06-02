@@ -7,28 +7,28 @@ export interface TenantRequest extends Request {
 
 export const tenantMiddleware = async (req: TenantRequest, res: Response, next: NextFunction) => {
   try {
-    const orgId = req.headers['x-organization-id'] as string;
-    const subdomain = req.headers['x-subdomain'] as string;
+    const hostname = req.hostname || '';
 
-    if (orgId) {
-      const org = await prisma.organization.findUnique({ where: { id: orgId } });
-      if (!org) {
-        return res.status(404).json({ message: 'Organization not found' });
+    // First, try to resolve as a Custom Domain
+    let org = await prisma.organization.findFirst({ where: { custom_domain: hostname } });
+
+    // If not found, try to resolve as a Subdomain
+    if (!org) {
+      const parts = hostname.split('.');
+      if (parts.length > 0) {
+        const potentialSubdomain = parts[0];
+        org = await prisma.organization.findFirst({ where: { subdomain: potentialSubdomain } });
       }
-      req.organization_id = org.id;
-      return next();
     }
 
-    if (subdomain) {
-      const org = await prisma.organization.findUnique({ where: { subdomain } });
-      if (!org) {
-        return res.status(404).json({ message: 'Organization not found' });
-      }
+    if (org) {
       req.organization_id = org.id;
-      return next();
     }
+    
+    // If no organization matched, req.organization_id remains undefined.
+    // This represents the Platform Context (e.g. app.platform.com) which will be verified downstream.
+    return next();
 
-    return res.status(400).json({ message: 'Organization identification missing (header x-organization-id or x-subdomain required)' });
   } catch (error) {
     return res.status(500).json({ message: 'Internal server error in tenant middleware' });
   }

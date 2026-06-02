@@ -97,6 +97,41 @@ router.use('/boards', createCrudHandlers('Board', prisma_1.default.board));
 router.use('/mediums', createCrudHandlers('Medium', prisma_1.default.medium));
 router.use('/organization-types', createCrudHandlers('OrganizationType', prisma_1.default.organizationType));
 router.use('/academic-years', createCrudHandlers('AcademicYear', prisma_1.default.academicYear));
+// ── Academic Year Activation ──────────────────────────────────────────────────
+router.post('/academic-years/:id/activate', (0, auth_middleware_1.requirePermission)('ACADEMIC_STRUCTURE', 'EDIT'), async (req, res) => {
+    try {
+        const orgId = req.user.organization_id;
+        const yearId = req.params.id;
+        const { confirm } = req.body;
+        if (!confirm) {
+            return res.status(400).json({
+                message: 'Confirmation required. Reverting the Active Academic Year acts as a rollback because data remains stored under its original academic_year_id. Send { confirm: true } to proceed.'
+            });
+        }
+        const yearToActivate = await prisma_1.default.academicYear.findFirst({
+            where: { id: yearId, organization_id: orgId }
+        });
+        if (!yearToActivate) {
+            return res.status(404).json({ message: 'Academic Year not found' });
+        }
+        await prisma_1.default.$transaction([
+            // Enforce one ACTIVE year: mark all others as not active
+            prisma_1.default.academicYear.updateMany({
+                where: { organization_id: orgId },
+                data: { is_active: false }
+            }),
+            // Set the requested one to ACTIVE
+            prisma_1.default.academicYear.update({
+                where: { id: yearId },
+                data: { is_active: true }
+            })
+        ]);
+        res.json({ message: `Academic Year ${yearToActivate.name} is now ACTIVE.` });
+    }
+    catch (error) {
+        res.status(500).json({ message: 'Error activating academic year', error: error.message });
+    }
+});
 // ── Active Academic Year ─────────────────────────────────────────────────────
 // GET /api/academic/active-year — no special permission required, available to
 // all authenticated users so that modules like Teacher Assignment can read it.
@@ -160,6 +195,7 @@ gradeRouter.get('/', (0, auth_middleware_1.requirePermission)('ACADEMIC_STRUCTUR
         res.json(data);
     }
     catch (error) {
+        console.error('Grades fetch error:', error);
         res.status(500).json({ message: 'Error fetching Grades' });
     }
 });
@@ -190,14 +226,24 @@ gradeRouter.post('/', (0, auth_middleware_1.requirePermission)('ACADEMIC_STRUCTU
             return res.status(400).json({ message: 'Grade name is required' });
         // Normalize: strip leading "Grade " so "Grade 10" and "10" map to the same DB record
         const name = String(rawName).replace(/^grade\s*/i, '').trim();
-        const { academic_year_id } = req.body;
-        let yearId = academic_year_id;
-        if (!yearId) {
-            // Auto-resolve: use the centralized active academic year
-            yearId = await (0, academic_helper_1.getActiveAcademicYearId)(req.user.organization_id);
-        }
+        const yearId = req.academic_year_id;
+        const masterGrade = await prisma_1.default.masterGrade.upsert({
+            where: {
+                name_organization_id: {
+                    name,
+                    organization_id: req.user.organization_id
+                }
+            },
+            update: {},
+            create: { name, organization_id: req.user.organization_id }
+        });
         const data = await prisma_1.default.grade.create({
-            data: { name, academic_year_id: yearId, organization_id: req.user.organization_id }
+            data: {
+                name,
+                academic_year_id: yearId,
+                organization_id: req.user.organization_id,
+                master_grade_id: masterGrade.id
+            }
         });
         res.status(201).json({ message: 'Grade created', data });
     }
@@ -364,7 +410,7 @@ subjectRouter.post('/', (0, auth_middleware_1.requirePermission)('ACADEMIC_STRUC
             finalGradeId = possibleSection.grade_id;
         }
         // Fetch grade name (needed for SubjectGroup naming convention)
-        const gradeRecord = await prisma_1.default.grade.findUnique({ where: { id: finalGradeId }, select: { name: true } });
+        const gradeRecord = await prisma_1.default.grade.findUnique({ where: { id: finalGradeId }, select: { name: true, master_grade_id: true } });
         const data = await prisma_1.default.subject.upsert({
             where: {
                 name_grade_id_organization_id: {
@@ -374,7 +420,12 @@ subjectRouter.post('/', (0, auth_middleware_1.requirePermission)('ACADEMIC_STRUC
                 }
             },
             update: {},
-            create: { name, grade_id: finalGradeId, organization_id: req.user.organization_id }
+            create: {
+                name,
+                grade_id: finalGradeId,
+                organization_id: req.user.organization_id,
+                master_grade_id: gradeRecord?.master_grade_id || undefined
+            }
         });
         // If section_id is explicitly provided → link ONLY to that section.
         // Otherwise → link to ALL sections under the grade (global subject).
@@ -402,7 +453,8 @@ subjectRouter.post('/', (0, auth_middleware_1.requirePermission)('ACADEMIC_STRUC
                     name: groupName,
                     grade_id: finalGradeId,
                     section_id: sec.id,
-                    organization_id: req.user.organization_id
+                    organization_id: req.user.organization_id,
+                    master_grade_id: gradeRecord?.master_grade_id || undefined
                 }
             });
             await prisma_1.default.subjectGroupSubject.upsert({
@@ -504,11 +556,17 @@ router.post('/bulk-setup', (0, auth_middleware_1.requirePermission)('ACADEMIC_ST
                 const gName = String(gradeName).trim().replace(/^grade\s*/i, '').trim();
                 if (!gName)
                     continue;
+                // MasterGrade
+                const masterGradeResult = await tx.masterGrade.upsert({
+                    where: { name_organization_id: { name: gName, organization_id: org_id } },
+                    update: {},
+                    create: { name: gName, organization_id: org_id }
+                });
                 // Grade — has unique constraint: upsert is safe
                 const gradeResult = await tx.grade.upsert({
                     where: { name_academic_year_id_organization_id: { name: gName, academic_year_id, organization_id: org_id } },
-                    update: {},
-                    create: { name: gName, academic_year_id, organization_id: org_id }
+                    update: { master_grade_id: masterGradeResult.id },
+                    create: { name: gName, academic_year_id, organization_id: org_id, master_grade_id: masterGradeResult.id }
                 });
                 // Check if we created or skipped (upsert returns old record on update:{})
                 const gradeIsNew = gradeResult.created_at &&
@@ -539,8 +597,8 @@ router.post('/bulk-setup', (0, auth_middleware_1.requirePermission)('ACADEMIC_ST
                     // Subject — has unique constraint: upsert is safe
                     const subjectResult = await tx.subject.upsert({
                         where: { name_grade_id_organization_id: { name: subName, grade_id: gradeResult.id, organization_id: org_id } },
-                        update: {},
-                        create: { name: subName, grade_id: gradeResult.id, organization_id: org_id }
+                        update: { master_grade_id: masterGradeResult.id },
+                        create: { name: subName, grade_id: gradeResult.id, organization_id: org_id, master_grade_id: masterGradeResult.id }
                     });
                     const subjectEntry = { name: subName, subject_id: subjectResult.id, units: [] };
                     gradeEntry.subjects.push(subjectEntry);
@@ -558,12 +616,13 @@ router.post('/bulk-setup', (0, auth_middleware_1.requirePermission)('ACADEMIC_ST
                                     organization_id: org_id
                                 }
                             },
-                            update: {},
+                            update: { master_grade_id: masterGradeResult.id },
                             create: {
                                 name: groupName,
                                 grade_id: gradeResult.id,
                                 section_id: sec.id,
-                                organization_id: org_id
+                                organization_id: org_id,
+                                master_grade_id: masterGradeResult.id
                             }
                         });
                         // Link subject to group — skip if already linked
@@ -726,6 +785,7 @@ router.post('/subject-groups', (0, auth_middleware_1.requirePermission)('ACADEMI
         if (!name || !grade_id || !section_id) {
             return res.status(400).json({ message: 'Missing required fields: name, grade_id, section_id' });
         }
+        const gradeRecord = await prisma_1.default.grade.findUnique({ where: { id: grade_id }, select: { master_grade_id: true } });
         const result = await prisma_1.default.$transaction(async (tx) => {
             // Create the group
             const group = await tx.subjectGroup.create({
@@ -733,7 +793,8 @@ router.post('/subject-groups', (0, auth_middleware_1.requirePermission)('ACADEMI
                     organization_id: org_id,
                     name,
                     grade_id,
-                    section_id
+                    section_id,
+                    master_grade_id: gradeRecord?.master_grade_id || undefined
                 }
             });
             // Link subjects

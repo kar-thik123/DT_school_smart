@@ -9,6 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
 import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.component';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-manage',
@@ -33,6 +34,7 @@ export class ManageComponent implements OnInit {
 
   orgId: string | null = null;
   org: any = null;
+  serverUrl = environment.apiUrl.replace('/api', '');
 
   ngOnInit() {
     this.orgId = this.route.snapshot.paramMap.get('id');

@@ -25,7 +25,7 @@
                 <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
                   <mat-card class="p-4 text-center">
                     <div class="mb-3">
-                      <img [src]="organization?.logo_url || 'assets/images/user/hospital.png'" 
+                      <img [src]="organization?.logo_url ? serverUrl + organization!.logo_url : 'assets/images/user/hospital.png'" 
                            class="img-thumbnail" style="max-height: 150px;" alt="Logo">
                     </div>
                     <input type="file" #fileInput style="display: none" (change)="onFileSelected($event)" accept="image/*">

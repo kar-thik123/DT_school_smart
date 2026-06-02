@@ -15,6 +15,7 @@ import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.co
 import { AcademicContextService } from '@core';
 import { MasterConfigService } from './master-config.service';
 import { OrganizationProfile, MasterEntity } from './master-config.model';
+import { environment } from '../../../../environments/environment';
 import { lastValueFrom } from 'rxjs';
 
 @Component({
@@ -48,6 +49,7 @@ export class MasterConfigComponent implements OnInit {
   profileForm!: UntypedFormGroup;
   organization?: OrganizationProfile;
   activeYearControl = new FormControl<string>('');
+  serverUrl = environment.apiUrl.replace('/api', '');
   
   // UI State
   isLoading = true;

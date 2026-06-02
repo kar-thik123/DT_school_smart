@@ -422,7 +422,8 @@ router.post('/:id/reset-password', async (req: any, res: Response) => {
       data: { user_id: targetUser.id, token, expires_at }
     });
 
-    const resetUrl = `http://localhost:4200/#/authentication/reset-password?token=${token}`;
+    const baseUrl = process.env.FRONTEND_URL || 'https://app.platform.com';
+    const resetUrl = `${baseUrl}/#/authentication/reset-password?token=${token}`;
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
