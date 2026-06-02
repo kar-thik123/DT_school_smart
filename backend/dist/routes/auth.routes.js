@@ -87,6 +87,12 @@ router.post('/login', loginLimiter, async (req, res) => {
         if (roleName === 'MANAGEMENT') {
             permissions.push('IDENTITY:IS_MANAGEMENT');
         }
+        const verificationAssignments = await prisma_1.default.skillVerificationAssignment.findMany({
+            where: { verifier_id: user.id }
+        });
+        if (verificationAssignments.length > 0) {
+            permissions.push('IDENTITY:IS_SKILL_VERIFIER');
+        }
         const token = jsonwebtoken_1.default.sign({
             user_id: user.id,
             organization_id: user.organization_id
@@ -115,7 +121,7 @@ router.post('/login', loginLimiter, async (req, res) => {
                 errors: error.issues
             });
         }
-        res.status(500).json({ message: 'Server error' });
+        res.status(500).json({ message: 'Server error', error: error?.message, stack: error?.stack });
     }
 });
 router.get('/me', auth_middleware_1.authMiddleware, async (req, res) => {
@@ -146,6 +152,12 @@ router.get('/me', auth_middleware_1.authMiddleware, async (req, res) => {
         }
         if (roleName === 'MANAGEMENT') {
             permissions.push('IDENTITY:IS_MANAGEMENT');
+        }
+        const verificationAssignments = await prisma_1.default.skillVerificationAssignment.findMany({
+            where: { verifier_id: user.id }
+        });
+        if (verificationAssignments.length > 0) {
+            permissions.push('IDENTITY:IS_SKILL_VERIFIER');
         }
         res.json({
             user_id: user.id,

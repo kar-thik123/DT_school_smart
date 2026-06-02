@@ -16,7 +16,7 @@ const image_compression_util_1 = require("../utils/image-compression.util");
 const upload = multer({ storage: multer.memoryStorage() });
 const router = (0, express_1.Router)();
 router.use(auth_middleware_1.authMiddleware);
-router.use((0, auth_middleware_1.requirePermission)('IDENTITY', 'IS_MANAGEMENT'));
+const requireManagement = (0, auth_middleware_1.requirePermission)('IDENTITY', 'IS_MANAGEMENT');
 const userSchema = zod_1.z.object({
     name: zod_1.z.string().min(1),
     email: zod_1.z.string().email(),
@@ -62,7 +62,7 @@ router.get('/teachers', async (req, res) => {
     }
 });
 // GET all users in org
-router.get('/', async (req, res) => {
+router.get('/', requireManagement, async (req, res) => {
     try {
         const filter = { organization_id: req.user.organization_id };
         if (req.query.grade_id) {
@@ -112,7 +112,7 @@ router.get('/', async (req, res) => {
     }
 });
 // POST create single user
-router.post('/', async (req, res) => {
+router.post('/', requireManagement, async (req, res) => {
     try {
         const parsed = userSchema.parse(req.body);
         console.log('[POST /api/users] body:', JSON.stringify(req.body));
@@ -193,7 +193,7 @@ router.post('/', async (req, res) => {
     }
 });
 // POST bulk import users via JSON array
-router.post('/bulk', async (req, res) => {
+router.post('/bulk', requireManagement, async (req, res) => {
     try {
         const users = req.body.users;
         if (!users || !Array.isArray(users) || users.length === 0) {
@@ -281,7 +281,7 @@ router.post('/bulk', async (req, res) => {
     }
 });
 // PUT update user by id
-router.put('/:id', async (req, res) => {
+router.put('/:id', requireManagement, async (req, res) => {
     try {
         const user = await prisma_1.default.user.findFirst({
             where: { id: req.params.id, organization_id: req.user.organization_id },
@@ -330,7 +330,7 @@ router.put('/:id', async (req, res) => {
     }
 });
 // PATCH status
-router.patch('/:id/status', async (req, res) => {
+router.patch('/:id/status', requireManagement, async (req, res) => {
     try {
         const { is_active } = req.body;
         if (typeof is_active !== 'boolean') {
@@ -358,7 +358,7 @@ router.patch('/:id/status', async (req, res) => {
     }
 });
 // DELETE user
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireManagement, async (req, res) => {
     try {
         const user = await prisma_1.default.user.findFirst({
             where: { id: req.params.id, organization_id: req.user.organization_id },
@@ -382,7 +382,7 @@ router.delete('/:id', async (req, res) => {
     }
 });
 // POST admin-triggered reset password link
-router.post('/:id/reset-password', async (req, res) => {
+router.post('/:id/reset-password', requireManagement, async (req, res) => {
     try {
         const targetUser = await prisma_1.default.user.findFirst({
             where: { id: req.params.id, organization_id: req.user.organization_id },
@@ -455,7 +455,16 @@ router.get('/profile/:id', async (req, res) => {
     try {
         const user = await prisma_1.default.user.findUnique({
             where: { id: req.params.id },
-            include: { role: true, user_profile: true }
+            include: {
+                role: true,
+                user_profile: true,
+                student_profile: true,
+                enrollments: {
+                    where: { status: 'ACTIVE' },
+                    take: 1,
+                    orderBy: { enrollment_date: 'desc' }
+                }
+            }
         });
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
@@ -473,7 +482,10 @@ router.get('/profile/:id', async (req, res) => {
             academic_profiles: [],
             skills: []
         };
-        res.json({ ...user, ...profileData });
+        const roll_number = user.enrollments?.[0]?.roll_number || null;
+        const date_of_birth = user.student_profile?.date_of_birth || null;
+        const academic_birth = user.student_profile?.academic_birth || null;
+        res.json({ ...user, ...profileData, roll_number, date_of_birth, academic_birth });
     }
     catch (error) {
         console.error('Error fetching profile:', error);
@@ -482,7 +494,7 @@ router.get('/profile/:id', async (req, res) => {
 });
 router.put('/profile/:id', upload.single('profile_image'), async (req, res) => {
     try {
-        let { name, email, phone, city, country, address, about, academic_profiles, skills } = req.body;
+        let { name, email, phone, city, country, address, about, academic_profiles, skills, roll_number, date_of_birth, academic_birth } = req.body;
         // Handle multipart/form-data where JSON arrays are sent as strings
         if (typeof academic_profiles === 'string') {
             try {
@@ -544,6 +556,33 @@ router.put('/profile/:id', upload.single('profile_image'), async (req, res) => {
                 academic_profiles: academic_profiles || []
             }
         });
+        if (roll_number !== undefined) {
+            const activeEnrollment = await prisma_1.default.studentEnrollment.findFirst({
+                where: { student_id: req.params.id, status: 'ACTIVE' },
+                orderBy: { enrollment_date: 'desc' }
+            });
+            if (activeEnrollment) {
+                await prisma_1.default.studentEnrollment.update({
+                    where: { id: activeEnrollment.id },
+                    data: { roll_number }
+                });
+            }
+        }
+        if (date_of_birth !== undefined || academic_birth !== undefined) {
+            await prisma_1.default.studentProfile.upsert({
+                where: { user_id: req.params.id },
+                update: {
+                    ...(date_of_birth !== undefined && { date_of_birth: date_of_birth ? new Date(date_of_birth) : null }),
+                    ...(academic_birth !== undefined && { academic_birth: academic_birth ? new Date(academic_birth) : null })
+                },
+                create: {
+                    user_id: req.params.id,
+                    organization_id: user.organization_id,
+                    ...(date_of_birth !== undefined && { date_of_birth: date_of_birth ? new Date(date_of_birth) : null }),
+                    ...(academic_birth !== undefined && { academic_birth: academic_birth ? new Date(academic_birth) : null })
+                }
+            });
+        }
         res.json({ message: 'Profile updated successfully', user_profile: { profile_image } });
     }
     catch (error) {
