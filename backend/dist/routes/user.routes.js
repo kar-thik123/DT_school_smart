@@ -476,11 +476,9 @@ router.get('/profile/:id', async (req, res) => {
             address: user.user_profile.address,
             about: user.user_profile.about,
             profile_image: user.user_profile.profile_image,
-            academic_profiles: user.user_profile.academic_profiles || [],
-            skills: user.user_profile.skills || []
+            academic_profiles: user.user_profile.academic_profiles || []
         } : {
-            academic_profiles: [],
-            skills: []
+            academic_profiles: []
         };
         const roll_number = user.enrollments?.[0]?.roll_number || null;
         const date_of_birth = user.student_profile?.date_of_birth || null;
@@ -494,7 +492,7 @@ router.get('/profile/:id', async (req, res) => {
 });
 router.put('/profile/:id', upload.single('profile_image'), async (req, res) => {
     try {
-        let { name, email, phone, city, country, address, about, academic_profiles, skills, roll_number, date_of_birth, academic_birth } = req.body;
+        let { name, email, phone, city, country, address, about, academic_profiles, roll_number, date_of_birth, academic_birth } = req.body;
         // Handle multipart/form-data where JSON arrays are sent as strings
         if (typeof academic_profiles === 'string') {
             try {
@@ -502,14 +500,6 @@ router.put('/profile/:id', upload.single('profile_image'), async (req, res) => {
             }
             catch (e) {
                 academic_profiles = [];
-            }
-        }
-        if (typeof skills === 'string') {
-            try {
-                skills = JSON.parse(skills);
-            }
-            catch (e) {
-                skills = [];
             }
         }
         let profile_image = undefined;
