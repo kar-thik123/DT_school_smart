@@ -66,6 +66,7 @@ export class ProfileComponent implements OnInit {
   selectedAcademicYear: string = '';
   editingSkillId: string | null = null;
   editingSkillIndex: number | null = null;
+  isSavingSkill = false;
   oldPassword = '';
   newPassword = '';
   selectedProfileImage: File | null = null;
@@ -180,6 +181,8 @@ export class ProfileComponent implements OnInit {
       return;
     }
 
+    this.isSavingSkill = true;
+
     // You can format this however you want to store it, for example: "HTML5 (Extra Curricular Skills)"
     // We are now storing skill_type and skill_name directly in DB!
     const formData = new FormData();
@@ -207,6 +210,7 @@ export class ProfileComponent implements OnInit {
       // Update existing skill
       this.http.put<any>(`${environment.apiUrl}/skills/${this.editingSkillId}`, formData).subscribe({
         next: (updatedSkill) => {
+          this.isSavingSkill = false;
           const index = this.skills.findIndex(s => s.id === this.editingSkillId);
           if (index !== -1) {
             this.skills[index] = updatedSkill;
@@ -215,6 +219,7 @@ export class ProfileComponent implements OnInit {
           this.showNotification('snackbar-success', 'Skill updated successfully!', 'bottom', 'center');
         },
         error: (err) => {
+          this.isSavingSkill = false;
           console.error('Failed to update skill:', err);
           this.showNotification('snackbar-danger', err.error?.error || 'Failed to update skill', 'bottom', 'center');
         }
@@ -223,6 +228,7 @@ export class ProfileComponent implements OnInit {
       // Create new skill
       this.http.post<any>(`${environment.apiUrl}/skills`, formData).subscribe({
         next: (newSkill) => {
+          this.isSavingSkill = false;
           this.skills.unshift(newSkill);
           this.selectedSkill = '';
           this.customSkill = '';
@@ -230,6 +236,7 @@ export class ProfileComponent implements OnInit {
           this.showNotification('snackbar-success', 'Skill added successfully!', 'bottom', 'center');
         },
         error: (err) => {
+          this.isSavingSkill = false;
           console.error('Failed to add skill:', err);
           this.showNotification('snackbar-danger', err.error?.error || 'Failed to add skill', 'bottom', 'center');
         }
@@ -241,8 +248,16 @@ export class ProfileComponent implements OnInit {
     return this.skills.filter(s => s.skill_type === 'Academic Skills');
   }
 
+  get approvedAcademicSkillsCount() {
+    return this.academicSkills.filter(s => s.status === 'approved').length;
+  }
+
   get extraCurricularSkills() {
     return this.skills.filter(s => s.skill_type === 'Extra Curricular Skills');
+  }
+
+  get approvedExtraCurricularSkillsCount() {
+    return this.extraCurricularSkills.filter(s => s.status === 'approved').length;
   }
 
   existingImages: string[] = [];

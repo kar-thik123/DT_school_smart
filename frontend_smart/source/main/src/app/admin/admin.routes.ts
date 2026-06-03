@@ -149,7 +149,7 @@ export const ADMIN_ROUTE: Route[] = [
       {
         path: 'academic-structure',
         canActivate: [AuthGuard],
-        data: { permission: 'ACADEMIC_STRUCTURE:VIEW' },
+        data: { permission: ['ACADEMIC_STRUCTURE:VIEW', 'ACADEMIC_STRUCTURE:READ'] },
         loadComponent: () =>
           import('./administration/academic-structure/academic-structure.component').then(
             (m) => m.AcademicStructureComponent
@@ -185,7 +185,7 @@ export const ADMIN_ROUTE: Route[] = [
       {
         path: 'student-mapping',
         canActivate: [AuthGuard],
-        data: { permission: 'STUDENT_ENROLLMENT:VIEW' },
+        data: { permission: ['STUDENT_ENROLLMENT:VIEW', 'STUDENT_ENROLLMENT:READ', 'ACADEMIC_STRUCTURE:VIEW'] },
         loadComponent: () =>
           import('./administration/student-mapping/student-mapping.component').then(
             (m) => m.StudentMappingComponent

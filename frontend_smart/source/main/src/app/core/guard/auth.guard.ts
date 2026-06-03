@@ -43,6 +43,12 @@ export class AuthGuard {
             this.router.navigate(['/authentication/signin']);
             return false;
           }
+        } else if (Array.isArray(permission)) {
+          const hasAny = permission.some(p => this.authService.hasPermission(p));
+          if (!hasAny) {
+            this.router.navigate(['/authentication/signin']);
+            return false;
+          }
         } else if (!this.authService.hasPermission(permission)) {
           this.router.navigate(['/authentication/signin']);
           return false;

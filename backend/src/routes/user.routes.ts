@@ -473,7 +473,6 @@ router.get('/profile/:id', async (req: any, res: Response) => {
         user_profile: true,
         student_profile: true,
         enrollments: {
-          where: { status: 'ACTIVE' },
           take: 1,
           orderBy: { enrollment_date: 'desc' }
         }
@@ -529,7 +528,7 @@ router.put('/profile/:id', upload.single('profile_image'), async (req: any, res:
         format: 'webp',
         skipIfSmall: true
       });
-      profile_image = `/uploads/profile/${processed.filename}`;
+      profile_image = `/api/uploads/profile/${processed.filename}`;
     }
 
     const user = await prisma.user.findUnique({
@@ -575,15 +574,15 @@ router.put('/profile/:id', upload.single('profile_image'), async (req: any, res:
       }
     });
 
-    if (roll_number !== undefined) {
-      const activeEnrollment = await prisma.studentEnrollment.findFirst({
-        where: { student_id: req.params.id, status: 'ACTIVE' },
+    if (roll_number !== undefined && roll_number !== 'undefined' && roll_number !== 'null') {
+      const latestEnrollment = await prisma.studentEnrollment.findFirst({
+        where: { student_id: req.params.id },
         orderBy: { enrollment_date: 'desc' }
       });
-      if (activeEnrollment) {
+      if (latestEnrollment) {
         await prisma.studentEnrollment.update({
-          where: { id: activeEnrollment.id },
-          data: { roll_number }
+          where: { id: latestEnrollment.id },
+          data: { roll_number: roll_number === '' ? null : roll_number }
         });
       }
     }

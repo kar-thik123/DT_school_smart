@@ -126,7 +126,7 @@ export const PLATFORM_MODULES: RouteInfo[] = [
         groupTitle: false,
         badge: '',
         badgeClass: '',
-        role: ['ACADEMIC_STRUCTURE:VIEW', 'ACADEMIC_STRUCTURE_VIEW'],
+        role: ['ACADEMIC_STRUCTURE:VIEW', 'ACADEMIC_STRUCTURE_VIEW', 'ACADEMIC_STRUCTURE:READ', 'ACADEMIC_STRUCTURE_READ'],
         submenu: [],
         showInSidebar: true,
         domain: 'TENANT'
@@ -168,7 +168,7 @@ export const PLATFORM_MODULES: RouteInfo[] = [
         groupTitle: false,
         badge: '',
         badgeClass: '',
-        role: ['STUDENT_ENROLLMENT:VIEW', 'ACADEMIC_STRUCTURE:VIEW', 'ACADEMIC_STRUCTURE_VIEW'],
+        role: ['STUDENT_ENROLLMENT:VIEW', 'STUDENT_ENROLLMENT_VIEW', 'STUDENT_ENROLLMENT:READ', 'STUDENT_ENROLLMENT_READ', 'ACADEMIC_STRUCTURE:VIEW', 'ACADEMIC_STRUCTURE_VIEW'],
         submenu: [],
         showInSidebar: true,
         domain: 'TENANT'

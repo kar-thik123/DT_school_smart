@@ -82,7 +82,7 @@ router.get('/all', async (req: any, res: Response) => {
     }
     if (academic_year_id) whereClause.academic_year_id = academic_year_id;
     if (skill_type) whereClause.skill_type = skill_type;
-    
+
     if (grade_id || section_id) {
       whereClause.user = {};
       if (grade_id) whereClause.user.grade_id = grade_id;
@@ -120,6 +120,7 @@ router.get('/all', async (req: any, res: Response) => {
       include: {
         user: {
           select: {
+            id: true,
             name: true,
             email: true
           }
@@ -187,10 +188,10 @@ router.patch('/:id/status', async (req: any, res: Response) => {
 
     const skill = await prisma.skill.update({
       where: { id },
-      data: { 
+      data: {
         status,
         remarks: req.body.remarks || null,
-        verified_by: req.user.user_id 
+        verified_by: req.user.user_id
       }
     });
 
@@ -311,7 +312,7 @@ router.patch('/bulk-status', async (req: any, res: Response) => {
       });
 
       if (skillsToUpdate.length !== skill_ids.length) {
-         return res.status(404).json({ error: 'One or more skills not found' });
+        return res.status(404).json({ error: 'One or more skills not found' });
       }
 
       // Check permissions for each skill

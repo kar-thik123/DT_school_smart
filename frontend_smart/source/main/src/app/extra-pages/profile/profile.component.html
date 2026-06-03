@@ -18,7 +18,7 @@
                 <div class="name-center">{{ userDetails?.role?.name || 'User' }}</div>
               </div>
               <img [src]="getUserProfileImage()" class="user-img" alt="Profile" (error)="onImageError($event)">
-              <p>
+              <p style="word-break: break-word; padding: 0 10px;">
                 {{ userDetails?.address || 'No Address Provided' }}
                 <br />{{ userDetails?.city || '' }}
               </p>
@@ -80,8 +80,10 @@
           </div> -->
 
           <div class="skills-card" *ngIf="academicSkills.length > 0">
-            <div class="skills-header">
-              <h5 class="skills-title">Academic Skills</h5>
+            <div class="skills-header d-flex justify-content-between align-items-center">
+              <h5 class="skills-title mb-0">Academic Skills</h5>
+              <span class="text-muted small"><strong>Approved {{ academicSkills.length }} /
+                  {{approvedAcademicSkillsCount}}</strong> </span>
             </div>
 
             <ul class="skills-list">
@@ -108,8 +110,10 @@
           </div>
 
           <div class="skills-card" *ngIf="extraCurricularSkills.length > 0">
-            <div class="skills-header mt-4">
-              <h5 class="skills-title">Extra Curricular Skills</h5>
+            <div class="skills-header mt-4 d-flex justify-content-between align-items-center">
+              <h5 class="skills-title mb-0">Extra Curricular Skills</h5>
+              <span class="text-muted small"><strong>Approved {{approvedExtraCurricularSkillsCount}} /
+                  {{extraCurricularSkills.length }}</strong></span>
             </div>
 
             <ul class="skills-list">
@@ -179,8 +183,7 @@
                   </div>
                 </div>
               </div>
-              <div class="col-lg-12 col-md-12 col-sm-12"
-                *ngFor="let profile of userDetails?.academic_profiles">
+              <div class="col-lg-12 col-md-12 col-sm-12" *ngFor="let profile of userDetails?.academic_profiles">
                 <div class="project_widget">
                   <div class="header">
                     <h2><strong>{{profile.title}}</strong></h2>
@@ -418,7 +421,8 @@
                           (change)="onSkillImageSelected($event)" accept="image/*" multiple>
 
                         <button mat-raised-button color="primary" class="add-skill-btn ms-2"
-                          (click)="addSelectedSkill()" [disabled]="!selectedSkill || !customSkill.trim()">
+                          (click)="addSelectedSkill()"
+                          [disabled]="!selectedSkill || !customSkill.trim() || isSavingSkill">
                           {{ editingSkillId ? 'Update' : 'Add' }}
                         </button>
                         <button *ngIf="editingSkillId" mat-stroked-button color="warn" class="ms-2"

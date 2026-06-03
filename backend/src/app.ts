@@ -32,7 +32,7 @@ app.use(cors({
   credentials: true,
 }));
 app.use(express.json());
-app.use('/uploads', express.static('uploads'));
+app.use('/api/uploads', express.static('uploads'));
 
 app.use('/api/organizations', organizationRoutes);
 app.use('/api/auth', authRoutes);

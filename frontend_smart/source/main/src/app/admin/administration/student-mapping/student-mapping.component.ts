@@ -102,8 +102,8 @@ export class StudentMappingComponent implements OnInit {
   ngOnInit() {
     // Subscribe to centralized Academic Context
     this.academicContextService.activeYear$.subscribe((year: any) => {
-      this.activeAcademicYear = year;
-      if (this.activeAcademicYear) {
+      if (year) {
+        this.activeAcademicYear = year;
         this.loadUnenrolledStudents();
         this.loadEnrollments();
       }
@@ -115,10 +115,28 @@ export class StudentMappingComponent implements OnInit {
   loadInitialData() {
     this.academicYearService.getAllAcademicYears().subscribe((years: any) => {
       this.academicYears = years;
+      if (!this.activeAcademicYear && years.length > 0) {
+        this.activeAcademicYear = years.find((y: any) => y.is_active) || years[0];
+        if (this.activeAcademicYear) {
+          this.loadUnenrolledStudents();
+          this.loadEnrollments();
+        }
+      }
     });
 
     this.academicService.getGrades().subscribe((grades) => this.grades = grades);
     this.academicService.getSections().subscribe((sections) => this.sections = sections);
+  }
+
+  compareYears(y1: any, y2: any): boolean {
+    return y1 && y2 ? y1.id === y2.id : y1 === y2;
+  }
+
+  onYearChange() {
+    if (this.activeAcademicYear) {
+      this.loadUnenrolledStudents();
+      this.loadEnrollments();
+    }
   }
 
   loadEnrollments() {
@@ -200,8 +218,12 @@ export class StudentMappingComponent implements OnInit {
     this.globalGroupName = context.subjectGroup?.name || '';
 
     if (this.globalGradeId && this.globalSectionId) {
-      this.academicService.getSubjectGroups(this.globalGradeId, this.globalSectionId).subscribe(groups => {
+      this.academicService.getSubjectGroups(this.globalGradeId, this.globalSectionId, false).subscribe(groups => {
         this.subjectGroups = groups;
+        if (groups.length === 1 && !this.globalGroupId) {
+          this.globalGroupId = groups[0].id;
+          this.globalGroupName = groups[0].name;
+        }
       });
     } else {
       this.subjectGroups = [];
