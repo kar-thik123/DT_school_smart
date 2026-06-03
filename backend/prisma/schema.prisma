@@ -156,6 +156,8 @@ model UserProfile {
   about             String?
   profile_image     String?
   academic_profiles Json?   @default("[]")
+  date_of_birth     DateTime? @db.Date
+  academic_birth    DateTime? @db.Date
 
   user         User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
   organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)

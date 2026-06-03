@@ -490,14 +490,16 @@ router.get('/profile/:id', async (req: any, res: Response) => {
       address: user.user_profile.address,
       about: user.user_profile.about,
       profile_image: user.user_profile.profile_image,
-      academic_profiles: user.user_profile.academic_profiles || []
+      academic_profiles: user.user_profile.academic_profiles || [],
+      date_of_birth: user.user_profile.date_of_birth,
+      academic_birth: user.user_profile.academic_birth
     } : {
       academic_profiles: []
     };
 
     const roll_number = user.enrollments?.[0]?.roll_number || null;
-    const date_of_birth = user.student_profile?.date_of_birth || null;
-    const academic_birth = user.student_profile?.academic_birth || null;
+    const date_of_birth = user.user_profile?.date_of_birth || user.student_profile?.date_of_birth || null;
+    const academic_birth = user.user_profile?.academic_birth || user.student_profile?.academic_birth || null;
 
     res.json({ ...user, ...profileData, roll_number, date_of_birth, academic_birth });
   } catch (error: any) {
@@ -548,6 +550,12 @@ router.put('/profile/:id', upload.single('profile_image'), async (req: any, res:
     if (profile_image) {
       updateData.profile_image = profile_image;
     }
+    if (date_of_birth !== undefined) {
+      updateData.date_of_birth = date_of_birth ? new Date(date_of_birth) : null;
+    }
+    if (academic_birth !== undefined) {
+      updateData.academic_birth = academic_birth ? new Date(academic_birth) : null;
+    }
 
     await prisma.userProfile.upsert({
       where: { user_id: req.params.id },
@@ -561,7 +569,9 @@ router.put('/profile/:id', upload.single('profile_image'), async (req: any, res:
         address,
         about,
         profile_image,
-        academic_profiles: academic_profiles || []
+        academic_profiles: academic_profiles || [],
+        ...(date_of_birth !== undefined && { date_of_birth: date_of_birth ? new Date(date_of_birth) : null }),
+        ...(academic_birth !== undefined && { academic_birth: academic_birth ? new Date(academic_birth) : null })
       }
     });
 
