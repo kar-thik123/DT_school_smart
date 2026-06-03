@@ -61,7 +61,7 @@
       <div class="row">
         <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
           <div class="example-button-row text-end">
-            <button mat-raised-button color="primary" [disabled]="!userForm.valid" (click)="submit()">Save User</button>
+            <button mat-raised-button color="primary" type="submit" [disabled]="!userForm.valid">Save User</button>
             <button mat-raised-button color="warn" (click)="onNoClick()" tabindex="-1">Cancel</button>
           </div>
         </div>
