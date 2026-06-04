@@ -1,10 +1,18 @@
-<!-- IMAGE PREVIEW MODE -->
 <ng-container *ngIf="data.type === 'image'">
-  <div class="image-dialog-container position-relative bg-transparent">
-    <button mat-icon-button (click)="onCancel()" class="position-absolute m-2 bg-white shadow-sm" style="top: 5px; right: 5px; z-index: 10;">
-      <mat-icon>close</mat-icon>
-    </button>
-    <img [src]="data.imageUrl" alt="Skill Proof" class="img-fluid w-100 rounded shadow-lg" style="max-height: 80vh; object-fit: contain; background: white;" />
+  <div class="dialog-container h-100 d-flex flex-column p-0 bg-white" style="border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center px-4 py-3" style="border-bottom: 1px solid #f3f4f6;">
+      <h3 mat-dialog-title class="m-0 p-0 fw-bold fs-5 text-dark">Proof Preview</h3>
+      <button mat-icon-button (click)="onCancel()" class="top-close-btn">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+    
+    <!-- Image Area -->
+    <div class="image-wrapper flex-grow-1 d-flex justify-content-center align-items-center p-3" style="background-color: #f8fafc; overflow: hidden;">
+      <img [src]="data.imageUrl" (error)="$event.target.src='assets/images/media.png'" alt="Skill Proof"
+        class="lightbox-img rounded-3 shadow-sm" />
+    </div>
   </div>
 </ng-container>
 
@@ -23,9 +31,9 @@
 
       <mat-form-field appearance="outline" class="w-100">
         <mat-label>Remarks {{ data.requireRemarks ? '(Mandatory)' : '(Optional)' }}</mat-label>
-        <textarea matInput [(ngModel)]="remarks" rows="3" 
-                  [placeholder]="data.requireRemarks ? 'Enter remarks (mandatory)' : 'Enter remarks (optional)'"
-                  (input)="showError = false"></textarea>
+        <textarea matInput [(ngModel)]="remarks" rows="3"
+          [placeholder]="data.requireRemarks ? 'Enter remarks (mandatory)' : 'Enter remarks (optional)'"
+          (input)="showError = false"></textarea>
         <mat-error *ngIf="showError">Remarks are mandatory when rejecting!</mat-error>
       </mat-form-field>
     </mat-dialog-content>
@@ -69,9 +77,8 @@
         <div class="mb-2">
           <mat-form-field appearance="outline" class="w-100">
             <mat-label>Remarks {{ status === 'rejected' ? '(Required)' : '(Optional)' }}</mat-label>
-            <textarea matInput [(ngModel)]="remarks" name="remarks" rows="4" 
-                      [required]="status === 'rejected'"
-                      placeholder="Enter verification remarks..."></textarea>
+            <textarea matInput [(ngModel)]="remarks" name="remarks" rows="4" [required]="status === 'rejected'"
+              placeholder="Enter verification remarks..."></textarea>
             <mat-error *ngIf="editForm.controls['remarks']?.hasError('required')">
               Remarks are mandatory when rejecting a skill.
             </mat-error>
@@ -82,7 +89,8 @@
 
     <mat-dialog-actions align="end" class="p-0 m-0 gap-2">
       <button mat-button (click)="onCancel()">Cancel</button>
-      <button mat-flat-button color="primary" [disabled]="!editForm.form.valid" (click)="onSaveEdit()">Save Changes</button>
+      <button mat-flat-button color="primary" [disabled]="!editForm.form.valid" (click)="onSaveEdit()">Save
+        Changes</button>
     </mat-dialog-actions>
   </div>
 </ng-container>

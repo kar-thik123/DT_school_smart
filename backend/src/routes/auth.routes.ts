@@ -100,7 +100,7 @@ router.post('/login', loginLimiter, async (req: any, res: Response) => {
     }
 
     const verificationAssignments = await prisma.skillVerificationAssignment.findMany({
-      where: { verifier_id: user.id }
+      where: { verifier_ids: { has: user.id } }
     });
     if (verificationAssignments.length > 0) {
       permissions.push('IDENTITY:IS_SKILL_VERIFIER');
@@ -174,7 +174,7 @@ router.get('/me', authMiddleware, async (req: any, res: Response) => {
     }
 
     const verificationAssignments = await prisma.skillVerificationAssignment.findMany({
-      where: { verifier_id: user.id }
+      where: { verifier_ids: { has: user.id } }
     });
     if (verificationAssignments.length > 0) {
       permissions.push('IDENTITY:IS_SKILL_VERIFIER');

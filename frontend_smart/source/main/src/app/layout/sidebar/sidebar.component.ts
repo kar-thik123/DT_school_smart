@@ -330,6 +330,8 @@ export class SidebarComponent
     if (path.includes('/skills-verify')) {
       return this.authService.hasPermission('IDENTITY', 'IS_SKILL_VERIFIER') ||
         this.authService.hasPermission('IDENTITY_IS_SKILL_VERIFIER') ||
+        this.authService.hasPermission('SKILLS_VERIFICATION', 'VIEW') ||
+        this.authService.hasPermission('SKILLS_VERIFICATION_VIEW') ||
         userRoleUpper === 'SUPER_ADMIN';
     }
     if (path.includes('/teacher-assignment')) {

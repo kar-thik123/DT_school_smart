@@ -110,29 +110,7 @@
   }
 }
 
-/* Minimalist Table */
-.minimalist-table {
-  background-color: transparent;
 
-  th.mat-header-cell {
-    border-bottom: none !important;
-    /* Remove hardcoded #111827 to support dark mode */
-    font-size: 0.75rem;
-    font-weight: 700;
-    padding-bottom: 12px;
-  }
-
-  td.mat-cell {
-    border-bottom: none !important;
-    padding: 12px 0;
-    vertical-align: middle;
-  }
-
-  tr.mat-row {
-    background-color: transparent !important;
-    /* No alternating or hover */
-  }
-}
 
 /* Type Pill */
 .type-pill {
@@ -253,6 +231,22 @@
   }
 }
 
+.mat-elevation-z0 {
+  .mat-mdc-row, .mat-mdc-header-row {
+    height: auto !important;
+    min-height: 40px !important;
+  }
+  .mat-mdc-header-cell {
+    padding: 8px 12px !important;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .mat-mdc-cell {
+    padding: 6px 12px !important;
+    vertical-align: middle;
+  }
+}
+
 @media (max-width: 767px) {
   .dialog-header {
     padding: 16px 16px 0 16px !important;
@@ -262,7 +256,7 @@
     padding: 0 16px 16px 16px !important;
   }
   
-  .minimalist-table {
+  .mat-elevation-z0 {
     min-width: 700px; /* Forces horizontal scrolling instead of text squishing */
   }
 
@@ -306,11 +300,11 @@
     background-color: rgba(255, 255, 255, 0.05);
   }
   
-  .minimalist-table th.mat-header-cell {
+  .mat-elevation-z0 th.mat-header-cell {
     color: #cbd5e1 !important;
   }
   
-  .minimalist-table td.mat-cell {
+  .mat-elevation-z0 td.mat-cell {
     color: #f8fafc;
   }
   

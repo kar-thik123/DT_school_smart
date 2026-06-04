@@ -73,16 +73,30 @@ export class SkillsVerifyComponent implements OnInit {
 
   selection = new SelectionModel<any>(true, []);
 
+  canModify = false;
+  canViewAll = false;
+  canManageAll = false;
+
   ngOnInit(): void {
     const user = this.authService.currentUserValue;
     this.isSuperAdmin = user?.role === 'SUPER_ADMIN';
+    this.canViewAll = this.isSuperAdmin || this.authService.hasPermission('SKILLS_VERIFICATION', 'VIEW');
+    this.canManageAll = this.isSuperAdmin || this.authService.hasPermission('SKILLS_VERIFICATION', 'MANAGE');
+
+    const isVerifier = this.authService.hasPermission('IDENTITY', 'IS_SKILL_VERIFIER');
+    this.canModify = this.canManageAll || isVerifier;
 
     this.fetchSkills();
 
-    if (this.isSuperAdmin) {
-      this.loadGrades();
-      this.loadSections();
-      this.loadAcademicYears();
+    if (this.canViewAll) {
+      const canReadAcademic = this.isSuperAdmin ||
+        this.authService.hasPermission('ACADEMIC_STRUCTURE', 'READ') ||
+        this.authService.hasPermission('ACADEMIC_STRUCTURE', 'VIEW');
+      if (canReadAcademic) {
+        this.loadGrades();
+        this.loadSections();
+        this.loadAcademicYears();
+      }
     }
   }
 
@@ -180,7 +194,8 @@ export class SkillsVerifyComponent implements OnInit {
       maxWidth: '1200px',
       data: {
         student: studentData.user,
-        skills: studentData.skills
+        skills: studentData.skills,
+        canModify: this.canModify
       }
     });
 
@@ -277,7 +292,10 @@ export class SkillsVerifyComponent implements OnInit {
     this.dialog.open(SkillsActionDialogComponent, {
       data: { type: 'image', imageUrl: imageUrl } as SkillsActionDialogData,
       panelClass: 'image-preview-dialog',
-      backdropClass: 'image-preview-backdrop'
+      backdropClass: 'image-preview-backdrop',
+      width: '45vw',
+      height: '45vh',
+      maxWidth: '1200px'
     });
   }
 }

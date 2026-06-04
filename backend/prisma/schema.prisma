@@ -118,7 +118,6 @@ model User {
   skills                      Skill[]                       @relation("SkillOwner")
   verified_skills             Skill[]                       @relation("SkillVerifier")
   // completed_by isn't strict referential integrity for Users to keep schema clean, or we can use relation. I'll omit it and not use relation to avoid User model clutter.
-  SkillVerificationAssignment SkillVerificationAssignment[]
 
   @@index([organization_id])
   @@index([email])
@@ -329,7 +328,6 @@ model Grade {
   users                       User[]
   questions                   Question[]
   completion_trackings        CompletionTracking[]
-  SkillVerificationAssignment SkillVerificationAssignment[]
 
   @@unique([name, academic_year_id, organization_id])
   @@index([organization_id])
@@ -359,7 +357,6 @@ model Section {
   users                       User[]
   questions                   Question[]
   completion_trackings        CompletionTracking[]
-  SkillVerificationAssignment SkillVerificationAssignment[]
 
   @@unique([name, grade_id, organization_id])
   @@index([organization_id])
@@ -1051,17 +1048,12 @@ model Skill {
 model SkillVerificationAssignment {
   id              String   @id @default(uuid()) @db.Uuid
   organization_id String   @db.Uuid
-  verifier_id     String   @db.Uuid
-  skill_type      String // e.g. "Academic Skills"
-  grade_id        String?  @db.Uuid
-  section_id      String?  @db.Uuid
+  verifier_ids    String[] @db.Uuid
+  skill_types     String[] // e.g. "Academic Skills"
+  grade_ids       String[] @db.Uuid
+  section_ids     String[] @db.Uuid
   created_at      DateTime @default(now())
   updated_at      DateTime @default(now()) @updatedAt
 
-  verifier     User         @relation(fields: [verifier_id], references: [id], onDelete: Cascade)
   organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
-  grade        Grade?       @relation(fields: [grade_id], references: [id], onDelete: Cascade)
-  section      Section?     @relation(fields: [section_id], references: [id], onDelete: Cascade)
-
-  @@unique([verifier_id, skill_type, grade_id, section_id])
 }

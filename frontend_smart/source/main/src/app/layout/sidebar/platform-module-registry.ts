@@ -214,7 +214,7 @@ export const PLATFORM_MODULES: RouteInfo[] = [
     groupTitle: false,
     badge: '',
     badgeClass: '',
-    role: ['SUPER_ADMIN', 'IDENTITY:IS_SKILL_VERIFIER'],
+    role: ['SUPER_ADMIN', 'IDENTITY:IS_SKILL_VERIFIER', 'SKILLS_VERIFICATION:VIEW', 'SKILLS_VERIFICATION_VIEW'],
     submenu: [],
     showInSidebar: true,
     domain: 'TENANT'

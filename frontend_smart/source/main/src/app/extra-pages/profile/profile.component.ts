@@ -164,14 +164,14 @@ export class ProfileComponent implements OnInit {
   addSelectedSkill() {
     const skillName = this.customSkill.trim();
     const skillType = this.selectedSkill;
-    
+
     if (!skillName) {
       this.showNotification('snackbar-danger', 'Please enter a skill name.', 'bottom', 'center');
       return;
     }
 
-    const isDuplicate = this.skills.some(s => 
-      s.skill_type === skillType && 
+    const isDuplicate = this.skills.some(s =>
+      s.skill_type === skillType &&
       s.skill_name.toLowerCase() === skillName.toLowerCase() &&
       s.id !== this.editingSkillId
     );
@@ -265,13 +265,13 @@ export class ProfileComponent implements OnInit {
   editSkill(skill: any) {
     this.editingSkillId = skill.id;
     this.editingSkillIndex = null; // No longer using index
-    
+
     if (this.availableSkills.includes(skill.skill_type)) {
       this.selectedSkill = skill.skill_type;
     } else {
       this.selectedSkill = '';
     }
-    
+
     this.customSkill = skill.skill_name;
     this.existingImages = skill.images ? [...skill.images] : [];
     this.skillImagePreviews = skill.images ? skill.images.map((img: string) => this.getSkillImageUrl(img)) : [];
@@ -320,14 +320,14 @@ export class ProfileComponent implements OnInit {
         maxWidthOrHeight: 800
       });
       this.selectedSkillImages.push(compressedFile);
-      
+
       const reader = new FileReader();
       reader.onload = (e: any) => {
         this.skillImagePreviews.push(e.target.result);
       };
       reader.readAsDataURL(compressedFile);
     }
-    
+
     // Clear the input value so the same file can be selected again if removed
     event.target.value = '';
   }
@@ -405,6 +405,14 @@ export class ProfileComponent implements OnInit {
   getSkillImageUrl(imagePath: string): string {
     if (!imagePath) return '';
     if (imagePath.startsWith('http')) return imagePath;
+    
+    // Ensure legacy paths or paths missing /api prefix are corrected
+    if (imagePath.startsWith('/uploads')) {
+      imagePath = `/api${imagePath}`;
+    } else if (imagePath.startsWith('uploads')) {
+      imagePath = `/api/${imagePath}`;
+    }
+    
     const baseUrl = environment.apiUrl.replace('/api', '');
     return `${baseUrl}${imagePath}`;
   }

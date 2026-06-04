@@ -15,6 +15,7 @@ import { SelectionModel } from '@angular/cdk/collections';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatCardModule } from '@angular/material/card';
 import { SkillsActionDialogComponent, SkillsActionDialogData } from '../skills-action-dialog/skills-action-dialog.component';
 
 @Component({
@@ -34,21 +35,23 @@ import { SkillsActionDialogComponent, SkillsActionDialogData } from '../skills-a
     MatCheckboxModule,
     MatSelectModule,
     MatFormFieldModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    MatCardModule
   ]
 })
 export class StudentSkillsDialogComponent {
   private http = inject(HttpClient);
   private dialog = inject(MatDialog);
   private snackBar = inject(MatSnackBar);
-  
+
   student: any;
   allSkills: any[] = [];
   filteredSkills: any[] = [];
-  
+  canModify = false;
+
   displayedColumns: string[] = ['select', 'type', 'skillName', 'proofs', 'remarks', 'status', 'actions'];
   selection = new SelectionModel<any>(true, []);
-  
+
   statusFilter = 'all';
 
   constructor(
@@ -57,6 +60,12 @@ export class StudentSkillsDialogComponent {
   ) {
     this.student = data.student;
     this.allSkills = data.skills;
+    this.canModify = data.canModify;
+
+    if (!this.canModify) {
+      this.displayedColumns = ['type', 'skillName', 'proofs', 'remarks', 'status'];
+    }
+
     this.applyFilter();
   }
 
@@ -85,7 +94,7 @@ export class StudentSkillsDialogComponent {
 
   bulkUpdateStatus(status: string): void {
     if (this.selection.selected.length === 0) return;
-    
+
     const actionText = status === 'approved' ? 'Approve' : 'Reject';
     const actionColor = status === 'approved' ? '#3085d6' : '#d33';
     const skillIds = this.selection.selected.map(s => s.id);
@@ -162,8 +171,33 @@ export class StudentSkillsDialogComponent {
   getSkillImageUrl(imagePath: string): string {
     if (!imagePath) return '';
     if (imagePath.startsWith('http')) return imagePath;
-    const baseUrl = environment.apiUrl.replace('/api', '');
-    return `${baseUrl}${imagePath}`;
+
+    let path = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
+    if (path.startsWith('/api/')) {
+      path = path.substring(4);
+    }
+
+    const baseUrl = environment.apiUrl;
+    return `${baseUrl}${path}`;
+  }
+
+  getProfileImageUrl(student: any): string {
+    if (student?.img) return student.img;
+    if (student?.user_profile?.profile_image) {
+      let img = student.user_profile.profile_image;
+      if (img.startsWith('http')) return img;
+
+      let path = img.startsWith('/') ? img : `/${img}`;
+      if (path.startsWith('/api/')) {
+        path = path.substring(4);
+      }
+      return `${environment.apiUrl}${path}`;
+    }
+    return 'assets/images/user/student.jpg';
+  }
+
+  handleImageError(event: any) {
+    event.target.src = 'assets/images/media.png';
   }
 
   viewImage(imagePath: string): void {
@@ -171,7 +205,10 @@ export class StudentSkillsDialogComponent {
     this.dialog.open(SkillsActionDialogComponent, {
       data: { type: 'image', imageUrl: imageUrl } as SkillsActionDialogData,
       panelClass: 'image-preview-dialog',
-      backdropClass: 'image-preview-backdrop'
+      backdropClass: 'image-preview-backdrop',
+      width: '45vw',
+      height: '45vh',
+      maxWidth: '1200px'
     });
   }
 
@@ -189,9 +226,9 @@ export class StudentSkillsDialogComponent {
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
         // Send the updated status and remarks to the API
-        this.http.patch(`${environment.apiUrl}/skills/${skill.id}/status`, { 
-          status: result.status, 
-          remarks: result.remarks 
+        this.http.patch(`${environment.apiUrl}/skills/${skill.id}/status`, {
+          status: result.status,
+          remarks: result.remarks
         }).subscribe({
           next: () => {
             this.snackBar.open('Verification updated successfully.', 'Close', { duration: 3000 });

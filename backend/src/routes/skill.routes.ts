@@ -90,24 +90,31 @@ router.get('/all', async (req: any, res: Response) => {
     }
 
     const isSuperAdmin = req.user.role === 'SUPER_ADMIN';
+    const hasGlobalView = req.user.permissions?.includes('SKILLS_VERIFICATION:VIEW') || 
+                          req.user.permissions?.includes('SKILLS_VERIFICATION_VIEW');
 
-    if (!isSuperAdmin) {
+    if (!isSuperAdmin && !hasGlobalView) {
       const assignments = await prisma.skillVerificationAssignment.findMany({
-        where: { verifier_id: req.user.user_id }
+        where: { verifier_ids: { has: req.user.user_id } }
       });
 
       if (assignments.length === 0) {
-        return res.status(403).json({ error: 'Forbidden' });
+        return res.json([]);
       }
 
-      const OR = assignments.map((a: any) => {
-        const condition: any = { skill_type: a.skill_type };
-        if (a.grade_id || a.section_id) {
-          condition.user = {};
-          if (a.grade_id) condition.user.grade_id = a.grade_id;
-          if (a.section_id) condition.user.section_id = a.section_id;
-        }
-        return condition;
+      const OR = assignments.flatMap((a: any) => {
+        return a.skill_types.map((skillType: string) => {
+          const condition: any = { skill_type: skillType };
+          if (a.grade_ids && a.grade_ids.length > 0) {
+            condition.user = {
+              grade_id: { in: a.grade_ids }
+            };
+            if (a.section_ids && a.section_ids.length > 0) {
+              condition.user.section_id = { in: a.section_ids };
+            }
+          }
+          return condition;
+        });
       });
 
       whereClause.AND = whereClause.AND || [];
@@ -172,12 +179,12 @@ router.patch('/:id/status', async (req: any, res: Response) => {
 
       const assignment = await prisma.skillVerificationAssignment.findFirst({
         where: {
-          verifier_id: req.user.user_id,
-          skill_type: skillToUpdate.skill_type,
+          verifier_ids: { has: req.user.user_id },
+          skill_types: { has: skillToUpdate.skill_type },
           OR: [
-            { grade_id: null, section_id: null },
-            { grade_id: skillToUpdate.user.grade_id ?? null, section_id: null },
-            { grade_id: skillToUpdate.user.grade_id ?? null, section_id: skillToUpdate.user.section_id ?? null }
+            { grade_ids: { isEmpty: true }, section_ids: { isEmpty: true } },
+            { grade_ids: { has: skillToUpdate.user.grade_id ?? '' }, section_ids: { isEmpty: true } },
+            { grade_ids: { has: skillToUpdate.user.grade_id ?? '' }, section_ids: { has: skillToUpdate.user.section_id ?? '' } }
           ]
         }
       });
@@ -319,12 +326,12 @@ router.patch('/bulk-status', async (req: any, res: Response) => {
       for (const skill of skillsToUpdate) {
         const assignment = await prisma.skillVerificationAssignment.findFirst({
           where: {
-            verifier_id: req.user.user_id,
-            skill_type: skill.skill_type,
+            verifier_ids: { has: req.user.user_id },
+            skill_types: { has: skill.skill_type },
             OR: [
-              { grade_id: null, section_id: null },
-              { grade_id: skill.user.grade_id ?? null, section_id: null },
-              { grade_id: skill.user.grade_id ?? null, section_id: skill.user.section_id ?? null }
+              { grade_ids: { isEmpty: true }, section_ids: { isEmpty: true } },
+              { grade_ids: { has: skill.user.grade_id ?? '' }, section_ids: { isEmpty: true } },
+              { grade_ids: { has: skill.user.grade_id ?? '' }, section_ids: { has: skill.user.section_id ?? '' } }
             ]
           }
         });

@@ -9,10 +9,10 @@ router.use(authMiddleware);
 
 // Schema for assignment validation
 const assignmentSchema = z.object({
-  verifier_id: z.string().uuid(),
-  skill_type: z.string().min(1),
-  grade_id: z.string().uuid().optional().nullable(),
-  section_id: z.string().uuid().optional().nullable()
+  verifier_ids: z.array(z.string().uuid()),
+  skill_types: z.array(z.string().min(1)),
+  grade_ids: z.array(z.string().uuid()).optional(),
+  section_ids: z.array(z.string().uuid()).optional()
 });
 
 // Middleware to check permissions
@@ -38,15 +38,10 @@ router.post('/', async (req: any, res: Response) => {
     const assignment = await prisma.skillVerificationAssignment.create({
       data: {
         organization_id: req.user.organization_id,
-        verifier_id: parsed.verifier_id,
-        skill_type: parsed.skill_type,
-        grade_id: parsed.grade_id || null,
-        section_id: parsed.section_id || null
-      },
-      include: {
-        verifier: { select: { id: true, name: true, email: true } },
-        grade: { select: { id: true, name: true } },
-        section: { select: { id: true, name: true } }
+        verifier_ids: parsed.verifier_ids,
+        skill_types: parsed.skill_types,
+        grade_ids: parsed.grade_ids || [],
+        section_ids: parsed.section_ids || []
       }
     });
 
@@ -68,15 +63,32 @@ router.get('/', async (req: any, res: Response) => {
   try {
     const assignments = await prisma.skillVerificationAssignment.findMany({
       where: { organization_id: req.user.organization_id },
-      include: {
-        verifier: { select: { id: true, name: true, email: true, role: { select: { name: true } } } },
-        grade: { select: { id: true, name: true } },
-        section: { select: { id: true, name: true } }
-      },
       orderBy: { created_at: 'desc' }
     });
 
-    res.json(assignments);
+    const enrichedAssignments = await Promise.all(assignments.map(async (a: any) => {
+      const verifiers = await prisma.user.findMany({
+        where: { id: { in: a.verifier_ids } },
+        select: { id: true, name: true, email: true, role: { select: { name: true } } }
+      });
+      const grades = await prisma.grade.findMany({
+        where: { id: { in: a.grade_ids } },
+        select: { id: true, name: true }
+      });
+      const sections = await prisma.section.findMany({
+        where: { id: { in: a.section_ids } },
+        select: { id: true, name: true }
+      });
+
+      return {
+        ...a,
+        verifiers,
+        grades,
+        sections
+      };
+    }));
+
+    res.json(enrichedAssignments);
   } catch (error) {
     console.error('Error fetching assignments:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -120,15 +132,10 @@ router.put('/:id', async (req: any, res: Response) => {
     const assignment = await prisma.skillVerificationAssignment.update({
       where: { id },
       data: {
-        verifier_id: parsed.verifier_id,
-        skill_type: parsed.skill_type,
-        grade_id: parsed.grade_id || null,
-        section_id: parsed.section_id || null
-      },
-      include: {
-        verifier: { select: { id: true, name: true, email: true } },
-        grade: { select: { id: true, name: true } },
-        section: { select: { id: true, name: true } }
+        verifier_ids: parsed.verifier_ids,
+        skill_types: parsed.skill_types,
+        grade_ids: parsed.grade_ids || [],
+        section_ids: parsed.section_ids || []
       }
     });
 

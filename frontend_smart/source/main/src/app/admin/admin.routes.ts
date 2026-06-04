@@ -212,7 +212,7 @@ export const ADMIN_ROUTE: Route[] = [
       {
         path: 'skills-verify',
         canActivate: [AuthGuard],
-        data: { permission: 'IDENTITY:IS_SKILL_VERIFIER' },
+        data: { permission: ['IDENTITY:IS_SKILL_VERIFIER', 'SKILLS_VERIFICATION:VIEW', 'SKILLS_VERIFICATION_VIEW'] },
         loadComponent: () =>
           import('./administration/skills-verify/skills-verify.component').then(
             (m) => m.SkillsVerifyComponent

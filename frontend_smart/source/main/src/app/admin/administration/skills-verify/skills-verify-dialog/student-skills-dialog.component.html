@@ -1,128 +1,144 @@
-<div class="dialog-header d-flex justify-content-between align-items-center">
-  <div class="d-flex align-items-center gap-3">
-    <div class="avatar-circle flex-shrink-0">
-      <img src="assets/images/user/user.jpg" alt="User">
-    </div>
-    <div class="header-text-container text-truncate">
-      <h3 mat-dialog-title class="m-0 student-name fw-bold text-truncate" style="padding-bottom: 0;">{{ student?.name || 'Student name' }}</h3>
-      <p class="m-0 student-meta text-truncate" style="margin-top: 2px;">
-        {{ student?.email || student?.roll_no || 'Student email' }}
-      </p>
-    </div>
-  </div>
+<mat-dialog-content class="p-0 m-0" style="background-color: #f4f7f6; overflow: hidden;">
+  <mat-card class="m-0" style="box-shadow: none; border-radius: 0;">
+    <div
+      class="d-flex flex-column flex-xl-row align-items-start align-items-xl-center justify-content-between w-100 mb-3 pt-4 px-4">
 
-  <button mat-icon-button mat-dialog-close class="top-close-btn m-0">
-    <mat-icon>close</mat-icon>
-  </button>
-</div>
-
-<mat-dialog-content class="dialog-content-area">
-  <div class="d-flex justify-content-start justify-content-md-end mb-4 mt-2">
-    <mat-form-field appearance="outline" class="status-filter m-0">
-      <mat-label>Filter by Status</mat-label>
-      <mat-select [(ngModel)]="statusFilter" (selectionChange)="applyFilter()">
-        <mat-option value="all">All Statuses</mat-option>
-        <mat-option value="pending">Pending</mat-option>
-        <mat-option value="approved">Approved</mat-option>
-        <mat-option value="rejected">Rejected</mat-option>
-      </mat-select>
-    </mat-form-field>
-  </div>
-
-  <div class="table-responsive">
-    <table mat-table [dataSource]="filteredSkills" class="w-100 minimalist-table">
-    <!-- Checkbox Column -->
-    <ng-container matColumnDef="select">
-      <th mat-header-cell *matHeaderCellDef style="width: 50px;">
-        <mat-checkbox (change)="$event ? toggleAllRows() : null" [checked]="selection.hasValue() && isAllSelected()"
-          [indeterminate]="selection.hasValue() && !isAllSelected()" color="primary">
-        </mat-checkbox>
-      </th>
-      <td mat-cell *matCellDef="let row">
-        <mat-checkbox (click)="$event.stopPropagation()" (change)="$event ? selection.toggle(row) : null"
-          [checked]="selection.isSelected(row)" color="primary">
-        </mat-checkbox>
-      </td>
-    </ng-container>
-
-    <!-- Type Column -->
-    <ng-container matColumnDef="type">
-      <th mat-header-cell *matHeaderCellDef> Type </th>
-      <td mat-cell *matCellDef="let skill">
-        <span class="type-pill" [ngClass]="skill.skill_type === 'Academic Skills' ? 'academic' : 'extra'">
-          {{ skill.skill_type }}
-        </span>
-      </td>
-    </ng-container>
-
-    <!-- Skill Name Column -->
-    <ng-container matColumnDef="skillName">
-      <th mat-header-cell *matHeaderCellDef> Skill Name </th>
-      <td mat-cell *matCellDef="let skill" class="fw-bold text-dark">
-        {{ skill.skill_name }}
-      </td>
-    </ng-container>
-
-    <!-- Proofs Column -->
-    <ng-container matColumnDef="proofs">
-      <th mat-header-cell *matHeaderCellDef> Proofs </th>
-      <td mat-cell *matCellDef="let skill">
-        <div class="d-flex gap-2 py-2">
-          <div class="proof-img" *ngFor="let img of skill.images" (click)="viewImage(img)">
-            <img [src]="getSkillImageUrl(img)" alt="Proof" />
-          </div>
-          <span *ngIf="!skill.images || skill.images.length === 0" class="text-muted small">-</span>
+      <!-- Left side: Avatar and Name (Acting as Card Title) -->
+      <div class="d-flex align-items-center gap-3 mb-3 mb-xl-0">
+        <div class="avatar-circle flex-shrink-0"
+          style="width: 48px; height: 48px; border-radius: 50%; overflow: hidden; background-color: #f3f4f6;">
+          <img [src]="getProfileImageUrl(student)" (error)="$event.target.src='assets/images/user/student.jpg'"
+            alt="User" style="width: 100%; height: 100%; object-fit: cover;">
         </div>
-      </td>
-    </ng-container>
-
-    <!-- Remarks Column -->
-    <ng-container matColumnDef="remarks">
-      <th mat-header-cell *matHeaderCellDef> Remarks </th>
-      <td mat-cell *matCellDef="let skill">
-        <span *ngIf="skill.remarks" [matTooltip]="skill.remarks" style="cursor: help;">
-          <mat-icon color="primary" style="font-size: 18px; width: 18px; height: 18px;">info</mat-icon>
-        </span>
-        <span *ngIf="!skill.remarks" class="text-muted">-</span>
-      </td>
-    </ng-container>
-
-    <!-- Status Column -->
-    <ng-container matColumnDef="status">
-      <th mat-header-cell *matHeaderCellDef> Status </th>
-      <td mat-cell *matCellDef="let skill">
-        <span class="status-pill" [ngClass]="skill.status">
-          {{ skill.status | uppercase }}
-        </span>
-      </td>
-    </ng-container>
-
-    <!-- Actions Column -->
-    <ng-container matColumnDef="actions">
-      <th mat-header-cell *matHeaderCellDef> Actions </th>
-      <td mat-cell *matCellDef="let skill">
-        <div class="d-flex gap-2">
-          <button *ngIf="skill.status === 'pending'" class="action-icon-btn approve" matTooltip="Approve" (click)="updateSkillStatus(skill, 'approved')">
-            <mat-icon>check_circle</mat-icon>
-          </button>
-          <button *ngIf="skill.status === 'pending'" class="action-icon-btn reject" matTooltip="Reject" (click)="updateSkillStatus(skill, 'rejected')">
-            <mat-icon>cancel</mat-icon>
-          </button>
-          <button class="action-icon-btn edit" matTooltip="Edit" (click)="editSkill(skill)">
-            <mat-icon>edit</mat-icon>
-          </button>
+        <div class="header-text-container text-truncate">
+          <h3 class="m-0 fw-bold text-truncate fs-5">{{ student?.name || 'Student name' }}</h3>
+          <p class="m-0 text-muted text-truncate" style="margin-top: 2px; font-size: 0.875rem;">
+            {{ student?.email || student?.roll_no || 'Student email' }}
+          </p>
         </div>
-      </td>
-    </ng-container>
+      </div>
 
-    <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
-    <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="skill-row"></tr>
-  </table>
-  </div>
+      <!-- Right side: Filters and Close -->
+      <div
+        class="header-actions d-flex flex-wrap gap-3 justify-content-start justify-content-xl-end align-items-center">
+        <mat-form-field appearance="outline" class="filter-field m-0" style="width: 200px;">
+          <mat-label>Filter by Status</mat-label>
+          <mat-select [(ngModel)]="statusFilter" (selectionChange)="applyFilter()">
+            <mat-option value="all">All Statuses</mat-option>
+            <mat-option value="pending">Pending</mat-option>
+            <mat-option value="approved">Approved</mat-option>
+            <mat-option value="rejected">Rejected</mat-option>
+          </mat-select>
+        </mat-form-field>
 
-  <div *ngIf="filteredSkills.length === 0" class="text-center p-5 text-muted empty-state">
-    <mat-icon class="mb-2 text-secondary" style="font-size: 48px; width: 48px; height: 48px;">inventory_2</mat-icon>
-    <h5 class="m-0 text-dark">No skills found</h5>
-    <p class="m-0 mt-1">There are no skills matching the current filter.</p>
-  </div>
+        <button mat-icon-button mat-dialog-close class="top-close-btn"
+          style="background-color: #e5e7eb; color: #4b5563; border-radius: 50%; margin-top: -15px;">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    <mat-card-content class="px-4 pb-4">
+      <div class="table-responsive">
+        <table mat-table [dataSource]="filteredSkills" class="mat-elevation-z0 w-100">
+          <!-- Checkbox Column -->
+          <ng-container matColumnDef="select">
+            <th mat-header-cell *matHeaderCellDef style="width: 50px;">
+              <mat-checkbox (change)="$event ? toggleAllRows() : null"
+                [checked]="selection.hasValue() && isAllSelected()"
+                [indeterminate]="selection.hasValue() && !isAllSelected()" color="primary">
+              </mat-checkbox>
+            </th>
+            <td mat-cell *matCellDef="let row">
+              <mat-checkbox (click)="$event.stopPropagation()" (change)="$event ? selection.toggle(row) : null"
+                [checked]="selection.isSelected(row)" color="primary">
+              </mat-checkbox>
+            </td>
+          </ng-container>
+
+          <!-- Type Column -->
+          <ng-container matColumnDef="type">
+            <th mat-header-cell *matHeaderCellDef> Type </th>
+            <td mat-cell *matCellDef="let skill">
+              <span class="type-pill" [ngClass]="skill.skill_type === 'Academic Skills' ? 'academic' : 'extra'">
+                {{ skill.skill_type }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Skill Name Column -->
+          <ng-container matColumnDef="skillName">
+            <th mat-header-cell *matHeaderCellDef> Skill Name </th>
+            <td mat-cell *matCellDef="let skill" class="fw-bold text-dark">
+              {{ skill.skill_name }}
+            </td>
+          </ng-container>
+
+          <!-- Proofs Column -->
+          <ng-container matColumnDef="proofs">
+            <th mat-header-cell *matHeaderCellDef> Proofs </th>
+            <td mat-cell *matCellDef="let skill">
+              <div class="d-flex gap-2 py-2">
+                <div class="proof-img" *ngFor="let img of skill.images" (click)="viewImage(img)">
+                  <img [src]="getSkillImageUrl(img)" (error)="handleImageError($event)" alt="Proof" />
+                </div>
+                <span *ngIf="!skill.images || skill.images.length === 0" class="text-muted small">-</span>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Remarks Column -->
+          <ng-container matColumnDef="remarks">
+            <th mat-header-cell *matHeaderCellDef> Remarks </th>
+            <td mat-cell *matCellDef="let skill">
+              <span *ngIf="skill.remarks" [matTooltip]="skill.remarks" style="cursor: help;">
+                <mat-icon color="primary" style="font-size: 18px; width: 18px; height: 18px;">info</mat-icon>
+              </span>
+              <span *ngIf="!skill.remarks" class="text-muted">-</span>
+            </td>
+          </ng-container>
+
+          <!-- Status Column -->
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef> Status </th>
+            <td mat-cell *matCellDef="let skill">
+              <span class="status-pill" [ngClass]="skill.status">
+                {{ skill.status | uppercase }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Actions Column -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef> Actions </th>
+            <td mat-cell *matCellDef="let skill">
+              <div class="d-flex gap-2">
+                <button *ngIf="skill.status === 'pending'" class="action-icon-btn approve" matTooltip="Approve"
+                  (click)="updateSkillStatus(skill, 'approved')">
+                  <mat-icon>check_circle</mat-icon>
+                </button>
+                <button *ngIf="skill.status === 'pending'" class="action-icon-btn reject" matTooltip="Reject"
+                  (click)="updateSkillStatus(skill, 'rejected')">
+                  <mat-icon>cancel</mat-icon>
+                </button>
+                <button *ngIf="skill.status !== 'pending'" class="action-icon-btn edit" matTooltip="Edit"
+                  (click)="editSkill(skill)">
+                  <mat-icon>edit</mat-icon>
+                </button>
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="skill-row"></tr>
+        </table>
+      </div>
+
+      <div *ngIf="filteredSkills.length === 0" class="text-center p-5 text-muted empty-state">
+        <mat-icon class="mb-2 text-secondary" style="font-size: 48px; width: 48px; height: 48px;">inventory_2</mat-icon>
+        <h5 class="m-0 text-dark">No skills found</h5>
+        <p class="m-0 mt-1">There are no skills matching the current filter.</p>
+      </div>
+    </mat-card-content>
+  </mat-card>
 </mat-dialog-content>
