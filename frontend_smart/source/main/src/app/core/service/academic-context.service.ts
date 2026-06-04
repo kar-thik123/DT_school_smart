@@ -23,8 +23,13 @@ export class AcademicContextService {
   constructor() {
     this.authService.user$.subscribe(user => {
       if (user && Object.keys(user).length > 0) {
-        console.log('[AcademicContextService] User session active. Loading active year context.');
-        this.loadActiveYear().subscribe();
+        const isPlatformAdmin = this.authService.hasPermission('IDENTITY', 'IS_SYSTEM_ADMIN');
+        if (!isPlatformAdmin) {
+          console.log('[AcademicContextService] User session active. Loading active year context.');
+          this.loadActiveYear().subscribe();
+        } else {
+          console.log('[AcademicContextService] Platform admin session active. Bypassing academic context.');
+        }
       } else {
         console.log('[AcademicContextService] User session inactive. Clearing context.');
         this.clearContext();

@@ -466,13 +466,26 @@ router.post('/:id/reset-password', requireManagement, async (req: any, res: Resp
 
 router.get('/profile/:id', async (req: any, res: Response) => {
   try {
+    // First, fetch basic user to determine role
+    const userBase = await prisma.user.findUnique({
+      where: { id: req.params.id },
+      include: { role: true }
+    });
+    if (!userBase) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Platform admins do not have student enrollments or academic contexts.
+    // Eager loading these relationships for them causes unnecessary strain and intermittent errors.
+    const isPlatformAdmin = userBase.role?.name === 'SYSTEM_ADMIN';
+
     const user = await prisma.user.findUnique({
       where: { id: req.params.id },
       include: {
         role: true,
         user_profile: true,
-        student_profile: true,
-        enrollments: {
+        student_profile: !isPlatformAdmin,
+        enrollments: isPlatformAdmin ? false : {
           take: 1,
           orderBy: { enrollment_date: 'desc' }
         }

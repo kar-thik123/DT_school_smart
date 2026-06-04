@@ -157,7 +157,6 @@ router.get('/topics', requirePermission('COMPLETION_TRACKING', 'VIEW'), async (r
 });
 
 const toggleSchema = z.object({
-  academic_year_id: z.string().uuid(),
   grade_id: z.string().uuid(),
   section_id: z.string().uuid().nullable(),
   subject_id: z.string().uuid(),
@@ -254,15 +253,7 @@ router.post('/toggle', requirePermission('COMPLETION_TRACKING', 'MANAGE'), async
         };
       };
 
-      // 1. Toggle main item
-      await tx.completionTracking.upsert({
-        where: {
-          // This requires a unique compound index in Prisma if we use upsert, but we didn't add a unique constraint!
-          // We must use findFirst and update/create instead since we didn't define a unique @@unique.
-          // Wait, findFirst isn't supported in upsert where clause. Let's do findFirst -> update or create manually.
-          id: 'dummy' // Placeholder, will fix below
-        }
-      }).catch((e: any) => null); // Let's just write the manual logic.
+
       
       const upsertCompletion = async (lvl: string, target_id: string) => {
          const existing = await tx.completionTracking.findFirst({
