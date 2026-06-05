@@ -5,7 +5,7 @@ export interface AuditLogPayload {
   user_id: string;
   user_name?: string;
   action_type: 'CREATE' | 'UPDATE' | 'DELETE' | 'TOGGLE' | 'IMPORT' | 'ASSIGN';
-  entity_type: 'QUESTION' | 'COMPLETION' | 'TEACHER_ASSIGNMENT' | 'SYLLABUS' | 'ROLE_PERMISSION';
+  entity_type: 'QUESTION' | 'COMPLETION' | 'TEACHER_ASSIGNMENT' | 'SYLLABUS' | 'ROLE_PERMISSION' | 'ACADEMIC_STRUCTURE';
   entity_id: string;
   metadata?: any;
 }

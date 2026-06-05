@@ -136,4 +136,19 @@ export class AcademicStructureService {
   deleteSubjectGroup(id: string): Observable<any> {
     return this.http.delete(`${this.API_URL}/subject-groups/${id}`);
   }
+
+  // --- Bulk Import ---
+  uploadBulkCsvPreview(file: File): Observable<{ message: string; session_id: string; summary: any; records: any[] }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<{ message: string; session_id: string; summary: any; records: any[] }>(`${this.API_URL}/bulk/preview`, formData);
+  }
+
+  discardBulkImport(session_id: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.API_URL}/bulk/discard`, { session_id });
+  }
+
+  confirmBulkImport(session_id: string, modifiedRecords?: any[]): Observable<{ message: string; results?: any }> {
+    return this.http.post<{ message: string; results?: any }>(`${this.API_URL}/bulk/confirm`, { session_id, modified_records: modifiedRecords });
+  }
 }

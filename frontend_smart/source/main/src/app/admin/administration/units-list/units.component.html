@@ -6,12 +6,27 @@
           [active_item]="breadscrums[0].active"></app-breadcrumb>
       </div>
 
-      <div class="hierarchy-dropdown-wrapper d-flex align-items-center" style="flex-shrink: 0;">
-        <app-hierarchy-dropdown [grades]="grades" [allSections]="allSections" [selectedGradeId]="selectedGradeId"
-          [selectedSectionId]="selectedSectionId" [selectedGradeName]="selectedGradeName"
-          [selectedSectionName]="selectedSectionName"
-          (selectionChange)="selectGradeSectionForUnit($event.grade, $event.section)">
-        </app-hierarchy-dropdown>
+      <div class="d-flex align-items-center gap-3 header-actions-wrapper" style="flex-shrink: 0;">
+        <div class="hierarchy-dropdown-wrapper">
+          <app-hierarchy-dropdown [grades]="grades" [allSections]="allSections" [selectedGradeId]="selectedGradeId"
+            [selectedSectionId]="selectedSectionId" [selectedGradeName]="selectedGradeName"
+            [selectedSectionName]="selectedSectionName"
+            (selectionChange)="selectGradeSectionForUnit($event.grade, $event.section)">
+          </app-hierarchy-dropdown>
+        </div>
+        
+        <div *ngIf="canManageSyllabus">
+          <input type="file" #fileInput (change)="onFileSelected($event)" accept=".xlsx, .xls, .csv" style="display: none;">
+          <button class="import-excel-btn" (click)="fileInput.click()">
+            <mat-icon>cloud_upload</mat-icon> Import Excel
+          </button>
+        </div>
+        
+        <div>
+          <button class="import-excel-btn" (click)="exportExcel()">
+            <mat-icon>download</mat-icon> Export Excel
+          </button>
+        </div>
       </div>
     </div>
 
@@ -322,3 +337,12 @@
   </div>
 
 </section>
+
+<!-- Bulk Import Preview Modal -->
+<app-units-preview *ngIf="showPreviewModal"
+  [previewData]="previewData"
+  [previewSummary]="previewSummary"
+  (discard)="onDiscardImport()"
+  (confirm)="onConfirmImport($event)"
+  (revalidate)="onRevalidateImport($event)">
+</app-units-preview>
