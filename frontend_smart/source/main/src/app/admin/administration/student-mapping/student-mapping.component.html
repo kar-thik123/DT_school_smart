@@ -27,6 +27,14 @@
 
             <div class="d-flex justify-content-between align-items-center mb-4">
               <h5 class="m-0">Academic Year: <span class="text-primary">{{ activeAcademicYear?.name || 'Not Set' }}</span></h5>
+              <div>
+                <button mat-stroked-button color="primary" class="me-2" *appHasPermission="'STUDENT_ENROLLMENT:IMPORT'" (click)="openImportDialog()">
+                  <mat-icon>upload</mat-icon> Import
+                </button>
+                <button mat-stroked-button color="primary" *appHasPermission="'STUDENT_ENROLLMENT:EXPORT'" (click)="exportEnrollments()">
+                  <mat-icon>download</mat-icon> Export
+                </button>
+              </div>
             </div>
 
             <!-- GLOBAL ACADEMIC CONTEXT SELECTOR -->

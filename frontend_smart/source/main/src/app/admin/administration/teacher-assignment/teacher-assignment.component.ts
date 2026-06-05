@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -9,6 +9,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatTableModule, MatTableDataSource } from '@angular/material/table';
+import { MatPaginatorModule, MatPaginator } from '@angular/material/paginator';
+import { MatInputModule } from '@angular/material/input';
 import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.component';
 import { TeacherAssignmentService } from './services/teacher-assignment.service';
 import { AcademicStructureService, IGrade, ISection } from '../academic-structure/services/academic-structure.service';
@@ -31,6 +34,9 @@ import { AcademicContextSelectorComponent, IAcademicContextSelection } from '@sh
     MatIconModule,
     MatButtonModule,
     MatProgressSpinnerModule,
+    MatTableModule,
+    MatPaginatorModule,
+    MatInputModule,
     BreadcrumbComponent,
     AcademicContextSelectorComponent
   ],
@@ -71,6 +77,22 @@ export class TeacherAssignmentComponent implements OnInit {
   isSaving = false;
   canManageAssignments = false;
 
+  allAssignments: any[] = [];
+  dataSource = new MatTableDataSource<any>([]);
+  displayedColumns = ['teacherName', 'assignmentType', 'grade', 'section', 'subject'];
+
+  private _paginator!: MatPaginator;
+  @ViewChild(MatPaginator) set matPaginator(mp: MatPaginator) {
+    this._paginator = mp;
+    if (this.dataSource) {
+      this.dataSource.paginator = mp;
+    }
+  }
+
+  get paginator(): MatPaginator {
+    return this._paginator;
+  }
+
   ngOnInit() {
     const isTeacherPath = this.router.url.startsWith('/teacher/');
     const parentPath = isTeacherPath ? 'Teacher' : 'Administration';
@@ -83,12 +105,9 @@ export class TeacherAssignmentComponent implements OnInit {
                                 this.authService.hasPermission('TEACHER_ASSIGNMENT', 'DELETE') ||
                                 this.authService.hasPermission('TEACHER_ASSIGNMENT_DELETE');
 
-    // Subscribe to centralized Academic Context
     this.academicContextService.activeYear$.subscribe((year: any) => {
       this.activeAcademicYear = year;
-      if (this.selectedGradeId && this.selectedSectionId) {
-        this.loadAssignmentsForSection();
-      }
+      this.refreshAssignments();
     });
 
     this.loadInitialData();
@@ -119,8 +138,8 @@ export class TeacherAssignmentComponent implements OnInit {
     }
 
     this.resetAssignments();
+    this.refreshAssignments();
     if (this.selectedGradeId && this.selectedSectionId) {
-      this.loadAssignmentsForSection();
       this.loadSubjectsForSection();
     }
   }
@@ -133,27 +152,56 @@ export class TeacherAssignmentComponent implements OnInit {
     this.existingSubjectAssignments = [];
   }
 
-  loadAssignmentsForSection() {
+  refreshAssignments() {
     this.assignmentService.getAllAssignments().subscribe((assignments) => {
-      const sectionAssignments = assignments.filter(a => 
-        a.section_id === this.selectedSectionId
-      );
-
-      // Class Teacher
-      const classTeacher = sectionAssignments.find(a => a.assignment_type === AssignmentType.CLASS_TEACHER);
-      if (classTeacher) {
-        this.currentClassTeacherAssignment = classTeacher;
-        this.currentClassTeacherId = classTeacher.teacher_id;
+      this.allAssignments = assignments;
+      
+      const currentFilter = this.dataSource?.filter || '';
+      this.dataSource = new MatTableDataSource(assignments);
+      if (this._paginator) {
+        this.dataSource.paginator = this._paginator;
       }
+      this.dataSource.filterPredicate = (data: any, filter: string) => {
+        const searchStr = (
+          (data.teacher?.name || '') + 
+          (data.assignment_type || '') + 
+          (data.grade?.name || '') + 
+          (data.section?.name || '') + 
+          (data.subject?.name || '')
+        ).toLowerCase();
+        return searchStr.includes(filter);
+      };
+      this.dataSource.filter = currentFilter;
 
-      // Subject Teachers
-      this.existingSubjectAssignments = sectionAssignments.filter(a => a.assignment_type === AssignmentType.SUBJECT_TEACHER);
-      this.existingSubjectAssignments.forEach(a => {
-        if (a.subject_id) {
-          this.subjectTeacherMap[a.subject_id] = a.teacher_id;
+      if (this.selectedGradeId && this.selectedSectionId) {
+        const sectionAssignments = assignments.filter(a => 
+          a.section_id === this.selectedSectionId
+        );
+
+        // Class Teacher
+        const classTeacher = sectionAssignments.find(a => a.assignment_type === AssignmentType.CLASS_TEACHER);
+        if (classTeacher) {
+          this.currentClassTeacherAssignment = classTeacher;
+          this.currentClassTeacherId = classTeacher.teacher_id;
         }
-      });
+
+        // Subject Teachers
+        this.existingSubjectAssignments = sectionAssignments.filter(a => a.assignment_type === AssignmentType.SUBJECT_TEACHER);
+        this.existingSubjectAssignments.forEach(a => {
+          if (a.subject_id) {
+            this.subjectTeacherMap[a.subject_id] = a.teacher_id;
+          }
+        });
+      }
     });
+  }
+
+  applyFilter(event: Event) {
+    const filterValue = (event.target as HTMLInputElement).value;
+    this.dataSource.filter = filterValue.trim().toLowerCase();
+    if (this.dataSource.paginator) {
+      this.dataSource.paginator.firstPage();
+    }
   }
 
   loadSubjectsForSection() {
@@ -298,7 +346,7 @@ export class TeacherAssignmentComponent implements OnInit {
 
       Promise.all(createPromises).then(() => {
         this.showNotification('success', 'Subject Teachers mapped successfully');
-        this.loadAssignmentsForSection(); // reload
+        this.refreshAssignments(); // reload
         this.isSaving = false;
       }).catch(err => {
         this.showNotification('error', 'Error saving subject teachers');

@@ -62,7 +62,9 @@ export const PERMISSIONS_REGISTRY = {
     "actions": [
       "VIEW",
       "ENROLL",
-      "TRANSFER"
+      "TRANSFER",
+      "IMPORT",
+      "EXPORT"
     ]
   },
   "QUESTION_BANK": {

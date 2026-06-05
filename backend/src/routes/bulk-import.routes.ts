@@ -8,7 +8,7 @@ import { logAuditEvent } from '../services/audit.service';
 const router = Router();
 
 const ENTITY_PERMISSION_MAP: Record<string, { module: string, action: string }> = {
-  'STUDENT_ENROLLMENT': { module: 'USERS', action: 'BULK_IMPORT' },
+  'STUDENT_ENROLLMENT': { module: 'STUDENT_ENROLLMENT', action: 'IMPORT' },
   'STUDENT_MAPPING': { module: 'USERS', action: 'BULK_IMPORT' },
   'TEACHER_ASSIGNMENT': { module: 'TEACHER_ASSIGNMENT', action: 'CREATE' },
   'SUBJECT_GROUPS': { module: 'ACADEMIC_STRUCTURE', action: 'CREATE' },

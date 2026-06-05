@@ -4,78 +4,12 @@ import { authMiddleware, requirePermission } from '../middlewares/auth.middlewar
 import { EnrollmentStatus } from '@prisma/client';
 import { AssignmentVisibilityResolver } from '../utils/assignment-visibility.resolver';
 import { AcademicContextResolver } from '../utils/academic-context.resolver';
+import { StudentEnrollmentService } from '../services/student-enrollment.service';
 
 const router = Router();
 router.use(authMiddleware);
 
-// Helper to check capacity
-async function checkSectionCapacity(sectionId: string, orgId: string, addedCount = 1) {
-  const section = await prisma.section.findUnique({ where: { id: sectionId } });
-  if (!section || !section.capacity) return { allowed: true };
-
-  // Count active enrollments in this section
-  const currentCount = await prisma.studentEnrollment.count({
-    where: { section_id: sectionId, organization_id: orgId, status: EnrollmentStatus.ACTIVE }
-  });
-
-  if (currentCount + addedCount > section.capacity) {
-    return { allowed: false, message: `Section capacity exceeded. Max: ${section.capacity}, Current: ${currentCount}, Adding: ${addedCount}` };
-  }
-  return { allowed: true };
-}
-
-// Helper to check if section has groups
-async function sectionHasGroups(
-  organizationId: string,
-  academicYearId: string,
-  gradeId: string,
-  sectionId: string
-): Promise<boolean> {
-  const groupCount = await prisma.subjectGroup.count({
-    where: {
-      organization_id: organizationId,
-      grade_id: gradeId,
-      section_id: sectionId
-    }
-  });
-  return groupCount > 0;
-}
-
-// Helper to validate the group assignment
-async function validateGroupAssignment(
-  organizationId: string,
-  academicYearId: string,
-  gradeId: string,
-  sectionId: string | null | undefined,
-  subjectGroupId: string | null | undefined
-): Promise<{ allowed: boolean, message?: string }> {
-  if (!sectionId) {
-    if (subjectGroupId) {
-      return { allowed: false, message: 'subject_group_id cannot be provided without a section' };
-    }
-    return { allowed: true };
-  }
-
-  const hasGroups = await sectionHasGroups(organizationId, academicYearId, gradeId, sectionId);
-
-  if (hasGroups && !subjectGroupId) {
-    return { allowed: false, message: 'subject_group_id is required for grouped sections' };
-  }
-
-  if (subjectGroupId) {
-    const group = await prisma.subjectGroup.findUnique({
-      where: { id: subjectGroupId }
-    });
-    if (!group || group.organization_id !== organizationId) {
-      return { allowed: false, message: 'Invalid subject_group_id: does not exist or belongs to another organization' };
-    }
-    if (group.section_id !== sectionId) {
-      return { allowed: false, message: 'Invalid subject_group_id: belongs to another section' };
-    }
-  }
-
-  return { allowed: true };
-}
+// Helpers were moved to StudentEnrollmentService
 
 // GET enrollments
 router.get('/', requirePermission('ACADEMIC_STRUCTURE', 'READ'), async (req: any, res: Response) => {
@@ -187,50 +121,13 @@ router.post('/map', requirePermission('ACADEMIC_STRUCTURE', 'EDIT'), async (req:
     const orgId = req.user.organization_id;
     const academic_year_id = req.academic_year_id;
 
-    if (!student_id || !grade_id) {
-      return res.status(400).json({ message: 'student_id and grade_id required' });
-    }
-
-    // Group requirement validation
-    const groupValidation = await validateGroupAssignment(orgId, academic_year_id, grade_id, section_id, subject_group_id);
-    if (!groupValidation.allowed) {
-      return res.status(400).json({ message: groupValidation.message });
-    }
-
-    // Capacity check if section provided
-    if (section_id) {
-      // Find existing enrollment to see if section is changing
-      const existing = await prisma.studentEnrollment.findUnique({
-        where: { student_id_academic_year_id_organization_id: { student_id, academic_year_id, organization_id: orgId } }
-      });
-      if (!existing || existing.section_id !== section_id) {
-        const cap = await checkSectionCapacity(section_id, orgId, 1);
-        if (!cap.allowed) return res.status(400).json({ message: cap.message });
-      }
-    }
-
-    const enrollment = await prisma.studentEnrollment.upsert({
-      where: {
-        student_id_academic_year_id_organization_id: {
-          student_id, academic_year_id, organization_id: orgId
-        }
-      },
-      update: { grade_id, section_id, subject_group_id, status: status || EnrollmentStatus.ACTIVE },
-      create: {
-        organization_id: orgId,
-        student_id, academic_year_id, grade_id, section_id, subject_group_id, status: status || EnrollmentStatus.ACTIVE
-      }
-    });
-
-    // Update the transitional fields on User model safely within tenant scope
-    await prisma.user.updateMany({
-      where: { id: student_id, organization_id: orgId },
-      data: { grade_id, section_id }
+    const enrollment = await StudentEnrollmentService.enrollStudent(orgId, academic_year_id, {
+      student_id, grade_id, section_id, subject_group_id, status
     });
 
     return res.json(enrollment);
   } catch (error: any) {
-    return res.status(500).json({ error: error.message });
+    return res.status(400).json({ error: error.message });
   }
 });
 
@@ -245,35 +142,23 @@ router.post('/bulk-enroll', requirePermission('ACADEMIC_STRUCTURE', 'EDIT'), asy
       return res.status(400).json({ message: 'Invalid payload' });
     }
 
-    // Group requirement validation
-    const groupValidation = await validateGroupAssignment(orgId, academic_year_id, grade_id, section_id, subject_group_id);
-    if (!groupValidation.allowed) {
-      return res.status(400).json({ message: groupValidation.message });
+    const payloads = student_ids.map((id: string) => ({
+      student_id: id,
+      grade_id,
+      section_id,
+      subject_group_id,
+      status: EnrollmentStatus.ACTIVE
+    }));
+
+    const result = await StudentEnrollmentService.bulkEnrollStudents(orgId, academic_year_id, payloads);
+    
+    if (result.failure > 0 && result.success === 0) {
+       return res.status(400).json({ message: 'All enrollments failed validation' });
     }
 
-    if (section_id) {
-      const cap = await checkSectionCapacity(section_id, orgId, student_ids.length);
-      if (!cap.allowed) return res.status(400).json({ message: cap.message });
-    }
-
-    await prisma.$transaction(async (tx: any) => {
-      for (const student_id of student_ids) {
-        await tx.studentEnrollment.upsert({
-          where: { student_id_academic_year_id_organization_id: { student_id, academic_year_id, organization_id: orgId } },
-          update: { grade_id, section_id: section_id || null, subject_group_id: subject_group_id || null, status: EnrollmentStatus.ACTIVE },
-          create: { organization_id: orgId, student_id, academic_year_id, grade_id, section_id: section_id || null, subject_group_id: subject_group_id || null, status: EnrollmentStatus.ACTIVE }
-        });
-
-        await tx.user.updateMany({
-          where: { id: student_id, organization_id: orgId },
-          data: { grade_id, section_id: section_id || null }
-        });
-      }
-    });
-
-    return res.json({ message: 'Bulk enrollment successful' });
+    return res.json({ message: 'Bulk enrollment successful', result });
   } catch (error: any) {
-    return res.status(500).json({ error: error.message });
+    return res.status(400).json({ error: error.message });
   }
 });
 
@@ -291,7 +176,7 @@ router.post('/promote', requirePermission('ACADEMIC_STRUCTURE', 'EDIT'), async (
 
     // Group validation for each promotion
     for (const promo of promotions) {
-      const groupValidation = await validateGroupAssignment(orgId, to_academic_year_id, promo.to_grade_id, promo.to_section_id, promo.to_subject_group_id);
+      const groupValidation = await StudentEnrollmentService.validateGroupAssignment(orgId, promo.to_grade_id, promo.to_section_id, promo.to_subject_group_id);
       if (!groupValidation.allowed) {
         return res.status(400).json({ message: `Validation failed for student ${promo.student_id}: ${groupValidation.message}` });
       }
@@ -388,14 +273,21 @@ router.put('/:id', requirePermission('ACADEMIC_STRUCTURE', 'EDIT'), async (req: 
     const targetGradeId = grade_id || existing.grade_id;
 
     // Group validation
-    const groupValidation = await validateGroupAssignment(orgId, existing.academic_year_id, targetGradeId, section_id, subject_group_id);
+    const groupValidation = await StudentEnrollmentService.validateGroupAssignment(orgId, targetGradeId, section_id, subject_group_id);
     if (!groupValidation.allowed) {
       return res.status(400).json({ message: groupValidation.message });
     }
 
     if (section_id && section_id !== existing.section_id) {
-       const cap = await checkSectionCapacity(section_id, orgId, 1);
-       if (!cap.allowed) return res.status(400).json({ message: cap.message });
+       // Mock existing capacity check behavior here for edits, but using full logic would be better.
+       // However, `enrollStudent` method does this cleanly. To avoid breaking edits, we keep it simple.
+       const section = await prisma.section.findUnique({ where: { id: section_id } });
+       if (section && section.capacity) {
+         const currentCount = await prisma.studentEnrollment.count({
+           where: { section_id, organization_id: orgId, status: EnrollmentStatus.ACTIVE }
+         });
+         if (currentCount + 1 > section.capacity) return res.status(400).json({ message: 'Section capacity exceeded' });
+       }
     }
 
     const updated = await prisma.$transaction(async (tx: any) => {
@@ -429,14 +321,19 @@ router.post('/:id/transfer', requirePermission('ACADEMIC_STRUCTURE', 'EDIT'), as
     }
 
     // Group validation
-    const groupValidation = await validateGroupAssignment(orgId, existing.academic_year_id, to_grade_id, to_section_id, to_subject_group_id);
+    const groupValidation = await StudentEnrollmentService.validateGroupAssignment(orgId, to_grade_id, to_section_id, to_subject_group_id);
     if (!groupValidation.allowed) {
       return res.status(400).json({ message: groupValidation.message });
     }
 
     if (to_section_id && to_section_id !== existing.section_id) {
-       const cap = await checkSectionCapacity(to_section_id, orgId, 1);
-       if (!cap.allowed) return res.status(400).json({ message: cap.message });
+       const section = await prisma.section.findUnique({ where: { id: to_section_id } });
+       if (section && section.capacity) {
+         const currentCount = await prisma.studentEnrollment.count({
+           where: { section_id: to_section_id, organization_id: orgId, status: EnrollmentStatus.ACTIVE }
+         });
+         if (currentCount + 1 > section.capacity) return res.status(400).json({ message: 'Section capacity exceeded' });
+       }
     }
 
     await prisma.$transaction(async (tx: any) => {
@@ -525,6 +422,45 @@ router.patch('/:id/withdraw', requirePermission('ACADEMIC_STRUCTURE', 'EDIT'), a
     });
 
     return res.json({ message: 'Student withdrawn successfully' });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+// GET export
+router.get('/export', requirePermission('STUDENT_ENROLLMENT', 'EXPORT'), async (req: any, res: Response) => {
+  try {
+    const yearId = await AcademicContextResolver.resolveAcademicYearId(req);
+    const orgId = req.user.organization_id;
+
+    const enrollments = await prisma.studentEnrollment.findMany({
+      where: { organization_id: orgId, academic_year_id: yearId },
+      include: {
+        student: { select: { email: true } },
+        grade: { select: { name: true } },
+        section: { select: { name: true } },
+        subject_group: { select: { name: true } }
+      }
+    });
+
+    const csvHeaders = ['student_email', 'grade_name', 'section_name', 'group_name'];
+    let csvContent = csvHeaders.join(',') + '\n';
+
+    for (const enr of enrollments) {
+      const row = [
+        enr.student?.email || '',
+        enr.grade?.name || '',
+        enr.section?.name || '',
+        enr.subject_group?.name || ''
+      ];
+      // Escape commas and quotes
+      const escapedRow = row.map(col => `"${col.replace(/"/g, '""')}"`);
+      csvContent += escapedRow.join(',') + '\n';
+    }
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=student_enrollments.csv');
+    return res.send(csvContent);
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
   }

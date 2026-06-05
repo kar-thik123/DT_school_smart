@@ -1,6 +1,7 @@
 import { BulkImportProcessor, ResolvedDataMap, ValidationResult, CommitResult } from '../bulk-import.types';
 import prisma from '../../../prisma';
 import { EnrollmentStatus } from '@prisma/client';
+import { StudentEnrollmentService, EnrollmentPayload } from '../../student-enrollment.service';
 
 export class StudentEnrollmentProcessor implements BulkImportProcessor {
   private resolved: ResolvedDataMap = {
@@ -8,9 +9,13 @@ export class StudentEnrollmentProcessor implements BulkImportProcessor {
     academic_years: {},
     grades: {},
     sections: {},
-    subject_groups: {}
+    subject_groups: {},
+    section_capacities: {},
+    section_current_counts: {},
+    existing_enrollments: {}
   };
   private fileUniqueSet: Set<string> = new Set();
+  private sectionAddedCount: Record<string, number> = {};
   
   constructor(private organizationId: string, private userId: string, private academicYearId: string) {}
 
@@ -45,6 +50,27 @@ export class StudentEnrollmentProcessor implements BulkImportProcessor {
     this.resolved.sections = Object.fromEntries(sections.map((s: any) => [`${s.grade_id}_${s.name.trim().toLowerCase()}`, s]));
     this.resolved.subject_groups = Object.fromEntries(groups.map((g: any) => [`${g.section_id}_${g.name.trim().toLowerCase()}`, g]));
     
+    // For capacity validation in analyze phase
+    const sectionIds = sections.map((s: any) => s.id);
+    const counts = await prisma.studentEnrollment.groupBy({
+      by: ['section_id'],
+      where: { section_id: { in: sectionIds }, organization_id: this.organizationId, status: EnrollmentStatus.ACTIVE },
+      _count: { student_id: true }
+    });
+    this.resolved.section_capacities = Object.fromEntries(sections.map((s: any) => [s.id, s.capacity]));
+    this.resolved.section_current_counts = Object.fromEntries(counts.map((c: any) => [c.section_id, c._count.student_id]));
+
+    // Fetch existing enrollments to avoid double counting capacity delta
+    const userIds = users.map((u: any) => u.id);
+    if (userIds.length > 0) {
+      const existing = await prisma.studentEnrollment.findMany({
+        where: { student_id: { in: userIds }, academic_year_id: this.academicYearId, organization_id: this.organizationId }
+      });
+      this.resolved.existing_enrollments = Object.fromEntries(existing.map((e: any) => [e.student_id, e]));
+    }
+
+    this.sectionAddedCount = {}; // Reset
+
     return this.resolved;
   }
 
@@ -81,9 +107,6 @@ export class StudentEnrollmentProcessor implements BulkImportProcessor {
     if (grade && sectionName) {
        section = this.resolved.sections[`${grade.id}_${sectionName}`];
        if (!section) errors.push(`Section '${row.section_name}' does not exist under Grade '${row.grade_name}'.`);
-       
-       // Note: In real setup, we'd also check capacity here, but for bulk it's complex since we add multiple at once.
-       // We can rely on the commit phase for strict limits or accept them with warnings.
     }
 
     let group: any;
@@ -92,6 +115,34 @@ export class StudentEnrollmentProcessor implements BulkImportProcessor {
        if (!group) errors.push(`Subject Group '${row.group_name}' does not exist under Section '${row.section_name}'.`);
     } else if (!section && groupName) {
        errors.push(`Cannot assign Subject Group without a valid Section.`);
+    }
+
+    // Advanced Validations (Group & Capacity) early in Analyze phase
+    if (grade) {
+      const groupValidation = await StudentEnrollmentService.validateGroupAssignment(
+        this.organizationId, grade.id, section?.id, group?.id
+      );
+      if (!groupValidation.allowed) {
+        errors.push(groupValidation.message || 'Invalid group assignment');
+      }
+    }
+
+    if (section && user) {
+      const existingEnrollment = this.resolved.existing_enrollments[user.id];
+      const isAlreadyInSection = existingEnrollment && existingEnrollment.section_id === section.id;
+      
+      if (!isAlreadyInSection) {
+        const cap = this.resolved.section_capacities[section.id];
+        if (cap) {
+          const current = this.resolved.section_current_counts[section.id] || 0;
+          const addedSoFar = this.sectionAddedCount[section.id] || 0;
+          if (current + addedSoFar + 1 > cap) {
+            errors.push(`Section capacity exceeded (Max: ${cap}, Current: ${current}, Incoming: ${addedSoFar + 1}).`);
+          } else {
+            this.sectionAddedCount[section.id] = addedSoFar + 1;
+          }
+        }
+      }
     }
 
     if (errors.length > 0) return { status: 'ERROR', errors, data: row };
@@ -110,56 +161,25 @@ export class StudentEnrollmentProcessor implements BulkImportProcessor {
   }
 
   async commit(validRows: any[], conflictResolutions?: any[]): Promise<CommitResult> {
-    const result = await prisma.$transaction(async (tx: any) => {
-      let success = 0;
-      let failure = 0;
-      
-      for (const row of validRows) {
-        if (!row.resolved_student_id || !row.resolved_academic_year_id || !row.resolved_grade_id) {
-          failure++;
-          continue;
-        }
+    const payloads: EnrollmentPayload[] = validRows.map(row => ({
+      student_id: row.resolved_student_id,
+      grade_id: row.resolved_grade_id,
+      section_id: row.resolved_section_id,
+      subject_group_id: row.resolved_group_id,
+      status: EnrollmentStatus.ACTIVE
+    }));
 
-        try {
-          await tx.studentEnrollment.upsert({
-            where: {
-              student_id_academic_year_id_organization_id: {
-                student_id: row.resolved_student_id,
-                academic_year_id: row.resolved_academic_year_id,
-                organization_id: this.organizationId
-              }
-            },
-            update: {
-              grade_id: row.resolved_grade_id,
-              section_id: row.resolved_section_id,
-              subject_group_id: row.resolved_group_id,
-              status: EnrollmentStatus.ACTIVE
-            },
-            create: {
-              organization_id: this.organizationId,
-              student_id: row.resolved_student_id,
-              academic_year_id: row.resolved_academic_year_id,
-              grade_id: row.resolved_grade_id,
-              section_id: row.resolved_section_id,
-              subject_group_id: row.resolved_group_id,
-              status: EnrollmentStatus.ACTIVE
-            }
-          });
-
-          await tx.user.update({
-            where: { id: row.resolved_student_id },
-            data: { grade_id: row.resolved_grade_id, section_id: row.resolved_section_id }
-          });
-
-          success++;
-        } catch (e) {
-          console.error('[Bulk-StudentEnrollment-Commit] Row failed:', e);
-          failure++;
-        }
-      }
-      return { success, failure };
-    });
-
-    return { success_count: result.success, failure_count: result.failure };
+    try {
+      const result = await StudentEnrollmentService.bulkEnrollStudents(
+        this.organizationId,
+        this.academicYearId,
+        payloads
+      );
+      return { success_count: result.success, failure_count: result.failure };
+    } catch (e: any) {
+      console.error('[Bulk-StudentEnrollment-Commit] Batch failed:', e);
+      // If the batch fails due to a late capacity throw or transaction error
+      return { success_count: 0, failure_count: validRows.length };
+    }
   }
 }

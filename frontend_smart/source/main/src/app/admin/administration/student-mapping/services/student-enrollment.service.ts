@@ -54,4 +54,18 @@ export class StudentEnrollmentService {
   activateStudent(id: string): Observable<any> {
     return this.http.patch<any>(`${this.apiUrl}/${id}/activate`, {});
   }
+
+  exportEnrollments(): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/export`, { responseType: 'blob' });
+  }
+
+  analyzeBulkImport(file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<any>(`${environment.apiUrl}/bulk-import/STUDENT_ENROLLMENT/analyze`, formData);
+  }
+
+  commitBulkImport(validRows: any[]): Observable<any> {
+    return this.http.post<any>(`${environment.apiUrl}/bulk-import/STUDENT_ENROLLMENT/commit`, { validRows });
+  }
 }

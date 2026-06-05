@@ -132,6 +132,7 @@ router.post('/login', loginLimiter, async (req: any, res: Response) => {
       }
     });
   } catch (error: any) {
+    console.error("Login Error: ", error);
     if (error instanceof z.ZodError) {
       return res.status(400).json({
         message: 'Validation failed',

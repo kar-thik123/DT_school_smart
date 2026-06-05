@@ -22,6 +22,8 @@ import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { MatDividerModule } from '@angular/material/divider';
 import { OverlayContainer } from '@angular/cdk/overlay';
 import { AcademicContextSelectorComponent, IAcademicContextSelection } from '@shared/components/academic-context-selector/academic-context-selector.component';
+import { HasPermissionDirective } from '@core/directive/has-permission.directive';
+import { BulkImportPreviewDialogComponent } from './dialogs/bulk-import-preview-dialog.component';
 
 @Component({
   selector: 'app-simple-test-dialog',
@@ -53,7 +55,8 @@ import { WithdrawStudentDialogComponent } from './dialogs/withdraw-student-dialo
     MatDialogModule,
     MatDividerModule,
     BreadcrumbComponent,
-    AcademicContextSelectorComponent
+    AcademicContextSelectorComponent,
+    HasPermissionDirective
   ],
   templateUrl: './student-mapping.component.html',
   styleUrls: ['./student-mapping.component.scss']
@@ -381,6 +384,57 @@ export class StudentMappingComponent implements OnInit {
     this.snackBar.open(message, '', {
       duration: 3000,
       panelClass: type === 'success' ? 'snackbar-success' : 'snackbar-danger'
+    });
+  }
+
+  exportEnrollments() {
+    this.enrollmentService.exportEnrollments().subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'student_enrollments.csv';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      },
+      error: (err) => {
+        this.showNotification('error', 'Failed to export enrollments');
+      }
+    });
+  }
+
+  openImportDialog() {
+    const dialogRef = this.dialog.open(BulkImportPreviewDialogComponent, {
+      width: '800px',
+      data: {
+        onFileSelect: (file: File) => {
+          this.enrollmentService.analyzeBulkImport(file).subscribe({
+            next: (res) => {
+              dialogRef.componentInstance.setPreviewData(res.rows);
+            },
+            error: (err) => {
+              this.showNotification('error', err.error?.message || 'Failed to analyze file');
+            }
+          });
+        }
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(validRows => {
+      if (validRows && validRows.length > 0) {
+        this.enrollmentService.commitBulkImport(validRows).subscribe({
+          next: (res) => {
+            this.showNotification('success', res.message || 'Import successful');
+            this.loadEnrollments();
+            this.loadUnenrolledStudents();
+          },
+          error: (err) => {
+            this.showNotification('error', err.error?.message || 'Failed to commit import');
+          }
+        });
+      }
     });
   }
 }

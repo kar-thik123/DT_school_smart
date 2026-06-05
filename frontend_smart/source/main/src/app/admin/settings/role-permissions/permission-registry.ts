@@ -30,7 +30,7 @@ export const CENTRAL_PERMISSION_REGISTRY: IRegistryPermission[] = [
   },
   {
     module: 'STUDENT_ENROLLMENT',
-    permissions: ['READ']
+    permissions: ['READ', 'IMPORT', 'EXPORT']
   },
   {
     module: 'SETTINGS',
