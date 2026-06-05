@@ -1,0 +1,157 @@
+<div class="modal fade show" style="display: block; background: rgba(0,0,0,0.6); z-index: 1050;">
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable preview-dialog">
+    <div class="modal-content preview-modal">
+      <!-- Header -->
+      <div class="modal-header border-bottom-0 d-flex align-items-center justify-content-between">
+        <h5 class="modal-title d-flex align-items-center">
+          <mat-icon class="text-primary me-2">visibility</mat-icon> Preview Import Data
+        </h5>
+        <div class="d-flex align-items-center gap-2">
+          <div class="summary-bar">
+            <div class="summary-item">
+              <span class="summary-count">{{previewSummary.total || previewData.length}}</span>
+              <span class="summary-label">Total Rows</span>
+            </div>
+            <div class="summary-item exact" *ngIf="previewSummary.valid > 0">
+              <mat-icon class="me-1">check_circle</mat-icon>
+              <span class="summary-count">{{previewSummary.valid}}</span>
+              <span class="summary-label">Valid Rows</span>
+            </div>
+            <div class="summary-item error-h" *ngIf="hasErrors">
+              <mat-icon class="me-1">error</mat-icon>
+              <div class="d-flex flex-column align-items-start ms-1">
+                <span class="summary-label fw-bold text-danger mb-0" style="font-size: 13px;"
+                  *ngIf="previewSummary.validation_error > 0">
+                  {{previewSummary.validation_error}} Non-Valid Rows
+                </span>
+                <span class="summary-label fw-bold text-danger mb-0" style="font-size: 13px;"
+                  *ngIf="previewSummary.duplicate > 0">
+                  {{previewSummary.duplicate}} Duplicates
+                </span>
+              </div>
+            </div>
+          </div>
+          <button type="button" class="btn-close" (click)="discard.emit()" aria-label="Close"></button>
+        </div>
+      </div>
+
+      <!-- Body -->
+      <div class="modal-body bg-light p-4">
+        <!-- Error Banner -->
+        <div class="alert alert-danger d-flex align-items-center mb-3" *ngIf="hasErrors">
+          <mat-icon class="me-2">warning</mat-icon>
+          <span>
+            <ng-container *ngIf="previewSummary.validation_error > 0">
+              <strong>{{previewSummary.validation_error}}</strong> row(s) have validation errors.
+            </ng-container>
+            <ng-container *ngIf="previewSummary.duplicate > 0">
+              <strong>{{previewSummary.duplicate}}</strong> row(s) are duplicates.
+            </ng-container>
+            Fix these issues in your Excel file and re-import. These rows will be <strong>skipped</strong> during
+            import.
+          </span>
+        </div>
+
+        <!-- Data Table -->
+        <div class="card border-0 shadow-sm">
+          <div class="card-body p-0 table-responsive" style="max-height: 450px;">
+            <table class="table table-hover mb-0 text-nowrap preview-table">
+              <thead class="table-light position-sticky top-0 shadow-sm" style="z-index: 1;">
+                <tr>
+                  <th class="th-status">Status</th>
+                  <th>S.No</th>
+                  <th>Grade</th>
+                  <th>Section</th>
+                  <th>Subject</th>
+                  <th>Unit Name</th>
+                  <th>Topic Name</th>
+                  <th>Sub Topic Name</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let row of previewData; let i = index" [class]="getRowClass(row.match_status)">
+                  <!-- Status Badge -->
+                  <td>
+                    <span class="status-badge" [class]="getStatusClass(row.match_status)"
+                      [matTooltip]="getStatusLabel(row.match_status)">
+                      <mat-icon class="status-icon">{{getStatusIcon(row.match_status)}}</mat-icon>
+                      <span class="status-text">{{getStatusLabel(row.match_status)}}</span>
+                    </span>
+                  </td>
+
+                  <!-- Row Number -->
+                  <td>{{i + 1}}</td>
+
+                  <td [class.cell-error]="getFieldError(row, ['Grade']) || getSpecialCharError(row, 'Grade')"
+                    [matTooltip]="getFieldError(row, ['Grade']) || getSpecialCharError(row, 'Grade') || ''">
+                    <span *ngIf="!row.isEditing">{{row.raw_data?.Grade || '—'}}</span>
+                    <input *ngIf="row.isEditing" type="text" [(ngModel)]="row.raw_data.Grade"
+                      class="form-control form-control-sm" style="min-width:70px;">
+                  </td>
+
+                  <td [class.cell-error]="getFieldError(row, ['Section']) || getSpecialCharError(row, 'Section')"
+                    [matTooltip]="getFieldError(row, ['Section']) || getSpecialCharError(row, 'Section') || ''">
+                    <span *ngIf="!row.isEditing">{{row.raw_data?.Section ? row.raw_data.Section : (row.raw_data?.Subject ? 'All Sections' : '—')}}</span>
+                    <input *ngIf="row.isEditing" type="text" [(ngModel)]="row.raw_data.Section"
+                      class="form-control form-control-sm" style="min-width:70px;">
+                  </td>
+
+                  <td [class.cell-error]="getFieldError(row, ['Subject']) || getSpecialCharError(row, 'Subject')"
+                    [matTooltip]="getFieldError(row, ['Subject']) || getSpecialCharError(row, 'Subject') || ''">
+                    <span *ngIf="!row.isEditing">{{row.raw_data?.Subject || '—'}}</span>
+                    <input *ngIf="row.isEditing" type="text" [(ngModel)]="row.raw_data.Subject"
+                      class="form-control form-control-sm" style="min-width:90px;">
+                  </td>
+
+                  <td [class.cell-error]="getFieldError(row, ['Unit Name']) || getSpecialCharError(row, 'Unit Name')"
+                    [matTooltip]="getFieldError(row, ['Unit Name']) || getSpecialCharError(row, 'Unit Name') || ''">
+                    <span *ngIf="!row.isEditing">{{row.raw_data?.['Unit Name'] || '—'}}</span>
+                    <input *ngIf="row.isEditing" type="text" [(ngModel)]="row.raw_data['Unit Name']"
+                      class="form-control form-control-sm" style="min-width:90px;">
+                  </td>
+
+                  <td [class.cell-error]="getFieldError(row, ['Topic Name']) || getSpecialCharError(row, 'Topic Name')"
+                    [matTooltip]="getFieldError(row, ['Topic Name']) || getSpecialCharError(row, 'Topic Name') || ''">
+                    <span *ngIf="!row.isEditing">{{row.raw_data?.['Topic Name'] || '—'}}</span>
+                    <input *ngIf="row.isEditing" type="text" [(ngModel)]="row.raw_data['Topic Name']"
+                      class="form-control form-control-sm" style="min-width:90px;">
+                  </td>
+
+                  <td [class.cell-error]="getFieldError(row, ['Sub Topic Name']) || getSpecialCharError(row, 'Sub Topic Name')"
+                    [matTooltip]="getFieldError(row, ['Sub Topic Name']) || getSpecialCharError(row, 'Sub Topic Name') || ''">
+                    <span *ngIf="!row.isEditing">{{row.raw_data?.['Sub Topic Name'] || '—'}}</span>
+                    <input *ngIf="row.isEditing" type="text" [(ngModel)]="row.raw_data['Sub Topic Name']"
+                      class="form-control form-control-sm" style="min-width:90px;">
+                  </td>
+
+                  <td>
+                    <button *ngIf="!row.isEditing" mat-icon-button color="primary" (click)="startEdit(row)"
+                      matTooltip="Edit Row">
+                      <mat-icon>edit</mat-icon>
+                    </button>
+                    <button *ngIf="row.isEditing" mat-icon-button color="accent" (click)="saveEdit(row)"
+                      matTooltip="Save Changes">
+                      <mat-icon>save</mat-icon>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Footer -->
+      <div class="modal-footer border-top-0 bg-light">
+        <button mat-button color="warn" (click)="discard.emit()">Discard</button>
+        <button mat-raised-button color="primary" (click)="onConfirm()" [disabled]="hasErrors"
+          matTooltip="Fix validation errors and duplicates before confirming">
+          <mat-icon>check_circle</mat-icon>
+          Confirm & Import
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

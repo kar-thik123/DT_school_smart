@@ -54,3 +54,69 @@
     }
   }
 }
+
+.import-excel-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 38px;
+  padding: 0 14px;
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #1f2937;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+
+  mat-icon {
+    margin-right: 6px;
+    color: #6b7280;
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+
+  &:hover {
+    background-color: #f9fafb;
+    border-color: #d1d5db;
+  }
+}
+
+[data-theme='dark'] {
+  .import-excel-btn {
+    background-color: #1a202e !important;
+    border-color: #404755 !important;
+    color: #96a2b4 !important;
+
+    mat-icon {
+      color: #6c757d !important;
+    }
+
+    &:hover {
+      background-color: #232b3e !important;
+      border-color: #6c757d !important;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .import-excel-btn {
+    height: 32px !important;
+    width: 32px !important;
+    padding: 0 !important;
+    border-radius: 8px !important;
+    font-size: 0 !important; /* Hide text to save space */
+    
+    mat-icon {
+      margin-right: 0 !important;
+      font-size: 18px !important;
+      width: 18px !important;
+      height: 18px !important;
+    }
+  }
+}

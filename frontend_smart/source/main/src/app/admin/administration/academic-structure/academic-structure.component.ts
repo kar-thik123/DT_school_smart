@@ -19,6 +19,9 @@ import { DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
 import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.component';
 import { AcademicStructureService, IGrade, ISection, ISubject } from './services/academic-structure.service';
 import { BulkSetupDialogComponent } from './dialogs/bulk-setup-dialog.component';
+import { AcademicStructurePreviewComponent } from './academic-structure-preview/academic-structure-preview.component';
+import * as XLSX from 'xlsx';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-academic-structure',
@@ -28,7 +31,7 @@ import { BulkSetupDialogComponent } from './dialogs/bulk-setup-dialog.component'
     MatTabsModule, MatIconModule, MatButtonModule, MatCardModule, 
     MatTableModule, MatMenuModule, MatFormFieldModule, MatInputModule, 
     MatSelectModule, MatDialogModule, MatSnackBarModule, MatDividerModule,
-    MatTooltipModule, DragDropModule, MatProgressBarModule
+    MatTooltipModule, DragDropModule, MatProgressBarModule, AcademicStructurePreviewComponent
   ],
   templateUrl: './academic-structure.component.html',
   styleUrls: ['./academic-structure.component.scss']
@@ -47,6 +50,11 @@ export class AcademicStructureComponent implements OnInit {
   ];
 
   isLoading = true;
+
+  showPreviewModal = false;
+  previewData: any[] = [];
+  previewSummary: any = {};
+  previewSessionId: string | null = null;
 
   // Grades & Sections
   grades: IGrade[] = [];
@@ -327,12 +335,252 @@ export class AcademicStructureComponent implements OnInit {
     });
   }
 
-  private showNotification(type: 'success' | 'error', message: string) {
+  private  showNotification(type: 'success' | 'error', message: string) {
     this.snackBar.open(message, '', {
       duration: 3000,
       panelClass: type === 'success' ? 'snackbar-success' : 'snackbar-error',
       horizontalPosition: 'center',
       verticalPosition: 'bottom'
     });
+  }
+
+  // --- Bulk Import / Export ---
+  onFileImport(event: any) {
+    const target: DataTransfer = <DataTransfer>(event.target);
+    if (target.files.length !== 1) {
+      this.showNotification('error', 'Cannot use multiple files');
+      return;
+    }
+    const file = target.files[0];
+    const reader: FileReader = new FileReader();
+    reader.onload = (e: any) => {
+      try {
+        const bstr: string = e.target.result;
+        const wb: XLSX.WorkBook = XLSX.read(bstr, { type: 'binary' });
+
+        const wsname: string = wb.SheetNames[0];
+        const ws: XLSX.WorkSheet = wb.Sheets[wsname];
+
+        const csv = XLSX.utils.sheet_to_csv(ws);
+        const csvBlob = new Blob([csv], { type: 'text/csv' });
+        const csvFile = new File([csvBlob], 'import.csv', { type: 'text/csv' });
+
+        this.isLoading = true;
+        this.academicService.uploadBulkCsvPreview(csvFile).subscribe({
+          next: (res) => {
+            this.isLoading = false;
+            this.previewSessionId = res.session_id;
+            this.previewSummary = res.summary || {};
+            this.previewData = res.records || [];
+            this.showPreviewModal = true;
+          },
+          error: (err) => {
+            this.isLoading = false;
+            console.error(err);
+            this.showNotification('error', err.error?.message || 'Error processing preview.');
+          }
+        });
+      } catch (err) {
+        console.error('Error reading Excel file:', err);
+        this.showNotification('error', 'Invalid Excel file format.');
+      }
+    };
+    reader.readAsBinaryString(file);
+    event.target.value = null; // reset input
+  }
+
+  discardImport() {
+    if (this.previewSessionId) {
+      this.academicService.discardBulkImport(this.previewSessionId).subscribe({
+        next: () => {},
+        error: (err) => console.error('Error discarding preview', err)
+      });
+    }
+    this.showPreviewModal = false;
+    this.previewData = [];
+    this.previewSummary = {};
+    this.previewSessionId = null;
+  }
+
+  revalidateImport(modifiedRecords: any[]) {
+    this.isLoading = true;
+    
+    const header = [
+      'Grade', 'Section', 'Subject', 'Subject Type', 'Group / Stream Name'
+    ];
+    
+    const csvRows = [header.join(',')];
+    
+    for (const r of modifiedRecords) {
+      const row = header.map(field => {
+        const val = r[field] || '';
+        return `"${String(val).replace(/"/g, '""')}"`;
+      });
+      csvRows.push(row.join(','));
+    }
+    
+    const csvString = csvRows.join('\n');
+    const csvBlob = new Blob([csvString], { type: 'text/csv' });
+    const csvFile = new File([csvBlob], 'import.csv', { type: 'text/csv' });
+
+    this.academicService.uploadBulkCsvPreview(csvFile).subscribe({
+      next: (res) => {
+        this.isLoading = false;
+        this.previewSessionId = res.session_id;
+        this.previewSummary = res.summary || {};
+        this.previewData = res.records || [];
+      },
+      error: (err) => {
+        this.isLoading = false;
+        console.error(err);
+        this.showNotification('error', err.error?.message || 'Error re-validating preview.');
+      }
+    });
+  }
+
+  confirmImport(modifiedRecords?: any[]) {
+    if (!this.previewSessionId) return;
+    this.isLoading = true;
+    this.showPreviewModal = false;
+    this.academicService.confirmBulkImport(this.previewSessionId, modifiedRecords).subscribe({
+      next: (res) => {
+        this.isLoading = false;
+        this.showNotification('success', res.message || 'Data imported successfully!');
+        this.previewSessionId = null;
+        this.discardImport();
+        this.loadInitialData(); // Refresh UI
+      },
+      error: (err) => {
+        this.isLoading = false;
+        console.error(err);
+        const msg = err.error?.message || 'Error importing data.';
+        this.showNotification('error', msg);
+        this.discardImport();
+      }
+    });
+  }
+
+  async exportExcel() {
+    this.isLoading = true;
+    try {
+      const grades = await firstValueFrom(this.academicService.getGrades()) || [];
+      const sections = await firstValueFrom(this.academicService.getSections()) || [];
+      const subjects = await firstValueFrom(this.academicService.getSubjects()) || [];
+      const groups = await firstValueFrom(this.academicService.getSubjectGroups(undefined, undefined, false)) || [];
+
+      const data: any[] = [];
+      let sNo = 1;
+
+      // Create a map of grades
+      const gradeMap = new Map(grades.map(g => [g.id, g.name]));
+      const sectionMap = new Map(sections.map(s => [s.id, s]));
+      const subjectMap = new Map(subjects.map(s => [s.id, s.name]));
+
+      // We need to iterate over all grades
+      for (const g of grades) {
+        const gradeSections = sections.filter(s => s.grade_id === g.id);
+        const gradeSubjects = subjects.filter(s => s.grade_id === g.id);
+
+        if (gradeSections.length === 0 && gradeSubjects.length === 0) {
+           data.push({
+             'S.No': sNo++,
+             'Grade': g.name,
+             'Section': '',
+             'Subject': '',
+             'Subject Type': '',
+             'Group / Stream Name': ''
+           });
+           continue;
+        }
+
+        // Output by sections
+        for (const s of gradeSections) {
+           const sectionGroups = groups.filter((grp: any) => grp.grade_id === g.id && grp.section_id === s.id);
+           
+           if (sectionGroups.length === 0) {
+              data.push({
+                 'S.No': sNo++,
+                 'Grade': g.name,
+                 'Section': s.name,
+                 'Subject': '',
+                 'Subject Type': '',
+                 'Group / Stream Name': ''
+              });
+              continue;
+           }
+
+           for (const grp of sectionGroups) {
+              const grpName = (grp as any).name;
+              if ((grp as any).subjects && (grp as any).subjects.length > 0) {
+                 for (const subLink of (grp as any).subjects) {
+                    const subName = subLink.name || subjectMap.get(subLink.id) || '';
+                    data.push({
+                       'S.No': sNo++,
+                       'Grade': g.name,
+                       'Section': s.name,
+                       'Subject': subName,
+                       'Subject Type': subLink.subject_type || 'MANDATORY',
+                       'Group / Stream Name': grpName
+                    });
+                 }
+              } else {
+                 data.push({
+                    'S.No': sNo++,
+                    'Grade': g.name,
+                    'Section': s.name,
+                    'Subject': '',
+                    'Subject Type': '',
+                    'Group / Stream Name': grpName
+                 });
+              }
+           }
+        }
+
+        // Global subjects not linked to any section
+        const linkedSubjectIds = new Set<string>();
+        groups.filter((grp: any) => grp.grade_id === g.id).forEach((grp: any) => {
+           if ((grp as any).subjects) {
+              (grp as any).subjects.forEach((link: any) => linkedSubjectIds.add(link.id));
+           }
+        });
+
+        for (const sub of gradeSubjects) {
+           if (!linkedSubjectIds.has(sub.id)) {
+              data.push({
+                 'S.No': sNo++,
+                 'Grade': g.name,
+                 'Section': '',
+                 'Subject': sub.name,
+                 'Subject Type': 'MANDATORY',
+                 'Group / Stream Name': ''
+              });
+           }
+        }
+      }
+
+      if (data.length === 0) {
+        this.showNotification('error', 'No data to export');
+        this.isLoading = false;
+        return;
+      }
+
+      const worksheet = XLSX.utils.json_to_sheet(data);
+      const workbook = { Sheets: { 'Academic Structure': worksheet }, SheetNames: ['Academic Structure'] };
+      const excelBuffer: any = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+
+      const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Academic_Structure_${new Date().getTime()}.xlsx`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+
+    } catch (err) {
+      console.error(err);
+      this.showNotification('error', 'Error exporting data');
+    } finally {
+      this.isLoading = false;
+    }
   }
 }

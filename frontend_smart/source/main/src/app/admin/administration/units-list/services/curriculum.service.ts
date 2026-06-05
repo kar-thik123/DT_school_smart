@@ -127,4 +127,19 @@ export class CurriculumService {
   deleteSubTopic(id: string): Observable<any> {
     return this.http.delete(`${this.API_URL}/subtopics/${id}`);
   }
+
+  // --- Bulk Import / Export ---
+  uploadBulkCsvPreview(file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post(`${this.API_URL}/bulk/preview`, formData);
+  }
+
+  confirmBulkImport(sessionId: string, modifiedRecords?: any[]): Observable<any> {
+    return this.http.post(`${this.API_URL}/bulk/confirm`, { session_id: sessionId, modified_records: modifiedRecords });
+  }
+
+  discardBulkImport(sessionId: string): Observable<any> {
+    return this.http.post(`${this.API_URL}/bulk/discard`, { session_id: sessionId });
+  }
 }

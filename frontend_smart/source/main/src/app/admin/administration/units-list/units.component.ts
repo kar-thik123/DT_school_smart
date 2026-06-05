@@ -16,7 +16,9 @@ import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.co
 import { CurriculumService, ICurriculumUnit, ICurriculumTopic, ICurriculumSubTopic } from './services/curriculum.service';
 import { AcademicStructureService, IGrade, ISection, ISubject } from './services/units.service';
 import { HierarchyDropdownComponent } from './components/hierarchy-dropdown/hierarchy-dropdown.component';
-import { forkJoin } from 'rxjs';
+import { UnitsPreviewComponent } from './components/units-preview/units-preview.component';
+import { forkJoin, firstValueFrom } from 'rxjs';
+import * as XLSX from 'xlsx';
 import Swal from 'sweetalert2';
 import { AuthService } from '@core';
 import { Router } from '@angular/router';
@@ -29,7 +31,7 @@ import { Router } from '@angular/router';
     MatTabsModule, MatIconModule, MatButtonModule, MatCardModule,
     MatTableModule, MatMenuModule, MatFormFieldModule, MatInputModule,
     MatSelectModule, MatSnackBarModule, MatProgressBarModule,
-    HierarchyDropdownComponent
+    HierarchyDropdownComponent, UnitsPreviewComponent
   ],
   templateUrl: './units.component.html',
   styleUrls: ['./units.component.scss']
@@ -73,6 +75,12 @@ export class UnitsListComponent implements OnInit {
   subTopics: ICurriculumSubTopic[] = [];
 
   isCurriculumLoaded = false;
+
+  // Bulk Import
+  showPreviewModal = false;
+  previewData: any[] = [];
+  previewSummary: any = {};
+  previewSessionId: string | null = null;
 
   // Edit states
   editingUnitId: string | null = null;
@@ -619,5 +627,218 @@ export class UnitsListComponent implements OnInit {
       horizontalPosition: 'center',
       verticalPosition: 'bottom'
     });
+  }
+
+  // ---------------------------------------------------------
+  // EXPORT EXCEL
+  // ---------------------------------------------------------
+  async exportExcel() {
+    this.isLoading = true;
+    try {
+      // Fetch all required data to ensure complete export
+      const [grades, sections, subjects, unitsRes, topicsRes, subTopicsRes] = await Promise.all([
+        firstValueFrom(this.academicService.getGrades()),
+        firstValueFrom(this.academicService.getSections()),
+        firstValueFrom(this.academicService.getSubjects()),
+        firstValueFrom(this.curriculumService.getUnits({ limit: 10000 })),
+        firstValueFrom(this.curriculumService.getTopics({ limit: 10000 })),
+        firstValueFrom(this.curriculumService.getSubTopics({ limit: 10000 }))
+      ]);
+
+      const dataToExport: any[] = [];
+      const units = unitsRes?.data || [];
+      const topics = topicsRes?.data || [];
+      const subTopics = subTopicsRes?.data || [];
+      
+      // Structure: Grade -> Section -> Subject -> Unit -> Topic -> SubTopic
+      // Build a map of items
+      const gradeMap = new Map<string, string>();
+      (grades || []).forEach(g => gradeMap.set(g.id, g.name));
+      
+      const sectionMap = new Map<string, string>();
+      (sections || []).forEach(s => sectionMap.set(s.id, s.name));
+      
+      const subjectMap = new Map<string, string>();
+      (subjects || []).forEach(s => subjectMap.set(s.id, s.name));
+
+      // For every unit, we have its topics, for every topic its subtopics
+      // Let's create rows based on the deepest level available.
+      
+      for (const unit of units) {
+      const gradeName = unit.grade?.name || gradeMap.get(unit.grade_id) || '';
+      const sectionName = unit.section?.name || sectionMap.get(unit.section_id) || '';
+      const subjectName = unit.subject?.name || subjectMap.get(unit.subject_id) || '';
+      const unitName = unit.name;
+
+      const unitTopics = topics.filter(t => t.unit_id === unit.id);
+
+      if (unitTopics.length === 0) {
+        dataToExport.push({
+          'Grade': gradeName,
+          'Section': sectionName,
+          'Subject': subjectName,
+          'Unit Name': unitName,
+          'Topic Name': '',
+          'Sub Topic Name': ''
+        });
+      } else {
+        for (const topic of unitTopics) {
+          const topicName = topic.name;
+          const topicSubTopics = subTopics.filter(st => st.topic_id === topic.id);
+
+          if (topicSubTopics.length === 0) {
+            dataToExport.push({
+              'Grade': gradeName,
+              'Section': sectionName,
+              'Subject': subjectName,
+              'Unit Name': unitName,
+              'Topic Name': topicName,
+              'Sub Topic Name': ''
+            });
+          } else {
+            for (const subTopic of topicSubTopics) {
+              dataToExport.push({
+                'Grade': gradeName,
+                'Section': sectionName,
+                'Subject': subjectName,
+                'Unit Name': unitName,
+                'Topic Name': topicName,
+                'Sub Topic Name': subTopic.name
+              });
+            }
+          }
+        }
+      }
+    }
+
+    if (dataToExport.length === 0) {
+      // If empty, just create template
+      dataToExport.push({
+        'Grade': '',
+        'Section': '',
+        'Subject': '',
+        'Unit Name': '',
+        'Topic Name': '',
+        'Sub Topic Name': ''
+      });
+    }
+
+    const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(dataToExport);
+    const wb: XLSX.WorkBook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Curriculum');
+
+    const fileName = 'Curriculum_Export_' + new Date().getTime() + '.xlsx';
+    XLSX.writeFile(wb, fileName);
+    this.isLoading = false;
+    } catch (error) {
+      this.isLoading = false;
+      this.showNotification('error', 'Failed to export Excel file');
+      console.error(error);
+    }
+  }
+
+  // ---------------------------------------------------------
+  // IMPORT EXCEL
+  // ---------------------------------------------------------
+  onFileSelected(event: any) {
+    const target: DataTransfer = <DataTransfer>(event.target);
+    if (target.files && target.files.length > 0) {
+      const file = target.files[0];
+      const reader: FileReader = new FileReader();
+      reader.onload = (e: any) => {
+        try {
+          const bstr: string = e.target.result;
+          const wb: XLSX.WorkBook = XLSX.read(bstr, { type: 'binary' });
+
+          const wsname: string = wb.SheetNames[0];
+          const ws: XLSX.WorkSheet = wb.Sheets[wsname];
+
+          const csv = XLSX.utils.sheet_to_csv(ws);
+          const csvBlob = new Blob([csv], { type: 'text/csv' });
+          const csvFile = new File([csvBlob], 'import.csv', { type: 'text/csv' });
+
+          this.isLoading = true;
+          this.curriculumService.uploadBulkCsvPreview(csvFile).subscribe({
+            next: (res) => {
+              this.isLoading = false;
+              this.previewSessionId = res.session_id;
+              this.previewSummary = res.summary || {};
+              this.previewData = res.records || [];
+              this.showPreviewModal = true;
+            },
+            error: (err) => {
+              this.isLoading = false;
+              this.showNotification('error', err.error?.message || 'Error processing preview.');
+            }
+          });
+        } catch (err) {
+          console.error('Error reading Excel file:', err);
+          this.showNotification('error', 'Invalid Excel file format.');
+        }
+      };
+      reader.readAsBinaryString(file);
+      event.target.value = null; // reset
+    }
+  }
+
+  onRevalidateImport(modifiedRecords: any[]) {
+    // Send it back to the preview endpoint
+    if (!this.previewSessionId) return;
+    
+    this.isLoading = true;
+    
+    // Convert to CSV string and then to Blob
+    const header = ['Grade', 'Section', 'Subject', 'Unit Name', 'Topic Name', 'Sub Topic Name'];
+    const csvContent = [
+      header.join(','),
+      ...modifiedRecords.map(r => header.map(h => `"${(r[h] || '').replace(/"/g, '""')}"`).join(','))
+    ].join('\n');
+    
+    const file = new File([csvContent], 'revalidated.csv', { type: 'text/csv' });
+    
+    this.curriculumService.uploadBulkCsvPreview(file).subscribe({
+      next: (res) => {
+        this.isLoading = false;
+        this.previewSessionId = res.session_id;
+        this.previewSummary = res.summary || {};
+        this.previewData = res.records || [];
+      },
+      error: (err) => {
+        this.isLoading = false;
+        this.showNotification('error', err.error?.message || 'Error re-validating preview.');
+      }
+    });
+  }
+
+  onConfirmImport(modifiedRecords: any[]) {
+    if (!this.previewSessionId) return;
+
+    this.isLoading = true;
+    this.showPreviewModal = false;
+    this.curriculumService.confirmBulkImport(this.previewSessionId, modifiedRecords).subscribe({
+      next: () => {
+        this.isLoading = false;
+        this.previewSessionId = null;
+        this.showNotification('success', 'Curriculum imported successfully!');
+        this.loadAllCurriculumData(); // Refresh data
+      },
+      error: (err) => {
+        this.isLoading = false;
+        this.showNotification('error', err.error?.message || 'Error importing curriculum.');
+      }
+    });
+  }
+
+  onDiscardImport() {
+    if (this.previewSessionId) {
+      this.curriculumService.discardBulkImport(this.previewSessionId).subscribe({
+        next: () => console.log('Preview discarded'),
+        error: (err) => console.error('Error discarding preview', err)
+      });
+    }
+    this.showPreviewModal = false;
+    this.previewData = [];
+    this.previewSummary = {};
+    this.previewSessionId = null;
   }
 }
