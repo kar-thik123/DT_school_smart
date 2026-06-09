@@ -249,4 +249,71 @@ router.post('/attempts', requirePermission('MCQ', 'ATTEMPT'), checkMcqEnabled, a
   }
 });
 
+const completeTopicSchema = z.object({
+  subject_id: z.string().uuid()
+});
+
+router.post('/topics/:topic_id/complete', requirePermission('MCQ', 'ATTEMPT'), checkMcqEnabled, async (req: any, res: Response) => {
+  try {
+    const org_id = req.user.organization_id;
+    const student_id = req.user.user_id;
+    const yearId = req.academic_year_id;
+    const topic_id = req.params.topic_id;
+    const parsed = completeTopicSchema.parse(req.body);
+
+    const completion = await prisma.studentTopicCompletion.upsert({
+      where: {
+        student_id_topic_id_academic_year_id: {
+          student_id,
+          topic_id,
+          academic_year_id: yearId || ''
+        }
+      },
+      update: {},
+      create: {
+        organization_id: org_id,
+        student_id,
+        academic_year_id: yearId,
+        subject_id: parsed.subject_id,
+        topic_id: topic_id
+      }
+    });
+
+    const topic = await prisma.topic.findUnique({ where: { id: topic_id } });
+
+    // Enforce EventTrigger
+    const payload: any = {
+      organization_id: org_id,
+      actor_id: student_id,
+      entity: {
+        type: 'STUDENT_TOPIC_COMPLETION',
+        id: topic_id,
+        name: topic?.name || 'Topic'
+      },
+      context: {
+        academic_year_id: yearId,
+        grade_id: '',
+        subject_id: parsed.subject_id
+      }
+    };
+
+    const enrollment = await prisma.studentEnrollment.findFirst({
+      where: { student_id, academic_year_id: yearId, status: 'ACTIVE' }
+    });
+    
+    if (enrollment) {
+      payload.context.grade_id = enrollment.grade_id;
+      payload.context.section_id = enrollment.section_id;
+    }
+
+    // @ts-ignore
+    const { emitNotificationEvent, EventTypes } = await import('../services/events.service');
+    emitNotificationEvent(EventTypes.STUDENT_TOPIC_COMPLETION, payload);
+
+    res.status(200).json({ message: 'Topic marked as completed', completion });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Server error marking topic completed', error: error.message });
+  }
+});
+
 export default router;

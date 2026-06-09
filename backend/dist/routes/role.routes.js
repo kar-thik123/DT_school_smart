@@ -45,7 +45,8 @@ router.get('/', async (req, res) => {
                 })
             },
             include: {
-                _count: { select: { users: true, permissions: true } }
+                _count: { select: { users: true, permissions: true } },
+                permissions: { include: { permission: true } }
             },
             orderBy: { name: 'asc' }
         });

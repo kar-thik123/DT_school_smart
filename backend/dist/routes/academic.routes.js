@@ -8,6 +8,12 @@ const prisma_1 = __importDefault(require("../prisma"));
 const auth_middleware_1 = require("../middlewares/auth.middleware");
 const academic_helper_1 = require("../utils/academic-helper");
 const assignment_visibility_resolver_1 = require("../utils/assignment-visibility.resolver");
+const multer_1 = __importDefault(require("multer"));
+const sync_1 = require("csv-parse/sync");
+const crypto_1 = require("crypto");
+const audit_service_1 = require("../services/audit.service");
+const notification_service_1 = require("../services/notification.service");
+const upload = (0, multer_1.default)();
 const router = (0, express_1.Router)();
 router.use(auth_middleware_1.authMiddleware);
 // A helper function to create generic CRUD handlers
@@ -62,6 +68,21 @@ const createCrudHandlers = (modelName, prismaModel) => {
                 where: { id: req.params.id },
                 data: safeData
             });
+            if (modelName === 'Section') {
+                const admins = await prisma_1.default.user.findMany({
+                    where: { organization_id: req.user.organization_id, role: { name: { in: ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER'] } } }
+                });
+                await notification_service_1.NotificationService.sendNotification({
+                    organization_id: req.user.organization_id,
+                    event_type: 'ACADEMIC_MANAGEMENT',
+                    entity_type: 'SECTION',
+                    entity_id: data.id,
+                    title: 'Section Updated',
+                    message: `Section details have been updated.`,
+                    context_data: { icon: 'edit', color: 'notification-blue' },
+                    recipient_ids: admins.map((a) => a.id)
+                });
+            }
             res.json({ message: `${modelName} updated`, data });
         }
         catch (error) {
@@ -126,6 +147,21 @@ router.post('/academic-years/:id/activate', (0, auth_middleware_1.requirePermiss
                 data: { is_active: true }
             })
         ]);
+        const admins = await prisma_1.default.user.findMany({
+            where: { organization_id: orgId }
+        });
+        if (admins.length > 0) {
+            await notification_service_1.NotificationService.sendNotification({
+                organization_id: orgId,
+                event_type: 'ACADEMIC_MANAGEMENT',
+                entity_type: 'ACADEMIC_YEAR',
+                entity_id: yearId,
+                title: 'Academic Year Activated',
+                message: `Academic Year ${yearToActivate.name} is now ACTIVE.`,
+                context_data: { icon: 'calendar', color: 'notification-green' },
+                recipient_ids: admins.map((a) => a.id)
+            });
+        }
         res.json({ message: `Academic Year ${yearToActivate.name} is now ACTIVE.` });
     }
     catch (error) {
@@ -245,6 +281,21 @@ gradeRouter.post('/', (0, auth_middleware_1.requirePermission)('ACADEMIC_STRUCTU
                 master_grade_id: masterGrade.id
             }
         });
+        const admins = await prisma_1.default.user.findMany({
+            where: { organization_id: req.user.organization_id, role: { name: { in: ['SUPER_ADMIN', 'SCHOOL_ADMIN'] } } }
+        });
+        if (admins.length > 0) {
+            await notification_service_1.NotificationService.sendNotification({
+                organization_id: req.user.organization_id,
+                event_type: 'ACADEMIC_MANAGEMENT',
+                entity_type: 'GRADE',
+                entity_id: data.id,
+                title: 'New Class Created',
+                message: `Class "${name}" has been created.`,
+                context_data: { icon: 'layers', color: 'notification-green' },
+                recipient_ids: admins.map((a) => a.id)
+            });
+        }
         res.status(201).json({ message: 'Grade created', data });
     }
     catch (error) {
@@ -520,6 +571,280 @@ subjectRouter.delete('/:id/section/:section_id', (0, auth_middleware_1.requirePe
 });
 router.use('/subjects', subjectRouter);
 router.use('/syllabuses', createCrudHandlers('Syllabus', prisma_1.default.syllabus));
+// ── BULK ACADEMIC STRUCTURE IMPORT (CSV/XLSX) ───────────────────────────────
+router.post('/bulk/preview', (0, auth_middleware_1.requirePermission)('ACADEMIC_STRUCTURE', 'CREATE'), upload.single('file'), async (req, res) => {
+    try {
+        if (!req.file)
+            return res.status(400).json({ message: 'No file uploaded' });
+        const records = (0, sync_1.parse)(req.file.buffer, { columns: true, skip_empty_lines: true, trim: true });
+        if (!records || records.length === 0)
+            return res.status(400).json({ message: 'Empty or invalid CSV file' });
+        const org_id = req.user.organization_id;
+        const session_id = (0, crypto_1.randomUUID)();
+        const resolvedRows = [];
+        // existing grades, sections, subjects
+        const existingGrades = await prisma_1.default.grade.findMany({ where: { organization_id: org_id }, select: { name: true } });
+        const existingSections = await prisma_1.default.section.findMany({ where: { organization_id: org_id }, select: { name: true, grade: { select: { name: true } } } });
+        const existingSubjects = await prisma_1.default.subject.findMany({ where: { organization_id: org_id }, select: { name: true, grade: { select: { name: true } } } });
+        const existingGroups = await prisma_1.default.subjectGroup.findMany({
+            where: { organization_id: org_id },
+            select: {
+                name: true,
+                grade: { select: { name: true } },
+                section: { select: { name: true } },
+                subjects: { select: { subject: { select: { name: true } } } }
+            }
+        });
+        const getGradeCompositeKey = (g) => String(g || '').trim();
+        const getSectionCompositeKey = (g, s) => `${String(g || '').trim()}|${String(s || '').trim()}`;
+        const getSubjectCompositeKey = (g, sub) => `${String(g || '').trim()}|${String(sub || '').trim()}`;
+        const getGroupCompositeKey = (g, s, grp) => `${String(g || '').trim()}|${String(s || '').trim()}|${String(grp || '').trim()}`;
+        const dbGrades = new Set(existingGrades.map((g) => getGradeCompositeKey(g.name)));
+        const dbSections = new Set(existingSections.map((s) => getSectionCompositeKey(s.grade?.name, s.name)));
+        const dbSubjects = new Set(existingSubjects.map((s) => getSubjectCompositeKey(s.grade?.name, s.name)));
+        const dbGroups = new Set(existingGroups.map((g) => getGroupCompositeKey(g.grade?.name, g.section?.name, g.name)));
+        const dbGroupSubjects = new Set();
+        existingGroups.forEach((g) => {
+            if (g.subjects) {
+                g.subjects.forEach((sg) => {
+                    if (sg.subject?.name) {
+                        dbGroupSubjects.add(`${getGroupCompositeKey(g.grade?.name, g.section?.name, g.name)}|${String(sg.subject.name).trim()}`);
+                    }
+                });
+            }
+        });
+        const seenRows = new Set();
+        for (let i = 0; i < records.length; i++) {
+            const row = records[i];
+            const rowNum = i + 2;
+            const isEmptyRow = Object.values(row).every(val => !val || String(val).trim() === '');
+            if (isEmptyRow)
+                continue;
+            const errors = [];
+            let match_status = 'NOT_VALID';
+            const gradeName = String(row.Grade || '').trim();
+            const sectionName = String(row.Section || '').trim();
+            const subjectName = String(row.Subject || '').trim();
+            const subjectType = String(row['Subject Type'] || '').trim().toUpperCase();
+            const groupName = String(row['Group / Stream Name'] || '').trim();
+            if (!gradeName) {
+                errors.push('Grade name is required');
+            }
+            if (subjectType && !['MANDATORY', 'OPTIONAL', 'ELECTIVE'].includes(subjectType)) {
+                errors.push(`Invalid Subject Type: ${subjectType}. Must be MANDATORY, OPTIONAL, or ELECTIVE.`);
+            }
+            if (errors.length === 0) {
+                match_status = 'VALID';
+                const compositeKey = [gradeName, sectionName, subjectName, subjectType, groupName].join('|');
+                if (seenRows.has(compositeKey)) {
+                    match_status = 'DUPLICATE';
+                }
+                else {
+                    seenRows.add(compositeKey);
+                    // Check DB for exact duplicate based on the most granular detail provided
+                    if (groupName && subjectName) {
+                        const key = `${getGroupCompositeKey(gradeName, sectionName, groupName)}|${subjectName}`;
+                        if (dbGroupSubjects.has(key))
+                            match_status = 'DUPLICATE';
+                    }
+                    else if (groupName) {
+                        if (dbGroups.has(getGroupCompositeKey(gradeName, sectionName, groupName)))
+                            match_status = 'DUPLICATE';
+                    }
+                    else if (subjectName) {
+                        if (dbSubjects.has(getSubjectCompositeKey(gradeName, subjectName)))
+                            match_status = 'DUPLICATE';
+                    }
+                    else if (sectionName) {
+                        if (dbSections.has(getSectionCompositeKey(gradeName, sectionName)))
+                            match_status = 'DUPLICATE';
+                    }
+                    else if (gradeName) {
+                        if (dbGrades.has(getGradeCompositeKey(gradeName)))
+                            match_status = 'DUPLICATE';
+                    }
+                }
+            }
+            resolvedRows.push({
+                row_number: rowNum,
+                raw_data: row,
+                match_status,
+                resolved_data: { errors }
+            });
+        }
+        const previewData = resolvedRows.map((r) => ({
+            session_id,
+            organization_id: org_id,
+            created_by: req.user.user_id,
+            row_number: r.row_number,
+            raw_data: r.raw_data,
+            match_status: r.match_status,
+            resolved_data: r.resolved_data
+        }));
+        if (previewData.length > 0) {
+            await prisma_1.default.previewImportData.createMany({ data: previewData });
+        }
+        const summary = {
+            total: resolvedRows.length,
+            valid: resolvedRows.filter(r => r.match_status === 'VALID').length,
+            duplicate: resolvedRows.filter(r => r.match_status === 'DUPLICATE').length,
+            validation_error: resolvedRows.filter(r => r.match_status === 'NOT_VALID').length,
+        };
+        res.status(201).json({
+            message: 'Preview generated successfully',
+            session_id,
+            summary,
+            records: resolvedRows.map(r => ({
+                ...r,
+                created_by_name: req.user.name || 'System',
+                created_date: new Date().toISOString()
+            }))
+        });
+    }
+    catch (error) {
+        console.error('[Academic Bulk Preview Error]', error);
+        res.status(500).json({ message: 'Failed to process preview', error: error.message });
+    }
+});
+router.post('/bulk/discard', (0, auth_middleware_1.requirePermission)('ACADEMIC_STRUCTURE', 'CREATE'), async (req, res) => {
+    try {
+        const { session_id } = req.body;
+        if (!session_id)
+            return res.status(400).json({ message: 'Missing session_id' });
+        await prisma_1.default.previewImportData.deleteMany({
+            where: { session_id, organization_id: req.user.organization_id, created_by: req.user.user_id }
+        });
+        res.json({ message: 'Preview discarded' });
+    }
+    catch (error) {
+        res.status(500).json({ message: 'Failed to discard preview', error: error.message });
+    }
+});
+router.post('/bulk/confirm', (0, auth_middleware_1.requirePermission)('ACADEMIC_STRUCTURE', 'CREATE'), async (req, res) => {
+    try {
+        const { session_id, modified_records } = req.body;
+        if (!session_id)
+            return res.status(400).json({ message: 'Missing session_id' });
+        const org_id = req.user.organization_id;
+        let records = [];
+        if (modified_records && Array.isArray(modified_records) && modified_records.length > 0) {
+            records = modified_records;
+        }
+        else {
+            const previews = await prisma_1.default.previewImportData.findMany({
+                where: { session_id, organization_id: org_id, created_by: req.user.user_id }
+            });
+            if (!previews || previews.length === 0)
+                return res.status(404).json({ message: 'Session not found or empty' });
+            records = previews.map((p) => p.raw_data);
+        }
+        const academic_year_id = await (0, academic_helper_1.getActiveAcademicYearId)(org_id);
+        const results = { created: 0, skipped: 0, errors: [] };
+        await prisma_1.default.$transaction(async (tx) => {
+            for (let i = 0; i < records.length; i++) {
+                const row = records[i];
+                const gradeName = String(row.Grade || '').trim();
+                const sectionName = String(row.Section || '').trim();
+                const subjectName = String(row.Subject || '').trim();
+                const subjectType = String(row['Subject Type'] || 'MANDATORY').trim().toUpperCase();
+                const groupName = String(row['Group / Stream Name'] || '').trim();
+                if (!gradeName) {
+                    results.skipped++;
+                    continue;
+                }
+                try {
+                    const gNameClean = gradeName.replace(/^grade\s*/i, '').trim();
+                    // Upsert Master Grade
+                    const masterGradeResult = await tx.masterGrade.upsert({
+                        where: { name_organization_id: { name: gNameClean, organization_id: org_id } },
+                        update: {},
+                        create: { name: gNameClean, organization_id: org_id }
+                    });
+                    // Upsert Grade
+                    const gradeResult = await tx.grade.upsert({
+                        where: { name_academic_year_id_organization_id: { name: gNameClean, academic_year_id, organization_id: org_id } },
+                        update: { master_grade_id: masterGradeResult.id },
+                        create: { name: gNameClean, academic_year_id, organization_id: org_id, master_grade_id: masterGradeResult.id }
+                    });
+                    let sectionResult = null;
+                    if (sectionName) {
+                        sectionResult = await tx.section.upsert({
+                            where: { name_grade_id_organization_id: { name: sectionName, grade_id: gradeResult.id, organization_id: org_id } },
+                            update: {},
+                            create: { name: sectionName, grade_id: gradeResult.id, organization_id: org_id }
+                        });
+                    }
+                    let subjectResult = null;
+                    if (subjectName) {
+                        subjectResult = await tx.subject.upsert({
+                            where: { name_grade_id_organization_id: { name: subjectName, grade_id: gradeResult.id, organization_id: org_id } },
+                            update: { master_grade_id: masterGradeResult.id },
+                            create: { name: subjectName, grade_id: gradeResult.id, organization_id: org_id, master_grade_id: masterGradeResult.id }
+                        });
+                    }
+                    if (groupName && sectionResult && subjectResult) {
+                        const groupResult = await tx.subjectGroup.upsert({
+                            where: {
+                                name_grade_id_section_id_organization_id: {
+                                    name: groupName, grade_id: gradeResult.id, section_id: sectionResult.id, organization_id: org_id
+                                }
+                            },
+                            update: {},
+                            create: { name: groupName, grade_id: gradeResult.id, section_id: sectionResult.id, organization_id: org_id, master_grade_id: masterGradeResult.id }
+                        });
+                        await tx.subjectGroupSubject.upsert({
+                            where: { group_id_subject_id: { group_id: groupResult.id, subject_id: subjectResult.id } },
+                            update: { subject_type: subjectType },
+                            create: { group_id: groupResult.id, subject_id: subjectResult.id, subject_type: subjectType }
+                        });
+                    }
+                    else if (!groupName && sectionResult && subjectResult) {
+                        const defaultGroupName = `${gradeResult.name} - ${sectionResult.name} (Default)`;
+                        const defaultGroup = await tx.subjectGroup.upsert({
+                            where: {
+                                name_grade_id_section_id_organization_id: {
+                                    name: defaultGroupName, grade_id: gradeResult.id, section_id: sectionResult.id, organization_id: org_id
+                                }
+                            },
+                            update: {},
+                            create: { name: defaultGroupName, grade_id: gradeResult.id, section_id: sectionResult.id, organization_id: org_id, master_grade_id: masterGradeResult.id }
+                        });
+                        await tx.subjectGroupSubject.upsert({
+                            where: { group_id_subject_id: { group_id: defaultGroup.id, subject_id: subjectResult.id } },
+                            update: { subject_type: subjectType },
+                            create: { group_id: defaultGroup.id, subject_id: subjectResult.id, subject_type: subjectType }
+                        });
+                    }
+                    results.created++;
+                }
+                catch (err) {
+                    results.skipped++;
+                    results.errors.push(`Row ${i + 2}: ${err.message || 'Unknown error'}`);
+                }
+            }
+        }, { timeout: 30000 });
+        await prisma_1.default.previewImportData.deleteMany({
+            where: { session_id, organization_id: org_id, created_by: req.user.user_id }
+        });
+        await (0, audit_service_1.logAuditEvent)({
+            organization_id: org_id,
+            user_id: req.user.user_id,
+            user_name: req.user.name,
+            action_type: 'IMPORT',
+            entity_type: 'ACADEMIC_STRUCTURE',
+            entity_id: session_id,
+            metadata: { success_count: results.created, skipped_count: results.skipped }
+        });
+        res.status(201).json({
+            message: `Bulk import completed. ${results.created} rows processed, ${results.skipped} skipped.`,
+            results
+        });
+    }
+    catch (error) {
+        console.error('[Academic Bulk Confirm Error]', error);
+        res.status(500).json({ message: 'Bulk import failed', error: error.message });
+    }
+});
 // ── BULK ACADEMIC STRUCTURE SETUP ────────────────────────────────────────────
 // POST /api/academic/bulk-setup
 // Creates grades → sections → subjects → units → topics in one transaction.

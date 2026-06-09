@@ -62,6 +62,7 @@ model Organization {
   notification_preferences    NotificationPreference[]
   SkillVerificationAssignment SkillVerificationAssignment[]
   Skill                       Skill[]
+  StudentTopicCompletion      StudentTopicCompletion[]
 
   @@index([subdomain])
   @@map("organizations")
@@ -84,40 +85,41 @@ model OrganizationLicense {
 }
 
 model User {
-  id                          String                        @id @default(uuid()) @db.Uuid
+  id                          String                     @id @default(uuid()) @db.Uuid
   name                        String
-  email                       String                        @unique
+  email                       String                     @unique
   password_hash               String
-  role_id                     String                        @db.Uuid
-  organization_id             String                        @db.Uuid
-  grade_id                    String?                       @db.Uuid
-  section_id                  String?                       @db.Uuid
-  is_active                   Boolean                       @default(true)
-  created_at                  DateTime                      @default(now())
-  updated_at                  DateTime                      @default(now()) @updatedAt
-  mails_received              InternalMail[]                @relation("MailReceiver")
-  mails_sent                  InternalMail[]                @relation("MailSender")
+  role_id                     String                     @db.Uuid
+  organization_id             String                     @db.Uuid
+  grade_id                    String?                    @db.Uuid
+  section_id                  String?                    @db.Uuid
+  is_active                   Boolean                    @default(true)
+  created_at                  DateTime                   @default(now())
+  updated_at                  DateTime                   @default(now()) @updatedAt
+  mails_received              InternalMail[]             @relation("MailReceiver")
+  mails_sent                  InternalMail[]             @relation("MailSender")
   password_resets             PasswordReset[]
   practice_attempts           PracticeAttempt[]
   student_assessment_attempts StudentAssessmentAttempt[]
-  promotions_made             PromotionHistory[]            @relation("PromotedBy")
-  promotion_history           PromotionHistory[]            @relation("PromotionStudent")
+  promotions_made             PromotionHistory[]         @relation("PromotedBy")
+  promotion_history           PromotionHistory[]         @relation("PromotionStudent")
   questions                   Question[]
   enrollments                 StudentEnrollment[]
   student_group_mappings      StudentGroupMapping[]
   student_profile             StudentProfile?
   user_profile                UserProfile?
-  transfer_history_as_creator StudentTransferHistory[]      @relation("TransferCreator")
-  transfer_history_as_student StudentTransferHistory[]      @relation("TransferStudent")
+  transfer_history_as_creator StudentTransferHistory[]   @relation("TransferCreator")
+  transfer_history_as_student StudentTransferHistory[]   @relation("TransferStudent")
   teacher_assignments         TeacherAssignment[]
-  grade                       Grade?                        @relation(fields: [grade_id], references: [id])
-  organization                Organization                  @relation(fields: [organization_id], references: [id], onDelete: Cascade)
-  role                        Role                          @relation(fields: [role_id], references: [id])
-  section                     Section?                      @relation(fields: [section_id], references: [id])
+  grade                       Grade?                     @relation(fields: [grade_id], references: [id])
+  organization                Organization               @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  role                        Role                       @relation(fields: [role_id], references: [id])
+  section                     Section?                   @relation(fields: [section_id], references: [id])
   notification_recipients     NotificationRecipient[]
-  skills                      Skill[]                       @relation("SkillOwner")
-  verified_skills             Skill[]                       @relation("SkillVerifier")
+  skills                      Skill[]                    @relation("SkillOwner")
+  verified_skills             Skill[]                    @relation("SkillVerifier")
   // completed_by isn't strict referential integrity for Users to keep schema clean, or we can use relation. I'll omit it and not use relation to avoid User model clutter.
+  StudentTopicCompletion      StudentTopicCompletion[]
 
   @@index([organization_id])
   @@index([email])
@@ -145,16 +147,16 @@ model StudentProfile {
 }
 
 model UserProfile {
-  id                String  @id @default(uuid()) @db.Uuid
-  user_id           String  @unique @db.Uuid
-  organization_id   String  @db.Uuid
+  id                String    @id @default(uuid()) @db.Uuid
+  user_id           String    @unique @db.Uuid
+  organization_id   String    @db.Uuid
   phone             String?
   city              String?
   country           String?
   address           String?
   about             String?
   profile_image     String?
-  academic_profiles Json?   @default("[]")
+  academic_profiles Json?     @default("[]")
   date_of_birth     DateTime? @db.Date
   academic_birth    DateTime? @db.Date
 
@@ -303,31 +305,31 @@ model MasterGrade {
 }
 
 model Grade {
-  id                          String                        @id @default(uuid()) @db.Uuid
-  name                        String
-  academic_year_id            String                        @db.Uuid
-  organization_id             String                        @db.Uuid
-  master_grade_id             String?                       @db.Uuid
-  sort_order                  Int                           @default(0)
-  is_active                   Boolean                       @default(true)
-  created_at                  DateTime                      @default(now())
-  updated_at                  DateTime                      @default(now()) @updatedAt
-  academic_year               AcademicYear                  @relation(fields: [academic_year_id], references: [id], onDelete: Cascade)
-  master_grade                MasterGrade?                  @relation(fields: [master_grade_id], references: [id], onDelete: Cascade)
-  organization                Organization                  @relation(fields: [organization_id], references: [id], onDelete: Cascade)
-  promotion_from              PromotionHistory[]            @relation("FromGrade")
-  promotion_to                PromotionHistory[]            @relation("ToGrade")
-  sections                    Section[]
-  enrollments                 StudentEnrollment[]
-  transfer_history_from       StudentTransferHistory[]      @relation("TransferFromGrade")
-  transfer_history_to         StudentTransferHistory[]      @relation("TransferToGrade")
-  subject_groups              SubjectGroup[]
-  subjects                    Subject[]
-  teacher_assignments         TeacherAssignment[]
-  units                       Unit[]
-  users                       User[]
-  questions                   Question[]
-  completion_trackings        CompletionTracking[]
+  id                    String                   @id @default(uuid()) @db.Uuid
+  name                  String
+  academic_year_id      String                   @db.Uuid
+  organization_id       String                   @db.Uuid
+  master_grade_id       String?                  @db.Uuid
+  sort_order            Int                      @default(0)
+  is_active             Boolean                  @default(true)
+  created_at            DateTime                 @default(now())
+  updated_at            DateTime                 @default(now()) @updatedAt
+  academic_year         AcademicYear             @relation(fields: [academic_year_id], references: [id], onDelete: Cascade)
+  master_grade          MasterGrade?             @relation(fields: [master_grade_id], references: [id], onDelete: Cascade)
+  organization          Organization             @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  promotion_from        PromotionHistory[]       @relation("FromGrade")
+  promotion_to          PromotionHistory[]       @relation("ToGrade")
+  sections              Section[]
+  enrollments           StudentEnrollment[]
+  transfer_history_from StudentTransferHistory[] @relation("TransferFromGrade")
+  transfer_history_to   StudentTransferHistory[] @relation("TransferToGrade")
+  subject_groups        SubjectGroup[]
+  subjects              Subject[]
+  teacher_assignments   TeacherAssignment[]
+  units                 Unit[]
+  users                 User[]
+  questions             Question[]
+  completion_trackings  CompletionTracking[]
 
   @@unique([name, academic_year_id, organization_id])
   @@index([organization_id])
@@ -336,27 +338,27 @@ model Grade {
 }
 
 model Section {
-  id                          String                        @id @default(uuid()) @db.Uuid
-  name                        String
-  grade_id                    String                        @db.Uuid
-  organization_id             String                        @db.Uuid
-  sort_order                  Int                           @default(0)
-  is_active                   Boolean                       @default(true)
-  capacity                    Int?
-  warning_threshold           Int?
-  created_at                  DateTime                      @default(now())
-  updated_at                  DateTime                      @default(now()) @updatedAt
-  grade                       Grade                         @relation(fields: [grade_id], references: [id], onDelete: Cascade)
-  organization                Organization                  @relation(fields: [organization_id], references: [id], onDelete: Cascade)
-  enrollments                 StudentEnrollment[]
-  transfer_history_from       StudentTransferHistory[]      @relation("TransferFromSection")
-  transfer_history_to         StudentTransferHistory[]      @relation("TransferToSection")
-  subject_groups              SubjectGroup[]
-  teacher_assignments         TeacherAssignment[]
-  units                       Unit[]
-  users                       User[]
-  questions                   Question[]
-  completion_trackings        CompletionTracking[]
+  id                    String                   @id @default(uuid()) @db.Uuid
+  name                  String
+  grade_id              String                   @db.Uuid
+  organization_id       String                   @db.Uuid
+  sort_order            Int                      @default(0)
+  is_active             Boolean                  @default(true)
+  capacity              Int?
+  warning_threshold     Int?
+  created_at            DateTime                 @default(now())
+  updated_at            DateTime                 @default(now()) @updatedAt
+  grade                 Grade                    @relation(fields: [grade_id], references: [id], onDelete: Cascade)
+  organization          Organization             @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  enrollments           StudentEnrollment[]
+  transfer_history_from StudentTransferHistory[] @relation("TransferFromSection")
+  transfer_history_to   StudentTransferHistory[] @relation("TransferToSection")
+  subject_groups        SubjectGroup[]
+  teacher_assignments   TeacherAssignment[]
+  units                 Unit[]
+  users                 User[]
+  questions             Question[]
+  completion_trackings  CompletionTracking[]
 
   @@unique([name, grade_id, organization_id])
   @@index([organization_id])
@@ -385,6 +387,7 @@ model Subject {
   teacher_assignments         TeacherAssignment[]
   units                       Unit[]
   completion_trackings        CompletionTracking[]
+  StudentTopicCompletion      StudentTopicCompletion[]
 
   @@unique([name, grade_id, organization_id])
   @@index([organization_id])
@@ -441,20 +444,21 @@ model Unit {
 }
 
 model Topic {
-  id                   String               @id @default(uuid()) @db.Uuid
-  name                 String
-  unit_id              String               @db.Uuid
-  organization_id      String               @db.Uuid
-  order_index          Int                  @default(0)
-  created_at           DateTime             @default(now())
-  updated_at           DateTime             @default(now()) @updatedAt
-  practice_attempts    PracticeAttempt[]
-  questions            Question[]
-  topic_activations    TopicActivation[]
-  organization         Organization         @relation(fields: [organization_id], references: [id], onDelete: Cascade)
-  unit                 Unit                 @relation(fields: [unit_id], references: [id], onDelete: Cascade)
-  sub_topics           SubTopic[]
-  completion_trackings CompletionTracking[]
+  id                     String                   @id @default(uuid()) @db.Uuid
+  name                   String
+  unit_id                String                   @db.Uuid
+  organization_id        String                   @db.Uuid
+  order_index            Int                      @default(0)
+  created_at             DateTime                 @default(now())
+  updated_at             DateTime                 @default(now()) @updatedAt
+  practice_attempts      PracticeAttempt[]
+  questions              Question[]
+  topic_activations      TopicActivation[]
+  organization           Organization             @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  unit                   Unit                     @relation(fields: [unit_id], references: [id], onDelete: Cascade)
+  sub_topics             SubTopic[]
+  completion_trackings   CompletionTracking[]
+  StudentTopicCompletion StudentTopicCompletion[]
 
   @@index([organization_id])
   @@index([unit_id])
@@ -614,6 +618,26 @@ model StudentAssessmentAttempt {
   @@index([student_id])
   @@index([subject_id])
   @@map("student_assessment_attempts")
+}
+
+model StudentTopicCompletion {
+  id               String   @id @default(uuid()) @db.Uuid
+  organization_id  String   @db.Uuid
+  student_id       String   @db.Uuid
+  academic_year_id String?  @db.Uuid
+  subject_id       String   @db.Uuid
+  topic_id         String   @db.Uuid
+  completed_at     DateTime @default(now())
+
+  organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  student      User         @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  subject      Subject      @relation(fields: [subject_id], references: [id], onDelete: Cascade)
+  topic        Topic        @relation(fields: [topic_id], references: [id], onDelete: Cascade)
+
+  @@unique([student_id, topic_id, academic_year_id])
+  @@index([organization_id])
+  @@index([subject_id])
+  @@map("student_topic_completions")
 }
 
 model PracticeAnswer {

@@ -9,7 +9,10 @@ export class JwtInterceptor implements HttpInterceptor {
 
   intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     // get token from local storage using theme-aware service
-    const token = this.storage.get('token') as string;
+    let token = this.storage.get('token') as string;
+    if (!token) {
+      token = sessionStorage.getItem('token') as string;
+    }
 
     if (token) {
       request = request.clone({

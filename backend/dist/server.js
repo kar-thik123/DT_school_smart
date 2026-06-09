@@ -10,6 +10,8 @@ const socket_io_1 = require("socket.io");
 const app_1 = __importDefault(require("./app"));
 const client_1 = require("@prisma/client");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+// Initialize notification listeners
+require("./services/notification.service");
 const prisma = new client_1.PrismaClient();
 const PORT = process.env.PORT || 5000;
 // Create HTTP server from Express app

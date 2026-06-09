@@ -8,4 +8,7 @@ module.exports = {
   clearMocks: true,
   resetMocks: true,
   restoreMocks: true,
+  moduleNameMapper: {
+    '^uuid$': require.resolve('uuid'),
+  },
 };

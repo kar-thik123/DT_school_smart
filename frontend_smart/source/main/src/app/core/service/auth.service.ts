@@ -25,7 +25,7 @@ export class AuthService {
     return this.getUser();
   }
 
-  login(email: string, password: string): Observable<any> {
+  login(email: string, password: string, rememberMe: boolean = false): Observable<any> {
     return this.http.post<any>(`${environment.apiUrl}/auth/login`, { email, password }).pipe(
       tap((response) => {
         if (response && response.token) {
@@ -33,7 +33,7 @@ export class AuthService {
           const permissions = response.user.permissions || [];
           console.log('Logged User', response.user);
           console.log('Permissions', response.user.permissions);
-          this.setSession(response.token, response.user, permissions);
+          this.setSession(response.token, response.user, permissions, rememberMe);
         }
       })
     );
@@ -47,33 +47,47 @@ export class AuthService {
     return this.http.post<any>(`${environment.apiUrl}/auth/reset-password`, { token, new_password });
   }
 
-  setSession(token: string, user: any, permissions: string[]): void {
-    this.storage.set('token', token);
-    this.storage.set('currentUser', user);
-    this.storage.set('permissions', permissions);
+  setSession(token: string, user: any, permissions: string[], rememberMe: boolean = false): void {
+    if (rememberMe) {
+      this.storage.set('token', token);
+      this.storage.set('currentUser', user);
+      this.storage.set('permissions', permissions);
+    } else {
+      sessionStorage.setItem('token', token);
+      sessionStorage.setItem('currentUser', JSON.stringify(user));
+      sessionStorage.setItem('permissions', JSON.stringify(permissions));
+    }
     this.user$.next(user);
   }
 
   startImpersonation(token: string, user: any, permissions: string[]): void {
     // Save current admin session
-    this.storage.set('adminToken', this.storage.get('token'));
-    this.storage.set('adminUser', this.storage.get('currentUser'));
-    this.storage.set('adminPermissions', this.storage.get('permissions'));
+    const currentToken = this.storage.get('token') || sessionStorage.getItem('token');
+    const currentUser = this.getUser();
+    const currentPermissions = this.getPermissions();
+    const isRemembered = this.storage.has('token');
 
-    // Set tenant session
-    this.setSession(token, user, permissions);
+    this.storage.set('adminToken', currentToken);
+    this.storage.set('adminUser', currentUser);
+    this.storage.set('adminPermissions', currentPermissions);
+    this.storage.set('adminRemembered', isRemembered);
+
+    // Set tenant session (we use sessionStorage for impersonated session to avoid leaking)
+    this.setSession(token, user, permissions, false);
   }
 
   stopImpersonation(): void {
     const adminToken = this.storage.get('adminToken');
     const adminUser = this.storage.get('adminUser');
     const adminPermissions = this.storage.get('adminPermissions') as string[];
+    const adminRemembered = this.storage.get('adminRemembered') as boolean;
 
     if (adminToken && typeof adminToken === 'string' && adminToken !== '{}') {
-      this.setSession(adminToken, adminUser, adminPermissions);
+      this.setSession(adminToken, adminUser, adminPermissions, adminRemembered);
       this.storage.remove('adminToken');
       this.storage.remove('adminUser');
       this.storage.remove('adminPermissions');
+      this.storage.remove('adminRemembered');
     }
   }
 
@@ -82,7 +96,14 @@ export class AuthService {
   }
 
   getUser(): any {
-    return this.storage.get('currentUser') || {};
+    const local = this.storage.get('currentUser');
+    if (local && Object.keys(local).length > 0) return local;
+    
+    const session = sessionStorage.getItem('currentUser');
+    if (session) {
+      try { return JSON.parse(session); } catch(e) { return {}; }
+    }
+    return {};
   }
 
   getRole(): string | null {
@@ -91,11 +112,18 @@ export class AuthService {
   }
 
   getPermissions(): string[] {
-    return (this.storage.get('permissions') as string[]) || [];
+    const local = this.storage.get('permissions') as string[];
+    if (local && local.length > 0) return local;
+    
+    const session = sessionStorage.getItem('permissions');
+    if (session) {
+      try { return JSON.parse(session); } catch(e) { return []; }
+    }
+    return [];
   }
 
   isLoggedIn(): boolean {
-    return this.storage.has('token');
+    return this.storage.has('token') || !!sessionStorage.getItem('token');
   }
 
   hasPermission(moduleOrPermission: string, action?: string): boolean {
@@ -192,6 +220,12 @@ export class AuthService {
     this.storage.remove('adminToken');
     this.storage.remove('adminUser');
     this.storage.remove('adminPermissions');
+    this.storage.remove('adminRemembered');
+
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('currentUser');
+    sessionStorage.removeItem('permissions');
+
     this.user$.next({});
     return of({ success: true });
   }

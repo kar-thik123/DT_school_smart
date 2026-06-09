@@ -13,6 +13,7 @@ const multer = require("multer");
 const path = require("path");
 const authorization_service_1 = require("../services/authorization.service");
 const image_compression_util_1 = require("../utils/image-compression.util");
+const notification_service_1 = require("../services/notification.service");
 const upload = multer({ storage: multer.memoryStorage() });
 const router = (0, express_1.Router)();
 router.use(auth_middleware_1.authMiddleware);
@@ -178,6 +179,16 @@ router.post('/', requireManagement, async (req, res) => {
                 }
             });
         }
+        await notification_service_1.NotificationService.sendNotification({
+            organization_id: req.user.organization_id,
+            event_type: 'USER_MANAGEMENT',
+            entity_type: 'USER',
+            entity_id: user.id,
+            title: 'Welcome to the Platform',
+            message: `Your account has been successfully created.`,
+            context_data: { icon: 'user', color: 'notification-green' },
+            recipient_ids: [user.id]
+        });
         // Explicit return to prevent ERR_HTTP_HEADERS_SENT
         return res.status(201).json({ message: 'User created', user: { id: user.id, name: user.name, email: user.email, role_id: parsed.role_id } });
     }
@@ -320,6 +331,18 @@ router.put('/:id', requireManagement, async (req, res) => {
             data: updateData,
             include: { role: true }
         });
+        if (updateData.role_id && updateData.role_id !== user.role_id) {
+            await notification_service_1.NotificationService.sendNotification({
+                organization_id: req.user.organization_id,
+                event_type: 'USER_MANAGEMENT',
+                entity_type: 'USER',
+                entity_id: updated.id,
+                title: 'Role Updated',
+                message: `Your role has been updated to ${updated.role.name}.`,
+                context_data: { icon: 'shield', color: 'notification-blue' },
+                recipient_ids: [updated.id]
+            });
+        }
         res.json({ message: 'User updated', user: { ...updated, role: updated.role.name } });
     }
     catch (error) {
@@ -347,6 +370,16 @@ router.patch('/:id/status', requireManagement, async (req, res) => {
             return res.status(403).json({ message: 'Tenant owner account cannot perform self-destructive actions.' });
         }
         await prisma_1.default.user.update({ where: { id: req.params.id }, data: { is_active } });
+        await notification_service_1.NotificationService.sendNotification({
+            organization_id: req.user.organization_id,
+            event_type: 'USER_MANAGEMENT',
+            entity_type: 'USER',
+            entity_id: user.id,
+            title: `Account ${is_active ? 'Activated' : 'Deactivated'}`,
+            message: `Your account has been ${is_active ? 'activated' : 'deactivated'} by an administrator.`,
+            context_data: { icon: is_active ? 'check-circle' : 'slash', color: is_active ? 'notification-green' : 'notification-red' },
+            recipient_ids: [user.id]
+        });
         res.json({ message: `User ${is_active ? 'activated' : 'deactivated'}` });
     }
     catch (error) {
@@ -438,6 +471,16 @@ router.post('/:id/reset-password', requireManagement, async (req, res) => {
           </div>
         `
             });
+            await notification_service_1.NotificationService.sendNotification({
+                organization_id: req.user.organization_id,
+                event_type: 'USER_MANAGEMENT',
+                entity_type: 'USER',
+                entity_id: targetUser.id,
+                title: `Password Reset Requested`,
+                message: `A password reset link has been sent to your email.`,
+                context_data: { icon: 'lock', color: 'notification-orange' },
+                recipient_ids: [targetUser.id]
+            });
             res.json({ message: 'Password reset link sent to user email' });
         }
         catch (emailError) {
@@ -453,14 +496,24 @@ router.post('/:id/reset-password', requireManagement, async (req, res) => {
 });
 router.get('/profile/:id', async (req, res) => {
     try {
+        // First, fetch basic user to determine role
+        const userBase = await prisma_1.default.user.findUnique({
+            where: { id: req.params.id },
+            include: { role: true }
+        });
+        if (!userBase) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        // Platform admins do not have student enrollments or academic contexts.
+        // Eager loading these relationships for them causes unnecessary strain and intermittent errors.
+        const isPlatformAdmin = userBase.role?.name === 'SYSTEM_ADMIN';
         const user = await prisma_1.default.user.findUnique({
             where: { id: req.params.id },
             include: {
                 role: true,
                 user_profile: true,
-                student_profile: true,
-                enrollments: {
-                    where: { status: 'ACTIVE' },
+                student_profile: !isPlatformAdmin,
+                enrollments: isPlatformAdmin ? false : {
                     take: 1,
                     orderBy: { enrollment_date: 'desc' }
                 }
@@ -476,13 +529,15 @@ router.get('/profile/:id', async (req, res) => {
             address: user.user_profile.address,
             about: user.user_profile.about,
             profile_image: user.user_profile.profile_image,
-            academic_profiles: user.user_profile.academic_profiles || []
+            academic_profiles: user.user_profile.academic_profiles || [],
+            date_of_birth: user.user_profile.date_of_birth,
+            academic_birth: user.user_profile.academic_birth
         } : {
             academic_profiles: []
         };
         const roll_number = user.enrollments?.[0]?.roll_number || null;
-        const date_of_birth = user.student_profile?.date_of_birth || null;
-        const academic_birth = user.student_profile?.academic_birth || null;
+        const date_of_birth = user.user_profile?.date_of_birth || user.student_profile?.date_of_birth || null;
+        const academic_birth = user.user_profile?.academic_birth || user.student_profile?.academic_birth || null;
         res.json({ ...user, ...profileData, roll_number, date_of_birth, academic_birth });
     }
     catch (error) {
@@ -513,7 +568,7 @@ router.put('/profile/:id', upload.single('profile_image'), async (req, res) => {
                 format: 'webp',
                 skipIfSmall: true
             });
-            profile_image = `/uploads/profile/${processed.filename}`;
+            profile_image = `/api/uploads/profile/${processed.filename}`;
         }
         const user = await prisma_1.default.user.findUnique({
             where: { id: req.params.id }
@@ -531,6 +586,12 @@ router.put('/profile/:id', upload.single('profile_image'), async (req, res) => {
         if (profile_image) {
             updateData.profile_image = profile_image;
         }
+        if (date_of_birth !== undefined) {
+            updateData.date_of_birth = date_of_birth ? new Date(date_of_birth) : null;
+        }
+        if (academic_birth !== undefined) {
+            updateData.academic_birth = academic_birth ? new Date(academic_birth) : null;
+        }
         await prisma_1.default.userProfile.upsert({
             where: { user_id: req.params.id },
             update: updateData,
@@ -543,18 +604,20 @@ router.put('/profile/:id', upload.single('profile_image'), async (req, res) => {
                 address,
                 about,
                 profile_image,
-                academic_profiles: academic_profiles || []
+                academic_profiles: academic_profiles || [],
+                ...(date_of_birth !== undefined && { date_of_birth: date_of_birth ? new Date(date_of_birth) : null }),
+                ...(academic_birth !== undefined && { academic_birth: academic_birth ? new Date(academic_birth) : null })
             }
         });
-        if (roll_number !== undefined) {
-            const activeEnrollment = await prisma_1.default.studentEnrollment.findFirst({
-                where: { student_id: req.params.id, status: 'ACTIVE' },
+        if (roll_number !== undefined && roll_number !== 'undefined' && roll_number !== 'null') {
+            const latestEnrollment = await prisma_1.default.studentEnrollment.findFirst({
+                where: { student_id: req.params.id },
                 orderBy: { enrollment_date: 'desc' }
             });
-            if (activeEnrollment) {
+            if (latestEnrollment) {
                 await prisma_1.default.studentEnrollment.update({
-                    where: { id: activeEnrollment.id },
-                    data: { roll_number }
+                    where: { id: latestEnrollment.id },
+                    data: { roll_number: roll_number === '' ? null : roll_number }
                 });
             }
         }

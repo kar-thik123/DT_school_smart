@@ -4,6 +4,7 @@ import { authMiddleware } from '../middlewares/auth.middleware';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import { NotificationService } from '../services/notification.service';
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -167,31 +168,17 @@ router.post('/send', upload.array('attachments'), async (req: any, res: Response
     // Create a notification for the receiver when mail is actually sent (not drafted)
     if (status !== 'DRAFT') {
       const senderName = mailWithAttachments?.sender?.name || 'Someone';
-      const notification = await prisma.notification.create({
-        data: {
-          organization_id: orgId,
-          event_type: 'INTERNAL_MAIL',
-          entity_type: 'INTERNAL_MAIL',
-          entity_id: mail.id,
-          title: `New email from ${senderName}`,
-          message: subject,
-          actor_id: senderId,
-          context_data: { icon: 'mail', color: 'notification-green' },
-          recipients: {
-            create: {
-              user_id: receiverId
-            }
-          }
-        }
+      await NotificationService.sendNotification({
+        organization_id: orgId,
+        event_type: 'INTERNAL_MAIL',
+        entity_type: 'INTERNAL_MAIL',
+        entity_id: mail.id,
+        title: `New email from ${senderName}`,
+        message: subject,
+        actor_id: senderId,
+        context_data: { icon: 'mail', color: 'notification-green' },
+        recipient_ids: [receiverId]
       });
-
-      // Push real-time notification via Socket.io
-      try {
-        const { io } = require('../server');
-        io.to(`user:${receiverId}`).emit('new-notification', notification);
-      } catch (e) {
-        console.warn('Socket.io emit failed (non-critical):', e);
-      }
     }
 
     res.status(201).json({ message: `Mail ${status === 'DRAFT' ? 'saved to drafts' : 'sent'} successfully`, mail: mailWithAttachments });

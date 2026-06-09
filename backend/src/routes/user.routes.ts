@@ -9,6 +9,7 @@ import path = require('path');
 import fs = require('fs');
 import { AuthorizationService } from '../services/authorization.service';
 import { processImage } from '../utils/image-compression.util';
+import { NotificationService } from '../services/notification.service';
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -183,6 +184,17 @@ router.post('/', requireManagement, async (req: any, res: Response) => {
       });
     }
 
+    await NotificationService.sendNotification({
+      organization_id: req.user.organization_id,
+      event_type: 'USER_MANAGEMENT',
+      entity_type: 'USER',
+      entity_id: user.id,
+      title: 'Welcome to the Platform',
+      message: `Your account has been successfully created.`,
+      context_data: { icon: 'user', color: 'notification-green' },
+      recipient_ids: [user.id]
+    });
+
     // Explicit return to prevent ERR_HTTP_HEADERS_SENT
     return res.status(201).json({ message: 'User created', user: { id: user.id, name: user.name, email: user.email, role_id: parsed.role_id } });
   } catch (error: any) {
@@ -321,6 +333,20 @@ router.put('/:id', requireManagement, async (req: any, res: Response) => {
       data: updateData,
       include: { role: true }
     });
+
+    if (updateData.role_id && updateData.role_id !== user.role_id) {
+      await NotificationService.sendNotification({
+        organization_id: req.user.organization_id,
+        event_type: 'USER_MANAGEMENT',
+        entity_type: 'USER',
+        entity_id: updated.id,
+        title: 'Role Updated',
+        message: `Your role has been updated to ${updated.role.name}.`,
+        context_data: { icon: 'shield', color: 'notification-blue' },
+        recipient_ids: [updated.id]
+      });
+    }
+
     res.json({ message: 'User updated', user: { ...updated, role: updated.role.name } });
   } catch (error: any) {
     if (error.code === 'P2025' || error.name === 'PrismaClientKnownRequestError') {
@@ -349,6 +375,18 @@ router.patch('/:id/status', requireManagement, async (req: any, res: Response) =
     }
 
     await prisma.user.update({ where: { id: req.params.id }, data: { is_active } });
+
+    await NotificationService.sendNotification({
+      organization_id: req.user.organization_id,
+      event_type: 'USER_MANAGEMENT',
+      entity_type: 'USER',
+      entity_id: user.id,
+      title: `Account ${is_active ? 'Activated' : 'Deactivated'}`,
+      message: `Your account has been ${is_active ? 'activated' : 'deactivated'} by an administrator.`,
+      context_data: { icon: is_active ? 'check-circle' : 'slash', color: is_active ? 'notification-green' : 'notification-red' },
+      recipient_ids: [user.id]
+    });
+
     res.json({ message: `User ${is_active ? 'activated' : 'deactivated'}` });
   } catch (error: any) {
     if (error.code === 'P2025' || error.name === 'PrismaClientKnownRequestError') {
@@ -450,6 +488,18 @@ router.post('/:id/reset-password', requireManagement, async (req: any, res: Resp
           </div>
         `
       });
+
+      await NotificationService.sendNotification({
+        organization_id: req.user.organization_id,
+        event_type: 'USER_MANAGEMENT',
+        entity_type: 'USER',
+        entity_id: targetUser.id,
+        title: `Password Reset Requested`,
+        message: `A password reset link has been sent to your email.`,
+        context_data: { icon: 'lock', color: 'notification-orange' },
+        recipient_ids: [targetUser.id]
+      });
+
       res.json({ message: 'Password reset link sent to user email' });
     } catch (emailError: any) {
       console.error('[SMTP Error] Failed to send email:', emailError.message);

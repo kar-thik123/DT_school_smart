@@ -35,7 +35,7 @@ app.use((0, cors_1.default)({
     credentials: true,
 }));
 app.use(express_1.default.json());
-app.use('/uploads', express_1.default.static('uploads'));
+app.use('/api/uploads', express_1.default.static('uploads'));
 app.use('/api/organizations', organization_routes_1.default);
 app.use('/api/auth', auth_routes_1.default);
 app.use('/api/users', user_routes_1.default);
