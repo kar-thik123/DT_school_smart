@@ -1,7 +1,7 @@
 <section class="content">
   <div class="content-block">
     <div class="block-header">
-      <app-breadcrumb [title]="'Organization Provisioning'" [items]="['System Admin']" [active_item]="'Setup'"></app-breadcrumb>
+      <app-breadcrumb [title]="isEditMode ? 'Edit Organization' : 'Organization Provisioning'" [items]="['System Admin']" [active_item]="isEditMode ? 'Edit' : 'Setup'"></app-breadcrumb>
     </div>
 
     <!-- Success State -->
@@ -51,7 +51,7 @@
                   <ng-template matStepLabel>1. Profile</ng-template>
                   <div class="p-5" [formGroup]="provisioningForm">
                     <div class="step-header mb-4">
-                      <h3>Organization Identity</h3>
+                      <h3>{{ isEditMode ? 'Edit Organization Identity' : 'Organization Identity' }}</h3>
                       <p class="text-muted">Provide the legal name and contact details for the new school entity.</p>
                     </div>
 
@@ -101,7 +101,7 @@
                   <ng-template matStepLabel>2. Connectivity</ng-template>
                   <div class="p-5" [formGroup]="provisioningForm">
                     <div class="step-header mb-4">
-                      <h3>Deployment & Connectivity</h3>
+                      <h3>{{ isEditMode ? 'Edit Deployment & Connectivity' : 'Deployment & Connectivity' }}</h3>
                       <p class="text-muted">Configure how this tenant will be hosted and accessed.</p>
                     </div>
                     
@@ -145,6 +145,23 @@
                             <mat-label>Full Custom Domain URL</mat-label>
                             <input matInput formControlName="custom_domain" placeholder="e.g. portal.schoolname.edu">
                             <mat-hint>Ensure CNAME records are pointed to our ingress gateway.</mat-hint>
+                          </mat-form-field>
+                        </div>
+                      </div>
+
+                      <!-- SMTP Configuration -->
+                      <h6 class="mt-2 mb-3 text-muted">SMTP Configuration (Optional)</h6>
+                      <div class="row">
+                        <div class="col-md-8">
+                          <mat-form-field class="w-100" appearance="outline">
+                            <mat-label>SMTP Host</mat-label>
+                            <input matInput formControlName="smtp_host" placeholder="e.g. smtp.mailgun.org">
+                          </mat-form-field>
+                        </div>
+                        <div class="col-md-4">
+                          <mat-form-field class="w-100" appearance="outline">
+                            <mat-label>SMTP Port</mat-label>
+                            <input matInput type="number" formControlName="smtp_port" placeholder="e.g. 587">
                           </mat-form-field>
                         </div>
                       </div>
@@ -243,7 +260,7 @@
                           <mat-form-field class="w-100" appearance="outline">
                             <mat-label>Admin Email</mat-label>
                             <input matInput formControlName="admin_email" required (blur)="checkReadiness()">
-                            <mat-error *ngIf="!readiness.adminEmailAvailable">Conflict: Email already exists</mat-error>
+                            <mat-error *ngIf="!readiness.adminEmailAvailable && !isEditMode">Conflict: Email already exists</mat-error>
                           </mat-form-field>
                         </div>
                         <div class="col-md-6">
@@ -261,6 +278,9 @@
                             <input matInput formControlName="initial_academic_year" placeholder="e.g. 2026-2027" required>
                             <mat-hint>The foundational academic year for this organization.</mat-hint>
                           </mat-form-field>
+                        </div>
+                        <div class="col-md-6 pt-2">
+                          <mat-checkbox formControlName="backup_enabled" color="primary">Enable Automated Backups</mat-checkbox>
                         </div>
                       </div>
                     </div>
@@ -281,7 +301,7 @@
                   <div class="p-5 text-center">
                     <div class="launch-prep-box p-5 border rounded mb-5 bg-light shadow-sm">
                       <mat-icon style="font-size: 64px; width: 64px; height: 64px; color: #d32f2f;" class="mb-3">rocket_launch</mat-icon>
-                      <h3 class="mt-2">Final Review & Launch</h3>
+                      <h3 class="mt-2">{{ isEditMode ? 'Final Review & Save' : 'Final Review & Launch' }}</h3>
                       <p class="text-muted mb-4">The system has validated your configuration. Launching will initialize the dedicated database schema and provision the tenant environment.</p>
                       
                       <div class="summary-grid row text-left mt-4 mb-4">
@@ -310,14 +330,14 @@
                         <span class="badge" [ngClass]="licenseForm.valid ? 'bg-success' : 'bg-danger'">
                            {{ licenseForm.valid ? 'LICENSE OK' : 'LICENSE INCOMPLETE' }}
                         </span>
-                        <span class="badge" [ngClass]="(readiness.subdomainAvailable || domainForm.get('deployment_model')?.value !== 'Subdomain') ? 'bg-success' : 'bg-danger'">
-                           {{ (readiness.subdomainAvailable || domainForm.get('deployment_model')?.value !== 'Subdomain') ? 'DOMAIN OK' : 'DOMAIN CONFLICT' }}
+                        <span class="badge" [ngClass]="(readiness.subdomainAvailable || domainForm.get('deployment_model')?.value !== 'Subdomain' || isEditMode) ? 'bg-success' : 'bg-danger'">
+                           {{ (readiness.subdomainAvailable || domainForm.get('deployment_model')?.value !== 'Subdomain' || isEditMode) ? 'DOMAIN OK' : 'DOMAIN CONFLICT' }}
                         </span>
-                        <span class="badge" [ngClass]="adminForm.valid && readiness.adminEmailAvailable ? 'bg-success' : 'bg-danger'">
-                           {{ (adminForm.valid && readiness.adminEmailAvailable) ? 'SECURITY OK' : 'SECURITY INCOMPLETE' }}
+                        <span class="badge" [ngClass]="(adminForm.valid && readiness.adminEmailAvailable) || isEditMode ? 'bg-success' : 'bg-danger'">
+                           {{ ((adminForm.valid && readiness.adminEmailAvailable) || isEditMode) ? 'SECURITY OK' : 'SECURITY INCOMPLETE' }}
                         </span>
-                        <span class="badge" [ngClass]="adminForm.get('initial_academic_year')?.valid ? 'bg-success' : 'bg-danger'">
-                           {{ adminForm.get('initial_academic_year')?.valid ? 'ACADEMIC YR OK' : 'ACADEMIC YR MISSING' }}
+                        <span class="badge" [ngClass]="adminForm.get('initial_academic_year')?.valid || isEditMode ? 'bg-success' : 'bg-danger'">
+                           {{ (adminForm.get('initial_academic_year')?.valid || isEditMode) ? 'ACADEMIC YR OK' : 'ACADEMIC YR MISSING' }}
                         </span>
                       </div>
                     </div>
@@ -327,13 +347,12 @@
                       <button mat-flat-button color="primary" class="launch-btn-large" 
                         (click)="launchProvisioning()" 
                         [disabled]="!canLaunch">
-                        <mat-icon *ngIf="!isSubmitting">flash_on</mat-icon>
-                        <mat-spinner diameter="20" color="accent" *ngIf="isSubmitting" class="mr-2"></mat-spinner>
-                        {{ isSubmitting ? 'LAUNCHING TENANT...' : 'PROVISION & LAUNCH' }}
+                        <mat-icon>flash_on</mat-icon>
+                        {{ isEditMode ? 'SAVE CHANGES' : 'PROVISION & LAUNCH' }}
                       </button>
                     </div>
 
-                    <div class="mt-4" *ngIf="!readiness.ready && readiness.errors.length > 0">
+                    <div class="mt-4" *ngIf="!isEditMode && !readiness.ready && readiness.errors.length > 0">
                        <div *ngFor="let err of readiness.errors" class="text-danger small mb-1">
                          <mat-icon style="font-size: 14px; width: 14px; height: 14px;">error</mat-icon> {{ err }}
                        </div>

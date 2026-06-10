@@ -1,0 +1,6 @@
+<div class="global-loader-overlay" *ngIf="(loaderService.loaderState$ | async)?.isLoading">
+  <div class="global-loader-content">
+    <mat-spinner diameter="60" color="primary"></mat-spinner>
+    <div class="global-loader-message mt-3">{{ (loaderService.loaderState$ | async)?.message }}</div>
+  </div>
+</div>

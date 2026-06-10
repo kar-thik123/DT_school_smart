@@ -38,9 +38,7 @@
               <mat-icon>{{ org.status === 'ACTIVE' ? 'pause' : 'play_arrow' }}</mat-icon>
               {{ org.status === 'ACTIVE' ? 'SUSPEND TENANT' : 'ACTIVATE TENANT' }}
             </button>
-            <button mat-stroked-button color="accent">
-              <mat-icon>login</mat-icon> IMPERSONATE ADMIN
-            </button>
+
           </div>
         </div>
       </div>
@@ -77,7 +75,7 @@
                       <code>{{ org.smtp_port }}</code>
                    </div>
                 </div>
-                <button mat-flat-button color="primary">Update Settings</button>
+                <button mat-flat-button color="primary" (click)="openEditDialog()">Update Settings</button>
               </div>
             </mat-tab>
 

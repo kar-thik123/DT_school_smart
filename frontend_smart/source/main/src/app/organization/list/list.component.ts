@@ -82,24 +82,6 @@ export class ListComponent implements OnInit {
     this.loadOrganizations();
   }
 
-  impersonate(row: any) {
-    this.loadingRows.add(row.id);
-    this.orgService.impersonate(row.id).subscribe({
-      next: (res: any) => {
-        this.authService.startImpersonation(res.token, res.user, res.user.permissions);
-        
-        this.snackBar.open(`Impersonating ${row.school_name} Admin`, 'Close', { duration: 3000 });
-        
-        // Redirect to dashboard
-        this.router.navigate(['/admin/dashboard']); 
-        this.loadingRows.delete(row.id);
-      },
-      error: (err) => {
-        this.snackBar.open(err.error?.message || 'Impersonation failed', 'Close', { duration: 3000 });
-        this.loadingRows.delete(row.id);
-      }
-    });
-  }
 
   toggleStatus(row: any, newStatus: string) {
     Swal.fire({

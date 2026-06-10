@@ -17,7 +17,9 @@ export const PERMISSIONS_REGISTRY = {
       "VIEW",
       "CREATE",
       "UPDATE",
-      "DELETE"
+      "DELETE",
+      "IMPORT",
+      "EXPORT"
     ]
   },
   "ROLES_AND_PERMISSIONS": {
@@ -66,9 +68,7 @@ export const PERMISSIONS_REGISTRY = {
     "actions": [
       "VIEW",
       "ENROLL",
-      "TRANSFER",
-      "IMPORT",
-      "EXPORT"
+      "TRANSFER"
     ]
   },
   "QUESTION_BANK": {

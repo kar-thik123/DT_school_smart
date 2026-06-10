@@ -23,6 +23,8 @@ import { LocalStorageService } from '@shared/services';
 import { AuthService } from '@core';
 import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.component';
 import { CommonModule } from '@angular/common';
+import { UserImportDialogComponent } from './dialogs/import-dialog/import-dialog.component';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-user-management',
@@ -50,12 +52,12 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   userManagementService = inject(UserManagementService);
   private snackBar = inject(MatSnackBar);
   private localStorageService = inject(LocalStorageService);
-  private authService = inject(AuthService);
+  authService = inject(AuthService);
 
   // ID of the currently logged-in user — used for self-protection checks
   readonly currentUserId: string = this.authService.currentUserValue?.id;
 
-  displayedColumns: string[] = ['name', 'email', 'role', 'last_login', 'status', 'actions'];
+  displayedColumns: string[] = ['name', 'email', 'role', 'roll_number', 'last_login', 'status', 'actions'];
   dataSource = new MatTableDataSource<IUser>([]);
   isLoading = true;
   private destroy$ = new Subject<void>();
@@ -123,6 +125,85 @@ export class UserManagementComponent implements OnInit, OnDestroy {
       error: (err: any) => {
         this.isLoading = false;
         this.showNotification('snackbar-danger', 'Failed to verify license seats', 'bottom', 'center');
+      }
+    });
+  }
+
+  handleExportUsers() {
+    this.downloadFile(`${environment.apiUrl}/users/export`, 'users_export.csv');
+  }
+
+  private downloadFile(url: string, filename: string) {
+    let token = this.localStorageService.get('token') as string;
+    if (!token) {
+      token = sessionStorage.getItem('token') as string;
+    }
+    fetch(url, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+    .then(response => {
+      if (!response.ok) throw new Error('Network response was not ok');
+      return response.blob();
+    })
+    .then(blob => {
+      const windowUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = windowUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(windowUrl);
+    })
+    .catch(error => {
+      this.showNotification('snackbar-danger', 'Download failed', 'bottom', 'center');
+    });
+  }
+
+  handleFileSelect(event: any) {
+    const file = event.target.files[0];
+    if (file) {
+      this.openImportDialog(file);
+    }
+    // Clear the input so the same file can be selected again if needed
+    event.target.value = '';
+  }
+
+  openImportDialog(initialFile?: File) {
+    let currentJobId: string | null = null;
+    const dialogRef = this.dialog.open(UserImportDialogComponent, {
+      width: '95vw',
+      maxWidth: '1400px',
+      height: '85vh',
+      data: {
+        initialFile: initialFile,
+        onAnalyze: (file: File) => {
+          this.userManagementService.analyzeBulkImport(file).subscribe({
+            next: (res: any) => {
+              currentJobId = res.jobId;
+              // Pass the metadata and preview back to the dialog
+              dialogRef.componentInstance.setPreviewData(res.preview, res.totalRows, res.validRowsCount, res.invalidRowsCount);
+            },
+            error: (err) => {
+              dialogRef.componentInstance.data.isLoading = false;
+              this.showNotification('snackbar-danger', err.message || 'Failed to analyze file', 'bottom', 'center');
+            }
+          });
+        },
+        onCommit: (validRows: any[]) => {
+          // Send jobId instead of the preview rows
+          this.userManagementService.commitBulkImport({ jobId: currentJobId }).subscribe({
+            next: (res) => {
+              dialogRef.close();
+              this.showNotification('snackbar-success', res.message || 'Import successful', 'bottom', 'center');
+              this.loadData();
+            },
+            error: (err) => {
+              dialogRef.componentInstance.data.isLoading = false;
+              this.showNotification('snackbar-danger', err.message || 'Failed to commit import', 'bottom', 'center');
+            }
+          });
+        }
       }
     });
   }

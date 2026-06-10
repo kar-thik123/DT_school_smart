@@ -17,7 +17,9 @@ export const PERMISSIONS_REGISTRY = {
       "VIEW",
       "CREATE",
       "UPDATE",
-      "DELETE"
+      "DELETE",
+      "IMPORT",
+      "EXPORT"
     ]
   },
   "ROLES_AND_PERMISSIONS": {

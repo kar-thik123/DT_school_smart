@@ -2,13 +2,12 @@ import 'dotenv/config';
 import http from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import app from './app';
-import { PrismaClient } from '@prisma/client';
 import jwt from 'jsonwebtoken';
+import prisma from './prisma';
 
 // Initialize notification listeners
 import './services/notification.service';
 
-const prisma = new PrismaClient();
 const PORT = process.env.PORT || 5000;
 
 // Create HTTP server from Express app

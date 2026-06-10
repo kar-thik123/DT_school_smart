@@ -65,6 +65,20 @@ export class UserManagementService {
     );
   }
 
+  analyzeBulkImport(file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.httpClient.post(`${environment.apiUrl}/bulk-import/users/analyze`, formData).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  commitBulkImport(payload: any): Observable<any> {
+    return this.httpClient.post(`${environment.apiUrl}/bulk-import/users/commit`, payload).pipe(
+      catchError(this.handleError)
+    );
+  }
+
   private handleError(error: HttpErrorResponse) {
     let errorMessage = 'Something went wrong; please try again later.';
     if (error.error instanceof ErrorEvent) {

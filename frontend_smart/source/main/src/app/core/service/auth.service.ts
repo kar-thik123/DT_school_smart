@@ -60,40 +60,7 @@ export class AuthService {
     this.user$.next(user);
   }
 
-  startImpersonation(token: string, user: any, permissions: string[]): void {
-    // Save current admin session
-    const currentToken = this.storage.get('token') || sessionStorage.getItem('token');
-    const currentUser = this.getUser();
-    const currentPermissions = this.getPermissions();
-    const isRemembered = this.storage.has('token');
 
-    this.storage.set('adminToken', currentToken);
-    this.storage.set('adminUser', currentUser);
-    this.storage.set('adminPermissions', currentPermissions);
-    this.storage.set('adminRemembered', isRemembered);
-
-    // Set tenant session (we use sessionStorage for impersonated session to avoid leaking)
-    this.setSession(token, user, permissions, false);
-  }
-
-  stopImpersonation(): void {
-    const adminToken = this.storage.get('adminToken');
-    const adminUser = this.storage.get('adminUser');
-    const adminPermissions = this.storage.get('adminPermissions') as string[];
-    const adminRemembered = this.storage.get('adminRemembered') as boolean;
-
-    if (adminToken && typeof adminToken === 'string' && adminToken !== '{}') {
-      this.setSession(adminToken, adminUser, adminPermissions, adminRemembered);
-      this.storage.remove('adminToken');
-      this.storage.remove('adminUser');
-      this.storage.remove('adminPermissions');
-      this.storage.remove('adminRemembered');
-    }
-  }
-
-  isImpersonating(): boolean {
-    return this.storage.has('adminToken');
-  }
 
   getUser(): any {
     const local = this.storage.get('currentUser');
@@ -112,14 +79,23 @@ export class AuthService {
   }
 
   getPermissions(): string[] {
+    let perms: string[] = [];
     const local = this.storage.get('permissions') as string[];
-    if (local && local.length > 0) return local;
-    
-    const session = sessionStorage.getItem('permissions');
-    if (session) {
-      try { return JSON.parse(session); } catch(e) { return []; }
+    if (local && local.length > 0) perms = local;
+    else {
+      const session = sessionStorage.getItem('permissions');
+      if (session) {
+        try { perms = JSON.parse(session); } catch(e) { perms = []; }
+      }
     }
-    return [];
+
+    // Backwards compatibility for active sessions that haven't refreshed since migration
+    if (perms.includes('USERS:BULK_IMPORT') || perms.includes('USERS_BULK_IMPORT')) {
+      if (!perms.includes('USERS:IMPORT')) perms.push('USERS:IMPORT');
+      if (!perms.includes('USERS:EXPORT')) perms.push('USERS:EXPORT');
+    }
+
+    return perms;
   }
 
   isLoggedIn(): boolean {

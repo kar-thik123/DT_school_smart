@@ -1,15 +1,24 @@
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
+import { v4 as uuidv4 } from 'uuid';
+import * as xlsx from 'xlsx';
 import { parse } from 'csv-parse';
 import { getBulkProcessor } from '../services/bulk-import/bulk-import.registry';
 import { authMiddleware } from '../middlewares/auth.middleware';
 import { logAuditEvent } from '../services/audit.service';
+import fs from 'fs';
+import path from 'path';
 
 const router = Router();
+const IMPORTS_DIR = path.join(__dirname, '../../uploads/imports');
+if (!fs.existsSync(IMPORTS_DIR)) {
+  fs.mkdirSync(IMPORTS_DIR, { recursive: true });
+}
 
 const ENTITY_PERMISSION_MAP: Record<string, { module: string, action: string }> = {
   'STUDENT_ENROLLMENT': { module: 'STUDENT_ENROLLMENT', action: 'IMPORT' },
-  'STUDENT_MAPPING': { module: 'USERS', action: 'BULK_IMPORT' },
+  'STUDENT_MAPPING': { module: 'USERS', action: 'IMPORT' },
+  'USERS': { module: 'USERS', action: 'IMPORT' },
   'TEACHER_ASSIGNMENT': { module: 'TEACHER_ASSIGNMENT', action: 'CREATE' },
   'SUBJECT_GROUPS': { module: 'ACADEMIC_STRUCTURE', action: 'CREATE' },
   'QUESTION_BANK': { module: 'QUESTION_BANK', action: 'IMPORT' },
@@ -76,7 +85,7 @@ router.post('/:entityType/analyze', upload.single('file'), async (req: any, res:
     const file = req.file;
 
     if (!file) {
-      return res.status(400).json({ message: 'No CSV file provided.' });
+      return res.status(400).json({ message: 'No file uploaded. Please provide a valid CSV or Excel file.' });
     }
 
     const processor = getBulkProcessor(entityType, orgId, userId, req.academic_year_id);
@@ -84,16 +93,50 @@ router.post('/:entityType/analyze', upload.single('file'), async (req: any, res:
       return res.status(400).json({ message: `Bulk import for entity type '${entityType}' is not supported.` });
     }
 
-    // Parse CSV into array of raw objects
-    const rawRows = await new Promise<any[]>((resolve, reject) => {
-      parse(file.buffer, { columns: true, skip_empty_lines: true, trim: true }, (err, records) => {
-        if (err) reject(err);
-        else resolve(records);
-      });
+    let rawRows: any[] = [];
+    try {
+      if (file.originalname.toLowerCase().endsWith('.csv')) {
+        rawRows = await new Promise<any[]>((resolve, reject) => {
+          parse(file.buffer, { columns: true, skip_empty_lines: true, trim: true }, (err, records) => {
+            if (err) reject(err);
+            else resolve(records);
+          });
+        });
+      } else {
+        const workbook = xlsx.read(file.buffer, { type: 'buffer' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        rawRows = xlsx.utils.sheet_to_json(worksheet, { defval: "" });
+        
+        rawRows = rawRows.map(row => {
+          const trimmedRow: any = {};
+          for (const [key, value] of Object.entries(row)) {
+            trimmedRow[key.trim()] = typeof value === 'string' ? value.trim() : value;
+          }
+          return trimmedRow;
+        });
+      }
+    } catch (err) {
+      return res.status(400).json({ message: 'Failed to parse file. Ensure it is a valid CSV or Excel file.' });
+    }
+
+    // Filter out completely empty rows
+    rawRows = rawRows.filter(row => {
+      return Object.values(row).some(
+        value => value !== null && value !== undefined && String(value).trim() !== ''
+      );
     });
 
     if (rawRows.length === 0) {
-      return res.status(400).json({ message: 'CSV file is empty or formatted incorrectly.' });
+      return res.status(400).json({ message: 'File is empty or formatted incorrectly.' });
+    }
+
+    // Attach any extra body params to each row (e.g., default_password)
+    const extraParams = { ...req.body };
+    if (Object.keys(extraParams).length > 0) {
+      rawRows.forEach(row => {
+        Object.assign(row, extraParams);
+      });
     }
 
     // Step 1: Pre-resolve relations (e.g. bulk fetch emails, IDs instead of inside loop)
@@ -103,7 +146,30 @@ router.post('/:entityType/analyze', upload.single('file'), async (req: any, res:
     const validationPromises = rawRows.map(row => processor.validateRow(row));
     const processedRows = await Promise.all(validationPromises);
 
-    // Return the required standard format
+    if (entityType.toUpperCase() === 'USERS') {
+      const jobId = uuidv4();
+      fs.writeFileSync(path.join(IMPORTS_DIR, `${jobId}.json`), JSON.stringify(processedRows));
+      
+      // Clean up old jobs after 1 hour
+      setTimeout(() => {
+        const filePath = path.join(IMPORTS_DIR, `${jobId}.json`);
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      }, 60 * 60 * 1000);
+
+      const validRowsCount = processedRows.filter(r => r.status === 'VALID').length;
+      const invalidRowsCount = processedRows.length - validRowsCount;
+
+      return res.json({
+        jobId,
+        totalRows: processedRows.length,
+        validRowsCount,
+        invalidRowsCount,
+        preview: processedRows.slice(0, 100),
+        invalidPreview: processedRows.filter(r => r.status !== 'VALID') // Frontend needs this for error report
+      });
+    }
+
+    // Return the required standard format for other modules
     return res.json({
       rows: processedRows
     });
@@ -127,7 +193,17 @@ router.post('/:entityType/commit', async (req: any, res: Response) => {
     }
     const orgId = req.user.organization_id;
     const userId = req.user.user_id;
-    const { validRows, conflictResolutions } = req.body;
+    let { validRows, conflictResolutions, jobId } = req.body;
+
+    if (entityType.toUpperCase() === 'USERS' && jobId) {
+      const filePath = path.join(IMPORTS_DIR, `${jobId}.json`);
+      if (!fs.existsSync(filePath)) {
+        return res.status(400).json({ message: 'Import session expired or invalid. Please analyze the file again.' });
+      }
+      const cachedRows = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+      validRows = cachedRows.filter((r: any) => r.status === 'VALID').map((r: any) => r.data);
+      try { fs.unlinkSync(filePath); } catch(e) { console.warn('Could not delete session file', e); }
+    }
 
     if (!Array.isArray(validRows) || validRows.length === 0) {
       return res.status(400).json({ message: 'No valid rows provided for commit.' });

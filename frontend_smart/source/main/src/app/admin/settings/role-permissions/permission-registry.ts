@@ -6,7 +6,7 @@ export interface IRegistryPermission {
 export const CENTRAL_PERMISSION_REGISTRY: IRegistryPermission[] = [
   {
     module: 'USERS',
-    permissions: ['VIEW', 'CREATE', 'EDIT', 'DELETE', 'BULK_IMPORT']
+    permissions: ['VIEW', 'CREATE', 'EDIT', 'DELETE', 'IMPORT', 'EXPORT']
   },
   {
     module: 'ROLES_AND_PERMISSIONS',

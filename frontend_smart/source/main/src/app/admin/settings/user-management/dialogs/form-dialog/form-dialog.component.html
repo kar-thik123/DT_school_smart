@@ -59,6 +59,15 @@
         </div>
       </div>
       <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-2">
+          <mat-form-field class="example-full-width" appearance="outline">
+            <mat-label>Roll Number (Optional)</mat-label>
+            <input matInput formControlName="roll_number">
+            <mat-icon matSuffix>badge</mat-icon>
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row">
         <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 mb-2">
           <div class="example-button-row text-end">
             <button mat-raised-button color="primary" type="submit" [disabled]="!userForm.valid">Save User</button>

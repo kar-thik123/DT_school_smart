@@ -41,9 +41,11 @@ export class OrganizationService {
     return this.http.patch(`${this.apiUrl}/${id}/status`, { status });
   }
 
-  impersonate(id: string): Observable<any> {
-    return this.http.post(`${this.apiUrl}/${id}/impersonate`, {});
+  updateSettings(id: string, data: any): Observable<any> {
+    return this.http.patch(`${this.apiUrl}/${id}/settings`, data);
   }
+
+
 
   checkSubdomainAvailability(subdomain: string): Observable<{ available: boolean }> {
     // Note: This endpoint should be added to backend for better UX

@@ -93,6 +93,7 @@ model User {
   organization_id             String                     @db.Uuid
   grade_id                    String?                    @db.Uuid
   section_id                  String?                    @db.Uuid
+  roll_number                 String?
   is_active                   Boolean                    @default(true)
   created_at                  DateTime                   @default(now())
   updated_at                  DateTime                   @default(now()) @updatedAt

@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { CommonModule } from '@angular/common';
 import { OrganizationService } from '../organization.service';
 import { ProvisioningPayload, ReadinessStatus } from '../organization.model';
+import { ActivatedRoute, Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -14,6 +15,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatStepperModule } from '@angular/material/stepper';
 import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.component';
 import { environment } from '../../../environments/environment';
+import { GlobalLoaderService } from '../../core/service/global-loader.service';
+import { finalize } from 'rxjs/operators';
 
 @Component({
   selector: 'app-setup',
@@ -39,12 +42,18 @@ export class SetupComponent implements OnInit {
   private fb = inject(FormBuilder);
   private orgService = inject(OrganizationService);
   private snackBar = inject(MatSnackBar);
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  private loaderService = inject(GlobalLoaderService);
 
   provisioningForm!: FormGroup;
   currentStep = 1;
   isSubmitting = false;
   isValidating = false;
   isProvisioned = false;
+  isEditMode = false;
+  editOrgId: string | null = null;
+  editOrgDetails: any = null;
   
   logoPreview: string | null = null;
   serverUrl = environment.apiUrl.replace('/api', '');
@@ -60,13 +69,78 @@ export class SetupComponent implements OnInit {
   provisioningResult: any = null;
 
   ngOnInit() {
+    this.editOrgId = this.route.snapshot.paramMap.get('id');
+    this.isEditMode = !!this.editOrgId;
+
     this.initForm();
-    this.loadDraft();
     
-    // Auto-save draft on changes
+    if (this.isEditMode) {
+      this.loadOrganizationForEdit();
+    } else {
+      this.loadDraft();
+    }
+    
+    // Auto-save draft on changes only if not in edit mode
     this.provisioningForm.valueChanges.subscribe(() => {
-      this.saveDraft();
+      if (!this.isEditMode) {
+        this.saveDraft();
+      }
       this.checkReadiness();
+    });
+  }
+
+  loadOrganizationForEdit() {
+    if (!this.editOrgId) return;
+    this.orgService.getOrganizationById(this.editOrgId).subscribe({
+      next: (org) => {
+        this.editOrgDetails = org;
+        this.orgForm.patchValue({
+          school_name: org.school_name,
+          school_type: org.school_type || 'K-12',
+          medium: org.medium || 'English',
+          contact_email: org.contact_email,
+          contact_phone: org.contact_phone,
+          address: org.address,
+          logo_url: org.logo_url
+        });
+        if (org.logo_url) {
+          this.logoPreview = `${this.serverUrl}${org.logo_url}`;
+        }
+
+        this.domainForm.patchValue({
+          deployment_model: org.domain_type || 'Platform Domain',
+          subdomain: org.subdomain,
+          custom_domain: org.custom_domain,
+          smtp_host: org.smtp_host,
+          smtp_port: org.smtp_port
+        });
+
+        this.licenseForm.patchValue({
+          licensed_seats: org.login_limit,
+          warning_threshold: org.license?.warning_threshold || 80,
+          renewal_date: org.license?.renewal_date ? new Date(org.license.renewal_date).toISOString().split('T')[0] : null,
+          grace_period_days: org.license?.grace_period_days || 7,
+          internal_notes: org.license?.internal_notes || ''
+        });
+
+        this.adminForm.patchValue({
+          admin_name: org.users?.[0]?.name || 'School Admin',
+          admin_email: org.users?.[0]?.email || '',
+          admin_password: '********', // Masked for edit
+          initial_academic_year: org.academic_years?.[0]?.name || 'N/A',
+          backup_enabled: org.backup_enabled
+        });
+
+        // Disable security and foundational fields in edit mode
+        this.adminForm.get('admin_email')?.disable();
+        this.adminForm.get('admin_password')?.disable();
+        this.adminForm.get('initial_academic_year')?.disable();
+        
+        // Disable domain_type / subdomain as it shouldn't be easy to change, but user requested subdomain is editable. We will leave it enabled per requirement.
+      },
+      error: () => {
+        this.snackBar.open('Failed to load organization details', 'Close', { duration: 3000 });
+      }
     });
   }
 
@@ -100,13 +174,16 @@ export class SetupComponent implements OnInit {
         deployment_model: ['Platform Domain', Validators.required],
         subdomain: ['', [Validators.pattern('^[a-z0-9-]+$')]],
         custom_domain: [''],
-        on_premise_endpoint: ['']
+        on_premise_endpoint: [''],
+        smtp_host: [''],
+        smtp_port: ['']
       }),
       admin: this.fb.group({
         admin_name: ['School Admin', Validators.required],
         admin_email: ['', [Validators.required, Validators.email]],
         admin_password: ['', [Validators.required, Validators.minLength(6)]],
-        initial_academic_year: ['', Validators.required]
+        initial_academic_year: ['', Validators.required],
+        backup_enabled: [false]
       }),
       license: this.fb.group({
         licensed_seats: [100, [Validators.required, Validators.min(1)]],
@@ -124,7 +201,7 @@ export class SetupComponent implements OnInit {
    */
   get canLaunch(): boolean {
     const orgOk = this.orgForm.valid;
-    const adminOk = this.adminForm.valid;
+    const adminOk = this.isEditMode ? true : this.adminForm.valid;
     const licenseOk = this.licenseForm.valid;
     
     // Deployment specific validation
@@ -135,8 +212,8 @@ export class SetupComponent implements OnInit {
     else if (model === 'Custom Domain') deploymentOk = !!this.domainForm.get('custom_domain')?.value;
 
     // Must have all data, NO known conflicts, and not currently submitting
-    const subdomainConflict = (model === 'Subdomain') && !this.readiness.subdomainAvailable;
-    const adminConflict = !this.readiness.adminEmailAvailable;
+    const subdomainConflict = this.isEditMode ? false : (model === 'Subdomain') && !this.readiness.subdomainAvailable;
+    const adminConflict = this.isEditMode ? false : !this.readiness.adminEmailAvailable;
     const noConflicts = !subdomainConflict && !adminConflict;
     
     const ready = orgOk && adminOk && licenseOk && deploymentOk && noConflicts && !this.isSubmitting;
@@ -172,7 +249,7 @@ export class SetupComponent implements OnInit {
   }
 
   checkReadiness() {
-    if (this.isValidating) return;
+    if (this.isValidating || this.isEditMode) return;
     
     const subdomain = this.domainForm.get('subdomain')?.value;
     const adminEmail = this.adminForm.get('admin_email')?.value;
@@ -200,8 +277,13 @@ export class SetupComponent implements OnInit {
       return;
     }
 
+    if (this.isEditMode) {
+      this.loaderService.show('Saving changes... Please wait.');
+    } else {
+      this.loaderService.show('Provisioning organization... Please wait.');
+    }
     this.isSubmitting = true;
-    const rawValue = this.provisioningForm.value;
+    const rawValue = this.provisioningForm.getRawValue(); // use getRawValue to include disabled fields if needed
     const payload: ProvisioningPayload = {
       ...rawValue.organization,
       ...rawValue.domain,
@@ -210,25 +292,57 @@ export class SetupComponent implements OnInit {
       ...rawValue.license
     };
 
-    this.orgService.provisionOrganization(payload).subscribe({
-      next: (res) => {
-        this.provisioningResult = {
-          ...res,
-          schoolName: payload.school_name,
-          subdomain: payload.subdomain,
-          adminEmail: payload.admin_email
-        };
-        this.isProvisioned = true;
-        this.isSubmitting = false;
-        this.clearDraft(); // Clear draft on success — prevents retry with stale data
-        this.snackBar.open('Tenant Launched Successfully!', 'Success', { duration: 5000 });
-      },
-      error: (err) => {
-        this.snackBar.open(err.error?.message || 'Launch failed', 'Close', { duration: 5000 });
-        this.isSubmitting = false;
-        this.clearDraft(); // Clear draft on failure — forces clean retry
-      }
-    });
+    if (this.isEditMode && this.editOrgId) {
+      // Map to patch settings endpoint
+      const updatePayload = {
+        school_name: payload.school_name,
+        contact_email: payload.contact_email,
+        subdomain: payload.subdomain,
+        domain_type: payload.domain_type,
+        login_limit: rawValue.license.licensed_seats,
+        smtp_host: rawValue.domain.smtp_host,
+        smtp_port: rawValue.domain.smtp_port,
+        backup_enabled: rawValue.admin.backup_enabled
+      };
+
+      this.orgService.updateSettings(this.editOrgId, updatePayload)
+        .pipe(finalize(() => {
+          this.isSubmitting = false;
+          this.loaderService.hide();
+        }))
+        .subscribe({
+        next: () => {
+          this.snackBar.open('Tenant Updated Successfully!', 'Success', { duration: 5000 });
+          this.router.navigate(['/organization/manage', this.editOrgId]);
+        },
+        error: (err) => {
+          this.snackBar.open(err.error?.message || 'Update failed', 'Close', { duration: 5000 });
+        }
+      });
+    } else {
+      this.orgService.provisionOrganization(payload)
+        .pipe(finalize(() => {
+          this.isSubmitting = false;
+          this.loaderService.hide();
+        }))
+        .subscribe({
+        next: (res) => {
+          this.provisioningResult = {
+            ...res,
+            schoolName: payload.school_name,
+            subdomain: payload.subdomain,
+            adminEmail: payload.admin_email
+          };
+          this.isProvisioned = true;
+          this.clearDraft(); // Clear draft on success — prevents retry with stale data
+          this.snackBar.open('Tenant Launched Successfully!', 'Success', { duration: 5000 });
+        },
+        error: (err) => {
+          this.snackBar.open(err.error?.message || 'Launch failed', 'Close', { duration: 5000 });
+          this.clearDraft(); // Clear draft on failure — forces clean retry
+        }
+      });
+    }
   }
 
   resetConsole() {

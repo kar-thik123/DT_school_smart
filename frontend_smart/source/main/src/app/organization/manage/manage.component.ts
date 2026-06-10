@@ -1,6 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { OrganizationService } from '../organization.service';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatCardModule } from '@angular/material/card';
@@ -29,6 +29,7 @@ import { environment } from '../../../environments/environment';
 })
 export class ManageComponent implements OnInit {
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
   private orgService = inject(OrganizationService);
   private snackBar = inject(MatSnackBar);
 
@@ -56,5 +57,10 @@ export class ManageComponent implements OnInit {
       this.snackBar.open(`Organization ${newStatus} successfully`, 'Close', { duration: 3000 });
       this.loadOrganization(this.org.id);
     });
+  }
+
+  openEditDialog() {
+    if (!this.org) return;
+    this.router.navigate(['/organization/edit', this.org.id]);
   }
 }

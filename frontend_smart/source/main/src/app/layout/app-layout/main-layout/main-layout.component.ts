@@ -72,10 +72,6 @@ export class MainLayoutComponent
     );
   }
 
-  stopImpersonation() {
-    this.authService.stopImpersonation();
-    this.router.navigate(['/organization/list']);
-  }
 
   ngAfterViewInit(): void {
     //------------ set varient start----------------

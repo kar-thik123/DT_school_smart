@@ -1,11 +1,11 @@
-
 import { Component, inject } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { Event, Router, NavigationStart, NavigationEnd } from '@angular/router';
 import { PageLoaderComponent } from './layout/page-loader/page-loader.component';
+import { GlobalLoaderComponent } from './shared/components/global-loader/global-loader.component';
 @Component({
     selector: 'app-root',
-    imports: [RouterModule, PageLoaderComponent],
+    imports: [RouterModule, PageLoaderComponent, GlobalLoaderComponent],
     providers: [],
     templateUrl: './app.component.html',
     styleUrls: ['./app.component.scss']

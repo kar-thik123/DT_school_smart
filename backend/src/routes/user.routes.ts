@@ -10,6 +10,8 @@ import fs = require('fs');
 import { AuthorizationService } from '../services/authorization.service';
 import { processImage } from '../utils/image-compression.util';
 import { NotificationService } from '../services/notification.service';
+import { stringify } from 'csv-stringify';
+import { logAuditEvent } from '../services/audit.service';
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -27,6 +29,7 @@ const userSchema = z.object({
   section_id: z.string().uuid().optional().or(z.literal('')),
   admission_number: z.string().optional(),
   mobile_number: z.string().optional(),
+  roll_number: z.string().optional(),
 });
 
 // GET all teachers in org — only users whose role has IS_TEACHER but NOT IS_MANAGEMENT or IS_STUDENT
@@ -104,7 +107,7 @@ router.get('/', async (req: any, res: Response) => {
     const users = await prisma.user.findMany({
       where: filter,
       select: {
-        id: true, name: true, email: true, section_id: true, grade_id: true, role_id: true,
+        id: true, name: true, email: true, section_id: true, grade_id: true, role_id: true, roll_number: true,
         role: { select: { name: true } },
         grade: { select: { name: true } },
         section: { select: { name: true } },
@@ -122,6 +125,92 @@ router.get('/', async (req: any, res: Response) => {
   } catch (error: any) {
     console.error('[GET /api/users] ERROR:', error.message);
     res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// GET export users to CSV
+router.get('/export', requirePermission('USERS', 'EXPORT'), async (req: any, res: Response) => {
+  try {
+    const userCount = await prisma.user.count({
+      where: { organization_id: req.user.organization_id }
+    });
+    
+    const isTemplateOnly = userCount === 0;
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="users_${isTemplateOnly ? 'template' : 'export'}.csv"`);
+
+    const stringifier = stringify({
+      header: true,
+      columns: ['Name', 'Email Address', 'Mobile Number', 'Role', 'Roll Number', 'Password']
+    });
+
+    stringifier.pipe(res);
+
+    let totalExported = 0;
+
+    if (!isTemplateOnly) {
+      let cursor: string | undefined = undefined;
+      const batchSize = 1000;
+      let hasMore = true;
+
+      while (hasMore) {
+        const batchUsers: any[] = await prisma.user.findMany({
+          take: batchSize,
+          skip: cursor ? 1 : 0,
+          cursor: cursor ? { id: cursor } : undefined,
+          where: { organization_id: req.user.organization_id },
+          include: {
+            role: true,
+            student_profile: true,
+            enrollments: {
+              take: 1,
+              orderBy: { enrollment_date: 'desc' }
+            }
+          },
+          orderBy: { id: 'asc' }
+        });
+
+        if (batchUsers.length === 0) {
+          hasMore = false;
+          break;
+        }
+
+        for (const u of batchUsers) {
+          stringifier.write([
+            u.name,
+            u.email,
+            u.student_profile?.mobile_number || '',
+            u.role?.name || '',
+            u.roll_number || u.enrollments?.[0]?.roll_number || '',
+            '' // Password column must remain blank
+          ]);
+          totalExported++;
+        }
+
+        if (batchUsers.length < batchSize) {
+          hasMore = false;
+        } else {
+          cursor = batchUsers[batchUsers.length - 1].id;
+        }
+      }
+    }
+
+    stringifier.end();
+
+    await logAuditEvent({
+      organization_id: req.user.organization_id,
+      user_id: req.user.user_id,
+      user_name: req.user.name,
+      action_type: 'EXPORT' as any,
+      entity_type: 'USER' as any,
+      entity_id: 'BULK_EXPORT',
+      metadata: { entity_type: 'USER', is_template: isTemplateOnly, totalExported }
+    });
+
+  } catch (error) {
+    console.error('Error exporting users:', error);
+    res.status(500).json({ message: 'Failed to export users' });
   }
 });
 
@@ -173,7 +262,8 @@ router.post('/', requireManagement, async (req: any, res: Response) => {
         role_id: parsed.role_id,
         organization_id: req.user.organization_id,
         grade_id: parsed.grade_id || null,
-        section_id: parsed.section_id || null
+        section_id: parsed.section_id || null,
+        roll_number: parsed.roll_number || null
       }
     });
 
@@ -350,6 +440,10 @@ router.put('/:id', requireManagement, async (req: any, res: Response) => {
         where: { name: req.body.role, OR: [{ organization_id: req.user.organization_id }, { is_system: true }] }
       });
       if (roleDb) updateData.role_id = roleDb.id;
+    }
+
+    if (req.body.roll_number !== undefined) {
+      updateData.roll_number = req.body.roll_number === '' ? null : req.body.roll_number;
     }
 
     const updated = await prisma.user.update({
@@ -583,7 +677,7 @@ router.get('/profile/:id', async (req: any, res: Response) => {
       academic_profiles: []
     };
 
-    const roll_number = user.enrollments?.[0]?.roll_number || null;
+    const roll_number = user.roll_number || user.enrollments?.[0]?.roll_number || null;
     const date_of_birth = user.user_profile?.date_of_birth || user.student_profile?.date_of_birth || null;
     const academic_birth = user.user_profile?.academic_birth || user.student_profile?.academic_birth || null;
 

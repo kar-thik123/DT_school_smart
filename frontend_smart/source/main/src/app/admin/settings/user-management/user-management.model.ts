@@ -8,6 +8,9 @@ export interface IUser {
   is_active: boolean;
   last_login?: string;
   profile_img?: string;
+  roll_number?: string;
+  admission_number?: string;
+  mobile_number?: string;
 }
 
 export interface LicenseInfo {
@@ -30,6 +33,9 @@ export class User implements IUser {
   is_active: boolean;
   last_login?: string;
   profile_img?: string;
+  roll_number?: string;
+  admission_number?: string;
+  mobile_number?: string;
 
   constructor(user: Partial<IUser>) {
     this.id = user.id || '';
@@ -41,5 +47,8 @@ export class User implements IUser {
     this.is_active = user.is_active ?? true;
     this.last_login = user.last_login;
     this.profile_img = user.profile_img || 'assets/images/user/new.jpg';
+    this.roll_number = user.roll_number || '';
+    this.admission_number = user.admission_number || '';
+    this.mobile_number = user.mobile_number || '';
   }
 }

@@ -5,6 +5,22 @@
       </app-breadcrumb>
     </div>
 
+    <div class="row mb-3">
+      <div class="col-12 d-flex justify-content-end">
+        @if (authService.hasPermission('USERS', 'IMPORT')) {
+          <input type="file" #topLevelFileInput hidden (change)="handleFileSelect($event)" accept=".csv,.xlsx,.xls" />
+          <button mat-stroked-button color="primary" class="me-2" (click)="topLevelFileInput.click()">
+            <mat-icon>upload</mat-icon> Import
+          </button>
+        }
+        @if (authService.hasPermission('USERS', 'EXPORT')) {
+          <button mat-stroked-button color="primary" (click)="handleExportUsers()">
+            <mat-icon>download</mat-icon> Export
+          </button>
+        }
+      </div>
+    </div>
+
     <div class="row">
       <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
         <div class="card">
@@ -23,9 +39,11 @@
             </div>
             <div class="right">
               <div class="right-side-btn">
-                <button mat-icon-button (click)="handleAdd()" class="tbl-header-btn col-green" matTooltip="Add User">
-                  <mat-icon>add_circle_outline</mat-icon>
-                </button>
+                @if (authService.hasPermission('USERS', 'CREATE')) {
+                  <button mat-icon-button (click)="handleAdd()" class="tbl-header-btn col-green" matTooltip="Add User">
+                    <mat-icon>add_circle_outline</mat-icon>
+                  </button>
+                }
                 <button mat-icon-button (click)="handleRefresh()" class="tbl-header-btn col-brown" matTooltip="Refresh">
                   <mat-icon>refresh</mat-icon>
                 </button>
@@ -57,11 +75,21 @@
                 </ng-container>
 
                 <!-- Role Column -->
+                <!-- Role Column -->
                 <ng-container matColumnDef="role">
                   <mat-header-cell *matHeaderCellDef mat-sort-header>Role</mat-header-cell>
                   <mat-cell *matCellDef="let row">
                     <span class="mobile-label">Role:</span>
-                    <span class="truncate-text">{{row.role}}</span>
+                    <span class="badge badge-solid-green">{{row.role}}</span>
+                  </mat-cell>
+                </ng-container>
+                
+                <!-- Roll Number Column -->
+                <ng-container matColumnDef="roll_number">
+                  <mat-header-cell *matHeaderCellDef mat-sort-header>Roll No.</mat-header-cell>
+                  <mat-cell *matCellDef="let row">
+                    <span class="mobile-label">Roll No:</span>
+                    <span class="truncate-text">{{row.roll_number || '-'}}</span>
                   </mat-cell>
                 </ng-container>
 

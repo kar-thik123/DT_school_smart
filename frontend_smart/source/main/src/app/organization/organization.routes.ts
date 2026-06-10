@@ -23,6 +23,10 @@ export const ORGANIZATION_ROUTE: Route[] = [
     component: SetupComponent,
   },
   {
+    path: 'edit/:id',
+    component: SetupComponent,
+  },
+  {
     path: 'manage/:id',
     component: ManageComponent,
   },
