@@ -1,17 +1,14 @@
 <ng-container *ngIf="data.type === 'image'">
-  <div class="dialog-container h-100 d-flex flex-column p-0 bg-white" style="border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);">
-    <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center px-4 py-3" style="border-bottom: 1px solid #f3f4f6;">
-      <h3 mat-dialog-title class="m-0 p-0 fw-bold fs-5 text-dark">Proof Preview</h3>
-      <button mat-icon-button (click)="onCancel()" class="top-close-btn">
-        <mat-icon>close</mat-icon>
-      </button>
-    </div>
+  <div class="lightbox-wrapper">
+    <!-- Close Button -->
+    <button mat-icon-button (click)="onCancel()" class="lightbox-close-btn" aria-label="Close preview">
+      <mat-icon>close</mat-icon>
+    </button>
     
-    <!-- Image Area -->
-    <div class="image-wrapper flex-grow-1 d-flex justify-content-center align-items-center p-3" style="background-color: #f8fafc; overflow: hidden;">
+    <!-- Image Content -->
+    <div class="lightbox-content">
       <img [src]="data.imageUrl" (error)="$event.target.src='assets/images/media.png'" alt="Skill Proof"
-        class="lightbox-img rounded-3 shadow-sm" />
+        class="lightbox-img-custom" />
     </div>
   </div>
 </ng-container>

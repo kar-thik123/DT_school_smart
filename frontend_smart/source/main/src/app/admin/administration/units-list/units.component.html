@@ -15,14 +15,14 @@
           </app-hierarchy-dropdown>
         </div>
         
-        <div *ngIf="canManageSyllabus">
+        <div *ngIf="canImportSyllabus">
           <input type="file" #fileInput (change)="onFileSelected($event)" accept=".xlsx, .xls, .csv" style="display: none;">
           <button class="import-excel-btn" (click)="fileInput.click()">
             <mat-icon>cloud_upload</mat-icon> Import Excel
           </button>
         </div>
         
-        <div>
+        <div *ngIf="canExportSyllabus">
           <button class="import-excel-btn" (click)="exportExcel()">
             <mat-icon>download</mat-icon> Export Excel
           </button>
@@ -114,7 +114,7 @@
                     </div>
                     <div class="mb-3 text-end">
                       <button *ngIf="editingUnitId" mat-button color="warn" type="button" class="me-2" (click)="cancelEditUnit(unitFormDir)">Cancel</button>
-                      <button mat-raised-button color="primary" type="submit" [disabled]="unitForm.invalid">{{ editingUnitId ? 'Update' : 'Create' }} Unit</button>
+                      <button mat-raised-button color="primary" type="submit" [disabled]="unitForm.invalid || isSavingUnit">{{ editingUnitId ? 'Update' : 'Create' }} Unit</button>
                     </div>
                   </form>
 
@@ -203,7 +203,7 @@
                     </div>
                     <div class="mb-3 text-end">
                       <button *ngIf="editingTopicId" mat-button color="warn" type="button" class="me-2" (click)="cancelEditTopic(topicFormDir)">Cancel</button>
-                      <button mat-raised-button color="primary" type="submit" [disabled]="topicForm.invalid">{{ editingTopicId ? 'Update' : 'Create' }} Topic</button>
+                      <button mat-raised-button color="primary" type="submit" [disabled]="topicForm.invalid || isSavingTopic">{{ editingTopicId ? 'Update' : 'Create' }} Topic</button>
                     </div>
                   </form>
 
@@ -286,7 +286,7 @@
                     </div>
                     <div class="mb-3 text-end">
                       <button *ngIf="editingSubTopicId" mat-button color="warn" type="button" class="me-2" (click)="cancelEditSubTopic(subTopicFormDir)">Cancel</button>
-                      <button mat-raised-button color="primary" type="submit" [disabled]="subTopicForm.invalid">{{ editingSubTopicId ? 'Update' : 'Create' }} Sub Topic</button>
+                      <button mat-raised-button color="primary" type="submit" [disabled]="subTopicForm.invalid || isSavingSubTopic">{{ editingSubTopicId ? 'Update' : 'Create' }} Sub Topic</button>
                     </div>
                   </form>
 

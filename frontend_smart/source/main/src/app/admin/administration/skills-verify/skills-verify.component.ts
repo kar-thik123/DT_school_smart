@@ -293,9 +293,10 @@ export class SkillsVerifyComponent implements OnInit {
       data: { type: 'image', imageUrl: imageUrl } as SkillsActionDialogData,
       panelClass: 'image-preview-dialog',
       backdropClass: 'image-preview-backdrop',
-      width: '45vw',
-      height: '45vh',
-      maxWidth: '1200px'
+      width: 'auto',
+      height: 'auto',
+      maxWidth: '95vw',
+      maxHeight: '95vh'
     });
   }
 }

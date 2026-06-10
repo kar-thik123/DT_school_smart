@@ -18,11 +18,11 @@
     },
     "ACADEMIC_STRUCTURE": {
       "description": "Grades, Sections, and Subjects",
-      "actions": ["VIEW", "CREATE", "UPDATE", "DELETE"]
+      "actions": ["VIEW", "CREATE", "UPDATE", "DELETE", "IMPORT", "EXPORT"]
     },
     "UNITS_LIST": {
       "description": "Units, Topics, and Subtopics",
-      "actions": ["VIEW", "MANAGE_SYLLABUS"]
+      "actions": ["VIEW", "MANAGE_SYLLABUS", "IMPORT", "EXPORT"]
     },
     "TEACHER_ASSIGNMENT": {
       "description": "Teacher Subject and Class assignments",

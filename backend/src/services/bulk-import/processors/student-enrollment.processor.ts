@@ -127,6 +127,17 @@ export class StudentEnrollmentProcessor implements BulkImportProcessor {
       }
     }
 
+    if (user) {
+      const existingEnrollment = this.resolved.existing_enrollments[user.id];
+      if (existingEnrollment) {
+        if (existingEnrollment.grade_id === grade?.id && existingEnrollment.section_id === section?.id) {
+          errors.push(`Student is already enrolled in Grade '${row.grade_name}' and Section '${row.section_name}'.`);
+        } else {
+          errors.push(`Student is already enrolled in a different Grade/Section in this academic year.`);
+        }
+      }
+    }
+
     if (section && user) {
       const existingEnrollment = this.resolved.existing_enrollments[user.id];
       const isAlreadyInSection = existingEnrollment && existingEnrollment.section_id === section.id;
@@ -161,13 +172,16 @@ export class StudentEnrollmentProcessor implements BulkImportProcessor {
   }
 
   async commit(validRows: any[], conflictResolutions?: any[]): Promise<CommitResult> {
-    const payloads: EnrollmentPayload[] = validRows.map(row => ({
-      student_id: row.resolved_student_id,
-      grade_id: row.resolved_grade_id,
-      section_id: row.resolved_section_id,
-      subject_group_id: row.resolved_group_id,
-      status: EnrollmentStatus.ACTIVE
-    }));
+    const payloads: EnrollmentPayload[] = validRows.map(row => {
+      const data = row.data || row;
+      return {
+        student_id: data.resolved_student_id,
+        grade_id: data.resolved_grade_id,
+        section_id: data.resolved_section_id,
+        subject_group_id: data.resolved_group_id,
+        status: EnrollmentStatus.ACTIVE
+      };
+    });
 
     try {
       const result = await StudentEnrollmentService.bulkEnrollStudents(

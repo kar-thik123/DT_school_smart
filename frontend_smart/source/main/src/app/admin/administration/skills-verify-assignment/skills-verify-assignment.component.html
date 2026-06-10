@@ -30,10 +30,12 @@
               <mat-form-field appearance="outline" class="w-100 mb-3">
                 <mat-label>Verifier</mat-label>
                 <mat-select formControlName="verifier_id" required multiple>
-                  <mat-option #allVerifierSelected [value]="'selectAll'" (click)="toggleAllNative('verifier_id', getIds(users), allVerifierSelected.selected)">
+                  <mat-option #allVerifierSelected [value]="'selectAll'"
+                    (click)="toggleAllNative('verifier_id', getIds(filteredUsers), allVerifierSelected.selected)">
                     Select All
                   </mat-option>
-                  <mat-option *ngFor="let u of users" [value]="u.id" (click)="toggleOneNative('verifier_id', getIds(users))">
+                  <mat-option *ngFor="let u of filteredUsers" [value]="u.id"
+                    (click)="toggleOneNative('verifier_id', getIds(filteredUsers))">
                     {{u.name}} ({{u.email}})
                   </mat-option>
                 </mat-select>
@@ -42,10 +44,12 @@
               <mat-form-field appearance="outline" class="w-100 mb-3">
                 <mat-label>Skill Type</mat-label>
                 <mat-select formControlName="skill_type" required multiple>
-                  <mat-option #allSkillSelected [value]="'selectAll'" (click)="toggleAllNative('skill_type', skillTypes, allSkillSelected.selected)">
+                  <mat-option #allSkillSelected [value]="'selectAll'"
+                    (click)="toggleAllNative('skill_type', skillTypes, allSkillSelected.selected)">
                     Select All
                   </mat-option>
-                  <mat-option *ngFor="let t of skillTypes" [value]="t" (click)="toggleOneNative('skill_type', skillTypes)">
+                  <mat-option *ngFor="let t of skillTypes" [value]="t"
+                    (click)="toggleOneNative('skill_type', skillTypes)">
                     {{t}}
                   </mat-option>
                 </mat-select>
@@ -54,10 +58,12 @@
               <mat-form-field appearance="outline" class="w-100 mb-3">
                 <mat-label>Grade (Optional)</mat-label>
                 <mat-select formControlName="grade_id" multiple>
-                  <mat-option #allGradeSelected [value]="'selectAll'" (click)="toggleAllNative('grade_id', getIds(grades), allGradeSelected.selected)">
+                  <mat-option #allGradeSelected [value]="'selectAll'"
+                    (click)="toggleAllNative('grade_id', getIds(grades), allGradeSelected.selected)">
                     Select All
                   </mat-option>
-                  <mat-option *ngFor="let g of grades" [value]="g.id" (click)="toggleOneNative('grade_id', getIds(grades))">
+                  <mat-option *ngFor="let g of grades" [value]="g.id"
+                    (click)="toggleOneNative('grade_id', getIds(grades))">
                     {{g.name}}
                   </mat-option>
                 </mat-select>
@@ -66,11 +72,13 @@
               <mat-form-field appearance="outline" class="w-100 mb-3" *ngIf="assignForm.get('grade_id')?.value?.length">
                 <mat-label>Section (Optional)</mat-label>
                 <mat-select formControlName="section_id" multiple>
-                  <mat-option #allSectionSelected [value]="'selectAll'" (click)="toggleAllNative('section_id', getIds(filteredSections), allSectionSelected.selected)">
+                  <mat-option #allSectionSelected [value]="'selectAll'"
+                    (click)="toggleAllNative('section_id', getIds(filteredSections), allSectionSelected.selected)">
                     Select All
                   </mat-option>
-                  <mat-option *ngFor="let s of filteredSections" [value]="s.id" (click)="toggleOneNative('section_id', getIds(filteredSections))">
-                    {{s.name}}
+                  <mat-option *ngFor="let s of filteredSections" [value]="s.id"
+                    (click)="toggleOneNative('section_id', getIds(filteredSections))">
+                    {{getGradeName(s.grade_id)}} - {{s.name}}
                   </mat-option>
                 </mat-select>
               </mat-form-field>
@@ -99,23 +107,23 @@
               <table mat-table [dataSource]="assignments" class="w-100">
                 <ng-container matColumnDef="verifier">
                   <th mat-header-cell *matHeaderCellDef> Verifiers </th>
-                  <td mat-cell *matCellDef="let element"> 
-                    <span *ngFor="let v of element.verifiers; let last = last">{{v.name}}{{!last ? ', ' : ''}}</span> 
+                  <td mat-cell *matCellDef="let element">
+                    <span *ngFor="let v of element.verifiers; let last = last">{{v.name}}{{!last ? ', ' : ''}}</span>
                   </td>
                 </ng-container>
 
                 <ng-container matColumnDef="skill_type">
                   <th mat-header-cell *matHeaderCellDef> Skill Types </th>
-                  <td mat-cell *matCellDef="let element"> 
-                    <span *ngFor="let s of element.skill_types; let last = last">{{s}}{{!last ? ', ' : ''}}</span> 
+                  <td mat-cell *matCellDef="let element">
+                    <span *ngFor="let s of element.skill_types; let last = last">{{s}}{{!last ? ', ' : ''}}</span>
                   </td>
                 </ng-container>
 
                 <ng-container matColumnDef="grade">
                   <th mat-header-cell *matHeaderCellDef> Grades </th>
-                  <td mat-cell *matCellDef="let element"> 
+                  <td mat-cell *matCellDef="let element">
                     <span *ngIf="element.grades?.length === 0">All</span>
-                    <span *ngFor="let g of element.grades; let last = last">{{g.name}}{{!last ? ', ' : ''}}</span> 
+                    <span *ngFor="let g of element.grades; let last = last">{{g.name}}{{!last ? ', ' : ''}}</span>
                   </td>
                 </ng-container>
 

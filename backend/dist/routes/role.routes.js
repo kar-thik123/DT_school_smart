@@ -15,10 +15,14 @@ router.use(auth_middleware_1.authMiddleware);
 router.use((req, res, next) => {
     // Allow SUPER_ADMIN or anyone with ROLES_AND_PERMISSIONS:VIEW to access these routes
     const userPermissions = req.user?.permissions || [];
+    // Specific override: if the method is GET and hitting the base / endpoint, allow SKILLS_VERIFY_ASSIGNMENT
+    const isRolesList = req.method === 'GET' && (req.path === '/' || req.path === '');
+    const hasSkillAssignAccess = userPermissions.includes('SKILLS_VERIFY_ASSIGNMENT:ASSIGN') || userPermissions.includes('SKILLS_VERIFY_ASSIGNMENT:VIEW');
     if (authorization_service_1.AuthorizationService.hasIdentity(userPermissions, 'IS_SYSTEM_ADMIN') ||
         authorization_service_1.AuthorizationService.hasIdentity(userPermissions, 'IS_SUPER_ADMIN') ||
         userPermissions.includes('ROLES_AND_PERMISSIONS:VIEW') ||
-        userPermissions.includes('ROLES_AND_PERMISSIONS:MANAGE')) {
+        userPermissions.includes('ROLES_AND_PERMISSIONS:MANAGE') ||
+        (isRolesList && hasSkillAssignAccess)) {
         return next();
     }
     return res.status(403).json({ message: 'Forbidden: Requires role management permissions' });
@@ -45,7 +49,8 @@ router.get('/', async (req, res) => {
                 })
             },
             include: {
-                _count: { select: { users: true, permissions: true } }
+                _count: { select: { users: true, permissions: true } },
+                permissions: { include: { permission: true } }
             },
             orderBy: { name: 'asc' }
         });

@@ -9,7 +9,11 @@
 .image-preview-dialog .mat-mdc-dialog-container .mdc-dialog__surface {
   background: transparent !important;
   box-shadow: none !important;
+  overflow: visible !important;
+}
+.image-preview-dialog .mat-mdc-dialog-container {
+  overflow: visible !important;
 }
 .image-preview-backdrop {
-  background: rgba(0, 0, 0, 0.8) !important;
+  background: rgba(0, 0, 0, 0.85) !important;
 }

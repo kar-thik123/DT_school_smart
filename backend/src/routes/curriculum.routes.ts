@@ -584,6 +584,7 @@ bulkRouter.post('/preview', requirePermission('ACADEMIC_STRUCTURE', 'CREATE'), u
       let match_status = 'NOT_VALID';
 
       const gradeName = String(row.Grade || '').trim();
+      const gradeNameClean = gradeName.replace(/^grade\\s*/i, '').trim();
       let sectionName = String(row.Section || '').trim();
       if (sectionName.toLowerCase() === 'all sections') {
         sectionName = '';
@@ -593,7 +594,7 @@ bulkRouter.post('/preview', requirePermission('ACADEMIC_STRUCTURE', 'CREATE'), u
       const topicName = String(row['Topic Name'] || '').trim();
       const subTopicName = String(row['Sub Topic Name'] || '').trim();
 
-      if (!gradeName) errors.push('Grade is required');
+      if (!gradeNameClean) errors.push('Grade is required');
       if (!subjectName) errors.push('Subject is required');
       if (!unitName) errors.push('Unit Name is required');
 
@@ -601,17 +602,20 @@ bulkRouter.post('/preview', requirePermission('ACADEMIC_STRUCTURE', 'CREATE'), u
       let resolvedSectionId: string | null = null;
       let resolvedSubjectId: string | null = null;
 
-      const grade = existingGrades.find((g: any) => g.name === gradeName);
+      const grade = existingGrades.find((g: any) => g.name.trim().toLowerCase() === gradeNameClean.toLowerCase());
       if (grade) {
         resolvedGradeId = grade.id;
         
         if (sectionName) {
-           const section = existingSections.find((s: any) => s.grade_id === grade.id && s.name === sectionName);
+           const section = existingSections.find((s: any) => s.grade_id === grade.id && s.name.trim().toLowerCase() === sectionName.toLowerCase());
            if (!section) errors.push(`Section "${sectionName}" not found in Grade "${gradeName}"`);
            else resolvedSectionId = section.id;
         }
 
-        const subject = existingSubjects.find((s: any) => s.grade_id === grade.id && s.name === subjectName);
+        let subject = existingSubjects.find((s: any) => s.grade_id === grade.id && s.name.trim().toLowerCase() === subjectName.toLowerCase());
+        if (!subject) {
+            subject = existingSubjects.find((s: any) => s.name.trim().toLowerCase() === subjectName.toLowerCase());
+        }
         if (!subject) {
           errors.push(`Subject "${subjectName}" not found in Grade "${gradeName}"`);
         } else {
@@ -637,7 +641,7 @@ bulkRouter.post('/preview', requirePermission('ACADEMIC_STRUCTURE', 'CREATE'), u
       if (errors.length === 0) {
         match_status = 'VALID';
         
-        const compositeKey = [gradeName, sectionName, subjectName, unitName, topicName, subTopicName].join('|');
+        const compositeKey = [gradeNameClean, sectionName, subjectName, unitName, topicName, subTopicName].join('|');
         if (seenRows.has(compositeKey)) {
           match_status = 'DUPLICATE';
         } else {

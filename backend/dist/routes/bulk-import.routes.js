@@ -11,7 +11,7 @@ const auth_middleware_1 = require("../middlewares/auth.middleware");
 const audit_service_1 = require("../services/audit.service");
 const router = (0, express_1.Router)();
 const ENTITY_PERMISSION_MAP = {
-    'STUDENT_ENROLLMENT': { module: 'USERS', action: 'BULK_IMPORT' },
+    'STUDENT_ENROLLMENT': { module: 'STUDENT_ENROLLMENT', action: 'IMPORT' },
     'STUDENT_MAPPING': { module: 'USERS', action: 'BULK_IMPORT' },
     'TEACHER_ASSIGNMENT': { module: 'TEACHER_ASSIGNMENT', action: 'CREATE' },
     'SUBJECT_GROUPS': { module: 'ACADEMIC_STRUCTURE', action: 'CREATE' },

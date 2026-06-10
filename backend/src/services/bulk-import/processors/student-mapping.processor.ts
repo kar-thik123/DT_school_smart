@@ -203,7 +203,8 @@ export class StudentMappingProcessor implements BulkImportProcessor {
 
       // Phase 2: Perform discrete isolated upserts across the valid block
       for (const row of validRows) {
-        if (!row.resolved_student_id || !row.resolved_group_id) {
+        const data = row.data || row;
+        if (!data.resolved_student_id || !data.resolved_group_id) {
           failure++;
           continue;
         }
@@ -212,15 +213,15 @@ export class StudentMappingProcessor implements BulkImportProcessor {
           await tx.studentGroupMapping.upsert({
             where: {
               student_id_group_id: {
-                student_id: row.resolved_student_id,
-                group_id: row.resolved_group_id
+                student_id: data.resolved_student_id,
+                group_id: data.resolved_group_id
               }
             },
             update: {}, // Idempotent execution
             create: {
               organization_id: this.organizationId,
-              student_id: row.resolved_student_id,
-              group_id: row.resolved_group_id,
+              student_id: data.resolved_student_id,
+              group_id: data.resolved_group_id,
               academic_year_id: this.academicYearId
             }
           });

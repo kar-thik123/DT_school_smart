@@ -22,6 +22,7 @@ import { BulkSetupDialogComponent } from './dialogs/bulk-setup-dialog.component'
 import { AcademicStructurePreviewComponent } from './academic-structure-preview/academic-structure-preview.component';
 import * as XLSX from 'xlsx';
 import { firstValueFrom } from 'rxjs';
+import { AuthService } from '@core';
 
 @Component({
   selector: 'app-academic-structure',
@@ -40,6 +41,7 @@ export class AcademicStructureComponent implements OnInit {
   private academicService = inject(AcademicStructureService);
   private dialog = inject(MatDialog);
   private snackBar = inject(MatSnackBar);
+  private authService = inject(AuthService);
 
   breadscrums = [
     {
@@ -71,7 +73,14 @@ export class AcademicStructureComponent implements OnInit {
   groupsForSelectedSection: import('./services/academic-structure.service').ISubjectGroup[] = [];
   sectionsForGroupFilter: ISection[] = [];
 
+  canImportStructure = false;
+  canExportStructure = false;
+
   ngOnInit() {
+    this.canImportStructure = this.authService.hasPermission('ACADEMIC_STRUCTURE', 'IMPORT') ||
+                              this.authService.hasPermission('ACADEMIC_STRUCTURE_IMPORT');
+    this.canExportStructure = this.authService.hasPermission('ACADEMIC_STRUCTURE', 'EXPORT') ||
+                              this.authService.hasPermission('ACADEMIC_STRUCTURE_EXPORT');
     this.loadInitialData();
   }
 
