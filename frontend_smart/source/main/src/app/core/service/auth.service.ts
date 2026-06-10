@@ -130,10 +130,6 @@ export class AuthService {
     const user = this.user$.value;
     if (!user || Object.keys(user).length === 0) return false;
 
-    // SYSTEM_ADMIN owns the platform; other roles are permission-driven.
-    // NOTE: Removed global bypass for SYSTEM_ADMIN to enforce strict tenant isolation
-    const role = (user.role || user.roles?.[0]?.name || '').toUpperCase();
-
     const permissions = this.getPermissions() || [];
     
     // Normalize both user permissions and the permission to check
@@ -152,21 +148,11 @@ export class AuthService {
       return true;
     }
 
-    // Fallback: If DB permissions are empty, check the base role string
-    if (role === 'SYSTEM_ADMIN' && (permissionToCheck === 'IDENTITY:IS_SYSTEM_ADMIN' || permissionToCheckUnderscore === 'IDENTITY_IS_SYSTEM_ADMIN')) return true;
-    if (role === 'SUPER_ADMIN' && (permissionToCheck === 'IDENTITY:IS_SUPER_ADMIN' || permissionToCheckUnderscore === 'IDENTITY_IS_SUPER_ADMIN' || permissionToCheck === 'IDENTITY:IS_MANAGEMENT' || permissionToCheckUnderscore === 'IDENTITY_IS_MANAGEMENT')) return true;
-    if (role === 'MANAGEMENT' && (permissionToCheck === 'IDENTITY:IS_MANAGEMENT' || permissionToCheckUnderscore === 'IDENTITY_IS_MANAGEMENT')) return true;
-    if (role === 'TEACHER' && (permissionToCheck === 'IDENTITY:IS_TEACHER' || permissionToCheckUnderscore === 'IDENTITY_IS_TEACHER')) return true;
-    if (role === 'STUDENT' && (permissionToCheck === 'IDENTITY:IS_STUDENT' || permissionToCheckUnderscore === 'IDENTITY_IS_STUDENT')) return true;
-
     return false;
   }
 
   hasAdminNamespaceAccess(): boolean {
-    const user = this.user$.value;
-    if (!user || Object.keys(user).length === 0) return false;
-    const role = (user.role || '').toUpperCase();
-    if (role === 'SUPER_ADMIN' || role === 'MANAGEMENT') {
+    if (this.hasPermission('IDENTITY', 'IS_SUPER_ADMIN') || this.hasPermission('IDENTITY', 'IS_MANAGEMENT')) {
       return true;
     }
     // Or check if they have any admin sub-module permission
@@ -189,10 +175,7 @@ export class AuthService {
   }
 
   hasTeacherNamespaceAccess(): boolean {
-    const user = this.user$.value;
-    if (!user || Object.keys(user).length === 0) return false;
-    const role = (user.role || '').toUpperCase();
-    if (role === 'TEACHER') {
+    if (this.hasPermission('IDENTITY', 'IS_TEACHER')) {
       return true;
     }
     // Or check if they have teacher sub-module permissions
@@ -206,10 +189,7 @@ export class AuthService {
   }
 
   hasStudentNamespaceAccess(): boolean {
-    const user = this.user$.value;
-    if (!user || Object.keys(user).length === 0) return false;
-    const role = (user.role || '').toUpperCase();
-    return role === 'STUDENT';
+    return this.hasPermission('IDENTITY', 'IS_STUDENT');
   }
 
   logout(): Observable<any> {
@@ -231,20 +211,12 @@ export class AuthService {
   }
 
   getDefaultRoute(): string {
-    const user = this.getUser();
-    const role = user?.role;
-
-    // Role-name fallback: protects first-time login where permissions[] may
-    // be transiently empty (e.g. before ngx-permissions loads from storage).
-    // Role name is always present in the stored currentUser object.
-    if (role === 'SYSTEM_ADMIN') return '/organization/list';
-    if (role === 'SUPER_ADMIN') return '/admin/dashboard/main';
-
-    // Permission-driven routing for all other roles
     if (this.hasPermission('IDENTITY', 'IS_SYSTEM_ADMIN')) return '/organization/list';
     if (this.hasPermission('IDENTITY', 'IS_SUPER_ADMIN')) return '/admin/dashboard/main';
     if (this.hasPermission('IDENTITY', 'IS_MANAGEMENT')) return '/admin/dashboard/main';
     if (this.hasPermission('IDENTITY', 'IS_TEACHER')) return '/teacher/dashboard';
+    if (this.hasPermission('IDENTITY', 'IS_SKILL_VERIFIER')) return '/admin/administration/skills-verify';
+    if (this.hasPermission('IDENTITY', 'IS_PARENT')) return '/parent/dashboard';
     if (this.hasPermission('IDENTITY', 'IS_STUDENT')) return '/student/dashboard';
     return '/authentication/signin';
   }

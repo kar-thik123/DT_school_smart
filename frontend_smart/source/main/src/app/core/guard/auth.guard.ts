@@ -19,10 +19,16 @@ export class AuthGuard {
 
 
   canActivate(route: ActivatedRouteSnapshot, _state: RouterStateSnapshot) {
-    const currentUser = this.store.get('currentUser') as User;
-    if (currentUser) {
+    const currentUser = this.authService.getUser();
+    if (currentUser && Object.keys(currentUser).length > 0) {
       const permission = route.data['permission'];
       if (permission) {
+        console.log('Current User', currentUser);
+        console.log('Route Permission', permission);
+        
+        const permissionToCheck = Array.isArray(permission) ? permission[0] : permission;
+        console.log('Has Permission', this.authService.hasPermission(permissionToCheck));
+        
         if (permission === 'IDENTITY:IS_MANAGEMENT') {
           if (!this.authService.hasPermission('IDENTITY:IS_MANAGEMENT') && !this.authService.hasAdminNamespaceAccess()) {
             this.router.navigate(['/authentication/signin']);

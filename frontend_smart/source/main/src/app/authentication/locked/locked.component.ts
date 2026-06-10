@@ -55,17 +55,7 @@ export class LockedComponent implements OnInit {
     if (this.authForm.invalid) {
       return;
     } else {
-      const currentUser = this.store.get('currentUser') as User;
-      const role = currentUser?.roles?.[0]?.name;
-      if (role === Role.Admin) {
-        this.router.navigate(['/admin/dashboard/main']);
-      } else if (role === Role.Teacher) {
-        this.router.navigate(['/teacher/dashboard']);
-      } else if (role === Role.Student) {
-        this.router.navigate(['/student/dashboard']);
-      } else {
-        this.router.navigate(['/authentication/signin']);
-      }
+      this.router.navigate([this.authService.getDefaultRoute()]);
     }
   }
 }
