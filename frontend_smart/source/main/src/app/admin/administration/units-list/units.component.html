@@ -121,6 +121,7 @@
                   <table class="table mb-0 table-hover mt-3">
                     <thead>
                       <tr>
+                        <th>S.No</th>
                         <th>Unit Name</th>
                         <th>Grade</th>
                         <th>Section</th>
@@ -129,7 +130,8 @@
                       </tr>
                     </thead>
                     <tbody>
-                      <tr *ngFor="let element of filteredUnits">
+                      <tr *ngFor="let element of paginatedUnits; let i = index">
+                        <td class="align-middle">{{ (unitCurrentPage - 1) * unitPageSize + i + 1 }}</td>
                         <td class="align-middle">{{ element.name }}</td>
                         <td class="align-middle">{{ element.grade?.name }}</td>
                         <td class="align-middle">
@@ -162,6 +164,15 @@
                       </tr>
                     </tbody>
                   </table>
+
+                  <mat-paginator *ngIf="filteredUnits.length > 0"
+                                 class="bg-transparent mt-2"
+                                 [length]="filteredUnits.length"
+                                 [pageSize]="unitPageSize"
+                                 [pageSizeOptions]="[10, 25, 50, 100]"
+                                 (page)="onUnitPageChange($event)"
+                                 showFirstLastButtons>
+                  </mat-paginator>
                 </div>
               </mat-card>
             </div>
@@ -210,13 +221,15 @@
                   <table class="table mb-0 table-hover mt-3">
                     <thead>
                       <tr>
+                        <th>S.No</th>
                         <th>Topic Name</th>
                         <th>Unit</th>
                         <th *ngIf="canManageSyllabus" class="text-end">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
-                      <tr *ngFor="let element of filteredTopics">
+                      <tr *ngFor="let element of paginatedTopics; let i = index">
+                        <td class="align-middle">{{ (topicCurrentPage - 1) * topicPageSize + i + 1 }}</td>
                         <td class="align-middle">{{ element.name }}</td>
                         <td class="align-middle">{{ element.unit?.name }}</td>
                         <td *ngIf="canManageSyllabus" class="text-end align-middle">
@@ -244,6 +257,15 @@
                       </tr>
                     </tbody>
                   </table>
+
+                  <mat-paginator *ngIf="filteredTopics.length > 0"
+                                 class="bg-transparent mt-2"
+                                 [length]="filteredTopics.length"
+                                 [pageSize]="topicPageSize"
+                                 [pageSizeOptions]="[10, 25, 50, 100]"
+                                 (page)="onTopicPageChange($event)"
+                                 showFirstLastButtons>
+                  </mat-paginator>
                 </div>
               </mat-card>
             </div>
@@ -293,13 +315,15 @@
                   <table class="table mb-0 table-hover mt-3">
                     <thead>
                       <tr>
+                        <th>S.No</th>
                         <th>Sub Topic Name</th>
                         <th>Topic</th>
                         <th *ngIf="canManageSyllabus" class="text-end">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
-                      <tr *ngFor="let element of filteredSubTopics">
+                      <tr *ngFor="let element of paginatedSubTopics; let i = index">
+                        <td class="align-middle">{{ (subTopicCurrentPage - 1) * subTopicPageSize + i + 1 }}</td>
                         <td class="align-middle">{{ element.name }}</td>
                         <td class="align-middle">{{ element.topic?.name }}</td>
                         <td *ngIf="canManageSyllabus" class="text-end align-middle">
@@ -327,6 +351,15 @@
                       </tr>
                     </tbody>
                   </table>
+
+                  <mat-paginator *ngIf="filteredSubTopics.length > 0"
+                                 class="bg-transparent mt-2"
+                                 [length]="filteredSubTopics.length"
+                                 [pageSize]="subTopicPageSize"
+                                 [pageSizeOptions]="[10, 25, 50, 100]"
+                                 (page)="onSubTopicPageChange($event)"
+                                 showFirstLastButtons>
+                  </mat-paginator>
                 </div>
               </mat-card>
             </div>

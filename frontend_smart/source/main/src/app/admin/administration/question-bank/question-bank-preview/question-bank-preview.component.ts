@@ -16,7 +16,7 @@ export class QuestionBankPreviewComponent {
   // Helper to check if a string starts with a non-alphanumeric character
   startsWithSpecialChar(value: string | undefined): boolean {
     if (!value) return false;
-    return /^[^a-zA-Z0-9]/.test(value);
+    return /^[^\p{L}\p{N}]/u.test(value);
   }
 
   // Stores the raw input

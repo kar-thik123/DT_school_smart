@@ -147,8 +147,8 @@
       <!-- UNITS -->
       <div *ngIf="showUnits" class="units-container" [@expandAnimation]="expandedSubject === subject.id ? 'expanded' : 'collapsed'">
         <div class="units-tree">
-          <ng-container *ngIf="getUnitsForSubject(subject.id).length > 0; else noUnits">
-            <div *ngFor="let unit of getUnitsForSubject(subject.id)">
+          <ng-container *ngIf="getUnitsForSubject(subject.id, section).length > 0; else noUnits">
+            <div *ngFor="let unit of getUnitsForSubject(subject.id, section)">
               <div class="unit-row"
                 [class.active]="selectedSubjectId === subject.id && selectedUnitId === unit.id && !selectedTopicId">
                 <div class="tree-line"></div>

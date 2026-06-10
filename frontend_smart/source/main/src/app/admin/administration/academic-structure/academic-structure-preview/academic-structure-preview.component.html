@@ -2,7 +2,7 @@
   <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable preview-dialog">
     <div class="modal-content preview-modal">
       <!-- Header -->
-      <div class="modal-header border-bottom-0 d-flex align-items-center justify-content-between">
+      <div class="modal-header border-bottom-0 d-flex align-items-center justify-content-between pt-2 pb-1 px-3">
         <h5 class="modal-title d-flex align-items-center">
           <mat-icon class="text-primary me-2">visibility</mat-icon> Preview Import Data
         </h5>
@@ -36,9 +36,9 @@
       </div>
 
       <!-- Body -->
-      <div class="modal-body bg-light p-4">
+      <div class="modal-body bg-light px-3 pt-2 pb-0">
         <!-- Error Banner -->
-        <div class="alert alert-danger d-flex align-items-center mb-3" *ngIf="hasErrors">
+        <div class="alert alert-danger d-flex align-items-center mb-2 py-2" *ngIf="hasErrors">
           <mat-icon class="me-2">warning</mat-icon>
           <span>
             <ng-container *ngIf="previewSummary.validation_error > 0">
@@ -53,9 +53,9 @@
         </div>
 
         <!-- Data Table -->
-        <div class="card border-0 shadow-sm">
-          <div class="card-body p-0 table-responsive" style="max-height: 450px;">
-            <table class="table table-hover mb-0 text-nowrap preview-table">
+        <div class="card border-0 shadow-sm mb-0">
+          <div class="card-body p-0 table-responsive">
+            <table class="table table-hover table-sm mb-0 text-nowrap preview-table">
               <thead class="table-light position-sticky top-0 shadow-sm" style="z-index: 1;">
                 <tr>
                   <th class="th-status">Status</th>
@@ -69,7 +69,7 @@
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let row of previewData; let i = index" [class]="getRowClass(row.match_status)">
+                <tr *ngFor="let row of paginatedData; let i = index" [class]="getRowClass(row.match_status)">
                   <!-- Status Badge -->
                   <td>
                     <span class="status-badge" [class]="getStatusClass(row.match_status)"
@@ -80,7 +80,7 @@
                   </td>
 
                   <!-- Row Number -->
-                  <td>{{i + 1}}</td>
+                  <td>{{ (currentPage - 1) * pageSize + i + 1 }}</td>
 
                   <td [class.cell-error]="getFieldError(row, ['Grade']) || getSpecialCharError(row, 'Grade')"
                     [matTooltip]="getFieldError(row, ['Grade']) || getSpecialCharError(row, 'Grade') || ''">
@@ -136,13 +136,27 @@
       </div>
 
       <!-- Footer -->
-      <div class="modal-footer border-top-0 bg-light">
-        <button mat-button color="warn" (click)="discard.emit()">Discard</button>
-        <button mat-raised-button color="primary" (click)="onConfirm()" [disabled]="hasErrors"
-          matTooltip="Fix validation errors and duplicates before confirming">
-          <mat-icon>check_circle</mat-icon>
-          Confirm & Import
-        </button>
+      <div class="modal-footer border-top-0 bg-light d-flex justify-content-between align-items-center py-2 px-3">
+        <!-- Pagination Controls -->
+        <div class="d-flex align-items-center" *ngIf="previewData.length > 0">
+          <mat-paginator class="bg-transparent"
+                         [length]="previewData.length"
+                         [pageSize]="pageSize"
+                         [pageSizeOptions]="[10, 25, 50, 100]"
+                         (page)="onPageChange($event)"
+                         showFirstLastButtons>
+          </mat-paginator>
+        </div>
+        <div *ngIf="previewData.length === 0"></div> <!-- Spacer -->
+
+        <div>
+          <button mat-button color="warn" (click)="discard.emit()" class="me-2">Discard</button>
+          <button mat-raised-button color="primary" (click)="onConfirm()" [disabled]="hasErrors"
+            matTooltip="Fix validation errors and duplicates before confirming">
+            <mat-icon>check_circle</mat-icon>
+            Confirm & Import
+          </button>
+        </div>
       </div>
     </div>
   </div>
