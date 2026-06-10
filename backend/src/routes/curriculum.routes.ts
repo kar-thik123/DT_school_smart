@@ -623,14 +623,20 @@ bulkRouter.post('/preview', requirePermission('ACADEMIC_STRUCTURE', 'CREATE'), u
 
           // Check against the Academic Structure Hierarchy
           if (resolvedSectionId) {
-             const isSubjectMappedToSection = existingSubjectGroups.some((grp: any) => 
-                grp.grade_id === resolvedGradeId && 
-                grp.section_id === resolvedSectionId && 
-                grp.subjects.some((subLink: any) => subLink.subject_id === resolvedSubjectId)
+             const hasSubjectGroupsForSection = existingSubjectGroups.some((grp: any) => 
+                grp.grade_id === resolvedGradeId && grp.section_id === resolvedSectionId
              );
              
-             if (!isSubjectMappedToSection) {
-                errors.push(`Subject "${subjectName}" is not mapped to Section "${sectionName}" in the academic hierarchy`);
+             if (hasSubjectGroupsForSection) {
+                 const isSubjectMappedToSection = existingSubjectGroups.some((grp: any) => 
+                    grp.grade_id === resolvedGradeId && 
+                    grp.section_id === resolvedSectionId && 
+                    grp.subjects.some((subLink: any) => subLink.subject_id === resolvedSubjectId)
+                 );
+                 
+                 if (!isSubjectMappedToSection) {
+                    errors.push(`Subject "${subjectName}" is not mapped to Section "${sectionName}" in the academic hierarchy`);
+                 }
              }
           }
         }
@@ -769,7 +775,7 @@ bulkRouter.post('/confirm', requirePermission('ACADEMIC_STRUCTURE', 'CREATE'), a
             where: { organization_id: org_id, grade_id: gradeId, section_id: sectionId, subject_id: subjectId, name: unitName }
           });
           if (!unit) {
-            const maxU = await tx.unit.aggregate({ where: { organization_id: org_id, grade_id: gradeId, section_id: sectionId, subject_id: subjectId }, _max: { order_index: true } });
+            const lastUnit = await tx.unit.findFirst({ where: { organization_id: org_id, grade_id: gradeId, section_id: sectionId, subject_id: subjectId }, orderBy: { order_index: 'desc' } });
             unit = await tx.unit.create({
               data: {
                 name: unitName,
@@ -777,7 +783,7 @@ bulkRouter.post('/confirm', requirePermission('ACADEMIC_STRUCTURE', 'CREATE'), a
                 section_id: sectionId,
                 subject_id: subjectId,
                 organization_id: org_id,
-                order_index: (maxU._max.order_index ?? -1) + 1
+                order_index: (lastUnit?.order_index ?? -1) + 1
               }
             });
           }
@@ -794,13 +800,13 @@ bulkRouter.post('/confirm', requirePermission('ACADEMIC_STRUCTURE', 'CREATE'), a
               where: { organization_id: org_id, unit_id: unitId, name: topicName }
             });
             if (!topic) {
-              const maxT = await tx.topic.aggregate({ where: { organization_id: org_id, unit_id: unitId }, _max: { order_index: true } });
+              const lastTopic = await tx.topic.findFirst({ where: { organization_id: org_id, unit_id: unitId }, orderBy: { order_index: 'desc' } });
               topic = await tx.topic.create({
                 data: {
                   name: topicName,
                   unit_id: unitId,
                   organization_id: org_id,
-                  order_index: (maxT._max.order_index ?? -1) + 1
+                  order_index: (lastTopic?.order_index ?? -1) + 1
                 }
               });
             }
@@ -813,13 +819,13 @@ bulkRouter.post('/confirm', requirePermission('ACADEMIC_STRUCTURE', 'CREATE'), a
               where: { organization_id: org_id, topic_id: topicId as string, name: subTopicName }
             });
             if (!subTopic) {
-              const maxST = await tx.subTopic.aggregate({ where: { organization_id: org_id, topic_id: topicId as string }, _max: { order_index: true } });
+              const lastST = await tx.subTopic.findFirst({ where: { organization_id: org_id, topic_id: topicId as string }, orderBy: { order_index: 'desc' } });
               await tx.subTopic.create({
                 data: {
                   name: subTopicName,
                   topic_id: topicId as string,
                   organization_id: org_id,
-                  order_index: (maxST._max.order_index ?? -1) + 1
+                  order_index: (lastST?.order_index ?? -1) + 1
                 }
               });
             }
@@ -827,8 +833,8 @@ bulkRouter.post('/confirm', requirePermission('ACADEMIC_STRUCTURE', 'CREATE'), a
         }
       }
     }, {
-      timeout: 60000,
-      maxWait: 5000
+      timeout: 120000,
+      maxWait: 10000
     });
 
     // Cleanup preview data
@@ -839,7 +845,7 @@ bulkRouter.post('/confirm', requirePermission('ACADEMIC_STRUCTURE', 'CREATE'), a
     res.json({ message: 'Curriculum imported successfully' });
   } catch (error: any) {
     console.error('[curriculum/bulk/confirm] Error:', error);
-    res.status(500).json({ message: 'Failed to import curriculum', error: error.message });
+    res.status(500).json({ message: 'Failed to import curriculum', error: error.stack });
   }
 });
 
