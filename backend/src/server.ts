@@ -5,6 +5,9 @@ import app from './app';
 import { PrismaClient } from '@prisma/client';
 import jwt from 'jsonwebtoken';
 
+// Initialize notification listeners
+import './services/notification.service';
+
 const prisma = new PrismaClient();
 const PORT = process.env.PORT || 5000;
 
@@ -79,10 +82,12 @@ async function checkDBConnection() {
 }
 checkDBConnection();
 
-server.listen(PORT, () => {
-  console.log(`🚀 API Server running proudly on port ${PORT}...`);
-  console.log(`🔌 WebSocket server ready`);
-});
+if (process.env.NODE_ENV !== 'test') {
+  server.listen(PORT, () => {
+    console.log(`🚀 API Server running proudly on port ${PORT}...`);
+    console.log(`🔌 WebSocket server ready`);
+  });
+}
 
-// Export io for use in routes
-export { io };
+// Export io and server for use in routes and tests
+export { io, server };

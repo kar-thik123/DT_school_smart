@@ -70,15 +70,33 @@ export class AudienceResolver {
     // Filter context-bound candidates by actual Academic Context enrollment
     
     // 1. Check Student Enrollments
+    const studentWhere: any = {
+      organization_id,
+      academic_year_id: context.academic_year_id,
+      grade_id: context.grade_id,
+      student_id: { in: Array.from(contextBoundUserIds) },
+      status: 'ACTIVE'
+    };
+    if (context.section_id) studentWhere.section_id = context.section_id;
+
+    // Fix: If context has subject_id, only include students mapped to a group containing that subject
+    if (context.subject_id) {
+      studentWhere.student = {
+        student_group_mappings: {
+          some: {
+            academic_year_id: context.academic_year_id,
+            group: {
+              subjects: {
+                some: { subject_id: context.subject_id }
+              }
+            }
+          }
+        }
+      };
+    }
+
     const enrollments = await prisma.studentEnrollment.findMany({
-      where: {
-        organization_id,
-        academic_year_id: context.academic_year_id,
-        grade_id: context.grade_id,
-        ...(context.section_id ? { section_id: context.section_id } : {}),
-        student_id: { in: Array.from(contextBoundUserIds) },
-        status: 'ACTIVE'
-      },
+      where: studentWhere,
       select: { student_id: true }
     });
     

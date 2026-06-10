@@ -5,6 +5,7 @@ import { EnrollmentStatus } from '@prisma/client';
 import { AssignmentVisibilityResolver } from '../utils/assignment-visibility.resolver';
 import { AcademicContextResolver } from '../utils/academic-context.resolver';
 import { StudentEnrollmentService } from '../services/student-enrollment.service';
+import { NotificationService } from '../services/notification.service';
 
 const router = Router();
 router.use(authMiddleware);
@@ -215,6 +216,17 @@ router.post('/promote', requirePermission('ACADEMIC_STRUCTURE', 'EDIT'), async (
           where: { id: promo.student_id, organization_id: orgId },
           data: { grade_id: promo.to_grade_id, section_id: promo.to_section_id }
         });
+
+        await NotificationService.sendNotification({
+          organization_id: orgId,
+          event_type: 'STUDENT_ENROLLMENT',
+          entity_type: 'STUDENT_ENROLLMENT',
+          entity_id: promo.student_id,
+          title: 'Student Promoted',
+          message: `You have been promoted to a new class.`,
+          context_data: { icon: 'trending-up', color: 'notification-green' },
+          recipient_ids: [promo.student_id]
+        });
       }
     });
 
@@ -362,6 +374,17 @@ router.post('/:id/transfer', requirePermission('ACADEMIC_STRUCTURE', 'EDIT'), as
         where: { id: existing.student_id },
         data: { grade_id: to_grade_id, section_id: to_section_id }
       });
+
+      await NotificationService.sendNotification({
+        organization_id: orgId,
+        event_type: 'STUDENT_ENROLLMENT',
+        entity_type: 'STUDENT_ENROLLMENT',
+        entity_id: existing.student_id,
+        title: 'Class Transfer',
+        message: `You have been transferred to a new class.`,
+        context_data: { icon: 'refresh-cw', color: 'notification-blue' },
+        recipient_ids: [existing.student_id]
+      });
     });
 
     return res.json({ message: 'Transfer successful' });
@@ -389,6 +412,17 @@ router.patch('/:id/activate', requirePermission('ACADEMIC_STRUCTURE', 'EDIT'), a
       await tx.user.update({
         where: { id: existing.student_id },
         data: { grade_id: existing.grade_id, section_id: existing.section_id }
+      });
+
+      await NotificationService.sendNotification({
+        organization_id: orgId,
+        event_type: 'STUDENT_ENROLLMENT',
+        entity_type: 'STUDENT_ENROLLMENT',
+        entity_id: existing.student_id,
+        title: 'Enrollment Activated',
+        message: `Your enrollment has been activated.`,
+        context_data: { icon: 'check-circle', color: 'notification-green' },
+        recipient_ids: [existing.student_id]
       });
     });
 
@@ -418,6 +452,17 @@ router.patch('/:id/withdraw', requirePermission('ACADEMIC_STRUCTURE', 'EDIT'), a
       await tx.user.update({
         where: { id: existing.student_id },
         data: { grade_id: null, section_id: null }
+      });
+
+      await NotificationService.sendNotification({
+        organization_id: orgId,
+        event_type: 'STUDENT_ENROLLMENT',
+        entity_type: 'STUDENT_ENROLLMENT',
+        entity_id: existing.student_id,
+        title: 'Enrollment Withdrawn',
+        message: `Your enrollment has been withdrawn.`,
+        context_data: { icon: 'x-circle', color: 'notification-red' },
+        recipient_ids: [existing.student_id]
       });
     });
 

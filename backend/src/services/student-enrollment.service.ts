@@ -1,5 +1,6 @@
 import prisma from '../prisma';
 import { EnrollmentStatus } from '@prisma/client';
+import { NotificationService } from './notification.service';
 
 export interface EnrollmentPayload {
   student_id: string;
@@ -123,6 +124,17 @@ export class StudentEnrollmentService {
       data: { grade_id, section_id: section_id || null }
     });
 
+    await NotificationService.sendNotification({
+      organization_id: orgId,
+      event_type: 'STUDENT_ENROLLMENT',
+      entity_type: 'STUDENT_ENROLLMENT',
+      entity_id: enrollment.id,
+      title: 'Enrollment Updated',
+      message: `Your enrollment has been updated for the academic year.`,
+      context_data: { icon: 'user-plus', color: 'notification-green' },
+      recipient_ids: [student_id]
+    });
+
     return enrollment;
   }
 
@@ -222,6 +234,17 @@ export class StudentEnrollmentService {
           data: { grade_id: p.grade_id, section_id: p.section_id || null }
         });
         
+        await NotificationService.sendNotification({
+          organization_id: orgId,
+          event_type: 'STUDENT_ENROLLMENT',
+          entity_type: 'STUDENT_ENROLLMENT',
+          entity_id: p.student_id,
+          title: 'Enrollment Updated',
+          message: `Your enrollment has been updated for the academic year.`,
+          context_data: { icon: 'user-plus', color: 'notification-green' },
+          recipient_ids: [p.student_id]
+        });
+
         successCount++;
       }
     });

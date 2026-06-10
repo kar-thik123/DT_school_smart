@@ -10,6 +10,7 @@ const client_1 = require("@prisma/client");
 const assignment_visibility_resolver_1 = require("../utils/assignment-visibility.resolver");
 const academic_context_resolver_1 = require("../utils/academic-context.resolver");
 const student_enrollment_service_1 = require("../services/student-enrollment.service");
+const notification_service_1 = require("../services/notification.service");
 const router = (0, express_1.Router)();
 router.use(auth_middleware_1.authMiddleware);
 // Helpers were moved to StudentEnrollmentService
@@ -201,6 +202,16 @@ router.post('/promote', (0, auth_middleware_1.requirePermission)('ACADEMIC_STRUC
                     where: { id: promo.student_id, organization_id: orgId },
                     data: { grade_id: promo.to_grade_id, section_id: promo.to_section_id }
                 });
+                await notification_service_1.NotificationService.sendNotification({
+                    organization_id: orgId,
+                    event_type: 'STUDENT_ENROLLMENT',
+                    entity_type: 'STUDENT_ENROLLMENT',
+                    entity_id: promo.student_id,
+                    title: 'Student Promoted',
+                    message: `You have been promoted to a new class.`,
+                    context_data: { icon: 'trending-up', color: 'notification-green' },
+                    recipient_ids: [promo.student_id]
+                });
             }
         });
         res.json({ message: 'Promotions successful' });
@@ -333,6 +344,16 @@ router.post('/:id/transfer', (0, auth_middleware_1.requirePermission)('ACADEMIC_
                 where: { id: existing.student_id },
                 data: { grade_id: to_grade_id, section_id: to_section_id }
             });
+            await notification_service_1.NotificationService.sendNotification({
+                organization_id: orgId,
+                event_type: 'STUDENT_ENROLLMENT',
+                entity_type: 'STUDENT_ENROLLMENT',
+                entity_id: existing.student_id,
+                title: 'Class Transfer',
+                message: `You have been transferred to a new class.`,
+                context_data: { icon: 'refresh-cw', color: 'notification-blue' },
+                recipient_ids: [existing.student_id]
+            });
         });
         return res.json({ message: 'Transfer successful' });
     }
@@ -356,6 +377,16 @@ router.patch('/:id/activate', (0, auth_middleware_1.requirePermission)('ACADEMIC
             await tx.user.update({
                 where: { id: existing.student_id },
                 data: { grade_id: existing.grade_id, section_id: existing.section_id }
+            });
+            await notification_service_1.NotificationService.sendNotification({
+                organization_id: orgId,
+                event_type: 'STUDENT_ENROLLMENT',
+                entity_type: 'STUDENT_ENROLLMENT',
+                entity_id: existing.student_id,
+                title: 'Enrollment Activated',
+                message: `Your enrollment has been activated.`,
+                context_data: { icon: 'check-circle', color: 'notification-green' },
+                recipient_ids: [existing.student_id]
             });
         });
         return res.json({ message: 'Student activated successfully' });
@@ -381,6 +412,16 @@ router.patch('/:id/withdraw', (0, auth_middleware_1.requirePermission)('ACADEMIC
             await tx.user.update({
                 where: { id: existing.student_id },
                 data: { grade_id: null, section_id: null }
+            });
+            await notification_service_1.NotificationService.sendNotification({
+                organization_id: orgId,
+                event_type: 'STUDENT_ENROLLMENT',
+                entity_type: 'STUDENT_ENROLLMENT',
+                entity_id: existing.student_id,
+                title: 'Enrollment Withdrawn',
+                message: `Your enrollment has been withdrawn.`,
+                context_data: { icon: 'x-circle', color: 'notification-red' },
+                recipient_ids: [existing.student_id]
             });
         });
         return res.json({ message: 'Student withdrawn successfully' });

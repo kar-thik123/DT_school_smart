@@ -9,6 +9,7 @@ const zod_1 = require("zod");
 const auth_middleware_1 = require("../middlewares/auth.middleware");
 const audit_service_1 = require("../services/audit.service");
 const academic_context_resolver_1 = require("../utils/academic-context.resolver");
+const notification_service_1 = require("../services/notification.service");
 const router = (0, express_1.Router)();
 router.use(auth_middleware_1.authMiddleware);
 const assignmentSchema = zod_1.z.object({
@@ -115,6 +116,17 @@ router.post('/', (0, auth_middleware_1.requirePermission)('TEACHER_ASSIGNMENT', 
                 entity_id: parsed.teacher_id,
                 metadata: { batch: true, count: assignmentProcess.count }
             });
+            await notification_service_1.NotificationService.sendNotification({
+                organization_id: req.user.organization_id,
+                event_type: 'TEACHER_ASSIGNMENT',
+                entity_type: 'TEACHER_ASSIGNMENT',
+                entity_id: parsed.teacher_id,
+                title: 'New Class Assignments',
+                message: `You have received ${parsed.assignments.length} new class assignment(s).`,
+                actor_id: req.user.user_id,
+                context_data: { icon: 'user-check', color: 'notification-blue' },
+                recipient_ids: [parsed.teacher_id]
+            });
             return res.status(201).json({ message: 'Teacher assignments created', count: assignmentProcess.count });
         }
         else {
@@ -154,6 +166,17 @@ router.post('/', (0, auth_middleware_1.requirePermission)('TEACHER_ASSIGNMENT', 
                 entity_type: 'TEACHER_ASSIGNMENT',
                 entity_id: assignment.id,
                 metadata: { teacher_id: assignment.teacher_id, assignment_type: assignment.assignment_type }
+            });
+            await notification_service_1.NotificationService.sendNotification({
+                organization_id: req.user.organization_id,
+                event_type: 'TEACHER_ASSIGNMENT',
+                entity_type: 'TEACHER_ASSIGNMENT',
+                entity_id: assignment.id,
+                title: 'New Class Assignment',
+                message: `You have been assigned as a ${parsed.assignment_type.replace('_', ' ').toLowerCase()}.`,
+                actor_id: req.user.user_id,
+                context_data: { icon: 'user-check', color: 'notification-blue' },
+                recipient_ids: [assignment.teacher_id]
             });
             return res.status(201).json({ message: 'Teacher assignment created', assignment });
         }
@@ -218,6 +241,17 @@ router.put('/:id', (0, auth_middleware_1.requirePermission)('TEACHER_ASSIGNMENT'
             entity_id: assignment.id,
             metadata: { teacher_id: assignment.teacher_id, assignment_type: assignment.assignment_type }
         });
+        await notification_service_1.NotificationService.sendNotification({
+            organization_id: req.user.organization_id,
+            event_type: 'TEACHER_ASSIGNMENT',
+            entity_type: 'TEACHER_ASSIGNMENT',
+            entity_id: assignment.id,
+            title: 'Assignment Updated',
+            message: `Your class assignment details have been updated.`,
+            actor_id: req.user.user_id,
+            context_data: { icon: 'edit', color: 'notification-orange' },
+            recipient_ids: [assignment.teacher_id]
+        });
         res.json({ message: 'Teacher assignment updated', assignment });
     }
     catch (error) {
@@ -244,6 +278,17 @@ router.delete('/:id', (0, auth_middleware_1.requirePermission)('TEACHER_ASSIGNME
             entity_type: 'TEACHER_ASSIGNMENT',
             entity_id: existing.id,
             metadata: { teacher_id: existing.teacher_id, assignment_type: existing.assignment_type }
+        });
+        await notification_service_1.NotificationService.sendNotification({
+            organization_id: req.user.organization_id,
+            event_type: 'TEACHER_ASSIGNMENT',
+            entity_type: 'TEACHER_ASSIGNMENT',
+            entity_id: existing.id,
+            title: 'Assignment Removed',
+            message: `Your class assignment has been removed.`,
+            actor_id: req.user.user_id,
+            context_data: { icon: 'user-minus', color: 'notification-red' },
+            recipient_ids: [existing.teacher_id]
         });
         res.json({ message: 'Teacher assignment deleted' });
     }

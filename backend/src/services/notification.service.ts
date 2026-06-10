@@ -14,6 +14,9 @@ export class NotificationService {
     eventBus.on(EventTypes.COMPLETION_UNIT_ENABLED, async (payload: NotificationEventPayload) => {
       await NotificationService.processCompletionEvent(payload, 'COMPLETION_TRACKING', 'VIEW');
     });
+    eventBus.on(EventTypes.STUDENT_TOPIC_COMPLETION, async (payload: NotificationEventPayload) => {
+      await NotificationService.processCompletionEvent(payload, 'COMPLETION_TRACKING', 'MANAGE');
+    });
   }
 
   private static async processCompletionEvent(payload: NotificationEventPayload, reqMod: string, reqAct: string) {
@@ -27,18 +30,50 @@ export class NotificationService {
       const message = `${payload.entity.name} is now available.`;
 
       // 3. Persist Notification (Batch)
+      const notification = await NotificationService.sendNotification({
+        organization_id: payload.organization_id,
+        event_type: payload.entity.type, // e.g., 'TOPIC' or full string
+        entity_type: payload.entity.type,
+        entity_id: payload.entity.id,
+        title,
+        message,
+        actor_id: payload.actor_id,
+        context_data: payload.context as any,
+        recipient_ids: recipientIds
+      });
+
+      // Real-time dispatch is handled inside sendNotification
+    } catch (error) {
+      console.error('Error processing notification event:', error);
+    }
+  }
+
+  static async sendNotification(params: {
+    organization_id: string;
+    event_type: string;
+    entity_type: string;
+    entity_id: string;
+    title: string;
+    message: string;
+    actor_id?: string;
+    context_data?: any;
+    recipient_ids: string[];
+  }) {
+    try {
+      if (!params.recipient_ids || params.recipient_ids.length === 0) return null;
+
       const notification = await prisma.notification.create({
         data: {
-          organization_id: payload.organization_id,
-          event_type: payload.entity.type, // e.g., 'TOPIC' or full string
-          entity_type: payload.entity.type,
-          entity_id: payload.entity.id,
-          title,
-          message,
-          actor_id: payload.actor_id,
-          context_data: payload.context as any,
+          organization_id: params.organization_id,
+          event_type: params.event_type,
+          entity_type: params.entity_type,
+          entity_id: params.entity_id,
+          title: params.title,
+          message: params.message,
+          actor_id: params.actor_id,
+          context_data: params.context_data || {},
           recipients: {
-            create: recipientIds.map(userId => ({
+            create: params.recipient_ids.map(userId => ({
               user_id: userId
             }))
           }
@@ -46,11 +81,11 @@ export class NotificationService {
         include: { recipients: true }
       });
 
-      // 4. Real-time Dispatch
       NotificationService.dispatchRealtime(notification);
-
+      return notification;
     } catch (error) {
-      console.error('Error processing notification event:', error);
+      console.error('Error creating notification:', error);
+      return null;
     }
   }
 
@@ -67,9 +102,9 @@ export class NotificationService {
             isRead: recipient.is_read,
             userId: recipient.user_id,
             referenceId: notification.entity_id,
-            type: notification.event_type,
-            icon: 'bell',
-            color: 'text-primary'
+            type: notification.event_type === 'INTERNAL_MAIL' ? 'email' : notification.event_type,
+            icon: notification.context_data?.icon || 'bell',
+            color: notification.context_data?.color || 'text-primary'
           };
           delete uiNotif.recipients;
           

@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { authMiddleware, requirePermission } from '../middlewares/auth.middleware';
 import { validateStudentSectionAccess } from '../services/academic-compatibility.service';
 import { AcademicContextResolver } from '../utils/academic-context.resolver';
+import { NotificationService } from '../services/notification.service';
 
 const router = Router();
 router.use(authMiddleware);
@@ -203,6 +204,17 @@ router.post('/topics/:topic_id/submit', requirePermission('PRACTICE', 'ATTEMPT')
       }
     });
 
+    await NotificationService.sendNotification({
+      organization_id: org_id,
+      event_type: 'PRACTICE_COMPLETION',
+      entity_type: 'PRACTICE_ATTEMPT',
+      entity_id: attempt.id,
+      title: 'Practice Completed',
+      message: `You scored ${correctCount}/${evaluatedAnswers.length} in your recent practice.`,
+      context_data: { icon: 'check-circle', color: 'notification-green' },
+      recipient_ids: [student_id]
+    });
+
     res.status(201).json({ message: 'Practice submitted', score: correctCount, total: evaluatedAnswers.length, attempt_id: attempt.id });
   } catch (error: any) {
     console.error('[practice/submit] ERROR:', error?.message, error?.code, JSON.stringify(error?.meta));
@@ -292,6 +304,24 @@ router.post('/activations/toggle', requirePermission('PRACTICE', 'MANAGE'), asyn
         where: { id: existing.id },
         data: { is_active: parsed.is_active }
       });
+
+      if (parsed.is_active && !existing.is_active) {
+        const mappings = await prisma.studentGroupMapping.findMany({ where: { group_id: parsed.subject_group_id } });
+        if (mappings.length > 0) {
+           const topic = await prisma.topic.findUnique({ where: { id: parsed.topic_id } });
+           await NotificationService.sendNotification({
+             organization_id: org_id,
+             event_type: 'PRACTICE_ASSIGNMENT',
+             entity_type: 'TOPIC_ACTIVATION',
+             entity_id: updated.id,
+             title: 'New Practice Available',
+             message: `Topic "${topic?.name}" is now active for practice.`,
+             context_data: { icon: 'book-open', color: 'notification-blue' },
+             recipient_ids: mappings.map((m: any) => m.student_id)
+           });
+        }
+      }
+
       return res.json({ message: 'Activation toggled', activation: updated });
     } else {
       const created = await prisma.topicActivation.create({
@@ -303,6 +333,24 @@ router.post('/activations/toggle', requirePermission('PRACTICE', 'MANAGE'), asyn
           is_active: parsed.is_active
         }
       });
+
+      if (parsed.is_active) {
+        const mappings = await prisma.studentGroupMapping.findMany({ where: { group_id: parsed.subject_group_id } });
+        if (mappings.length > 0) {
+           const topic = await prisma.topic.findUnique({ where: { id: parsed.topic_id } });
+           await NotificationService.sendNotification({
+             organization_id: org_id,
+             event_type: 'PRACTICE_ASSIGNMENT',
+             entity_type: 'TOPIC_ACTIVATION',
+             entity_id: created.id,
+             title: 'New Practice Available',
+             message: `Topic "${topic?.name}" is now active for practice.`,
+             context_data: { icon: 'book-open', color: 'notification-blue' },
+             recipient_ids: mappings.map((m: any) => m.student_id)
+           });
+        }
+      }
+
       return res.status(201).json({ message: 'Topic activated', activation: created });
     }
   } catch (error: any) {

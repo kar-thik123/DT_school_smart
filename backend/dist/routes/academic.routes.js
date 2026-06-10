@@ -12,6 +12,7 @@ const multer_1 = __importDefault(require("multer"));
 const sync_1 = require("csv-parse/sync");
 const crypto_1 = require("crypto");
 const audit_service_1 = require("../services/audit.service");
+const notification_service_1 = require("../services/notification.service");
 const upload = (0, multer_1.default)();
 const router = (0, express_1.Router)();
 router.use(auth_middleware_1.authMiddleware);
@@ -67,6 +68,21 @@ const createCrudHandlers = (modelName, prismaModel) => {
                 where: { id: req.params.id },
                 data: safeData
             });
+            if (modelName === 'Section') {
+                const admins = await prisma_1.default.user.findMany({
+                    where: { organization_id: req.user.organization_id, role: { name: { in: ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER'] } } }
+                });
+                await notification_service_1.NotificationService.sendNotification({
+                    organization_id: req.user.organization_id,
+                    event_type: 'ACADEMIC_MANAGEMENT',
+                    entity_type: 'SECTION',
+                    entity_id: data.id,
+                    title: 'Section Updated',
+                    message: `Section details have been updated.`,
+                    context_data: { icon: 'edit', color: 'notification-blue' },
+                    recipient_ids: admins.map((a) => a.id)
+                });
+            }
             res.json({ message: `${modelName} updated`, data });
         }
         catch (error) {
@@ -131,6 +147,21 @@ router.post('/academic-years/:id/activate', (0, auth_middleware_1.requirePermiss
                 data: { is_active: true }
             })
         ]);
+        const admins = await prisma_1.default.user.findMany({
+            where: { organization_id: orgId }
+        });
+        if (admins.length > 0) {
+            await notification_service_1.NotificationService.sendNotification({
+                organization_id: orgId,
+                event_type: 'ACADEMIC_MANAGEMENT',
+                entity_type: 'ACADEMIC_YEAR',
+                entity_id: yearId,
+                title: 'Academic Year Activated',
+                message: `Academic Year ${yearToActivate.name} is now ACTIVE.`,
+                context_data: { icon: 'calendar', color: 'notification-green' },
+                recipient_ids: admins.map((a) => a.id)
+            });
+        }
         res.json({ message: `Academic Year ${yearToActivate.name} is now ACTIVE.` });
     }
     catch (error) {
@@ -250,6 +281,21 @@ gradeRouter.post('/', (0, auth_middleware_1.requirePermission)('ACADEMIC_STRUCTU
                 master_grade_id: masterGrade.id
             }
         });
+        const admins = await prisma_1.default.user.findMany({
+            where: { organization_id: req.user.organization_id, role: { name: { in: ['SUPER_ADMIN', 'SCHOOL_ADMIN'] } } }
+        });
+        if (admins.length > 0) {
+            await notification_service_1.NotificationService.sendNotification({
+                organization_id: req.user.organization_id,
+                event_type: 'ACADEMIC_MANAGEMENT',
+                entity_type: 'GRADE',
+                entity_id: data.id,
+                title: 'New Class Created',
+                message: `Class "${name}" has been created.`,
+                context_data: { icon: 'layers', color: 'notification-green' },
+                recipient_ids: admins.map((a) => a.id)
+            });
+        }
         res.status(201).json({ message: 'Grade created', data });
     }
     catch (error) {

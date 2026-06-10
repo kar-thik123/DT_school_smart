@@ -3,17 +3,20 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.io = void 0;
+exports.server = exports.io = void 0;
 require("dotenv/config");
 const http_1 = __importDefault(require("http"));
 const socket_io_1 = require("socket.io");
 const app_1 = __importDefault(require("./app"));
 const client_1 = require("@prisma/client");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+// Initialize notification listeners
+require("./services/notification.service");
 const prisma = new client_1.PrismaClient();
 const PORT = process.env.PORT || 5000;
 // Create HTTP server from Express app
 const server = http_1.default.createServer(app_1.default);
+exports.server = server;
 // Attach Socket.io
 const io = new socket_io_1.Server(server, {
     cors: {
@@ -71,7 +74,9 @@ async function checkDBConnection() {
     }
 }
 checkDBConnection();
-server.listen(PORT, () => {
-    console.log(`🚀 API Server running proudly on port ${PORT}...`);
-    console.log(`🔌 WebSocket server ready`);
-});
+if (process.env.NODE_ENV !== 'test') {
+    server.listen(PORT, () => {
+        console.log(`🚀 API Server running proudly on port ${PORT}...`);
+        console.log(`🔌 WebSocket server ready`);
+    });
+}

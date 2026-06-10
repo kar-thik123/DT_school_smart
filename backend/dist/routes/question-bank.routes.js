@@ -12,6 +12,7 @@ const auth_middleware_1 = require("../middlewares/auth.middleware");
 const academic_helper_1 = require("../utils/academic-helper");
 const academic_compatibility_service_1 = require("../services/academic-compatibility.service");
 const audit_service_1 = require("../services/audit.service");
+const notification_service_1 = require("../services/notification.service");
 const router = (0, express_1.Router)();
 router.use(auth_middleware_1.authMiddleware);
 const upload = (0, multer_1.default)({ storage: multer_1.default.memoryStorage() });
@@ -131,6 +132,16 @@ router.post('/', (0, auth_middleware_1.requirePermission)('QUESTION_BANK', 'CREA
             entity_type: 'QUESTION',
             entity_id: question.id,
             metadata: { subject_id: question.subject_id, grade_id: question.grade_id }
+        });
+        await notification_service_1.NotificationService.sendNotification({
+            organization_id: org_id,
+            event_type: 'QUESTION_BANK',
+            entity_type: 'QUESTION',
+            entity_id: question.id,
+            title: 'Question Added',
+            message: `A new question has been successfully added to the bank.`,
+            context_data: { icon: 'plus-circle', color: 'notification-green' },
+            recipient_ids: [req.user.user_id]
         });
         res.status(201).json({ message: 'Question created', question });
     }
@@ -261,6 +272,16 @@ router.put('/:id', (0, auth_middleware_1.requirePermission)('QUESTION_BANK', 'ED
             entity_type: 'QUESTION',
             entity_id: updated.id,
             metadata: { subject_id: updated.subject_id, grade_id: updated.grade_id }
+        });
+        await notification_service_1.NotificationService.sendNotification({
+            organization_id: org_id,
+            event_type: 'QUESTION_BANK',
+            entity_type: 'QUESTION',
+            entity_id: updated.id,
+            title: 'Question Updated',
+            message: `Question details have been successfully updated.`,
+            context_data: { icon: 'edit', color: 'notification-blue' },
+            recipient_ids: [req.user.user_id]
         });
         res.json({ message: 'Question updated', question: updated });
     }

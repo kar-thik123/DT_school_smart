@@ -13,6 +13,7 @@ const multer = require("multer");
 const path = require("path");
 const authorization_service_1 = require("../services/authorization.service");
 const image_compression_util_1 = require("../utils/image-compression.util");
+const notification_service_1 = require("../services/notification.service");
 const upload = multer({ storage: multer.memoryStorage() });
 const router = (0, express_1.Router)();
 router.use(auth_middleware_1.authMiddleware);
@@ -188,6 +189,16 @@ router.post('/', requireManagement, async (req, res) => {
                 }
             });
         }
+        await notification_service_1.NotificationService.sendNotification({
+            organization_id: req.user.organization_id,
+            event_type: 'USER_MANAGEMENT',
+            entity_type: 'USER',
+            entity_id: user.id,
+            title: 'Welcome to the Platform',
+            message: `Your account has been successfully created.`,
+            context_data: { icon: 'user', color: 'notification-green' },
+            recipient_ids: [user.id]
+        });
         // Explicit return to prevent ERR_HTTP_HEADERS_SENT
         return res.status(201).json({ message: 'User created', user: { id: user.id, name: user.name, email: user.email, role_id: parsed.role_id } });
     }
@@ -342,6 +353,18 @@ router.put('/:id', requireManagement, async (req, res) => {
             data: updateData,
             include: { role: true }
         });
+        if (updateData.role_id && updateData.role_id !== user.role_id) {
+            await notification_service_1.NotificationService.sendNotification({
+                organization_id: req.user.organization_id,
+                event_type: 'USER_MANAGEMENT',
+                entity_type: 'USER',
+                entity_id: updated.id,
+                title: 'Role Updated',
+                message: `Your role has been updated to ${updated.role.name}.`,
+                context_data: { icon: 'shield', color: 'notification-blue' },
+                recipient_ids: [updated.id]
+            });
+        }
         res.json({ message: 'User updated', user: { ...updated, role: updated.role.name } });
     }
     catch (error) {
@@ -369,6 +392,16 @@ router.patch('/:id/status', requireManagement, async (req, res) => {
             return res.status(403).json({ message: 'Tenant owner account cannot perform self-destructive actions.' });
         }
         await prisma_1.default.user.update({ where: { id: req.params.id }, data: { is_active } });
+        await notification_service_1.NotificationService.sendNotification({
+            organization_id: req.user.organization_id,
+            event_type: 'USER_MANAGEMENT',
+            entity_type: 'USER',
+            entity_id: user.id,
+            title: `Account ${is_active ? 'Activated' : 'Deactivated'}`,
+            message: `Your account has been ${is_active ? 'activated' : 'deactivated'} by an administrator.`,
+            context_data: { icon: is_active ? 'check-circle' : 'slash', color: is_active ? 'notification-green' : 'notification-red' },
+            recipient_ids: [user.id]
+        });
         res.json({ message: `User ${is_active ? 'activated' : 'deactivated'}` });
     }
     catch (error) {
@@ -459,6 +492,16 @@ router.post('/:id/reset-password', requireManagement, async (req, res) => {
             <p style="font-size:14px; color:#666;">This link is valid for 15 minutes. If you did not request a password reset, you can safely ignore this email.</p>
           </div>
         `
+            });
+            await notification_service_1.NotificationService.sendNotification({
+                organization_id: req.user.organization_id,
+                event_type: 'USER_MANAGEMENT',
+                entity_type: 'USER',
+                entity_id: targetUser.id,
+                title: `Password Reset Requested`,
+                message: `A password reset link has been sent to your email.`,
+                context_data: { icon: 'lock', color: 'notification-orange' },
+                recipient_ids: [targetUser.id]
             });
             res.json({ message: 'Password reset link sent to user email' });
         }

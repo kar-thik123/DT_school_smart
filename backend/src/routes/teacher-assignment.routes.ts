@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { authMiddleware, requirePermission } from '../middlewares/auth.middleware';
 import { logAuditEvent } from '../services/audit.service';
 import { AcademicContextResolver } from '../utils/academic-context.resolver';
+import { NotificationService } from '../services/notification.service';
 
 const router = Router();
 router.use(authMiddleware);
@@ -119,6 +120,18 @@ router.post('/', requirePermission('TEACHER_ASSIGNMENT', 'CREATE'), async (req: 
         metadata: { batch: true, count: assignmentProcess.count }
       });
 
+      await NotificationService.sendNotification({
+        organization_id: req.user.organization_id,
+        event_type: 'TEACHER_ASSIGNMENT',
+        entity_type: 'TEACHER_ASSIGNMENT',
+        entity_id: parsed.teacher_id,
+        title: 'New Class Assignments',
+        message: `You have received ${parsed.assignments.length} new class assignment(s).`,
+        actor_id: req.user.user_id,
+        context_data: { icon: 'user-check', color: 'notification-blue' },
+        recipient_ids: [parsed.teacher_id]
+      });
+
       return res.status(201).json({ message: 'Teacher assignments created', count: assignmentProcess.count });
     } else {
       const parsed = assignmentSchema.parse(req.body);
@@ -160,6 +173,18 @@ router.post('/', requirePermission('TEACHER_ASSIGNMENT', 'CREATE'), async (req: 
         entity_type: 'TEACHER_ASSIGNMENT',
         entity_id: assignment.id,
         metadata: { teacher_id: assignment.teacher_id, assignment_type: assignment.assignment_type }
+      });
+
+      await NotificationService.sendNotification({
+        organization_id: req.user.organization_id,
+        event_type: 'TEACHER_ASSIGNMENT',
+        entity_type: 'TEACHER_ASSIGNMENT',
+        entity_id: assignment.id,
+        title: 'New Class Assignment',
+        message: `You have been assigned as a ${parsed.assignment_type.replace('_', ' ').toLowerCase()}.`,
+        actor_id: req.user.user_id,
+        context_data: { icon: 'user-check', color: 'notification-blue' },
+        recipient_ids: [assignment.teacher_id]
       });
 
       return res.status(201).json({ message: 'Teacher assignment created', assignment });
@@ -229,6 +254,18 @@ router.put('/:id', requirePermission('TEACHER_ASSIGNMENT', 'EDIT'), async (req: 
       metadata: { teacher_id: assignment.teacher_id, assignment_type: assignment.assignment_type }
     });
 
+    await NotificationService.sendNotification({
+      organization_id: req.user.organization_id,
+      event_type: 'TEACHER_ASSIGNMENT',
+      entity_type: 'TEACHER_ASSIGNMENT',
+      entity_id: assignment.id,
+      title: 'Assignment Updated',
+      message: `Your class assignment details have been updated.`,
+      actor_id: req.user.user_id,
+      context_data: { icon: 'edit', color: 'notification-orange' },
+      recipient_ids: [assignment.teacher_id]
+    });
+
     res.json({ message: 'Teacher assignment updated', assignment });
   } catch (error: any) {
     if (error.code === 'P2002') {
@@ -256,6 +293,18 @@ router.delete('/:id', requirePermission('TEACHER_ASSIGNMENT', 'DELETE'), async (
       entity_type: 'TEACHER_ASSIGNMENT',
       entity_id: existing.id,
       metadata: { teacher_id: existing.teacher_id, assignment_type: existing.assignment_type }
+    });
+
+    await NotificationService.sendNotification({
+      organization_id: req.user.organization_id,
+      event_type: 'TEACHER_ASSIGNMENT',
+      entity_type: 'TEACHER_ASSIGNMENT',
+      entity_id: existing.id,
+      title: 'Assignment Removed',
+      message: `Your class assignment has been removed.`,
+      actor_id: req.user.user_id,
+      context_data: { icon: 'user-minus', color: 'notification-red' },
+      recipient_ids: [existing.teacher_id]
     });
 
     res.json({ message: 'Teacher assignment deleted' });

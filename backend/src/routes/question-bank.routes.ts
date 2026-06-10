@@ -7,6 +7,7 @@ import { authMiddleware, requirePermission } from '../middlewares/auth.middlewar
 import { getActiveAcademicYearId } from '../utils/academic-helper';
 import { checkTeacherSubjectAccess } from '../services/academic-compatibility.service';
 import { logAuditEvent } from '../services/audit.service';
+import { NotificationService } from '../services/notification.service';
 
 const router = Router();
 router.use(authMiddleware);
@@ -133,6 +134,17 @@ router.post('/', requirePermission('QUESTION_BANK', 'CREATE'), async (req: any, 
       entity_type: 'QUESTION',
       entity_id: question.id,
       metadata: { subject_id: question.subject_id, grade_id: question.grade_id }
+    });
+
+    await NotificationService.sendNotification({
+      organization_id: org_id,
+      event_type: 'QUESTION_BANK',
+      entity_type: 'QUESTION',
+      entity_id: question.id,
+      title: 'Question Added',
+      message: `A new question has been successfully added to the bank.`,
+      context_data: { icon: 'plus-circle', color: 'notification-green' },
+      recipient_ids: [req.user.user_id]
     });
 
     res.status(201).json({ message: 'Question created', question });
@@ -265,6 +277,17 @@ router.put('/:id', requirePermission('QUESTION_BANK', 'EDIT'), async (req: any, 
       entity_type: 'QUESTION',
       entity_id: updated.id,
       metadata: { subject_id: updated.subject_id, grade_id: updated.grade_id }
+    });
+
+    await NotificationService.sendNotification({
+      organization_id: org_id,
+      event_type: 'QUESTION_BANK',
+      entity_type: 'QUESTION',
+      entity_id: updated.id,
+      title: 'Question Updated',
+      message: `Question details have been successfully updated.`,
+      context_data: { icon: 'edit', color: 'notification-blue' },
+      recipient_ids: [req.user.user_id]
     });
 
     res.json({ message: 'Question updated', question: updated });

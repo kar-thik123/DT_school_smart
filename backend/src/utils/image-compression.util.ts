@@ -1,6 +1,6 @@
 import sharp from 'sharp';
 import path from 'path';
-import { v4 as uuidv4 } from 'uuid';
+import crypto from 'crypto';
 import fs from 'fs';
 
 export interface ImageProcessingOptions {
@@ -41,7 +41,7 @@ export const processImage = async (
   console.log(`[ImageCompressionUtil] Original Size: ${(originalSize / 1024).toFixed(2)} KB`);
 
   // Generate unique filename
-  const uniqueId = uuidv4();
+  const uniqueId = crypto.randomUUID();
   const filename = `${uniqueId}.${format}`;
   const filePath = path.join(outputDirectory, filename);
 
