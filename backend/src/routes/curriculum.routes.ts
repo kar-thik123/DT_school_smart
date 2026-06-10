@@ -623,21 +623,15 @@ bulkRouter.post('/preview', requirePermission('ACADEMIC_STRUCTURE', 'CREATE'), u
 
           // Check against the Academic Structure Hierarchy
           if (resolvedSectionId) {
-             const hasSubjectGroupsForSection = existingSubjectGroups.some((grp: any) => 
-                grp.grade_id === resolvedGradeId && grp.section_id === resolvedSectionId
-             );
-             
-             if (hasSubjectGroupsForSection) {
-                 const isSubjectMappedToSection = existingSubjectGroups.some((grp: any) => 
-                    grp.grade_id === resolvedGradeId && 
-                    grp.section_id === resolvedSectionId && 
-                    grp.subjects.some((subLink: any) => subLink.subject_id === resolvedSubjectId)
-                 );
-                 
-                 if (!isSubjectMappedToSection) {
-                    errors.push(`Subject "${subjectName}" is not mapped to Section "${sectionName}" in the academic hierarchy`);
-                 }
-             }
+            const isSubjectMappedToSection = existingSubjectGroups.some((grp: any) =>
+              grp.grade_id === resolvedGradeId &&
+              grp.section_id === resolvedSectionId &&
+              grp.subjects.some((subLink: any) => subLink.subject_id === resolvedSubjectId)
+            );
+
+            if (!isSubjectMappedToSection) {
+              errors.push(`Subject "${subjectName}" is not mapped to Section "${sectionName}" in the academic hierarchy`);
+            }
           }
         }
       } else {
@@ -750,7 +744,15 @@ bulkRouter.post('/confirm', requirePermission('ACADEMIC_STRUCTURE', 'CREATE'), a
 
     // Filter valid rows only
     const validRows = recordsToProcess.filter((r: any) => r.match_status === 'VALID');
-    if (validRows.length === 0) return res.status(400).json({ message: 'No valid records to import.' });
+    if (validRows.length === 0) {
+      await (prisma as any).previewImportData.deleteMany({
+        where: { session_id, organization_id: org_id }
+      });
+      return res.status(200).json({ 
+        message: 'No new data imported. All rows were either duplicates or invalid.',
+        results: { created: 0, skipped: recordsToProcess.length, errors: [] }
+      });
+    }
 
     await prisma.$transaction(async (tx: any) => {
       // Pre-fetch organization data to prevent hundreds of sequential findFirst calls timing out
@@ -855,10 +857,13 @@ bulkRouter.post('/confirm', requirePermission('ACADEMIC_STRUCTURE', 'CREATE'), a
       where: { session_id, organization_id: org_id }
     });
 
-    res.json({ message: 'Curriculum imported successfully' });
+    res.status(201).json({ 
+      message: `Bulk import completed. ${validRows.length} rows processed, 0 skipped.`,
+      results: { created: validRows.length, skipped: 0, errors: [] }
+    });
   } catch (error: any) {
     console.error('[curriculum/bulk/confirm] Error:', error);
-    res.status(500).json({ message: 'Failed to import curriculum', error: error.stack });
+    res.status(500).json({ message: 'Bulk import failed', error: error.message });
   }
 });
 

@@ -896,17 +896,21 @@ export class UnitsListComponent implements OnInit {
     this.curriculumService.confirmBulkImport(this.previewSessionId, modifiedRecords).subscribe({
       next: (res: any) => {
         this.isLoading = false;
-        this.previewSessionId = null;
         if (duplicateCount > 0) {
           this.showNotification('success', `Data imported! ${modifiedRecords?.length || 0} unique values stored, ${duplicateCount} duplicates omitted.`);
         } else {
           this.showNotification('success', res.message || 'Data imported successfully!');
         }
+        this.previewSessionId = null;
+        this.onDiscardImport();
         this.loadAllCurriculumData(); // Refresh data
       },
       error: (err) => {
         this.isLoading = false;
-        this.showNotification('error', err.error?.message || 'Error importing curriculum.');
+        console.error(err);
+        const msg = err.error?.message || 'Error importing data.';
+        this.showNotification('error', msg);
+        this.onDiscardImport();
       }
     });
   }

@@ -661,7 +661,15 @@ export class QuestionBankComponent implements OnInit {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `Question_Bank_${new Date().getTime()}.xlsx`;
+      const now = new Date();
+      const formatter = new Intl.DateTimeFormat('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+        hour12: false
+      });
+      const formattedDate = formatter.format(now).replace(/\//g, '-').replace(/:/g, '-').replace(', ', '_');
+      a.download = `Question_Bank_${formattedDate}.xlsx`;
     a.click();
     window.URL.revokeObjectURL(url);
   }
