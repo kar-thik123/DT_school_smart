@@ -38,6 +38,7 @@ export class SkillsVerifyAssignmentComponent implements OnInit {
 
   assignments: any[] = [];
   users: any[] = [];
+  filteredUsers: any[] = [];
   grades: any[] = [];
   sections: any[] = [];
   filteredSections: any[] = [];
@@ -70,6 +71,28 @@ export class SkillsVerifyAssignmentComponent implements OnInit {
     this.loadGrades();
     this.loadSections();
 
+    this.assignForm.get('role_id')?.valueChanges.subscribe((roleId: string) => {
+      if (roleId) {
+        this.filteredUsers = this.users.filter(u => u.role_id === roleId);
+      } else {
+        // If there is no active role explicitly selected (like when opening an edit dialog for a previous assignment), 
+        // fall back to showing ONLY the assigned users so they are not dropped from the view, without listing ALL users.
+        const currentSelectedIds = this.assignForm.get('verifier_id')?.value || [];
+        this.filteredUsers = this.users.filter(u => currentSelectedIds.includes(u.id));
+      }
+
+      const currentVerifiers = this.assignForm.get('verifier_id')?.value || [];
+      const validVerifiers = currentVerifiers.filter((vid: string) =>
+        vid === 'selectAll' || this.filteredUsers.some(u => u.id === vid)
+      );
+
+      // We only want to patch and discard invalid assigned users if a role was specifically interacted with right now. 
+      // If roleId is empty, avoid indiscriminant patching that wipes everything.
+      if (roleId && currentVerifiers.length !== validVerifiers.length) {
+        this.assignForm.patchValue({ verifier_id: validVerifiers }, { emitEvent: false });
+      }
+    });
+
     this.assignForm.get('grade_id')?.valueChanges.subscribe((gradeIds: string[] | null) => {
       if (gradeIds && gradeIds.length > 0) {
         // If 'null' (All Grades) is selected along with others, we might want to handle it, 
@@ -86,6 +109,11 @@ export class SkillsVerifyAssignmentComponent implements OnInit {
     if (!items) return [];
     if (idField === 'self') return items;
     return items.map(item => item[idField]);
+  }
+
+  getGradeName(gradeId: string): string {
+    const grade = this.grades.find(g => g.id === gradeId);
+    return grade ? grade.name : 'Unknown Grade';
   }
 
   toggleAllNative(controlName: string, allValues: any[], isSelected: boolean) {
@@ -119,7 +147,16 @@ export class SkillsVerifyAssignmentComponent implements OnInit {
 
   loadUsers() {
     this.http.get<any[]>(`${environment.apiUrl}/users`).subscribe({
-      next: (data) => this.users = data,
+      next: (data) => {
+        this.users = data;
+        const roleId = this.assignForm.get('role_id')?.value;
+        if (roleId) {
+          this.filteredUsers = this.users.filter(u => u.role_id === roleId);
+        } else {
+          const currentSelectedIds = this.assignForm.get('verifier_id')?.value || [];
+          this.filteredUsers = this.users.filter(u => currentSelectedIds.includes(u.id));
+        }
+      },
       error: (err) => console.error(err)
     });
   }

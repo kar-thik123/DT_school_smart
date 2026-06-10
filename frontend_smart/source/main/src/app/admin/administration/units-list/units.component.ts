@@ -53,6 +53,9 @@ export class UnitsListComponent implements OnInit {
   ];
 
   isLoading = false;
+  isSavingUnit = false;
+  isSavingTopic = false;
+  isSavingSubTopic = false;
 
   // Forms
   unitForm!: FormGroup;
@@ -101,6 +104,8 @@ export class UnitsListComponent implements OnInit {
   subTopicColumns: string[] = ['name', 'topic', 'actions'];
   
   canManageSyllabus = false;
+  canImportSyllabus = false;
+  canExportSyllabus = false;
 
   ngOnInit() {
     const isTeacherPath = this.router.url.startsWith('/teacher/');
@@ -117,6 +122,12 @@ export class UnitsListComponent implements OnInit {
                              this.authService.hasPermission('ACADEMIC_MANAGE_SYLLABUS') ||
                              this.authService.hasPermission('UNITS_LIST', 'MANAGE_SYLLABUS') ||
                              this.authService.hasPermission('UNITS_LIST_MANAGE_SYLLABUS');
+
+    this.canImportSyllabus = this.authService.hasPermission('UNITS_LIST', 'IMPORT') ||
+                             this.authService.hasPermission('UNITS_LIST_IMPORT');
+
+    this.canExportSyllabus = this.authService.hasPermission('UNITS_LIST', 'EXPORT') ||
+                             this.authService.hasPermission('UNITS_LIST_EXPORT');
 
     this.initForms();
     this.loadGrades();
@@ -311,7 +322,7 @@ export class UnitsListComponent implements OnInit {
   }
 
   createUnit(formDirective: FormGroupDirective) {
-    if (this.unitForm.invalid) return;
+    if (this.unitForm.invalid || this.isSavingUnit) return;
 
     const formValue = this.unitForm.value;
     const isDuplicate = this.allUnits.some(u => 
@@ -327,9 +338,11 @@ export class UnitsListComponent implements OnInit {
       return;
     }
 
+    this.isSavingUnit = true;
     if (this.editingUnitId) {
       this.curriculumService.updateUnit(this.editingUnitId, this.unitForm.value).subscribe({
         next: (res) => {
+          this.isSavingUnit = false;
           this.showNotification('success', 'Unit updated successfully');
           if (res.data) {
             const index = this.allUnits.findIndex(u => u.id === this.editingUnitId);
@@ -346,12 +359,14 @@ export class UnitsListComponent implements OnInit {
           this.cancelEditUnit(formDirective);
         },
         error: () => {
+          this.isSavingUnit = false;
           this.showNotification('error', 'Failed to update unit');
         }
       });
     } else {
       this.curriculumService.createUnit(this.unitForm.value).subscribe({
         next: (res) => {
+          this.isSavingUnit = false;
           this.showNotification('success', 'Unit created successfully');
           if (res.data) {
             const newItem = { ...res.data };
@@ -365,6 +380,7 @@ export class UnitsListComponent implements OnInit {
           this.cancelEditUnit(formDirective);
         },
         error: () => {
+          this.isSavingUnit = false;
           this.showNotification('error', 'Failed to create unit');
         }
       });
@@ -426,7 +442,7 @@ export class UnitsListComponent implements OnInit {
   }
 
   createTopic(formDirective: FormGroupDirective) {
-    if (this.topicForm.invalid) return;
+    if (this.topicForm.invalid || this.isSavingTopic) return;
 
     const formValue = this.topicForm.value;
     const isDuplicate = this.allTopics.some(t => 
@@ -440,9 +456,11 @@ export class UnitsListComponent implements OnInit {
       return;
     }
 
+    this.isSavingTopic = true;
     if (this.editingTopicId) {
       this.curriculumService.updateTopic(this.editingTopicId, this.topicForm.value).subscribe({
         next: (res) => {
+          this.isSavingTopic = false;
           this.showNotification('success', 'Topic updated successfully');
           if (res.data) {
             const index = this.allTopics.findIndex(t => t.id === this.editingTopicId);
@@ -459,12 +477,14 @@ export class UnitsListComponent implements OnInit {
           this.cancelEditTopic(formDirective);
         },
         error: () => {
+          this.isSavingTopic = false;
           this.showNotification('error', 'Failed to update topic');
         }
       });
     } else {
       this.curriculumService.createTopic(this.topicForm.value).subscribe({
         next: (res) => {
+          this.isSavingTopic = false;
           this.showNotification('success', 'Topic created successfully');
           if (res.data) {
             const newItem = { ...res.data };
@@ -478,6 +498,7 @@ export class UnitsListComponent implements OnInit {
           this.cancelEditTopic(formDirective);
         },
         error: () => {
+          this.isSavingTopic = false;
           this.showNotification('error', 'Failed to create topic');
         }
       });
@@ -535,7 +556,7 @@ export class UnitsListComponent implements OnInit {
   }
 
   createSubTopic(formDirective: FormGroupDirective) {
-    if (this.subTopicForm.invalid) return;
+    if (this.subTopicForm.invalid || this.isSavingSubTopic) return;
 
     const formValue = this.subTopicForm.value;
     const isDuplicate = this.allSubTopics.some(st => 
@@ -549,9 +570,11 @@ export class UnitsListComponent implements OnInit {
       return;
     }
 
+    this.isSavingSubTopic = true;
     if (this.editingSubTopicId) {
       this.curriculumService.updateSubTopic(this.editingSubTopicId, this.subTopicForm.value).subscribe({
         next: (res) => {
+          this.isSavingSubTopic = false;
           this.showNotification('success', 'Sub Topic updated successfully');
           if (res.data) {
             const index = this.allSubTopics.findIndex(st => st.id === this.editingSubTopicId);
@@ -568,12 +591,14 @@ export class UnitsListComponent implements OnInit {
           this.cancelEditSubTopic(formDirective);
         },
         error: () => {
+          this.isSavingSubTopic = false;
           this.showNotification('error', 'Failed to update sub topic');
         }
       });
     } else {
       this.curriculumService.createSubTopic(this.subTopicForm.value).subscribe({
         next: (res) => {
+          this.isSavingSubTopic = false;
           this.showNotification('success', 'Sub Topic created successfully');
           if (res.data) {
             const newItem = { ...res.data };
@@ -587,6 +612,7 @@ export class UnitsListComponent implements OnInit {
           this.cancelEditSubTopic(formDirective);
         },
         error: () => {
+          this.isSavingSubTopic = false;
           this.showNotification('error', 'Failed to create sub topic');
         }
       });

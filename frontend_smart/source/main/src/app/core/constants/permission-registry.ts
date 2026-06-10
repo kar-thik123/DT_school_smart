@@ -40,14 +40,18 @@ export const PERMISSIONS_REGISTRY = {
       "VIEW",
       "CREATE",
       "UPDATE",
-      "DELETE"
+      "DELETE",
+      "IMPORT",
+      "EXPORT"
     ]
   },
   "UNITS_LIST": {
     "description": "Units, Topics, and Subtopics",
     "actions": [
       "VIEW",
-      "MANAGE_SYLLABUS"
+      "MANAGE_SYLLABUS",
+      "IMPORT",
+      "EXPORT"
     ]
   },
   "TEACHER_ASSIGNMENT": {

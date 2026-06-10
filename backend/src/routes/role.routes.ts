@@ -12,11 +12,17 @@ router.use(authMiddleware);
 router.use((req: any, res: Response, next: any) => {
   // Allow SUPER_ADMIN or anyone with ROLES_AND_PERMISSIONS:VIEW to access these routes
   const userPermissions = req.user?.permissions || [];
+
+  // Specific override: if the method is GET and hitting the base / endpoint, allow SKILLS_VERIFY_ASSIGNMENT
+  const isRolesList = req.method === 'GET' && (req.path === '/' || req.path === '');
+  const hasSkillAssignAccess = userPermissions.includes('SKILLS_VERIFY_ASSIGNMENT:ASSIGN') || userPermissions.includes('SKILLS_VERIFY_ASSIGNMENT:VIEW');
+
   if (
-    AuthorizationService.hasIdentity(userPermissions, 'IS_SYSTEM_ADMIN') || 
-    AuthorizationService.hasIdentity(userPermissions, 'IS_SUPER_ADMIN') || 
-    userPermissions.includes('ROLES_AND_PERMISSIONS:VIEW') || 
-    userPermissions.includes('ROLES_AND_PERMISSIONS:MANAGE')
+    AuthorizationService.hasIdentity(userPermissions, 'IS_SYSTEM_ADMIN') ||
+    AuthorizationService.hasIdentity(userPermissions, 'IS_SUPER_ADMIN') ||
+    userPermissions.includes('ROLES_AND_PERMISSIONS:VIEW') ||
+    userPermissions.includes('ROLES_AND_PERMISSIONS:MANAGE') ||
+    (isRolesList && hasSkillAssignAccess)
   ) {
     return next();
   }
@@ -39,10 +45,10 @@ const permissionSyncSchema = z.object({
 router.get('/', async (req: any, res: Response) => {
   try {
     const isSystemAdmin = AuthorizationService.hasIdentity(req.user.permissions || [], 'IS_SYSTEM_ADMIN');
-    
+
     const roles = await prisma.role.findMany({
-      where: { 
-        ...(isSystemAdmin ? {} : { 
+      where: {
+        ...(isSystemAdmin ? {} : {
           organization_id: req.user.organization_id,
           name: { not: 'SYSTEM_ADMIN' }
         })
@@ -82,7 +88,7 @@ router.get('/:id/permissions', async (req: any, res: Response) => {
   try {
     const role = await prisma.role.findUnique({ where: { id: req.params.id } });
     if (!role) return res.status(404).json({ message: 'Role not found' });
-    
+
     // Scoping check
     if (role.organization_id && role.organization_id !== req.user.organization_id) {
       return res.status(403).json({ message: 'Forbidden' });
@@ -105,7 +111,7 @@ router.get('/:id/permissions', async (req: any, res: Response) => {
 router.post('/', async (req: any, res: Response) => {
   try {
     const parsed = roleSchema.parse(req.body);
-    
+
     // Ensure name uniqueness within org
     const existing = await prisma.role.findFirst({
       where: { name: parsed.name, organization_id: req.user.organization_id }
@@ -133,24 +139,24 @@ router.post('/', async (req: any, res: Response) => {
 router.post('/:id/sync-permissions', async (req: any, res: Response) => {
   try {
     const { permissionIds } = permissionSyncSchema.parse(req.body);
-    
+
     const role = await prisma.role.findUnique({ where: { id: req.params.id } });
     if (!role) return res.status(404).json({ message: 'Role not found' });
-    
+
     // Security check: tenant isolation
     const isSystemAdmin = AuthorizationService.hasIdentity(req.user.permissions || [], 'IS_SYSTEM_ADMIN');
     if (role.organization_id && role.organization_id !== req.user.organization_id && !isSystemAdmin) {
-        return res.status(403).json({ message: 'Forbidden' });
+      return res.status(403).json({ message: 'Forbidden' });
     }
 
     // Security check: Global platform roles (org=null) can only be modified by SYSTEM_ADMIN
     if (role.is_system && !role.organization_id && !isSystemAdmin) {
-        return res.status(403).json({ message: 'Cannot modify global platform roles' });
+      return res.status(403).json({ message: 'Cannot modify global platform roles' });
     }
 
     // Security check: Prevent locking out SUPER_ADMIN role
     if (role.name === String('SUPER_ADMIN') && !isSystemAdmin) {
-        return res.status(403).json({ message: 'The SUPER_ADMIN role permissions are locked for safety.' });
+      return res.status(403).json({ message: 'The SUPER_ADMIN role permissions are locked for safety.' });
     }
 
     // Transactional sync

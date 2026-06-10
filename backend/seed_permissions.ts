@@ -7,7 +7,7 @@ async function main() {
   console.log('--- Starting Permission Bootstrap ---');
 
   const permissions = getFlatPermissions();
-  
+
   // 1. Sync Permissions Table
   for (const p of permissions) {
     await prisma.permission.upsert({
@@ -40,14 +40,14 @@ async function main() {
   // 4. Map Default Permissions to SUPER_ADMIN (Tenant Control)
   if (superAdminRole) {
     const allDbPermissions = await prisma.permission.findMany();
-    const tenantDbPermissions = allDbPermissions.filter(p => 
-      PERMISSION_DOMAINS[p.module] === 'TENANT' && 
+    const tenantDbPermissions = allDbPermissions.filter(p =>
+      PERMISSION_DOMAINS[p.module] === 'TENANT' &&
       !(p.module === 'IDENTITY' && p.action === 'IS_SYSTEM_ADMIN')
     );
-    
+
     // Clean existing mappings to avoid duplicates or stale perms
     await prisma.rolePermission.deleteMany({ where: { role_id: superAdminRole.id } });
-    
+
     await prisma.rolePermission.createMany({
       data: tenantDbPermissions.map(p => ({
         role_id: superAdminRole.id,
@@ -64,7 +64,7 @@ async function main() {
         module: { in: ['USERS', 'ACADEMIC', 'ACADEMIC_STRUCTURE', 'TEACHER_ASSIGNMENT', 'ANALYTICS'] }
       }
     });
-    
+
     await prisma.rolePermission.deleteMany({ where: { role_id: managementRole.id } });
     await prisma.rolePermission.createMany({
       data: mgmtPerms.map(p => ({

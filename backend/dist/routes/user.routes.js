@@ -62,8 +62,18 @@ router.get('/teachers', async (req, res) => {
     }
 });
 // GET all users in org
-router.get('/', requireManagement, async (req, res) => {
+router.get('/', async (req, res) => {
     try {
+        // Custom permission check since requireManagement is too strict for skills assigners
+        const permissions = req.user?.permissions || [];
+        const hasManagement = authorization_service_1.AuthorizationService.hasPermission(permissions, 'IDENTITY', 'IS_MANAGEMENT');
+        const hasSkillAccess = authorization_service_1.AuthorizationService.hasPermission(permissions, 'SKILLS_VERIFICATION', 'VIEW') ||
+            authorization_service_1.AuthorizationService.hasPermission(permissions, 'SKILLS_VERIFY_ASSIGNMENT', 'VIEW') ||
+            authorization_service_1.AuthorizationService.hasPermission(permissions, 'SKILLS_VERIFY_ASSIGNMENT', 'ASSIGN') ||
+            authorization_service_1.AuthorizationService.hasPermission(permissions, 'IDENTITY', 'IS_SKILL_VERIFIER');
+        if (!hasManagement && !hasSkillAccess) {
+            return res.status(403).json({ message: 'Forbidden: Requires IS_MANAGEMENT or SKILLS_VERIFICATION permissions' });
+        }
         const filter = { organization_id: req.user.organization_id };
         if (req.query.grade_id) {
             filter.grade_id = String(req.query.grade_id);
@@ -297,6 +307,18 @@ router.put('/:id', requireManagement, async (req, res) => {
             }
         }
         let updateData = { name: req.body.name, is_active: req.body.is_active };
+        if (req.body.email && req.body.email !== user.email) {
+            const existing = await prisma_1.default.user.findFirst({
+                where: {
+                    email: req.body.email,
+                    id: { not: req.params.id }
+                }
+            });
+            if (existing) {
+                return res.status(400).json({ message: `Email '${req.body.email}' is already registered in the platform. Each email can only belong to one account.` });
+            }
+            updateData.email = req.body.email;
+        }
         if (req.body.role_id) {
             const roleDb = await prisma_1.default.role.findFirst({
                 where: {
@@ -453,14 +475,24 @@ router.post('/:id/reset-password', requireManagement, async (req, res) => {
 });
 router.get('/profile/:id', async (req, res) => {
     try {
+        // First, fetch basic user to determine role
+        const userBase = await prisma_1.default.user.findUnique({
+            where: { id: req.params.id },
+            include: { role: true }
+        });
+        if (!userBase) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        // Platform admins do not have student enrollments or academic contexts.
+        // Eager loading these relationships for them causes unnecessary strain and intermittent errors.
+        const isPlatformAdmin = userBase.role?.name === 'SYSTEM_ADMIN';
         const user = await prisma_1.default.user.findUnique({
             where: { id: req.params.id },
             include: {
                 role: true,
                 user_profile: true,
-                student_profile: true,
-                enrollments: {
-                    where: { status: 'ACTIVE' },
+                student_profile: !isPlatformAdmin,
+                enrollments: isPlatformAdmin ? false : {
                     take: 1,
                     orderBy: { enrollment_date: 'desc' }
                 }
@@ -476,13 +508,15 @@ router.get('/profile/:id', async (req, res) => {
             address: user.user_profile.address,
             about: user.user_profile.about,
             profile_image: user.user_profile.profile_image,
-            academic_profiles: user.user_profile.academic_profiles || []
+            academic_profiles: user.user_profile.academic_profiles || [],
+            date_of_birth: user.user_profile.date_of_birth,
+            academic_birth: user.user_profile.academic_birth
         } : {
             academic_profiles: []
         };
         const roll_number = user.enrollments?.[0]?.roll_number || null;
-        const date_of_birth = user.student_profile?.date_of_birth || null;
-        const academic_birth = user.student_profile?.academic_birth || null;
+        const date_of_birth = user.user_profile?.date_of_birth || user.student_profile?.date_of_birth || null;
+        const academic_birth = user.user_profile?.academic_birth || user.student_profile?.academic_birth || null;
         res.json({ ...user, ...profileData, roll_number, date_of_birth, academic_birth });
     }
     catch (error) {
@@ -513,7 +547,7 @@ router.put('/profile/:id', upload.single('profile_image'), async (req, res) => {
                 format: 'webp',
                 skipIfSmall: true
             });
-            profile_image = `/uploads/profile/${processed.filename}`;
+            profile_image = `/api/uploads/profile/${processed.filename}`;
         }
         const user = await prisma_1.default.user.findUnique({
             where: { id: req.params.id }
@@ -531,6 +565,12 @@ router.put('/profile/:id', upload.single('profile_image'), async (req, res) => {
         if (profile_image) {
             updateData.profile_image = profile_image;
         }
+        if (date_of_birth !== undefined) {
+            updateData.date_of_birth = date_of_birth ? new Date(date_of_birth) : null;
+        }
+        if (academic_birth !== undefined) {
+            updateData.academic_birth = academic_birth ? new Date(academic_birth) : null;
+        }
         await prisma_1.default.userProfile.upsert({
             where: { user_id: req.params.id },
             update: updateData,
@@ -543,18 +583,20 @@ router.put('/profile/:id', upload.single('profile_image'), async (req, res) => {
                 address,
                 about,
                 profile_image,
-                academic_profiles: academic_profiles || []
+                academic_profiles: academic_profiles || [],
+                ...(date_of_birth !== undefined && { date_of_birth: date_of_birth ? new Date(date_of_birth) : null }),
+                ...(academic_birth !== undefined && { academic_birth: academic_birth ? new Date(academic_birth) : null })
             }
         });
-        if (roll_number !== undefined) {
-            const activeEnrollment = await prisma_1.default.studentEnrollment.findFirst({
-                where: { student_id: req.params.id, status: 'ACTIVE' },
+        if (roll_number !== undefined && roll_number !== 'undefined' && roll_number !== 'null') {
+            const latestEnrollment = await prisma_1.default.studentEnrollment.findFirst({
+                where: { student_id: req.params.id },
                 orderBy: { enrollment_date: 'desc' }
             });
-            if (activeEnrollment) {
+            if (latestEnrollment) {
                 await prisma_1.default.studentEnrollment.update({
-                    where: { id: activeEnrollment.id },
-                    data: { roll_number }
+                    where: { id: latestEnrollment.id },
+                    data: { roll_number: roll_number === '' ? null : roll_number }
                 });
             }
         }

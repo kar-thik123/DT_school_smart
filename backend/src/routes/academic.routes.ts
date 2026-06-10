@@ -602,10 +602,10 @@ router.post('/bulk/preview', requirePermission('ACADEMIC_STRUCTURE', 'CREATE'), 
       } 
     });
 
-    const getGradeCompositeKey = (g: string) => String(g || '').trim();
-    const getSectionCompositeKey = (g: string, s: string) => `${String(g || '').trim()}|${String(s || '').trim()}`;
-    const getSubjectCompositeKey = (g: string, sub: string) => `${String(g || '').trim()}|${String(sub || '').trim()}`;
-    const getGroupCompositeKey = (g: string, s: string, grp: string) => `${String(g || '').trim()}|${String(s || '').trim()}|${String(grp || '').trim()}`;
+    const getGradeCompositeKey = (g: string) => String(g || '').replace(/^grade\\s*/i, '').trim();
+    const getSectionCompositeKey = (g: string, s: string) => `${String(g || '').replace(/^grade\\s*/i, '').trim()}|${String(s || '').trim()}`;
+    const getSubjectCompositeKey = (g: string, sub: string) => `${String(g || '').replace(/^grade\\s*/i, '').trim()}|${String(sub || '').trim()}`;
+    const getGroupCompositeKey = (g: string, s: string, grp: string) => `${String(g || '').replace(/^grade\\s*/i, '').trim()}|${String(s || '').trim()}|${String(grp || '').trim()}`;
 
     const dbGrades = new Set(existingGrades.map((g: any) => getGradeCompositeKey(g.name)));
     const dbSections = new Set(existingSections.map((s: any) => getSectionCompositeKey(s.grade?.name, s.name)));
@@ -613,11 +613,13 @@ router.post('/bulk/preview', requirePermission('ACADEMIC_STRUCTURE', 'CREATE'), 
     const dbGroups = new Set(existingGroups.map((g: any) => getGroupCompositeKey(g.grade?.name, g.section?.name, g.name)));
 
     const dbGroupSubjects = new Set<string>();
+    const dbSectionSubjects = new Set<string>();
     existingGroups.forEach((g: any) => {
       if (g.subjects) {
         g.subjects.forEach((sg: any) => {
           if (sg.subject?.name) {
             dbGroupSubjects.add(`${getGroupCompositeKey(g.grade?.name, g.section?.name, g.name)}|${String(sg.subject.name).trim()}`);
+            dbSectionSubjects.add(`${getSectionCompositeKey(g.grade?.name, g.section?.name)}|${String(sg.subject.name).trim()}`);
           }
         });
       }
@@ -636,10 +638,12 @@ router.post('/bulk/preview', requirePermission('ACADEMIC_STRUCTURE', 'CREATE'), 
       let match_status = 'NOT_VALID';
 
       const gradeName = String(row.Grade || '').trim();
+      const gradeNameClean = gradeName.replace(/^grade\\s*/i, '').trim();
       const sectionName = String(row.Section || '').trim();
       const subjectName = String(row.Subject || '').trim();
       const subjectType = String(row['Subject Type'] || '').trim().toUpperCase();
       const groupName = String(row['Group / Stream Name'] || '').trim();
+      const resolvedGroupName = groupName || ((sectionName && subjectName) ? `${gradeNameClean} - ${sectionName} (Default)` : '');
 
       if (!gradeName) {
         errors.push('Grade name is required');
@@ -652,7 +656,7 @@ router.post('/bulk/preview', requirePermission('ACADEMIC_STRUCTURE', 'CREATE'), 
       if (errors.length === 0) {
         match_status = 'VALID';
         
-        const compositeKey = [gradeName, sectionName, subjectName, subjectType, groupName].join('|');
+        const compositeKey = [gradeNameClean, sectionName, subjectName, subjectType, resolvedGroupName].join('|');
         if (seenRows.has(compositeKey)) {
           match_status = 'DUPLICATE';
         } else {
@@ -660,16 +664,19 @@ router.post('/bulk/preview', requirePermission('ACADEMIC_STRUCTURE', 'CREATE'), 
 
           // Check DB for exact duplicate based on the most granular detail provided
           if (groupName && subjectName) {
-            const key = `${getGroupCompositeKey(gradeName, sectionName, groupName)}|${subjectName}`;
+            const key = `${getGroupCompositeKey(gradeNameClean, sectionName, groupName)}|${subjectName}`;
             if (dbGroupSubjects.has(key)) match_status = 'DUPLICATE';
-          } else if (groupName) {
-            if (dbGroups.has(getGroupCompositeKey(gradeName, sectionName, groupName))) match_status = 'DUPLICATE';
+          } else if (!groupName && sectionName && subjectName) {
+            const key = `${getSectionCompositeKey(gradeNameClean, sectionName)}|${subjectName}`;
+            if (dbSectionSubjects.has(key)) match_status = 'DUPLICATE';
+          } else if (resolvedGroupName) {
+            if (dbGroups.has(getGroupCompositeKey(gradeNameClean, sectionName, resolvedGroupName))) match_status = 'DUPLICATE';
           } else if (subjectName) {
-            if (dbSubjects.has(getSubjectCompositeKey(gradeName, subjectName))) match_status = 'DUPLICATE';
+            if (dbSubjects.has(getSubjectCompositeKey(gradeNameClean, subjectName))) match_status = 'DUPLICATE';
           } else if (sectionName) {
-            if (dbSections.has(getSectionCompositeKey(gradeName, sectionName))) match_status = 'DUPLICATE';
-          } else if (gradeName) {
-            if (dbGrades.has(getGradeCompositeKey(gradeName))) match_status = 'DUPLICATE';
+            if (dbSections.has(getSectionCompositeKey(gradeNameClean, sectionName))) match_status = 'DUPLICATE';
+          } else if (gradeNameClean) {
+            if (dbGrades.has(getGradeCompositeKey(gradeNameClean))) match_status = 'DUPLICATE';
           }
         }
       }

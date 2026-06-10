@@ -91,7 +91,7 @@ router.post('/login', loginLimiter, async (req, res) => {
             permissions.push('IDENTITY:IS_MANAGEMENT');
         }
         const verificationAssignments = await prisma_1.default.skillVerificationAssignment.findMany({
-            where: { verifier_id: user.id }
+            where: { verifier_ids: { has: user.id } }
         });
         if (verificationAssignments.length > 0) {
             permissions.push('IDENTITY:IS_SKILL_VERIFIER');
@@ -118,6 +118,7 @@ router.post('/login', loginLimiter, async (req, res) => {
         });
     }
     catch (error) {
+        console.error("Login Error: ", error);
         if (error instanceof zod_1.z.ZodError) {
             return res.status(400).json({
                 message: 'Validation failed',
@@ -157,7 +158,7 @@ router.get('/me', auth_middleware_1.authMiddleware, async (req, res) => {
             permissions.push('IDENTITY:IS_MANAGEMENT');
         }
         const verificationAssignments = await prisma_1.default.skillVerificationAssignment.findMany({
-            where: { verifier_id: user.id }
+            where: { verifier_ids: { has: user.id } }
         });
         if (verificationAssignments.length > 0) {
             permissions.push('IDENTITY:IS_SKILL_VERIFIER');

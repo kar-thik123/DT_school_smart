@@ -63,8 +63,20 @@ router.get('/teachers', async (req: any, res: Response) => {
 });
 
 // GET all users in org
-router.get('/', requireManagement, async (req: any, res: Response) => {
+router.get('/', async (req: any, res: Response) => {
   try {
+    // Custom permission check since requireManagement is too strict for skills assigners
+    const permissions = req.user?.permissions || [];
+    const hasManagement = AuthorizationService.hasPermission(permissions, 'IDENTITY', 'IS_MANAGEMENT');
+    const hasSkillAccess = AuthorizationService.hasPermission(permissions, 'SKILLS_VERIFICATION', 'VIEW') ||
+      AuthorizationService.hasPermission(permissions, 'SKILLS_VERIFY_ASSIGNMENT', 'VIEW') ||
+      AuthorizationService.hasPermission(permissions, 'SKILLS_VERIFY_ASSIGNMENT', 'ASSIGN') ||
+      AuthorizationService.hasPermission(permissions, 'IDENTITY', 'IS_SKILL_VERIFIER');
+
+    if (!hasManagement && !hasSkillAccess) {
+      return res.status(403).json({ message: 'Forbidden: Requires IS_MANAGEMENT or SKILLS_VERIFICATION permissions' });
+    }
+
     const filter: any = { organization_id: req.user.organization_id };
     if (req.query.grade_id) {
       filter.grade_id = String(req.query.grade_id);
@@ -300,6 +312,18 @@ router.put('/:id', requireManagement, async (req: any, res: Response) => {
     }
 
     let updateData: any = { name: req.body.name, is_active: req.body.is_active };
+    if (req.body.email && req.body.email !== user.email) {
+      const existing = await prisma.user.findFirst({
+        where: {
+          email: req.body.email,
+          id: { not: req.params.id }
+        }
+      });
+      if (existing) {
+        return res.status(400).json({ message: `Email '${req.body.email}' is already registered in the platform. Each email can only belong to one account.` });
+      }
+      updateData.email = req.body.email;
+    }
     if (req.body.role_id) {
       const roleDb = await prisma.role.findFirst({
         where: {

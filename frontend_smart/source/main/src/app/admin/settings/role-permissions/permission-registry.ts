@@ -18,11 +18,11 @@ export const CENTRAL_PERMISSION_REGISTRY: IRegistryPermission[] = [
   },
   {
     module: 'ACADEMIC_STRUCTURE',
-    permissions: ['READ', 'CREATE', 'EDIT', 'DELETE']
+    permissions: ['READ', 'CREATE', 'EDIT', 'DELETE', 'IMPORT', 'EXPORT']
   },
   {
     module: 'UNITS_LIST',
-    permissions: ['MANAGE_SYLLABUS']
+    permissions: ['MANAGE_SYLLABUS', 'IMPORT', 'EXPORT']
   },
   {
     module: 'TEACHER_ASSIGNMENT',

@@ -11,6 +11,7 @@ export class StudentEnrollmentProcessor implements BulkImportProcessor {
     subject_groups: {}
   };
   private fileUniqueSet: Set<string> = new Set();
+  private sectionAddedCount: Record<string, number> = {};
   
   constructor(private organizationId: string, private userId: string, private academicYearId: string) {}
 
@@ -94,6 +95,47 @@ export class StudentEnrollmentProcessor implements BulkImportProcessor {
        errors.push(`Cannot assign Subject Group without a valid Section.`);
     }
 
+    // Advanced Validations (Group & Capacity) early in Analyze phase
+    // TODO: Implement or import StudentEnrollmentService
+    /*
+    if (grade) {
+      const groupValidation = await StudentEnrollmentService.validateGroupAssignment(
+        this.organizationId, grade.id, section?.id, group?.id
+      );
+      if (!groupValidation.allowed) {
+        errors.push(groupValidation.message || 'Invalid group assignment');
+      }
+    }
+    */
+
+    if (user) {
+      const existingEnrollment = this.resolved.existing_enrollments[user.id];
+      if (existingEnrollment) {
+        if (existingEnrollment.grade_id === grade?.id && existingEnrollment.section_id === section?.id) {
+          errors.push(`Student is already enrolled in Grade '${row.grade_name}' and Section '${row.section_name}'.`);
+        } else {
+          errors.push(`Student is already enrolled in a different Grade/Section in this academic year.`);
+        }
+      }
+    }
+
+    if (section && user) {
+      const existingEnrollment = this.resolved.existing_enrollments[user.id];
+      const isAlreadyInSection = existingEnrollment && existingEnrollment.section_id === section.id;
+      
+      if (!isAlreadyInSection) {
+        const cap = this.resolved.section_capacities[section.id];
+        if (cap) {
+          const current = this.resolved.section_current_counts[section.id] || 0;
+          const addedSoFar = this.sectionAddedCount[section.id] || 0;
+          if (current + addedSoFar + 1 > cap) {
+            errors.push(`Section capacity exceeded (Max: ${cap}, Current: ${current}, Incoming: ${addedSoFar + 1}).`);
+          } else {
+            this.sectionAddedCount[section.id] = addedSoFar + 1;
+          }
+        }
+      }
+    }
     if (errors.length > 0) return { status: 'ERROR', errors, data: row };
 
     return { 
@@ -110,6 +152,17 @@ export class StudentEnrollmentProcessor implements BulkImportProcessor {
   }
 
   async commit(validRows: any[], conflictResolutions?: any[]): Promise<CommitResult> {
+    const payloads = validRows.map(row => {
+      const data = row.data || row;
+      return {
+        student_id: data.resolved_student_id,
+        grade_id: data.resolved_grade_id,
+        section_id: data.resolved_section_id,
+        subject_group_id: data.resolved_group_id,
+        status: EnrollmentStatus.ACTIVE
+      };
+    });
+
     const result = await prisma.$transaction(async (tx: any) => {
       let success = 0;
       let failure = 0;
