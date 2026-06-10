@@ -53,7 +53,7 @@ const updateSubTopicSchema = z.object({
 
 function parsePagination(query: any) {
   const page = Math.max(1, parseInt(query.page) || 1);
-  const limit = Math.min(100, Math.max(1, parseInt(query.limit) || 20));
+  const limit = Math.max(1, parseInt(query.limit) || 20);
   const skip = (page - 1) * limit;
   return { page, limit, skip };
 }
@@ -605,16 +605,16 @@ bulkRouter.post('/preview', requirePermission('ACADEMIC_STRUCTURE', 'CREATE'), u
       const grade = existingGrades.find((g: any) => g.name.trim().toLowerCase() === gradeNameClean.toLowerCase());
       if (grade) {
         resolvedGradeId = grade.id;
-        
+
         if (sectionName) {
-           const section = existingSections.find((s: any) => s.grade_id === grade.id && s.name.trim().toLowerCase() === sectionName.toLowerCase());
-           if (!section) errors.push(`Section "${sectionName}" not found in Grade "${gradeName}"`);
-           else resolvedSectionId = section.id;
+          const section = existingSections.find((s: any) => s.grade_id === grade.id && s.name.trim().toLowerCase() === sectionName.toLowerCase());
+          if (!section) errors.push(`Section "${sectionName}" not found in Grade "${gradeName}"`);
+          else resolvedSectionId = section.id;
         }
 
-        let subject = existingSubjects.find((s: any) => s.grade_id === grade.id && s.name.trim().toLowerCase() === subjectName.toLowerCase());
+        let subject = existingSubjects.find((s: any) => s.grade_id === resolvedGradeId && s.name.trim().toLowerCase() === subjectName.toLowerCase());
         if (!subject) {
-            subject = existingSubjects.find((s: any) => s.name.trim().toLowerCase() === subjectName.toLowerCase());
+          subject = existingSubjects.find((s: any) => s.name.trim().toLowerCase() === subjectName.toLowerCase());
         }
         if (!subject) {
           errors.push(`Subject "${subjectName}" not found in Grade "${gradeName}"`);
@@ -640,28 +640,28 @@ bulkRouter.post('/preview', requirePermission('ACADEMIC_STRUCTURE', 'CREATE'), u
 
       if (errors.length === 0) {
         match_status = 'VALID';
-        
-        const compositeKey = [gradeNameClean, sectionName, subjectName, unitName, topicName, subTopicName].join('|');
+
+        const compositeKey = [gradeNameClean.toLowerCase(), sectionName.toLowerCase(), subjectName.toLowerCase(), unitName.toLowerCase(), topicName.toLowerCase(), subTopicName.toLowerCase()].join('|');
         if (seenRows.has(compositeKey)) {
           match_status = 'DUPLICATE';
         } else {
           seenRows.add(compositeKey);
 
-          // Check against DB (case-sensitive)
-          let currentUnitId = existingUnits.find((u: any) => u.grade_id === resolvedGradeId && u.subject_id === resolvedSubjectId && (u.section_id === resolvedSectionId || (!u.section_id && !resolvedSectionId)) && u.name === unitName)?.id;
-          
+          // Check against DB (case-insensitive)
+          let currentUnitId = existingUnits.find((u: any) => u.grade_id === resolvedGradeId && u.subject_id === resolvedSubjectId && (u.section_id === resolvedSectionId || (!u.section_id && !resolvedSectionId)) && u.name.trim().toLowerCase() === unitName.toLowerCase())?.id;
+
           if (subTopicName && topicName && unitName) {
             if (currentUnitId) {
-               const currentTopicId = existingTopics.find((t: any) => t.unit_id === currentUnitId && t.name === topicName)?.id;
-               if (currentTopicId) {
-                  const currentSubTopic = existingSubTopics.find((st: any) => st.topic_id === currentTopicId && st.name === subTopicName);
-                  if (currentSubTopic) match_status = 'DUPLICATE';
-               }
+              const currentTopicId = existingTopics.find((t: any) => t.unit_id === currentUnitId && t.name.trim().toLowerCase() === topicName.toLowerCase())?.id;
+              if (currentTopicId) {
+                const currentSubTopic = existingSubTopics.find((st: any) => st.topic_id === currentTopicId && st.name.trim().toLowerCase() === subTopicName.toLowerCase());
+                if (currentSubTopic) match_status = 'DUPLICATE';
+              }
             }
           } else if (topicName && unitName) {
             if (currentUnitId) {
-               const currentTopic = existingTopics.find((t: any) => t.unit_id === currentUnitId && t.name === topicName);
-               if (currentTopic) match_status = 'DUPLICATE';
+              const currentTopic = existingTopics.find((t: any) => t.unit_id === currentUnitId && t.name.trim().toLowerCase() === topicName.toLowerCase());
+              if (currentTopic) match_status = 'DUPLICATE';
             }
           } else if (unitName) {
             if (currentUnitId) match_status = 'DUPLICATE';
@@ -747,14 +747,20 @@ bulkRouter.post('/confirm', requirePermission('ACADEMIC_STRUCTURE', 'CREATE'), a
     if (validRows.length === 0) return res.status(400).json({ message: 'No valid records to import.' });
 
     await prisma.$transaction(async (tx: any) => {
+      // Pre-fetch organization data to prevent hundreds of sequential findFirst calls timing out
+      const existingUnits = await tx.unit.findMany({ where: { organization_id: org_id } });
+      const existingTopics = await tx.topic.findMany({ where: { organization_id: org_id } });
+      const existingSubTopics = await tx.subTopic.findMany({ where: { organization_id: org_id } });
+
       // Process logically row by row to maintain relations (Units -> Topics -> SubTopics)
       const unitCache = new Map<string, string>();
       const topicCache = new Map<string, string>();
+      const subTopicCache = new Map<string, string>();
 
       for (const row of validRows) {
         const { Grade, Section, Subject, 'Unit Name': unitName, 'Topic Name': topicName, 'Sub Topic Name': subTopicName } = row.raw_data;
         const resolvedData = typeof row.resolved_data === 'string' ? JSON.parse(row.resolved_data) : row.resolved_data;
-        
+
         const gradeId = resolvedData.grade_id;
         const sectionId = resolvedData.section_id || null;
         const subjectId = resolvedData.subject_id;
@@ -765,11 +771,10 @@ bulkRouter.post('/confirm', requirePermission('ACADEMIC_STRUCTURE', 'CREATE'), a
         let unitId = unitCache.get(unitKey);
 
         if (!unitId) {
-          let unit = await tx.unit.findFirst({
-            where: { organization_id: org_id, grade_id: gradeId, section_id: sectionId, subject_id: subjectId, name: unitName }
-          });
+          let unit = existingUnits.find((u: any) => u.grade_id === gradeId && u.section_id === sectionId && u.subject_id === subjectId && u.name.toLowerCase() === unitName.toLowerCase());
           if (!unit) {
-            const maxU = await tx.unit.aggregate({ where: { organization_id: org_id, grade_id: gradeId, section_id: sectionId, subject_id: subjectId }, _max: { order_index: true } });
+            const siblings = existingUnits.filter((u: any) => u.grade_id === gradeId && u.section_id === sectionId && u.subject_id === subjectId);
+            const maxOrder = siblings.length > 0 ? Math.max(...siblings.map((s: any) => s.order_index)) : -1;
             unit = await tx.unit.create({
               data: {
                 name: unitName,
@@ -777,9 +782,10 @@ bulkRouter.post('/confirm', requirePermission('ACADEMIC_STRUCTURE', 'CREATE'), a
                 section_id: sectionId,
                 subject_id: subjectId,
                 organization_id: org_id,
-                order_index: (maxU._max.order_index ?? -1) + 1
+                order_index: maxOrder + 1
               }
             });
+            existingUnits.push(unit);
           }
           unitId = unit.id;
           unitCache.set(unitKey, unitId as string);
@@ -790,45 +796,52 @@ bulkRouter.post('/confirm', requirePermission('ACADEMIC_STRUCTURE', 'CREATE'), a
           let topicId = topicCache.get(topicKey);
 
           if (!topicId) {
-            let topic = await tx.topic.findFirst({
-              where: { organization_id: org_id, unit_id: unitId, name: topicName }
-            });
+            let topic = existingTopics.find((t: any) => t.unit_id === unitId && t.name.toLowerCase() === topicName.toLowerCase());
             if (!topic) {
-              const maxT = await tx.topic.aggregate({ where: { organization_id: org_id, unit_id: unitId }, _max: { order_index: true } });
+              const siblings = existingTopics.filter((t: any) => t.unit_id === unitId);
+              const maxOrder = siblings.length > 0 ? Math.max(...siblings.map((s: any) => s.order_index)) : -1;
               topic = await tx.topic.create({
                 data: {
                   name: topicName,
                   unit_id: unitId,
                   organization_id: org_id,
-                  order_index: (maxT._max.order_index ?? -1) + 1
+                  order_index: maxOrder + 1
                 }
               });
+              existingTopics.push(topic);
             }
             topicId = topic.id;
             topicCache.set(topicKey, topicId as string);
           }
 
           if (subTopicName && topicId) {
-            const subTopic = await tx.subTopic.findFirst({
-              where: { organization_id: org_id, topic_id: topicId as string, name: subTopicName }
-            });
-            if (!subTopic) {
-              const maxST = await tx.subTopic.aggregate({ where: { organization_id: org_id, topic_id: topicId as string }, _max: { order_index: true } });
-              await tx.subTopic.create({
-                data: {
-                  name: subTopicName,
-                  topic_id: topicId as string,
-                  organization_id: org_id,
-                  order_index: (maxST._max.order_index ?? -1) + 1
-                }
-              });
+            const subTopicKey = `${topicId as string}|${subTopicName}`;
+            let subTopicId = subTopicCache.get(subTopicKey);
+
+            if (!subTopicId) {
+              let subTopic = existingSubTopics.find((st: any) => st.topic_id === topicId && st.name.toLowerCase() === subTopicName.toLowerCase());
+              if (!subTopic) {
+                const siblings = existingSubTopics.filter((st: any) => st.topic_id === topicId);
+                const maxOrder = siblings.length > 0 ? Math.max(...siblings.map((s: any) => s.order_index)) : -1;
+                subTopic = await tx.subTopic.create({
+                  data: {
+                    name: subTopicName,
+                    topic_id: topicId as string,
+                    organization_id: org_id,
+                    order_index: maxOrder + 1
+                  }
+                });
+                existingSubTopics.push(subTopic);
+              }
+              subTopicId = subTopic.id;
+              subTopicCache.set(subTopicKey, subTopicId as string);
             }
           }
         }
       }
     }, {
-      timeout: 60000,
-      maxWait: 5000
+      timeout: 300000,
+      maxWait: 20000
     });
 
     // Cleanup preview data
@@ -848,7 +861,7 @@ bulkRouter.post('/discard', requirePermission('ACADEMIC_STRUCTURE', 'CREATE'), a
   try {
     const { session_id } = req.body;
     if (!session_id) return res.status(400).json({ message: 'Missing session_id' });
-    
+
     await (prisma as any).previewImportData.deleteMany({
       where: { session_id, organization_id: req.user!.organization_id, created_by: req.user!.user_id }
     });

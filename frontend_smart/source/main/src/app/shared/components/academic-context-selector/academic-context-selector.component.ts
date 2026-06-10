@@ -205,8 +205,16 @@ export class AcademicContextSelectorComponent implements OnInit {
     return this.subjects.filter(s => s.grade_id === gradeId);
   }
 
-  getUnitsForSubject(subjectId: string): ICurriculumUnit[] {
-    return this.allUnits.filter(u => u.subject_id === subjectId);
+  getUnitsForSubject(subjectId: string, section?: ISection | 'ALL'): ICurriculumUnit[] {
+    return this.allUnits.filter(u => {
+      if (u.subject_id !== subjectId) return false;
+      if (section && section !== 'ALL') {
+        if (u.section_id && u.section_id !== 'ALL' && u.section_id !== section.id) {
+          return false;
+        }
+      }
+      return true;
+    });
   }
 
   getTopicsForUnit(unitId: string): ICurriculumTopic[] {

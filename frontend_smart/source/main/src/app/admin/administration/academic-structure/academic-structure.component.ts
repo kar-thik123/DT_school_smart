@@ -447,14 +447,22 @@ export class AcademicStructureComponent implements OnInit {
     });
   }
 
-  confirmImport(modifiedRecords?: any[]) {
+  confirmImport(eventData?: any) {
     if (!this.previewSessionId) return;
+
+    const modifiedRecords = eventData?.records ? eventData.records : eventData;
+    const duplicateCount = eventData?.duplicateCount || 0;
+
     this.isLoading = true;
     this.showPreviewModal = false;
     this.academicService.confirmBulkImport(this.previewSessionId, modifiedRecords).subscribe({
       next: (res) => {
         this.isLoading = false;
-        this.showNotification('success', res.message || 'Data imported successfully!');
+        if (duplicateCount > 0) {
+          this.showNotification('success', `Data imported! ${modifiedRecords?.length || 0} unique values stored, ${duplicateCount} duplicates omitted.`);
+        } else {
+          this.showNotification('success', res.message || 'Data imported successfully!');
+        }
         this.previewSessionId = null;
         this.discardImport();
         this.loadInitialData(); // Refresh UI

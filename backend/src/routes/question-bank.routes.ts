@@ -220,8 +220,7 @@ router.get('/', requirePermission('QUESTION_BANK', 'READ'), async (req: any, res
         sub_topic: { select: { id: true, name: true } },
         creator: { select: { id: true, name: true } }
       },
-      orderBy: { created_at: 'desc' },
-      take: 100 // pagination placeholder
+      orderBy: { created_at: 'desc' }
     });
     res.json(questions);
   } catch (error) {
@@ -521,7 +520,7 @@ router.post('/bulk/preview', requirePermission('QUESTION_BANK', 'IMPORT'), uploa
       const errors: string[] = [];
       let match_status = 'NOT_VALID';
 
-      const startsWithSpecialChar = (val: string) => val ? /^[^a-zA-Z0-9]/.test(val) : false;
+      const startsWithSpecialChar = (val: string) => val ? /^[^\p{L}\p{N}]/u.test(val) : false;
 
       if (!row.grade || String(row.grade).trim() === '') errors.push('Missing required field: "grade"');
       else if (startsWithSpecialChar(row.grade)) errors.push('Value must not start with a special character');
@@ -732,7 +731,7 @@ router.post('/bulk/confirm', requirePermission('QUESTION_BANK', 'IMPORT'), async
           if (!row[f] || String(row[f]).trim() === '') throw new Error(`Missing required field: "${f}"`);
         }
 
-        const startsWithSpecialChar = (val: string) => val ? /^[^a-zA-Z0-9]/.test(val) : false;
+        const startsWithSpecialChar = (val: string) => val ? /^[^\p{L}\p{N}]/u.test(val) : false;
         const stringFieldsToCheck = ['grade', 'section', 'subject', 'unit_lesson', 'topic', 'sub_topic'];
         for (const f of stringFieldsToCheck) {
            const val = String(row[f] || '').trim();

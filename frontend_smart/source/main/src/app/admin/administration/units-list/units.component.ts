@@ -12,6 +12,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.component';
 import { CurriculumService, ICurriculumUnit, ICurriculumTopic, ICurriculumSubTopic } from './services/curriculum.service';
 import { AcademicStructureService, IGrade, ISection, ISubject } from './services/units.service';
@@ -30,7 +31,7 @@ import { Router } from '@angular/router';
     CommonModule, FormsModule, ReactiveFormsModule, BreadcrumbComponent,
     MatTabsModule, MatIconModule, MatButtonModule, MatCardModule,
     MatTableModule, MatMenuModule, MatFormFieldModule, MatInputModule,
-    MatSelectModule, MatSnackBarModule, MatProgressBarModule,
+    MatSelectModule, MatSnackBarModule, MatProgressBarModule, MatPaginatorModule,
     HierarchyDropdownComponent, UnitsPreviewComponent
   ],
   templateUrl: './units.component.html',
@@ -76,6 +77,16 @@ export class UnitsListComponent implements OnInit {
   units: ICurriculumUnit[] = [];
   topics: ICurriculumTopic[] = [];
   subTopics: ICurriculumSubTopic[] = [];
+
+  // Pagination states
+  unitCurrentPage = 1;
+  unitPageSize = 10;
+
+  topicCurrentPage = 1;
+  topicPageSize = 10;
+
+  subTopicCurrentPage = 1;
+  subTopicPageSize = 10;
 
   isCurriculumLoaded = false;
 
@@ -185,6 +196,11 @@ export class UnitsListComponent implements OnInit {
     // Filter subtopics based on filtered topics
     const topicIds = new Set(this.topics.map(t => t.id));
     this.subTopics = this.allSubTopics.filter(st => topicIds.has(st.topic_id));
+    
+    // Reset pagination when context changes
+    this.unitCurrentPage = 1;
+    this.topicCurrentPage = 1;
+    this.subTopicCurrentPage = 1;
   }
 
   // --- Filtering Getters ---
@@ -193,14 +209,44 @@ export class UnitsListComponent implements OnInit {
     return subjectId ? this.units.filter(u => u.subject_id === subjectId) : this.units;
   }
 
+  get paginatedUnits() {
+    const start = (this.unitCurrentPage - 1) * this.unitPageSize;
+    return this.filteredUnits.slice(start, start + this.unitPageSize);
+  }
+
+  onUnitPageChange(event: PageEvent) {
+    this.unitCurrentPage = event.pageIndex + 1;
+    this.unitPageSize = event.pageSize;
+  }
+
   get filteredTopics() {
     const unitId = this.topicForm?.get('unit_id')?.value;
     return unitId ? this.topics.filter(t => t.unit_id === unitId) : this.topics;
   }
 
+  get paginatedTopics() {
+    const start = (this.topicCurrentPage - 1) * this.topicPageSize;
+    return this.filteredTopics.slice(start, start + this.topicPageSize);
+  }
+
+  onTopicPageChange(event: PageEvent) {
+    this.topicCurrentPage = event.pageIndex + 1;
+    this.topicPageSize = event.pageSize;
+  }
+
   get filteredSubTopics() {
     const topicId = this.subTopicForm?.get('topic_id')?.value;
     return topicId ? this.subTopics.filter(st => st.topic_id === topicId) : this.subTopics;
+  }
+
+  get paginatedSubTopics() {
+    const start = (this.subTopicCurrentPage - 1) * this.subTopicPageSize;
+    return this.filteredSubTopics.slice(start, start + this.subTopicPageSize);
+  }
+
+  onSubTopicPageChange(event: PageEvent) {
+    this.subTopicCurrentPage = event.pageIndex + 1;
+    this.subTopicPageSize = event.pageSize;
   }
 
   initForms() {
@@ -753,7 +799,10 @@ export class UnitsListComponent implements OnInit {
     const wb: XLSX.WorkBook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Curriculum');
 
-    const fileName = 'Curriculum_Export_' + new Date().getTime() + '.xlsx';
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0];
+    const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-');
+    const fileName = `Unit_List_${dateStr}_${timeStr}.xlsx`;
     XLSX.writeFile(wb, fileName);
     this.isLoading = false;
     } catch (error) {
@@ -836,16 +885,23 @@ export class UnitsListComponent implements OnInit {
     });
   }
 
-  onConfirmImport(modifiedRecords: any[]) {
+  onConfirmImport(eventData: any) {
     if (!this.previewSessionId) return;
+
+    const modifiedRecords = eventData?.records ? eventData.records : eventData;
+    const duplicateCount = eventData?.duplicateCount || 0;
 
     this.isLoading = true;
     this.showPreviewModal = false;
     this.curriculumService.confirmBulkImport(this.previewSessionId, modifiedRecords).subscribe({
-      next: () => {
+      next: (res: any) => {
         this.isLoading = false;
         this.previewSessionId = null;
-        this.showNotification('success', 'Curriculum imported successfully!');
+        if (duplicateCount > 0) {
+          this.showNotification('success', `Data imported! ${modifiedRecords?.length || 0} unique values stored, ${duplicateCount} duplicates omitted.`);
+        } else {
+          this.showNotification('success', res.message || 'Data imported successfully!');
+        }
         this.loadAllCurriculumData(); // Refresh data
       },
       error: (err) => {

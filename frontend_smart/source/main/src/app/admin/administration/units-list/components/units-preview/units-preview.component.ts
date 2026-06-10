@@ -4,11 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 
 @Component({
   selector: 'app-units-preview',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, MatButtonModule, MatTooltipModule],
+  imports: [CommonModule, FormsModule, MatIconModule, MatButtonModule, MatTooltipModule, MatPaginatorModule],
   templateUrl: './units-preview.component.html',
   styleUrl: './units-preview.component.scss',
 })
@@ -16,19 +17,39 @@ export class UnitsPreviewComponent {
   // Helper to check if a string starts with a non-alphanumeric character
   startsWithSpecialChar(value: string | undefined): boolean {
     if (!value) return false;
-    return /^[^a-zA-Z0-9]/.test(value);
+    return /^[^\p{L}\p{N}]/u.test(value);
   }
 
   // Stores the raw input
   private _previewData: any[] = [];
 
+  // Pagination
+  currentPage = 1;
+  pageSize = 10;
+
+  get paginatedData(): any[] {
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this.previewData.slice(start, start + this.pageSize);
+  }
+
+  onPageChange(event: PageEvent) {
+    this.currentPage = event.pageIndex + 1;
+    this.pageSize = event.pageSize;
+  }
+
   // Input setter that filters out completely empty rows
   @Input()
   set previewData(value: any[]) {
     this._previewData = (value || []).filter(row => !this.isRowEmpty(row));
+    this.resetPagination();
   }
   get previewData(): any[] {
     return this._previewData;
+  }
+
+  // Reset page when data changes
+  private resetPagination() {
+    this.currentPage = 1;
   }
 
   // Determines if a row has any meaningful data
@@ -45,20 +66,20 @@ export class UnitsPreviewComponent {
 
   @Input() previewSummary: any = {};
   @Output() discard = new EventEmitter<void>();
-  @Output() confirm = new EventEmitter<any[]>();
+  @Output() confirm = new EventEmitter<any>();
   @Output() revalidate = new EventEmitter<any[]>();
 
   get hasErrors(): boolean {
-    const errors = this.previewSummary?.validation_error || 0;
-    const duplicates = this.previewSummary?.duplicate || 0;
-    return errors > 0 || duplicates > 0;
+    return this.previewSummary.validation_error > 0;
   }
 
-  get originalHasErrors(): boolean {
-    const errors = this.previewSummary?.validation_error || 0;
-    const duplicates = this.previewSummary?.duplicate || 0;
-    return errors > 0 || duplicates > 0;
+  onConfirm() {
+    const validRecords = this._previewData.filter(row => row.match_status !== 'DUPLICATE');
+    const duplicateCount = this._previewData.length - validRecords.length;
+    this.confirm.emit({ records: validRecords, duplicateCount });
   }
+
+
 
   startEdit(row: any) {
     row.isEditing = true;
@@ -71,11 +92,7 @@ export class UnitsPreviewComponent {
     this.revalidate.emit(modifiedRecords);
   }
 
-  onConfirm() {
-    // Emit the raw data for all rows
-    const modifiedRecords = this._previewData.map(r => r.raw_data);
-    this.confirm.emit(modifiedRecords);
-  }
+
 
   // Existing methods ...
 

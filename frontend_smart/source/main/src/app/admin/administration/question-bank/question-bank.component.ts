@@ -16,6 +16,8 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.component';
 import { Router } from '@angular/router';
 
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+
 import { QuestionBankService, IQuestion } from './services/question-bank.service';
 import { AcademicStructureService, IGrade, ISection, ISubject } from '../units-list/services/units.service';
 import { CurriculumService, ICurriculumUnit, ICurriculumTopic, ICurriculumSubTopic } from '../units-list/services/curriculum.service';
@@ -31,7 +33,7 @@ import { AuthService } from '@core';
     CommonModule, FormsModule, ReactiveFormsModule, BreadcrumbComponent,
     MatIconModule, MatButtonModule, MatCardModule,
     MatMenuModule, MatFormFieldModule, MatInputModule,
-    MatSelectModule, MatSnackBarModule, MatProgressBarModule, MatTabsModule, MatCheckboxModule,
+    MatSelectModule, MatSnackBarModule, MatProgressBarModule, MatTabsModule, MatCheckboxModule, MatPaginatorModule,
     AcademicContextSelectorComponent, QuestionBankPreviewComponent
   ],
   templateUrl: './question-bank.component.html',
@@ -72,6 +74,11 @@ export class QuestionBankComponent implements OnInit {
   // Questions Data
   allQuestions: IQuestion[] = [];
   filteredQuestions: IQuestion[] = [];
+  paginatedQuestions: IQuestion[] = [];
+
+  // Pagination states
+  currentPage = 1;
+  pageSize = 10;
 
   // State
   selectedGradeId: string | null = null;
@@ -409,6 +416,8 @@ export class QuestionBankComponent implements OnInit {
       next: (questions) => {
         this.allQuestions = questions || [];
         this.filteredQuestions = [...this.allQuestions]; // No local filtering needed, API handled it!
+        this.currentPage = 1;
+        this.updatePaginatedList();
         this.isLoading = false;
       },
       error: () => {
@@ -483,6 +492,7 @@ export class QuestionBankComponent implements OnInit {
             this.allQuestions[index] = { ...this.allQuestions[index], ...res.question };
           }
           this.filteredQuestions = [...this.allQuestions];
+          this.updatePaginatedList();
           this.cancelEdit(formDirective);
         },
         error: (err) => this.showNotification('error', `Failed to update question: ${err.error?.message || err.message}`)
@@ -493,6 +503,7 @@ export class QuestionBankComponent implements OnInit {
           this.showNotification('success', 'Question created successfully');
           this.allQuestions.unshift(res.question);
           this.filteredQuestions = [...this.allQuestions];
+          this.updatePaginatedList();
           this.cancelEdit(formDirective);
         },
         error: (err) => {
@@ -665,9 +676,15 @@ export class QuestionBankComponent implements OnInit {
       confirmButtonText: 'Delete'
     }).then((result) => {
       if (result.isConfirmed) {
-        // Optimistic delete
         this.allQuestions = this.allQuestions.filter(q => q.id !== question.id);
         this.filteredQuestions = [...this.allQuestions];
+        
+        // Handle page adjustment when deleting the last item on a page
+        const maxPages = Math.ceil(this.filteredQuestions.length / this.pageSize);
+        if (this.currentPage > maxPages && this.currentPage > 1) {
+          this.currentPage--;
+        }
+        this.updatePaginatedList();
 
         this.questionService.deleteQuestion(question.id).subscribe({
           next: () => this.showNotification('success', 'Question deleted'),
@@ -675,10 +692,22 @@ export class QuestionBankComponent implements OnInit {
             this.showNotification('error', 'Failed to delete question');
             this.allQuestions.push(question); // rollback
             this.filteredQuestions = [...this.allQuestions];
+            this.updatePaginatedList();
           }
         });
       }
     });
+  }
+
+  onPageChange(event: PageEvent) {
+    this.currentPage = event.pageIndex + 1;
+    this.pageSize = event.pageSize;
+    this.updatePaginatedList();
+  }
+
+  updatePaginatedList() {
+    const startIndex = (this.currentPage - 1) * this.pageSize;
+    this.paginatedQuestions = this.filteredQuestions.slice(startIndex, startIndex + this.pageSize);
   }
 
   // --- Helpers for Table Display ---
