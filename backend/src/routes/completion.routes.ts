@@ -56,8 +56,8 @@ router.get('/hierarchy', requirePermission('COMPLETION_TRACKING', 'VIEW'), async
     }
 
     // Check if user is admin (sees all)
-    const isAdmin = AuthorizationService.hasIdentity(req.user.permissions || [], 'IS_SUPER_ADMIN') || 
-                    (req.user.permissions || []).includes('COMPLETION_TRACKING:MANAGE');
+    const isAdmin = AuthorizationService.hasIdentity(req.user.permissions || [], 'IS_SUPER_ADMIN') ||
+      (req.user.permissions || []).includes('COMPLETION_TRACKING:MANAGE');
 
     if (isAdmin) {
       // Return full organization hierarchy for this academic year
@@ -98,12 +98,12 @@ router.get('/topics', requirePermission('COMPLETION_TRACKING', 'VIEW'), async (r
       return res.status(503).json({ message: 'Completion Management module is currently disabled for this organization.' });
     }
 
-    const isGlobalAdmin = AuthorizationService.hasIdentity(req.user.permissions || [], 'IS_SUPER_ADMIN') || 
-                          (req.user.permissions || []).includes('COMPLETION_TRACKING:MANAGE');
+    const isGlobalAdmin = AuthorizationService.hasIdentity(req.user.permissions || [], 'IS_SUPER_ADMIN') ||
+      (req.user.permissions || []).includes('COMPLETION_TRACKING:MANAGE');
     if (!isGlobalAdmin) {
       const subjectCondition: any = { subject_id: String(subject_id) };
       if (section_id) subjectCondition.section_id = String(section_id);
-      
+
       const classTeacherCondition: any = { grade_id: String(grade_id), assignment_type: 'CLASS_TEACHER' };
       if (section_id) classTeacherCondition.section_id = String(section_id);
 
@@ -160,12 +160,12 @@ const toggleSchema = z.object({
   grade_id: z.string().uuid(),
   section_id: z.string().uuid().nullable(),
   subject_id: z.string().uuid(),
-  
+
   level: z.enum(['UNIT', 'TOPIC', 'SUBTOPIC']),
   id: z.string().uuid(), // The ID of the unit, topic, or subtopic
   is_completed: z.boolean(),
   send_notification: z.boolean().default(false),
-  
+
   // To handle cascade toggle, frontend passes all child IDs that should be toggled
   cascade_topic_ids: z.array(z.string().uuid()).optional(),
   cascade_subtopic_ids: z.array(z.string().uuid()).optional()
@@ -187,8 +187,8 @@ router.post('/toggle', requirePermission('COMPLETION_TRACKING', 'MANAGE'), async
     }
 
     // Admin check vs Teacher assignment check
-    const isAdmin = AuthorizationService.hasIdentity(req.user.permissions || [], 'IS_SUPER_ADMIN') || 
-                    (req.user.permissions || []).includes('COMPLETION_TRACKING:MANAGE');
+    const isAdmin = AuthorizationService.hasIdentity(req.user.permissions || [], 'IS_SUPER_ADMIN') ||
+      (req.user.permissions || []).includes('COMPLETION_TRACKING:MANAGE');
     if (!isAdmin) {
       const validAssignment = await prisma.teacherAssignment.findFirst({
         where: {
@@ -206,9 +206,7 @@ router.post('/toggle', requirePermission('COMPLETION_TRACKING', 'MANAGE'), async
       }
     }
 
-    // Process toggles in a transaction
-    await prisma.$transaction(async (tx: any) => {
-      
+    // Process toggles using concurrent reads + sequential writes for high performance
       const buildWhere = (lvl: string, target_id: string) => {
         const base = {
           organization_id: org_id,
@@ -222,7 +220,7 @@ router.post('/toggle', requirePermission('COMPLETION_TRACKING', 'MANAGE'), async
         if (lvl === 'TOPIC') return { ...base, topic_id: target_id };
         return { ...base, sub_topic_id: target_id };
       };
-      
+
       const buildCreate = (lvl: string, target_id: string) => {
         const base = {
           organization_id: org_id,
@@ -241,7 +239,7 @@ router.post('/toggle', requirePermission('COMPLETION_TRACKING', 'MANAGE'), async
         if (lvl === 'TOPIC') return { ...base, topic_id: target_id };
         return { ...base, sub_topic_id: target_id };
       };
-      
+
       const buildUpdate = () => {
         return {
           is_completed: parsed.is_completed,
@@ -254,67 +252,119 @@ router.post('/toggle', requirePermission('COMPLETION_TRACKING', 'MANAGE'), async
       };
 
 
-      
-      const upsertCompletion = async (lvl: string, target_id: string) => {
-         const existing = await tx.completionTracking.findFirst({
-           where: buildWhere(lvl, target_id)
-         });
-         
-         if (existing) {
-           await tx.completionTracking.update({
-             where: { id: existing.id },
-             data: buildUpdate()
-           });
-         } else {
-           await tx.completionTracking.create({
-             data: buildCreate(lvl, target_id)
-           });
-         }
-      };
 
-      await upsertCompletion(parsed.level, parsed.id);
+    // 1. Fetch existing tracking records CONCURRENTLY outside the transaction for maximum speed
+    const [existingUnit, existingTopics, existingSubtopics] = await Promise.all([
+      prisma.completionTracking.findFirst({
+        where: buildWhere(parsed.level, parsed.id)
+      }),
+      (parsed.cascade_topic_ids && parsed.cascade_topic_ids.length > 0) 
+        ? prisma.completionTracking.findMany({
+            where: {
+              organization_id: org_id, academic_year_id: academic_year_id,
+              grade_id: parsed.grade_id, section_id: parsed.section_id, subject_id: parsed.subject_id,
+              completion_level: 'TOPIC', topic_id: { in: parsed.cascade_topic_ids }
+            }
+          })
+        : Promise.resolve([]),
+      (parsed.cascade_subtopic_ids && parsed.cascade_subtopic_ids.length > 0)
+        ? prisma.completionTracking.findMany({
+            where: {
+              organization_id: org_id, academic_year_id: academic_year_id,
+              grade_id: parsed.grade_id, section_id: parsed.section_id, subject_id: parsed.subject_id,
+              completion_level: 'SUBTOPIC', sub_topic_id: { in: parsed.cascade_subtopic_ids }
+            }
+          })
+        : Promise.resolve([])
+    ]);
+
+    // 2. Build our database queries into an array
+    const txOperations: any[] = [];
+
+    // Target (Unit/Topic/Subtopic) upsert
+    if (existingUnit) {
+      txOperations.push(prisma.completionTracking.update({
+        where: { id: existingUnit.id },
+        data: buildUpdate()
+      }));
+    } else {
+      txOperations.push(prisma.completionTracking.create({
+        data: buildCreate(parsed.level, parsed.id)
+      }));
+    }
+
+    // Cascade Topics
+    if (parsed.cascade_topic_ids && parsed.cascade_topic_ids.length > 0) {
+      const existingTopicIds = existingTopics.map((t: any) => t.topic_id);
+      const newTopicIds = parsed.cascade_topic_ids.filter((id: string) => !existingTopicIds.includes(id));
       
-      // 2. Cascade topics
-      if (parsed.cascade_topic_ids && parsed.cascade_topic_ids.length > 0) {
-        for (const t_id of parsed.cascade_topic_ids) {
-          await upsertCompletion('TOPIC', t_id);
-        }
+      if (existingTopicIds.length > 0) {
+        txOperations.push(prisma.completionTracking.updateMany({
+          where: {
+            organization_id: org_id, academic_year_id: academic_year_id,
+            grade_id: parsed.grade_id, section_id: parsed.section_id, subject_id: parsed.subject_id,
+            completion_level: 'TOPIC', topic_id: { in: existingTopicIds }
+          },
+          data: buildUpdate()
+        }));
       }
-      
-      // 3. Cascade subtopics
-      if (parsed.cascade_subtopic_ids && parsed.cascade_subtopic_ids.length > 0) {
-        for (const st_id of parsed.cascade_subtopic_ids) {
-          await upsertCompletion('SUBTOPIC', st_id);
-        }
+      if (newTopicIds.length > 0) {
+        txOperations.push(prisma.completionTracking.createMany({
+          data: newTopicIds.map((id: string) => buildCreate('TOPIC', id))
+        }));
       }
+    }
+    
+    // Cascade Subtopics
+    if (parsed.cascade_subtopic_ids && parsed.cascade_subtopic_ids.length > 0) {
+      const existingSubtopicIds = existingSubtopics.map((t: any) => t.sub_topic_id);
+      const newSubtopicIds = parsed.cascade_subtopic_ids.filter((id: string) => !existingSubtopicIds.includes(id));
       
+      if (existingSubtopicIds.length > 0) {
+        txOperations.push(prisma.completionTracking.updateMany({
+          where: {
+            organization_id: org_id, academic_year_id: academic_year_id,
+            grade_id: parsed.grade_id, section_id: parsed.section_id, subject_id: parsed.subject_id,
+            completion_level: 'SUBTOPIC', sub_topic_id: { in: existingSubtopicIds }
+          },
+          data: buildUpdate()
+        }));
+      }
+      if (newSubtopicIds.length > 0) {
+        txOperations.push(prisma.completionTracking.createMany({
+          data: newSubtopicIds.map((id: string) => buildCreate('SUBTOPIC', id))
+        }));
+      }
+    }
+
+    // 3. Execute all database writes instantly in a single sequential transaction!
+    await prisma.$transaction(txOperations);
+
       // 4. Send Notifications via Event Bus
       if (parsed.is_completed && parsed.send_notification) {
-         let eventType: EventTypes;
-         let typeStr: string;
-         if (parsed.level === 'UNIT') { eventType = EventTypes.COMPLETION_UNIT_ENABLED; typeStr = 'UNIT'; }
-         else if (parsed.level === 'TOPIC') { eventType = EventTypes.COMPLETION_TOPIC_ENABLED; typeStr = 'TOPIC'; }
-         else { eventType = EventTypes.COMPLETION_SUBTOPIC_ENABLED; typeStr = 'SUBTOPIC'; }
-         
-         const payload: NotificationEventPayload = {
-           organization_id: org_id,
-           actor_id: teacher_id,
-           entity: {
-             type: typeStr,
-             id: parsed.id,
-             name: 'Academic Content' // Could query DB for actual name if needed
-           },
-           context: {
-             academic_year_id: academic_year_id,
-             grade_id: parsed.grade_id,
-             section_id: parsed.section_id,
-             subject_id: parsed.subject_id
-           }
-         };
-         emitNotificationEvent(eventType, payload);
+        let eventType: EventTypes;
+        let typeStr: string;
+        if (parsed.level === 'UNIT') { eventType = EventTypes.COMPLETION_UNIT_ENABLED; typeStr = 'UNIT'; }
+        else if (parsed.level === 'TOPIC') { eventType = EventTypes.COMPLETION_TOPIC_ENABLED; typeStr = 'TOPIC'; }
+        else { eventType = EventTypes.COMPLETION_SUBTOPIC_ENABLED; typeStr = 'SUBTOPIC'; }
+
+        const payload: NotificationEventPayload = {
+          organization_id: org_id,
+          actor_id: teacher_id,
+          entity: {
+            type: typeStr,
+            id: parsed.id,
+            name: 'Academic Content' // Could query DB for actual name if needed
+          },
+          context: {
+            academic_year_id: academic_year_id,
+            grade_id: parsed.grade_id,
+            section_id: parsed.section_id,
+            subject_id: parsed.subject_id
+          }
+        };
+        emitNotificationEvent(eventType, payload);
       }
-      
-    });
 
     await logAuditEvent({
       organization_id: org_id,

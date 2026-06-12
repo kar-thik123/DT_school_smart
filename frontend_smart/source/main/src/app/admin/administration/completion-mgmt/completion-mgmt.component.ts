@@ -143,8 +143,8 @@ export class CompletionMgmtComponent implements OnInit {
     }
     
     if (event.subject) {
-      this.selectedSubjectId = event.subject.id || event.subject.subject_id;
-      this.selectedSubjectName = event.subject.name;
+      this.selectedSubjectId = event.subject.subject_id || event.subject.id;
+      this.selectedSubjectName = event.subject.name || (event.subject.subject && event.subject.subject.name) || '';
     } else {
       this.selectedSubjectId = null;
       this.selectedSubjectName = '';

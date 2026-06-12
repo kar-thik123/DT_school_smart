@@ -44,9 +44,10 @@ export class StudentEnrollmentService {
 
     const hasGroups = await this.sectionHasGroups(organizationId, gradeId, sectionId);
 
-    if (hasGroups && !subjectGroupId) {
-      return { allowed: false, message: 'subject_group_id is required for grouped sections' };
-    }
+    // Removed requirement: subject_group_id is optional even for grouped sections
+    // if (hasGroups && !subjectGroupId) {
+    //   return { allowed: false, message: 'subject_group_id is required for grouped sections' };
+    // }
 
     if (subjectGroupId) {
       const group = await prisma.subjectGroup.findUnique({
@@ -221,33 +222,40 @@ export class StudentEnrollmentService {
     // 3. Commit Phase
     let successCount = 0;
     
-    await prisma.$transaction(async (tx: any) => {
-      for (const p of studentsToProcess) {
-        await tx.studentEnrollment.upsert({
-          where: { student_id_academic_year_id_organization_id: { student_id: p.student_id, academic_year_id: academicYearId, organization_id: orgId } },
-          update: { grade_id: p.grade_id, section_id: p.section_id || null, subject_group_id: p.subject_group_id || null, status: p.status || EnrollmentStatus.ACTIVE },
-          create: { organization_id: orgId, student_id: p.student_id, academic_year_id: academicYearId, grade_id: p.grade_id, section_id: p.section_id || null, subject_group_id: p.subject_group_id || null, status: p.status || EnrollmentStatus.ACTIVE }
-        });
+    const txOperations: any[] = [];
 
-        await tx.user.updateMany({
-          where: { id: p.student_id, organization_id: orgId },
-          data: { grade_id: p.grade_id, section_id: p.section_id || null }
-        });
-        
-        await NotificationService.sendNotification({
-          organization_id: orgId,
-          event_type: 'STUDENT_ENROLLMENT',
-          entity_type: 'STUDENT_ENROLLMENT',
-          entity_id: p.student_id,
-          title: 'Enrollment Updated',
-          message: `Your enrollment has been updated for the academic year.`,
-          context_data: { icon: 'user-plus', color: 'notification-green' },
-          recipient_ids: [p.student_id]
-        });
+    for (const p of studentsToProcess) {
+      txOperations.push(prisma.studentEnrollment.upsert({
+        where: { student_id_academic_year_id_organization_id: { student_id: p.student_id, academic_year_id: academicYearId, organization_id: orgId } },
+        update: { grade_id: p.grade_id, section_id: p.section_id || null, subject_group_id: p.subject_group_id || null, status: p.status || EnrollmentStatus.ACTIVE },
+        create: { organization_id: orgId, student_id: p.student_id, academic_year_id: academicYearId, grade_id: p.grade_id, section_id: p.section_id || null, subject_group_id: p.subject_group_id || null, status: p.status || EnrollmentStatus.ACTIVE }
+      }));
 
-        successCount++;
-      }
-    });
+      txOperations.push(prisma.user.updateMany({
+        where: { id: p.student_id, organization_id: orgId },
+        data: { grade_id: p.grade_id, section_id: p.section_id || null }
+      }));
+    }
+
+    // Execute database writes in a single fast transaction
+    await prisma.$transaction(txOperations);
+
+    // Send notifications after transaction commits
+    for (const p of studentsToProcess) {
+      // Intentionally not awaited to speed up response for bulk imports
+      NotificationService.sendNotification({
+        organization_id: orgId,
+        event_type: 'STUDENT_ENROLLMENT',
+        entity_type: 'STUDENT_ENROLLMENT',
+        entity_id: p.student_id,
+        title: 'Enrollment Updated',
+        message: `Your enrollment has been updated for the academic year.`,
+        context_data: { icon: 'user-plus', color: 'notification-green' },
+        recipient_ids: [p.student_id]
+      }).catch(err => console.error('Failed to send notification for bulk enroll', err));
+      
+      successCount++;
+    }
 
     return { success: successCount, failure: failureCount };
   }

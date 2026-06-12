@@ -87,7 +87,7 @@
                                 <tr>
                                   <th>Student Name</th>
                                   <th>Email</th>
-                                  <th>Admission No.</th>
+                                  <th>Roll No.</th>
                                   <th>Mobile</th>
                                   <th>Status</th>
                                   <th class="text-end">Actions</th>
@@ -97,7 +97,7 @@
                                 <tr *ngFor="let e of s.enrollments; trackBy: trackByEnrollment">
                                   <td>{{ e.student?.name }}</td>
                                   <td>{{ e.student?.email }}</td>
-                                  <td>{{ e.student?.student_profile?.admission_number || 'N/A' }}</td>
+                                  <td>{{ e.student?.roll_number || 'N/A' }}</td>
                                   <td>{{ e.student?.student_profile?.mobile_number || 'N/A' }}</td>
                                   <td>
                                     <span class="badge" [ngClass]="{
@@ -165,7 +165,7 @@
                                 </mat-checkbox>
                               </th>
                               <th>Name</th>
-                              <th>Admission No</th>
+                              <th>Roll No.</th>
                               <th>Mobile No</th>
                             </tr>
                           </thead>
@@ -180,7 +180,7 @@
                                 </mat-checkbox>
                               </td>
                               <td>{{ s.name }}<br><small class="text-muted">{{ s.email }}</small></td>
-                              <td>{{ s.student_profile?.admission_number || 'N/A' }}</td>
+                              <td>{{ s.roll_number || 'N/A' }}</td>
                               <td>{{ s.student_profile?.mobile_number || 'N/A' }}</td>
                             </tr>
                             <tr *ngIf="unenrolledStudents.length === 0">

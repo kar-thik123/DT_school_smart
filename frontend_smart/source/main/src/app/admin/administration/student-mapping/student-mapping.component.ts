@@ -407,12 +407,14 @@ export class StudentMappingComponent implements OnInit {
 
   openImportDialog() {
     const dialogRef = this.dialog.open(BulkImportPreviewDialogComponent, {
-      width: '800px',
+      width: '500px',
+      maxWidth: '100vw',
       data: {
         onFileSelect: (file: File) => {
           this.enrollmentService.analyzeBulkImport(file).subscribe({
             next: (res) => {
               dialogRef.componentInstance.setPreviewData(res.rows);
+              dialogRef.updateSize('95vw', '85vh');
             },
             error: (err) => {
               this.showNotification('error', err.error?.message || 'Failed to analyze file');
