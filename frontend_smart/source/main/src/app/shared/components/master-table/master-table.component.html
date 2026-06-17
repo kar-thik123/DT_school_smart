@@ -144,6 +144,41 @@
                 {{ row[column.def] }}</span></mat-cell>
           </ng-container>
           } @else {
+          @if (column.type === 'checkbox') {
+          <ng-container [matColumnDef]="column.def">
+            <mat-header-cell *matHeaderCellDef mat-sort-header style="justify-content: center; text-align: center;">
+              <mat-checkbox 
+                *ngIf="hasSelectableRows(column)"
+                (change)="onHeaderCheckboxChange(column, $event)" 
+                [checked]="isAllChecked(column)" 
+                [indeterminate]="isSomeChecked(column) && !isAllChecked(column)"
+                color="primary"
+                (click)="$event.stopPropagation()"
+                class="me-2">
+              </mat-checkbox>
+              <span class="truncate-text">{{ column.label }}</span>
+            </mat-header-cell>
+            <mat-cell *matCellDef="let row" (contextmenu)="onContextMenu($event, row)" style="justify-content: center; text-align: center;">
+              <mat-checkbox 
+                *ngIf="!row[column.def]"
+                (change)="onCheckboxChange(row, column, $event)" 
+                [checked]="row['_selected_' + column.def]" 
+                (click)="$event.stopPropagation()"
+                color="primary"
+                class="me-2">
+              </mat-checkbox>
+              @if (column.statusBadgeMap && getStatusBadgeClass(row[column.def], column.statusBadgeMap)) {
+                <span [ngClass]="getStatusBadgeClass(row[column.def], column.statusBadgeMap)">
+                  {{ row[column.def] }}
+                </span>
+              } @else {
+                <span class="truncate-text" [style.visibility]="row[column.def] ? 'visible' : 'hidden'">
+                  {{ row[column.def] || column.label }}
+                </span>
+              }
+            </mat-cell>
+          </ng-container>
+          } @else {
           @if (column.type === 'status') {
           <ng-container [matColumnDef]="column.def">
             <mat-header-cell *matHeaderCellDef mat-sort-header>
@@ -152,9 +187,13 @@
             <mat-cell *matCellDef="let row" (contextmenu)="onContextMenu($event, row)">
               <span class="mobile-label">{{ column.label }}:</span>
               @if (getStatusBadgeClass(row[column.def], column.statusBadgeMap)) {
-              <span [ngClass]="getStatusBadgeClass(row[column.def], column.statusBadgeMap)">{{ row[column.def] }}</span>
+              <span [ngClass]="getStatusBadgeClass(row[column.def], column.statusBadgeMap)"
+                    (click)="onStatusClick(row, column, $event)"
+                    style="cursor: pointer; user-select: none;">{{ row[column.def] }}</span>
               } @else {
-              <span class="truncate-text">{{ row[column.def] }}</span>
+              <span class="truncate-text" 
+                    (click)="onStatusClick(row, column, $event)"
+                    style="cursor: pointer; user-select: none;">{{ row[column.def] }}</span>
               }
             </mat-cell>
           </ng-container>
@@ -309,6 +348,7 @@
           }
           }
           }
+          }
 
           <!-- actions -->
           <ng-container matColumnDef="actions">
@@ -410,9 +450,15 @@
         No results
       </div>
       }
-      <mat-paginator #paginator [length]="dataSource.filteredData.length" [pageIndex]="0" [pageSize]="pageSize"
-        [pageSizeOptions]="pageSizeOptions">
-      </mat-paginator>
+      <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; border-top: 1px solid #e0e0e0; background-color: #f9f9f9;">
+        <mat-paginator #paginator [length]="dataSource.filteredData.length" [pageIndex]="0" [pageSize]="pageSize"
+          [pageSizeOptions]="pageSizeOptions">
+        </mat-paginator>
+        
+        <div style="display: flex; gap: 10px; margin-right: 20px;">
+          <ng-content select="[bulk-actions]"></ng-content>
+        </div>
+      </div>
     </div>
   </div>
 </div>

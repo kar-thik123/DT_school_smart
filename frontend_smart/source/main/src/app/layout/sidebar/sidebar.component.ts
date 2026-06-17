@@ -322,6 +322,11 @@ export class SidebarComponent
         this.authService.hasPermission('COMPLETION', 'VIEW') ||
         this.authService.hasPermission('COMPLETION_VIEW');
     }
+    if (path.includes('/student-attendance')) {
+      return this.authService.hasPermission('ATTENDANCE', 'VIEW') ||
+        this.authService.hasPermission('ATTENDANCE_VIEW') ||
+        userRoleUpper === 'SUPER_ADMIN';
+    }
     if (path.includes('/skills-verify-assignment')) {
       return this.authService.hasPermission('SKILLS_VERIFY_ASSIGNMENT', 'VIEW') ||
         this.authService.hasPermission('SKILLS_VERIFY_ASSIGNMENT_VIEW') ||

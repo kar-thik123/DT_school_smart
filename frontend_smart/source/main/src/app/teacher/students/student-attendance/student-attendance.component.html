@@ -1,16 +1,66 @@
 <section class="content">
-    <div class="content-block">
-        @for (breadscrum of breadscrums; track breadscrum) {
-        <div class="block-header">
-            <!-- breadcrumb -->
-            <app-breadcrumb [title]="breadscrum.title" [items]="breadscrum.items" [active_item]="breadscrum.active">
-            </app-breadcrumb>
-        </div>
+  <div class="content-block">
+    @for (breadscrum of breadscrums; track breadscrum) {
+    <div class="block-header">
+      <!-- breadcrumb -->
+      <app-breadcrumb [title]="breadscrum.title" [items]="breadscrum.items" [active_item]="breadscrum.active">
+      </app-breadcrumb>
+    </div>
+    }
+
+    <h5 *ngIf="isClassTeacher" class="text-success mb-1 mt-2"
+      style="display: flex; align-items: center; font-weight: 600;">
+      <!-- <mat-icon class="me-2">check_circle</mat-icon> -->
+      {{ classTeacherMessage }} - {{ selectedDate | date:'mediumDate' }}
+    </h5>
+    <h5 *ngIf="!isClassTeacher" class="text-danger mb-1 mt-2"
+      style="display: flex; align-items: center; font-weight: 600;">
+      <mat-icon class="me-2">error</mat-icon>
+      {{ classTeacherMessage }}
+    </h5>
+
+    <app-master-table [title]="'Student Attendance'" [columnDefinitions]="dynamicColumnDefinitions"
+      [dataSource]="dataSource" [isLoading]="isLoading" (refresh)="handleRefresh()" [showAdd]="false"
+      [showDelete]="false" [disableRowClickToEdit]="true" (edit)="handleEdit($event)"
+      (checkboxChange)="handleCheckboxChange($event)" (headerCheckboxChange)="handleHeaderCheckboxChange($event)">
+
+      <div bulk-actions *ngIf="isClassTeacher" style="display: flex; gap: 10px;">
+        <!-- Bulk Checkbox Selection Buttons -->
+        <ng-container *ngIf="hasAnySelection()">
+          <button mat-raised-button color="primary" (click)="markSelected('PRESENT')">
+            <mat-icon>check_circle</mat-icon> Mark Present
+          </button>
+          <button mat-raised-button color="accent" (click)="markSelected('ABSENT')">
+            <mat-icon>cancel</mat-icon> Mark Absent
+          </button>
+        </ng-container>
+
+        <!-- Mark Remaining / Save Buttons -->
+        @if (isMorningComplete() && !isAfternoonComplete()) {
+        <button mat-stroked-button color="primary" [disabled]="!dataSource.data.length"
+          (click)="copyMorningToAfternoon()">
+          <mat-icon class="me-2">content_copy</mat-icon> Copy Morning Status
+        </button>
         }
 
-        <app-master-table [title]="'Student Attendance'" [columnDefinitions]="columnDefinitions"
-            [dataSource]="dataSource" [isLoading]="isLoading" (refresh)="handleRefresh()" (add)="handleAdd()"
-            (edit)="handleEdit($event)" (delete)="handleDelete($event)" (bulkDelete)="handleBulkDelete($event)">
-        </app-master-table>
-    </div>
+        @if (isMorningComplete() && isAfternoonComplete()) {
+        <button mat-raised-button color="primary"
+          [disabled]="isSaving || !morningPhaseId || !afternoonPhaseId || !hasChanges" (click)="saveAttendance()">
+          <mat-icon class="me-2">save</mat-icon> Save All Changes
+        </button>
+        } @else if (hasAnyMarked()) {
+        @if (suggestedRestAction === 'PRESENT') {
+        <button mat-stroked-button color="accent" [disabled]="!dataSource.data.length" (click)="markRest('PRESENT')">
+          <mat-icon class="me-2">done_all</mat-icon> Mark Rest as Present
+        </button>
+        } @else {
+        <button mat-stroked-button color="warn" [disabled]="!dataSource.data.length" (click)="markRest('ABSENT')">
+          <mat-icon class="me-2">cancel</mat-icon> Mark Rest as Absent
+        </button>
+        }
+        }
+      </div>
+
+    </app-master-table>
+  </div>
 </section>

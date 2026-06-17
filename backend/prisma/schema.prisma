@@ -63,6 +63,8 @@ model Organization {
   SkillVerificationAssignment SkillVerificationAssignment[]
   Skill                       Skill[]
   StudentTopicCompletion      StudentTopicCompletion[]
+  attendance_phases           AttendancePhase[]
+  student_attendances         StudentAttendance[]
 
   @@index([subdomain])
   @@map("organizations")
@@ -121,6 +123,8 @@ model User {
   verified_skills             Skill[]                    @relation("SkillVerifier")
   // completed_by isn't strict referential integrity for Users to keep schema clean, or we can use relation. I'll omit it and not use relation to avoid User model clutter.
   StudentTopicCompletion      StudentTopicCompletion[]
+  attendance_marked_for       StudentAttendance[]        @relation("AttendanceStudent")
+  attendance_marked_by        StudentAttendance[]        @relation("AttendanceMarker")
 
   @@index([organization_id])
   @@index([email])
@@ -281,6 +285,7 @@ model AcademicYear {
   student_group_mappings   StudentGroupMapping[]
   topic_activations        TopicActivation[]
   Skill                    Skill[]
+  student_attendances      StudentAttendance[]
 
   @@unique([name, organization_id])
   @@index([organization_id])
@@ -331,6 +336,7 @@ model Grade {
   users                 User[]
   questions             Question[]
   completion_trackings  CompletionTracking[]
+  student_attendances   StudentAttendance[]
 
   @@unique([name, academic_year_id, organization_id])
   @@index([organization_id])
@@ -360,6 +366,7 @@ model Section {
   users                 User[]
   questions             Question[]
   completion_trackings  CompletionTracking[]
+  student_attendances   StudentAttendance[]
 
   @@unique([name, grade_id, organization_id])
   @@index([organization_id])
@@ -1081,4 +1088,60 @@ model SkillVerificationAssignment {
   updated_at      DateTime @default(now()) @updatedAt
 
   organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  EXCUSED
+}
+
+model AttendancePhase {
+  id              String              @id @default(uuid()) @db.Uuid
+  organization_id String              @db.Uuid
+  phase_name      String              // e.g., "Phase 1" or "Morning Session"
+  start_period    Int                 // e.g., 1
+  end_period      Int                 // e.g., 4
+  display_order   Int                 @default(0)
+  is_active       Boolean             @default(true)
+  created_at      DateTime            @default(now())
+  updated_at      DateTime            @default(now()) @updatedAt
+  
+  organization    Organization        @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  attendances     StudentAttendance[]
+
+  @@unique([organization_id, phase_name])
+  @@index([organization_id])
+  @@map("attendance_phases")
+}
+
+model StudentAttendance {
+  id               String           @id @default(uuid()) @db.Uuid
+  organization_id  String           @db.Uuid
+  academic_year_id String           @db.Uuid
+  student_id       String           @db.Uuid
+  grade_id         String           @db.Uuid
+  section_id       String?          @db.Uuid
+  phase_id         String           @db.Uuid
+  attendance_date  DateTime         @db.Date
+  status           AttendanceStatus @default(PRESENT)
+  remarks          String?
+  marked_by        String           @db.Uuid
+  
+  created_at       DateTime         @default(now())
+  updated_at       DateTime         @default(now()) @updatedAt
+
+  organization     Organization     @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  academic_year    AcademicYear     @relation(fields: [academic_year_id], references: [id], onDelete: Cascade)
+  student          User             @relation("AttendanceStudent", fields: [student_id], references: [id], onDelete: Cascade)
+  grade            Grade            @relation(fields: [grade_id], references: [id], onDelete: Cascade)
+  section          Section?         @relation(fields: [section_id], references: [id], onDelete: Cascade)
+  phase            AttendancePhase  @relation(fields: [phase_id], references: [id], onDelete: Cascade)
+  marker           User             @relation("AttendanceMarker", fields: [marked_by], references: [id], onDelete: Cascade)
+
+  @@unique([organization_id, student_id, attendance_date, phase_id])
+  @@index([organization_id, grade_id, section_id, attendance_date])
+  @@index([student_id])
+  @@map("student_attendance")
 }

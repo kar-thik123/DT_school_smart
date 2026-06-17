@@ -219,6 +219,20 @@ export const PLATFORM_MODULES: RouteInfo[] = [
     showInSidebar: true,
     domain: 'TENANT'
   },
+  {
+    path: '/teacher/students/student-attendance',
+    title: 'Student Attendance',
+    iconType: 'material-icons-outlined',
+    icon: 'rule',
+    class: '',
+    groupTitle: false,
+    badge: '',
+    badgeClass: '',
+    role: ['ATTENDANCE:VIEW', 'ATTENDANCE_VIEW', 'SUPER_ADMIN', 'ADMIN'],
+    submenu: [],
+    showInSidebar: true,
+    domain: 'TENANT'
+  },
   // Admin versions:
   {
     path: '/admin/administration/question-bank',
