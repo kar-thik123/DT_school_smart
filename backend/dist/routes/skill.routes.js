@@ -1,4 +1,37 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -161,8 +194,17 @@ router.get('/user/:userId', async (req, res) => {
         if (req.user.user_id !== userId && req.user.role !== 'SUPER_ADMIN' && req.user.role !== 'SCHOOL_ADMIN') {
             return res.status(403).json({ error: 'Forbidden' });
         }
+        const { academic_year_id, status } = req.query;
+        const whereClause = {
+            user_id: userId,
+            organization_id: req.user.organization_id
+        };
+        if (academic_year_id)
+            whereClause.academic_year_id = academic_year_id;
+        if (status)
+            whereClause.status = status;
         const skills = await prisma_1.default.skill.findMany({
-            where: { user_id: userId, organization_id: req.user.organization_id },
+            where: whereClause,
             orderBy: { created_at: 'desc' }
         });
         res.json(skills);
@@ -204,6 +246,10 @@ router.patch('/:id/status', async (req, res) => {
             message: `Your skill "${skill.skill_name}" has been ${status}.`,
             context_data: { icon: status === 'approved' ? 'check-circle' : (status === 'rejected' ? 'x-circle' : 'info'), color: status === 'approved' ? 'notification-green' : (status === 'rejected' ? 'notification-red' : 'notification-blue') },
             recipient_ids: [skill.user_id]
+        });
+        // Fire Dashboard Sync asynchronously
+        Promise.resolve().then(() => __importStar(require('../services/dashboard-sync.service'))).then(({ DashboardSyncService }) => {
+            DashboardSyncService.updateSkillMetrics(req.user.organization_id, skill.user_id).catch(console.error);
         });
         res.json(skill);
     }
@@ -368,6 +414,10 @@ router.patch('/bulk-status', async (req, res) => {
                 message: `Your skill "${skill.skill_name}" has been ${status}.`,
                 context_data: { icon: status === 'approved' ? 'check-circle' : (status === 'rejected' ? 'x-circle' : 'info'), color: status === 'approved' ? 'notification-green' : (status === 'rejected' ? 'notification-red' : 'notification-blue') },
                 recipient_ids: [skill.user_id]
+            });
+            // Fire Dashboard Sync asynchronously per student
+            Promise.resolve().then(() => __importStar(require('../services/dashboard-sync.service'))).then(({ DashboardSyncService }) => {
+                DashboardSyncService.updateSkillMetrics(req.user.organization_id, skill.user_id).catch(console.error);
             });
         }
         res.json({ success: true, count: skill_ids.length });

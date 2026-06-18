@@ -3,6 +3,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatTableModule } from '@angular/material/table';
 import { MatProgressBar } from '@angular/material/progress-bar';
+import { DecimalPipe } from '@angular/common';
 
 export interface SubjectProgress {
   subject: string;
@@ -12,7 +13,7 @@ export interface SubjectProgress {
 
 @Component({
   selector: 'app-progress-table',
-  imports: [MatCardModule, MatButtonModule, MatTableModule, MatProgressBar],
+  imports: [MatCardModule, MatButtonModule, MatTableModule, MatProgressBar, DecimalPipe],
   templateUrl: './progress-table.component.html',
   styleUrl: './progress-table.component.scss',
 })

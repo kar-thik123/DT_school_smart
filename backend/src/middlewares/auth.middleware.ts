@@ -59,6 +59,17 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
     if (roleName === 'MANAGEMENT') {
       freshPermissions.push('IDENTITY:IS_MANAGEMENT');
     }
+    if (roleName === 'Student' || roleName === 'STUDENT') {
+      if (!freshPermissions.includes('IDENTITY:IS_STUDENT')) freshPermissions.push('IDENTITY:IS_STUDENT');
+      if (!freshPermissions.includes('STUDENT_DASHBOARD_ACCESS:READ')) freshPermissions.push('STUDENT_DASHBOARD_ACCESS:READ');
+    }
+    if (roleName === 'Teacher' || roleName === 'TEACHER') {
+      if (!freshPermissions.includes('IDENTITY:IS_TEACHER')) freshPermissions.push('IDENTITY:IS_TEACHER');
+      if (!freshPermissions.includes('TEACHER_DASHBOARD_ACCESS:READ')) freshPermissions.push('TEACHER_DASHBOARD_ACCESS:READ');
+    }
+
+    console.log('[AuthMiddleware] User:', dbUser.id, 'Role:', roleName);
+    console.log('[AuthMiddleware] Permissions:', freshPermissions);
 
     req.user = {
       user_id: dbUser.id,

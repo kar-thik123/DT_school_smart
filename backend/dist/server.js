@@ -8,11 +8,10 @@ require("dotenv/config");
 const http_1 = __importDefault(require("http"));
 const socket_io_1 = require("socket.io");
 const app_1 = __importDefault(require("./app"));
-const client_1 = require("@prisma/client");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const prisma_1 = __importDefault(require("./prisma"));
 // Initialize notification listeners
 require("./services/notification.service");
-const prisma = new client_1.PrismaClient();
 const PORT = process.env.PORT || 5000;
 // Create HTTP server from Express app
 const server = http_1.default.createServer(app_1.default);
@@ -34,7 +33,7 @@ io.use(async (socket, next) => {
             return next(new Error('Authentication required'));
         }
         const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET || 'supersecret_jwt_key_for_dev_only');
-        const user = await prisma.user.findUnique({
+        const user = await prisma_1.default.user.findUnique({
             where: { id: decoded.user_id },
             select: { id: true, organization_id: true, name: true }
         });
@@ -66,7 +65,7 @@ io.on('connection', (socket) => {
 });
 async function checkDBConnection() {
     try {
-        await prisma.$connect();
+        await prisma_1.default.$connect();
         console.log('✅ Database connected successfully');
     }
     catch (error) {

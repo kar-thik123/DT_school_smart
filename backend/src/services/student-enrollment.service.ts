@@ -233,21 +233,30 @@ export class StudentEnrollmentService {
           where: { id: p.student_id, organization_id: orgId },
           data: { grade_id: p.grade_id, section_id: p.section_id || null }
         });
-        
-        await NotificationService.sendNotification({
-          organization_id: orgId,
-          event_type: 'STUDENT_ENROLLMENT',
-          entity_type: 'STUDENT_ENROLLMENT',
-          entity_id: p.student_id,
-          title: 'Enrollment Updated',
-          message: `Your enrollment has been updated for the academic year.`,
-          context_data: { icon: 'user-plus', color: 'notification-green' },
-          recipient_ids: [p.student_id]
-        });
 
         successCount++;
       }
+    }, {
+      timeout: 15000 // Increase timeout for larger batches
     });
+
+    // 4. Send Notifications Outside Transaction
+    const notificationPromises = studentsToProcess.map(p =>
+      NotificationService.sendNotification({
+        organization_id: orgId,
+        event_type: 'STUDENT_ENROLLMENT',
+        entity_type: 'STUDENT_ENROLLMENT',
+        entity_id: p.student_id,
+        title: 'Enrollment Updated',
+        message: `Your enrollment has been updated for the academic year.`,
+        context_data: { icon: 'user-plus', color: 'notification-green' },
+        recipient_ids: [p.student_id]
+      }).catch(err => console.error(`[Bulk Enroll] Failed to send notification to ${p.student_id}`, err))
+    );
+
+    // Don't wait for all notifications to finish to avoid blocking response for too long, 
+    // or we can await them if needed. Awaiting with Promise.all is safe here since we catch errors.
+    await Promise.all(notificationPromises);
 
     return { success: successCount, failure: failureCount };
   }

@@ -595,10 +595,10 @@ router.post('/bulk/preview', (0, auth_middleware_1.requirePermission)('ACADEMIC_
                 subjects: { select: { subject: { select: { name: true } } } }
             }
         });
-        const getGradeCompositeKey = (g) => String(g || '').replace(/^grade\\s*/i, '').trim();
-        const getSectionCompositeKey = (g, s) => `${String(g || '').replace(/^grade\\s*/i, '').trim()}|${String(s || '').trim()}`;
-        const getSubjectCompositeKey = (g, sub) => `${String(g || '').replace(/^grade\\s*/i, '').trim()}|${String(sub || '').trim()}`;
-        const getGroupCompositeKey = (g, s, grp) => `${String(g || '').replace(/^grade\\s*/i, '').trim()}|${String(s || '').trim()}|${String(grp || '').trim()}`;
+        const getGradeCompositeKey = (g) => String(g || '').replace(/^grade\s*/i, '').trim().toLowerCase();
+        const getSectionCompositeKey = (g, s) => `${String(g || '').replace(/^grade\s*/i, '').trim().toLowerCase()}|${String(s || '').trim().toLowerCase()}`;
+        const getSubjectCompositeKey = (g, sub) => `${String(g || '').replace(/^grade\s*/i, '').trim().toLowerCase()}|${String(sub || '').trim().toLowerCase()}`;
+        const getGroupCompositeKey = (g, s, grp) => `${String(g || '').replace(/^grade\s*/i, '').trim().toLowerCase()}|${String(s || '').trim().toLowerCase()}|${String(grp || '').trim().toLowerCase()}`;
         const dbGrades = new Set(existingGrades.map((g) => getGradeCompositeKey(g.name)));
         const dbSections = new Set(existingSections.map((s) => getSectionCompositeKey(s.grade?.name, s.name)));
         const dbSubjects = new Set(existingSubjects.map((s) => getSubjectCompositeKey(s.grade?.name, s.name)));
@@ -609,8 +609,8 @@ router.post('/bulk/preview', (0, auth_middleware_1.requirePermission)('ACADEMIC_
             if (g.subjects) {
                 g.subjects.forEach((sg) => {
                     if (sg.subject?.name) {
-                        dbGroupSubjects.add(`${getGroupCompositeKey(g.grade?.name, g.section?.name, g.name)}|${String(sg.subject.name).trim()}`);
-                        dbSectionSubjects.add(`${getSectionCompositeKey(g.grade?.name, g.section?.name)}|${String(sg.subject.name).trim()}`);
+                        dbGroupSubjects.add(`${getGroupCompositeKey(g.grade?.name, g.section?.name, g.name)}|${String(sg.subject.name).trim().toLowerCase()}`);
+                        dbSectionSubjects.add(`${getSectionCompositeKey(g.grade?.name, g.section?.name)}|${String(sg.subject.name).trim().toLowerCase()}`);
                     }
                 });
             }
@@ -625,7 +625,7 @@ router.post('/bulk/preview', (0, auth_middleware_1.requirePermission)('ACADEMIC_
             const errors = [];
             let match_status = 'NOT_VALID';
             const gradeName = String(row.Grade || '').trim();
-            const gradeNameClean = gradeName.replace(/^grade\\s*/i, '').trim();
+            const gradeNameClean = gradeName.replace(/^grade\s*/i, '').trim();
             const sectionName = String(row.Section || '').trim();
             const subjectName = String(row.Subject || '').trim();
             const subjectType = String(row['Subject Type'] || '').trim().toUpperCase();
@@ -639,7 +639,7 @@ router.post('/bulk/preview', (0, auth_middleware_1.requirePermission)('ACADEMIC_
             }
             if (errors.length === 0) {
                 match_status = 'VALID';
-                const compositeKey = [gradeNameClean, sectionName, subjectName, subjectType, resolvedGroupName].join('|');
+                const compositeKey = [gradeNameClean.toLowerCase(), sectionName.toLowerCase(), subjectName.toLowerCase(), subjectType.toLowerCase(), resolvedGroupName.toLowerCase()].join('|');
                 if (seenRows.has(compositeKey)) {
                     match_status = 'DUPLICATE';
                 }
@@ -647,12 +647,12 @@ router.post('/bulk/preview', (0, auth_middleware_1.requirePermission)('ACADEMIC_
                     seenRows.add(compositeKey);
                     // Check DB for exact duplicate based on the most granular detail provided
                     if (groupName && subjectName) {
-                        const key = `${getGroupCompositeKey(gradeNameClean, sectionName, groupName)}|${subjectName}`;
+                        const key = `${getGroupCompositeKey(gradeNameClean, sectionName, groupName)}|${subjectName.toLowerCase()}`;
                         if (dbGroupSubjects.has(key))
                             match_status = 'DUPLICATE';
                     }
                     else if (!groupName && sectionName && subjectName) {
-                        const key = `${getSectionCompositeKey(gradeNameClean, sectionName)}|${subjectName}`;
+                        const key = `${getSectionCompositeKey(gradeNameClean, sectionName)}|${subjectName.toLowerCase()}`;
                         if (dbSectionSubjects.has(key))
                             match_status = 'DUPLICATE';
                     }
@@ -750,8 +750,37 @@ router.post('/bulk/confirm', (0, auth_middleware_1.requirePermission)('ACADEMIC_
         const academic_year_id = await (0, academic_helper_1.getActiveAcademicYearId)(org_id);
         const results = { created: 0, skipped: 0, errors: [] };
         await prisma_1.default.$transaction(async (tx) => {
+            // In-memory caches to avoid N+1 queries during bulk import
+            const masterGradeCache = new Map();
+            const gradeCache = new Map();
+            const sectionCache = new Map();
+            const subjectCache = new Map();
+            const groupCache = new Map();
+            const sgsCache = new Set();
+            // Pre-fetch all existing data into memory to completely eliminate findFirst inside the loop
+            const existingMasterGrades = await tx.masterGrade.findMany({ where: { organization_id: org_id } });
+            for (const mg of existingMasterGrades)
+                masterGradeCache.set(mg.name.toLowerCase(), mg);
+            const existingGrades = await tx.grade.findMany({ where: { organization_id: org_id, academic_year_id } });
+            for (const g of existingGrades)
+                gradeCache.set(`${academic_year_id}_${g.name.toLowerCase()}`, g);
+            const existingSections = await tx.section.findMany({ where: { organization_id: org_id } });
+            for (const s of existingSections)
+                sectionCache.set(`${s.grade_id}_${s.name.toLowerCase()}`, s);
+            const existingSubjects = await tx.subject.findMany({ where: { organization_id: org_id } });
+            for (const sub of existingSubjects)
+                subjectCache.set(`${sub.grade_id}_${sub.name.toLowerCase()}`, sub);
+            const existingGroups = await tx.subjectGroup.findMany({ where: { organization_id: org_id } });
+            for (const grp of existingGroups)
+                groupCache.set(`${grp.grade_id}_${grp.section_id}_${grp.name.toLowerCase()}`, grp);
+            const existingSgs = await tx.subjectGroupSubject.findMany({
+                where: { group: { organization_id: org_id } }
+            });
+            for (const sgs of existingSgs)
+                sgsCache.add(`${sgs.group_id}_${sgs.subject_id}`);
             for (let i = 0; i < records.length; i++) {
-                const row = records[i];
+                const row = records[i].raw_data || records[i];
+                const rowNumber = records[i].row_number || (i + 2);
                 const gradeName = String(row.Grade || '').trim();
                 const sectionName = String(row.Section || '').trim();
                 const subjectName = String(row.Subject || '').trim();
@@ -763,75 +792,91 @@ router.post('/bulk/confirm', (0, auth_middleware_1.requirePermission)('ACADEMIC_
                 }
                 try {
                     const gNameClean = gradeName.replace(/^grade\s*/i, '').trim();
+                    const gNameLower = gNameClean.toLowerCase();
                     // Upsert Master Grade
-                    const masterGradeResult = await tx.masterGrade.upsert({
-                        where: { name_organization_id: { name: gNameClean, organization_id: org_id } },
-                        update: {},
-                        create: { name: gNameClean, organization_id: org_id }
-                    });
+                    let masterGradeResult = masterGradeCache.get(gNameLower);
+                    if (!masterGradeResult) {
+                        masterGradeResult = await tx.masterGrade.create({ data: { name: gNameClean, organization_id: org_id } });
+                        masterGradeCache.set(gNameLower, masterGradeResult);
+                    }
                     // Upsert Grade
-                    const gradeResult = await tx.grade.upsert({
-                        where: { name_academic_year_id_organization_id: { name: gNameClean, academic_year_id, organization_id: org_id } },
-                        update: { master_grade_id: masterGradeResult.id },
-                        create: { name: gNameClean, academic_year_id, organization_id: org_id, master_grade_id: masterGradeResult.id }
-                    });
+                    const gradeKey = `${academic_year_id}_${gNameLower}`;
+                    let gradeResult = gradeCache.get(gradeKey);
+                    if (!gradeResult) {
+                        gradeResult = await tx.grade.create({ data: { name: gNameClean, academic_year_id, organization_id: org_id, master_grade_id: masterGradeResult.id } });
+                        gradeCache.set(gradeKey, gradeResult);
+                    }
+                    else if (gradeResult.master_grade_id !== masterGradeResult.id) {
+                        gradeResult = await tx.grade.update({ where: { id: gradeResult.id }, data: { master_grade_id: masterGradeResult.id } });
+                        gradeCache.set(gradeKey, gradeResult);
+                    }
                     let sectionResult = null;
                     if (sectionName) {
-                        sectionResult = await tx.section.upsert({
-                            where: { name_grade_id_organization_id: { name: sectionName, grade_id: gradeResult.id, organization_id: org_id } },
-                            update: {},
-                            create: { name: sectionName, grade_id: gradeResult.id, organization_id: org_id }
-                        });
+                        const sectionLower = sectionName.toLowerCase();
+                        const sectionKey = `${gradeResult.id}_${sectionLower}`;
+                        sectionResult = sectionCache.get(sectionKey);
+                        if (!sectionResult) {
+                            sectionResult = await tx.section.create({ data: { name: sectionName, grade_id: gradeResult.id, organization_id: org_id } });
+                            sectionCache.set(sectionKey, sectionResult);
+                        }
                     }
                     let subjectResult = null;
                     if (subjectName) {
-                        subjectResult = await tx.subject.upsert({
-                            where: { name_grade_id_organization_id: { name: subjectName, grade_id: gradeResult.id, organization_id: org_id } },
-                            update: { master_grade_id: masterGradeResult.id },
-                            create: { name: subjectName, grade_id: gradeResult.id, organization_id: org_id, master_grade_id: masterGradeResult.id }
-                        });
+                        const subjectLower = subjectName.toLowerCase();
+                        const subjectKey = `${gradeResult.id}_${subjectLower}`;
+                        subjectResult = subjectCache.get(subjectKey);
+                        if (!subjectResult) {
+                            subjectResult = await tx.subject.create({ data: { name: subjectName, grade_id: gradeResult.id, organization_id: org_id, master_grade_id: masterGradeResult.id } });
+                            subjectCache.set(subjectKey, subjectResult);
+                        }
+                        else if (subjectResult.master_grade_id !== masterGradeResult.id) {
+                            subjectResult = await tx.subject.update({ where: { id: subjectResult.id }, data: { master_grade_id: masterGradeResult.id } });
+                            subjectCache.set(subjectKey, subjectResult);
+                        }
                     }
                     if (groupName && sectionResult && subjectResult) {
-                        const groupResult = await tx.subjectGroup.upsert({
-                            where: {
-                                name_grade_id_section_id_organization_id: {
-                                    name: groupName, grade_id: gradeResult.id, section_id: sectionResult.id, organization_id: org_id
-                                }
-                            },
-                            update: {},
-                            create: { name: groupName, grade_id: gradeResult.id, section_id: sectionResult.id, organization_id: org_id, master_grade_id: masterGradeResult.id }
-                        });
-                        await tx.subjectGroupSubject.upsert({
-                            where: { group_id_subject_id: { group_id: groupResult.id, subject_id: subjectResult.id } },
-                            update: { subject_type: subjectType },
-                            create: { group_id: groupResult.id, subject_id: subjectResult.id, subject_type: subjectType }
-                        });
+                        const groupLower = groupName.toLowerCase();
+                        const groupKey = `${gradeResult.id}_${sectionResult.id}_${groupLower}`;
+                        let groupResult = groupCache.get(groupKey);
+                        if (!groupResult) {
+                            groupResult = await tx.subjectGroup.create({ data: { name: groupName, grade_id: gradeResult.id, section_id: sectionResult.id, organization_id: org_id, master_grade_id: masterGradeResult.id } });
+                            groupCache.set(groupKey, groupResult);
+                        }
+                        const sgsKey = `${groupResult.id}_${subjectResult.id}`;
+                        if (!sgsCache.has(sgsKey)) {
+                            await tx.subjectGroupSubject.create({ data: { group_id: groupResult.id, subject_id: subjectResult.id, subject_type: subjectType } });
+                            sgsCache.add(sgsKey);
+                        }
+                        else {
+                            await tx.subjectGroupSubject.update({ where: { group_id_subject_id: { group_id: groupResult.id, subject_id: subjectResult.id } }, data: { subject_type: subjectType } });
+                        }
                     }
                     else if (!groupName && sectionResult && subjectResult) {
                         const defaultGroupName = `${gradeResult.name} - ${sectionResult.name} (Default)`;
-                        const defaultGroup = await tx.subjectGroup.upsert({
-                            where: {
-                                name_grade_id_section_id_organization_id: {
-                                    name: defaultGroupName, grade_id: gradeResult.id, section_id: sectionResult.id, organization_id: org_id
-                                }
-                            },
-                            update: {},
-                            create: { name: defaultGroupName, grade_id: gradeResult.id, section_id: sectionResult.id, organization_id: org_id, master_grade_id: masterGradeResult.id }
-                        });
-                        await tx.subjectGroupSubject.upsert({
-                            where: { group_id_subject_id: { group_id: defaultGroup.id, subject_id: subjectResult.id } },
-                            update: { subject_type: subjectType },
-                            create: { group_id: defaultGroup.id, subject_id: subjectResult.id, subject_type: subjectType }
-                        });
+                        const defaultGroupLower = defaultGroupName.toLowerCase();
+                        const groupKey = `${gradeResult.id}_${sectionResult.id}_${defaultGroupLower}`;
+                        let defaultGroup = groupCache.get(groupKey);
+                        if (!defaultGroup) {
+                            defaultGroup = await tx.subjectGroup.create({ data: { name: defaultGroupName, grade_id: gradeResult.id, section_id: sectionResult.id, organization_id: org_id, master_grade_id: masterGradeResult.id } });
+                            groupCache.set(groupKey, defaultGroup);
+                        }
+                        const sgsKey = `${defaultGroup.id}_${subjectResult.id}`;
+                        if (!sgsCache.has(sgsKey)) {
+                            await tx.subjectGroupSubject.create({ data: { group_id: defaultGroup.id, subject_id: subjectResult.id, subject_type: subjectType } });
+                            sgsCache.add(sgsKey);
+                        }
+                        else {
+                            await tx.subjectGroupSubject.update({ where: { group_id_subject_id: { group_id: defaultGroup.id, subject_id: subjectResult.id } }, data: { subject_type: subjectType } });
+                        }
                     }
                     results.created++;
                 }
                 catch (err) {
                     results.skipped++;
-                    results.errors.push(`Row ${i + 2}: ${err.message || 'Unknown error'}`);
+                    results.errors.push(`Row ${rowNumber}: ${err.message || 'Unknown error'}`);
                 }
             }
-        }, { timeout: 30000 });
+        }, { maxWait: 20000, timeout: 300000 });
         await prisma_1.default.previewImportData.deleteMany({
             where: { session_id, organization_id: org_id, created_by: req.user.user_id }
         });
@@ -1013,7 +1058,7 @@ router.post('/bulk-setup', (0, auth_middleware_1.requirePermission)('ACADEMIC_ST
                     }
                 }
             }
-        }, { timeout: 30000 });
+        }, { maxWait: 20000, timeout: 300000 });
         // Count grade/section/subject created vs skipped using post-transaction query
         // (upsert doesn't reliably tell us if it created or updated, so we recount)
         const summaryMsg = `Bulk setup complete. ` +
@@ -1332,7 +1377,7 @@ router.post('/student-group-mapping/bulk', (0, auth_middleware_1.requirePermissi
                 }
             }
             return { mapped, skipped };
-        }, { timeout: 30000 });
+        }, { maxWait: 20000, timeout: 300000 });
         res.status(201).json({ message: `Bulk mapping complete: ${result.mapped} mapped, ${result.skipped} skipped`, ...result });
     }
     catch (err) {

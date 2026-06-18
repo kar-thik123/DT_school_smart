@@ -24,6 +24,7 @@ const completion_routes_1 = __importDefault(require("./routes/completion.routes"
 const student_mcq_routes_1 = __importDefault(require("./routes/student-mcq.routes"));
 const skill_routes_1 = __importDefault(require("./routes/skill.routes"));
 const skill_assignment_routes_1 = __importDefault(require("./routes/skill-assignment.routes"));
+const student_dashboard_routes_1 = __importDefault(require("./routes/student-dashboard.routes"));
 const app = (0, express_1.default)();
 console.log('Starting application, mounting routes...');
 // app.use(cors());
@@ -34,7 +35,8 @@ app.use((0, cors_1.default)({
     ],
     credentials: true,
 }));
-app.use(express_1.default.json());
+app.use(express_1.default.json({ limit: '50mb' }));
+app.use(express_1.default.urlencoded({ limit: '50mb', extended: true }));
 app.use('/api/uploads', express_1.default.static('uploads'));
 app.use('/api/organizations', organization_routes_1.default);
 app.use('/api/auth', auth_routes_1.default);
@@ -55,6 +57,7 @@ app.use('/api/completion', completion_routes_1.default);
 app.use('/api/student-mcq', student_mcq_routes_1.default);
 app.use('/api/skills', skill_routes_1.default);
 app.use('/api/skill-assignment', skill_assignment_routes_1.default);
+app.use('/api/student-dashboard', student_dashboard_routes_1.default);
 app.get('/health', (req, res) => {
     res.json({ status: 'ok' });
 });

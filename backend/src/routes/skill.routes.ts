@@ -169,8 +169,18 @@ router.get('/user/:userId', async (req: any, res: Response) => {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
+    const { academic_year_id, status } = req.query;
+
+    const whereClause: any = { 
+      user_id: userId, 
+      organization_id: req.user.organization_id 
+    };
+
+    if (academic_year_id) whereClause.academic_year_id = academic_year_id;
+    if (status) whereClause.status = status;
+
     const skills = await prisma.skill.findMany({
-      where: { user_id: userId, organization_id: req.user.organization_id },
+      where: whereClause,
       orderBy: { created_at: 'desc' }
     });
 
@@ -217,6 +227,11 @@ router.patch('/:id/status', async (req: any, res: Response) => {
       message: `Your skill "${skill.skill_name}" has been ${status}.`,
       context_data: { icon: status === 'approved' ? 'check-circle' : (status === 'rejected' ? 'x-circle' : 'info'), color: status === 'approved' ? 'notification-green' : (status === 'rejected' ? 'notification-red' : 'notification-blue') },
       recipient_ids: [skill.user_id]
+    });
+
+    // Fire Dashboard Sync asynchronously
+    import('../services/dashboard-sync.service').then(({ DashboardSyncService }) => {
+      DashboardSyncService.updateSkillMetrics(req.user.organization_id, skill.user_id).catch(console.error);
     });
 
     res.json(skill);
@@ -395,6 +410,11 @@ router.patch('/bulk-status', async (req: any, res: Response) => {
         message: `Your skill "${skill.skill_name}" has been ${status}.`,
         context_data: { icon: status === 'approved' ? 'check-circle' : (status === 'rejected' ? 'x-circle' : 'info'), color: status === 'approved' ? 'notification-green' : (status === 'rejected' ? 'notification-red' : 'notification-blue') },
         recipient_ids: [skill.user_id]
+      });
+
+      // Fire Dashboard Sync asynchronously per student
+      import('../services/dashboard-sync.service').then(({ DashboardSyncService }) => {
+        DashboardSyncService.updateSkillMetrics(req.user.organization_id, skill.user_id).catch(console.error);
       });
     }
 

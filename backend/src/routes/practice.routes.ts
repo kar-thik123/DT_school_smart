@@ -215,6 +215,11 @@ router.post('/topics/:topic_id/submit', requirePermission('PRACTICE', 'ATTEMPT')
       recipient_ids: [student_id]
     });
 
+    // Fire Dashboard Sync asynchronously so it doesn't block the request response
+    import('../services/dashboard-sync.service').then(({ DashboardSyncService }) => {
+      DashboardSyncService.updatePracticeMetrics(org_id, student_id).catch(console.error);
+    });
+
     res.status(201).json({ message: 'Practice submitted', score: correctCount, total: evaluatedAnswers.length, attempt_id: attempt.id });
   } catch (error: any) {
     console.error('[practice/submit] ERROR:', error?.message, error?.code, JSON.stringify(error?.meta));

@@ -47,7 +47,7 @@ const updateSubTopicSchema = zod_1.z.object({
 // ─── Shared helpers ─────────────────────────────────────────────────────────
 function parsePagination(query) {
     const page = Math.max(1, parseInt(query.page) || 1);
-    const limit = Math.min(100, Math.max(1, parseInt(query.limit) || 20));
+    const limit = Math.max(1, parseInt(query.limit) || 20);
     const skip = (page - 1) * limit;
     return { page, limit, skip };
 }
@@ -567,7 +567,7 @@ bulkRouter.post('/preview', (0, auth_middleware_1.requirePermission)('ACADEMIC_S
                     else
                         resolvedSectionId = section.id;
                 }
-                let subject = existingSubjects.find((s) => s.grade_id === grade.id && s.name.trim().toLowerCase() === subjectName.toLowerCase());
+                let subject = existingSubjects.find((s) => s.grade_id === resolvedGradeId && s.name.trim().toLowerCase() === subjectName.toLowerCase());
                 if (!subject) {
                     subject = existingSubjects.find((s) => s.name.trim().toLowerCase() === subjectName.toLowerCase());
                 }
@@ -593,19 +593,19 @@ bulkRouter.post('/preview', (0, auth_middleware_1.requirePermission)('ACADEMIC_S
             }
             if (errors.length === 0) {
                 match_status = 'VALID';
-                const compositeKey = [gradeNameClean, sectionName, subjectName, unitName, topicName, subTopicName].join('|');
+                const compositeKey = [gradeNameClean.toLowerCase(), sectionName.toLowerCase(), subjectName.toLowerCase(), unitName.toLowerCase(), topicName.toLowerCase(), subTopicName.toLowerCase()].join('|');
                 if (seenRows.has(compositeKey)) {
                     match_status = 'DUPLICATE';
                 }
                 else {
                     seenRows.add(compositeKey);
-                    // Check against DB (case-sensitive)
-                    let currentUnitId = existingUnits.find((u) => u.grade_id === resolvedGradeId && u.subject_id === resolvedSubjectId && (u.section_id === resolvedSectionId || (!u.section_id && !resolvedSectionId)) && u.name === unitName)?.id;
+                    // Check against DB (case-insensitive)
+                    let currentUnitId = existingUnits.find((u) => u.grade_id === resolvedGradeId && u.subject_id === resolvedSubjectId && (u.section_id === resolvedSectionId || (!u.section_id && !resolvedSectionId)) && u.name.trim().toLowerCase() === unitName.toLowerCase())?.id;
                     if (subTopicName && topicName && unitName) {
                         if (currentUnitId) {
-                            const currentTopicId = existingTopics.find((t) => t.unit_id === currentUnitId && t.name === topicName)?.id;
+                            const currentTopicId = existingTopics.find((t) => t.unit_id === currentUnitId && t.name.trim().toLowerCase() === topicName.toLowerCase())?.id;
                             if (currentTopicId) {
-                                const currentSubTopic = existingSubTopics.find((st) => st.topic_id === currentTopicId && st.name === subTopicName);
+                                const currentSubTopic = existingSubTopics.find((st) => st.topic_id === currentTopicId && st.name.trim().toLowerCase() === subTopicName.toLowerCase());
                                 if (currentSubTopic)
                                     match_status = 'DUPLICATE';
                             }
@@ -613,7 +613,7 @@ bulkRouter.post('/preview', (0, auth_middleware_1.requirePermission)('ACADEMIC_S
                     }
                     else if (topicName && unitName) {
                         if (currentUnitId) {
-                            const currentTopic = existingTopics.find((t) => t.unit_id === currentUnitId && t.name === topicName);
+                            const currentTopic = existingTopics.find((t) => t.unit_id === currentUnitId && t.name.trim().toLowerCase() === topicName.toLowerCase());
                             if (currentTopic)
                                 match_status = 'DUPLICATE';
                         }
@@ -692,12 +692,24 @@ bulkRouter.post('/confirm', (0, auth_middleware_1.requirePermission)('ACADEMIC_S
         }
         // Filter valid rows only
         const validRows = recordsToProcess.filter((r) => r.match_status === 'VALID');
-        if (validRows.length === 0)
-            return res.status(400).json({ message: 'No valid records to import.' });
+        if (validRows.length === 0) {
+            await prisma_1.default.previewImportData.deleteMany({
+                where: { session_id, organization_id: org_id }
+            });
+            return res.status(200).json({
+                message: 'No new data imported. All rows were either duplicates or invalid.',
+                results: { created: 0, skipped: recordsToProcess.length, errors: [] }
+            });
+        }
         await prisma_1.default.$transaction(async (tx) => {
+            // Pre-fetch organization data to prevent hundreds of sequential findFirst calls timing out
+            const existingUnits = await tx.unit.findMany({ where: { organization_id: org_id } });
+            const existingTopics = await tx.topic.findMany({ where: { organization_id: org_id } });
+            const existingSubTopics = await tx.subTopic.findMany({ where: { organization_id: org_id } });
             // Process logically row by row to maintain relations (Units -> Topics -> SubTopics)
             const unitCache = new Map();
             const topicCache = new Map();
+            const subTopicCache = new Map();
             for (const row of validRows) {
                 const { Grade, Section, Subject, 'Unit Name': unitName, 'Topic Name': topicName, 'Sub Topic Name': subTopicName } = row.raw_data;
                 const resolvedData = typeof row.resolved_data === 'string' ? JSON.parse(row.resolved_data) : row.resolved_data;
@@ -709,11 +721,10 @@ bulkRouter.post('/confirm', (0, auth_middleware_1.requirePermission)('ACADEMIC_S
                 const unitKey = `${gradeId}|${sectionId || ''}|${subjectId}|${unitName}`;
                 let unitId = unitCache.get(unitKey);
                 if (!unitId) {
-                    let unit = await tx.unit.findFirst({
-                        where: { organization_id: org_id, grade_id: gradeId, section_id: sectionId, subject_id: subjectId, name: unitName }
-                    });
+                    let unit = existingUnits.find((u) => u.grade_id === gradeId && u.section_id === sectionId && u.subject_id === subjectId && u.name.toLowerCase() === unitName.toLowerCase());
                     if (!unit) {
-                        const maxU = await tx.unit.aggregate({ where: { organization_id: org_id, grade_id: gradeId, section_id: sectionId, subject_id: subjectId }, _max: { order_index: true } });
+                        const siblings = existingUnits.filter((u) => u.grade_id === gradeId && u.section_id === sectionId && u.subject_id === subjectId);
+                        const maxOrder = siblings.length > 0 ? Math.max(...siblings.map((s) => s.order_index)) : -1;
                         unit = await tx.unit.create({
                             data: {
                                 name: unitName,
@@ -721,9 +732,10 @@ bulkRouter.post('/confirm', (0, auth_middleware_1.requirePermission)('ACADEMIC_S
                                 section_id: sectionId,
                                 subject_id: subjectId,
                                 organization_id: org_id,
-                                order_index: (maxU._max.order_index ?? -1) + 1
+                                order_index: maxOrder + 1
                             }
                         });
+                        existingUnits.push(unit);
                     }
                     unitId = unit.id;
                     unitCache.set(unitKey, unitId);
@@ -732,54 +744,63 @@ bulkRouter.post('/confirm', (0, auth_middleware_1.requirePermission)('ACADEMIC_S
                     const topicKey = `${unitId}|${topicName}`;
                     let topicId = topicCache.get(topicKey);
                     if (!topicId) {
-                        let topic = await tx.topic.findFirst({
-                            where: { organization_id: org_id, unit_id: unitId, name: topicName }
-                        });
+                        let topic = existingTopics.find((t) => t.unit_id === unitId && t.name.toLowerCase() === topicName.toLowerCase());
                         if (!topic) {
-                            const maxT = await tx.topic.aggregate({ where: { organization_id: org_id, unit_id: unitId }, _max: { order_index: true } });
+                            const siblings = existingTopics.filter((t) => t.unit_id === unitId);
+                            const maxOrder = siblings.length > 0 ? Math.max(...siblings.map((s) => s.order_index)) : -1;
                             topic = await tx.topic.create({
                                 data: {
                                     name: topicName,
                                     unit_id: unitId,
                                     organization_id: org_id,
-                                    order_index: (maxT._max.order_index ?? -1) + 1
+                                    order_index: maxOrder + 1
                                 }
                             });
+                            existingTopics.push(topic);
                         }
                         topicId = topic.id;
                         topicCache.set(topicKey, topicId);
                     }
                     if (subTopicName && topicId) {
-                        const subTopic = await tx.subTopic.findFirst({
-                            where: { organization_id: org_id, topic_id: topicId, name: subTopicName }
-                        });
-                        if (!subTopic) {
-                            const maxST = await tx.subTopic.aggregate({ where: { organization_id: org_id, topic_id: topicId }, _max: { order_index: true } });
-                            await tx.subTopic.create({
-                                data: {
-                                    name: subTopicName,
-                                    topic_id: topicId,
-                                    organization_id: org_id,
-                                    order_index: (maxST._max.order_index ?? -1) + 1
-                                }
-                            });
+                        const subTopicKey = `${topicId}|${subTopicName}`;
+                        let subTopicId = subTopicCache.get(subTopicKey);
+                        if (!subTopicId) {
+                            let subTopic = existingSubTopics.find((st) => st.topic_id === topicId && st.name.toLowerCase() === subTopicName.toLowerCase());
+                            if (!subTopic) {
+                                const siblings = existingSubTopics.filter((st) => st.topic_id === topicId);
+                                const maxOrder = siblings.length > 0 ? Math.max(...siblings.map((s) => s.order_index)) : -1;
+                                subTopic = await tx.subTopic.create({
+                                    data: {
+                                        name: subTopicName,
+                                        topic_id: topicId,
+                                        organization_id: org_id,
+                                        order_index: maxOrder + 1
+                                    }
+                                });
+                                existingSubTopics.push(subTopic);
+                            }
+                            subTopicId = subTopic.id;
+                            subTopicCache.set(subTopicKey, subTopicId);
                         }
                     }
                 }
             }
         }, {
-            timeout: 60000,
-            maxWait: 5000
+            timeout: 300000,
+            maxWait: 20000
         });
         // Cleanup preview data
         await prisma_1.default.previewImportData.deleteMany({
             where: { session_id, organization_id: org_id }
         });
-        res.json({ message: 'Curriculum imported successfully' });
+        res.status(201).json({
+            message: `Bulk import completed. ${validRows.length} rows processed, 0 skipped.`,
+            results: { created: validRows.length, skipped: 0, errors: [] }
+        });
     }
     catch (error) {
         console.error('[curriculum/bulk/confirm] Error:', error);
-        res.status(500).json({ message: 'Failed to import curriculum', error: error.message });
+        res.status(500).json({ message: 'Bulk import failed', error: error.message });
     }
 });
 // POST /api/curriculum/bulk/discard

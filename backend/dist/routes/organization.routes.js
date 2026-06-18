@@ -10,7 +10,6 @@ const auth_middleware_1 = require("../middlewares/auth.middleware");
 const permissions_1 = require("../config/permissions");
 const multer_1 = __importDefault(require("multer"));
 const path_1 = __importDefault(require("path"));
-const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const authorization_service_1 = require("../services/authorization.service");
 const router = (0, express_1.Router)();
@@ -154,62 +153,84 @@ router.patch('/:id/status', async (req, res) => {
         res.status(500).json({ message: 'Failed to update status' });
     }
 });
-// 7. Impersonate Tenant Admin (Enhanced)
-router.post('/:id/impersonate', async (req, res) => {
+// 6.5 Update Organization Settings (Platform Developer)
+router.patch('/:id/settings', async (req, res) => {
     try {
         const orgId = req.params.id;
-        const adminUserId = req.user.user_id; // The System Admin's ID
-        // Find the first Super Admin for this organization
-        const adminUser = await prisma_1.default.user.findFirst({
-            where: {
-                organization_id: orgId,
-                role: { name: 'SUPER_ADMIN' },
-                is_active: true
-            },
-            include: {
-                organization: true,
-                role: {
-                    include: {
-                        permissions: {
-                            include: { permission: true }
+        const { school_name, contact_email, subdomain, domain_type, login_limit, smtp_host, smtp_port, backup_enabled } = req.body;
+        const currentOrg = await prisma_1.default.organization.findUnique({
+            where: { id: orgId },
+            include: { license: true }
+        });
+        if (!currentOrg)
+            return res.status(404).json({ message: 'Organization not found' });
+        // Validate subdomain uniqueness
+        if (subdomain && subdomain !== currentOrg.subdomain) {
+            const existing = await prisma_1.default.organization.findUnique({ where: { subdomain } });
+            if (existing) {
+                return res.status(400).json({ message: `Subdomain '${subdomain}' is already in use.` });
+            }
+        }
+        const updated = await prisma_1.default.$transaction(async (tx) => {
+            const updatedOrg = await tx.organization.update({
+                where: { id: orgId },
+                data: {
+                    school_name: school_name !== undefined ? school_name : undefined,
+                    contact_email: contact_email !== undefined ? contact_email : undefined,
+                    subdomain: subdomain !== undefined ? subdomain : undefined,
+                    domain_type: domain_type !== undefined ? domain_type : undefined,
+                    login_limit: login_limit !== undefined ? Number(login_limit) : undefined,
+                    smtp_host: smtp_host !== undefined ? smtp_host : undefined,
+                    smtp_port: smtp_port !== undefined ? Number(smtp_port) : undefined,
+                    backup_enabled: backup_enabled !== undefined ? backup_enabled === true : undefined
+                }
+            });
+            if (login_limit !== undefined && currentOrg.license) {
+                await tx.organizationLicense.update({
+                    where: { organization_id: orgId },
+                    data: { licensed_seats: Number(login_limit) }
+                });
+            }
+            // Record Audit Log
+            await tx.auditLog.create({
+                data: {
+                    organization_id: orgId,
+                    user_id: req.user.user_id,
+                    user_name: req.user.name || 'System Admin',
+                    action_type: 'UPDATE',
+                    entity_type: 'ORGANIZATION',
+                    entity_id: orgId,
+                    metadata: {
+                        previousValues: {
+                            school_name: currentOrg.school_name,
+                            contact_email: currentOrg.contact_email,
+                            subdomain: currentOrg.subdomain,
+                            domain_type: currentOrg.domain_type,
+                            login_limit: currentOrg.login_limit,
+                            smtp_host: currentOrg.smtp_host,
+                            smtp_port: currentOrg.smtp_port,
+                            backup_enabled: currentOrg.backup_enabled
+                        },
+                        newValues: {
+                            school_name: updatedOrg.school_name,
+                            contact_email: updatedOrg.contact_email,
+                            subdomain: updatedOrg.subdomain,
+                            domain_type: updatedOrg.domain_type,
+                            login_limit: updatedOrg.login_limit,
+                            smtp_host: updatedOrg.smtp_host,
+                            smtp_port: updatedOrg.smtp_port,
+                            backup_enabled: updatedOrg.backup_enabled
                         }
                     }
                 }
-            }
+            });
+            return updatedOrg;
         });
-        if (!adminUser) {
-            return res.status(404).json({ message: 'No active Super Admin found for this tenant' });
-        }
-        const permissions = adminUser.role.permissions.map((rp) => `${rp.permission.module}:${rp.permission.action}`);
-        // Generate impersonation token with return context
-        const token = jsonwebtoken_1.default.sign({
-            user_id: adminUser.id,
-            organization_id: adminUser.organization_id,
-            is_impersonation: true,
-            original_user_id: adminUserId, // Context for returning
-            impersonated_at: new Date()
-        }, process.env.JWT_SECRET || 'dev_secret', { expiresIn: '2h' });
-        res.json({
-            token,
-            is_impersonation: true,
-            user: {
-                id: adminUser.id,
-                name: adminUser.name,
-                email: adminUser.email,
-                role: adminUser.role.name,
-                permissions,
-                is_active: adminUser.is_active
-            },
-            organization: {
-                id: adminUser.organization.id,
-                school_name: adminUser.organization.school_name,
-                logo_url: adminUser.organization.logo_url
-            }
-        });
+        res.json({ message: 'Organization settings updated', organization: updated });
     }
     catch (error) {
-        console.error('[IMPERSONATE ERROR]', error);
-        res.status(500).json({ message: 'Impersonation failed' });
+        console.error('[ORG SETTINGS UPDATE ERROR]', error);
+        res.status(500).json({ message: 'Failed to update organization settings' });
     }
 });
 // 3. Pre-flight Provisioning Validation

@@ -8,6 +8,7 @@ const subject_group_processor_1 = require("./processors/subject-group.processor"
 const question_bank_processor_1 = require("./processors/question-bank.processor");
 const academic_structure_processors_1 = require("./processors/academic-structure.processors");
 const academic_unified_processor_1 = require("./processors/academic-unified.processor");
+const user_processor_1 = require("./processors/user.processor");
 // Map of registered processors. 
 // A factory function is provided so that each request can instantiate a fresh processor bound to the user's organization context.
 exports.processorRegistry = {
@@ -22,9 +23,10 @@ exports.processorRegistry = {
     'UNITS': (orgId, userId, yearId) => new academic_structure_processors_1.UnitProcessor(orgId, userId, yearId),
     'TOPICS': (orgId, userId, yearId) => new academic_structure_processors_1.TopicProcessor(orgId, userId, yearId),
     'ACADEMIC_STRUCTURE_FULL': (orgId, userId, yearId) => new academic_unified_processor_1.AcademicUnifiedProcessor(orgId, userId, yearId),
+    'USERS': (orgId, userId, yearId) => new user_processor_1.UserProcessor(orgId, userId, yearId),
 };
 const getBulkProcessor = (entityType, organizationId, userId, academicYearId) => {
-    const factory = exports.processorRegistry[entityType];
+    const factory = exports.processorRegistry[entityType.toUpperCase()];
     if (!factory) {
         return null;
     }

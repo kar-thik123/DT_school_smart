@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -60,10 +60,10 @@ interface Course {
   templateUrl: './course-progress.component.html',
   styleUrls: ['./course-progress.component.scss'],
 })
-export class CourseProgressComponent {
+export class CourseProgressComponent implements OnChanges {
   public chartOptions!: Partial<CourseChartOptions>;
 
-  courses: Course[] = [
+  @Input() courses: Course[] = [
     {
       id: 1,
       name: 'Advanced Mathematics',
@@ -118,6 +118,12 @@ export class CourseProgressComponent {
 
   constructor() {
     this.initChart();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['courses'] && !changes['courses'].firstChange) {
+      this.initChart();
+    }
   }
 
   initChart(): void {

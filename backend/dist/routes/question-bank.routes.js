@@ -230,8 +230,7 @@ router.get('/', (0, auth_middleware_1.requirePermission)('QUESTION_BANK', 'READ'
                 sub_topic: { select: { id: true, name: true } },
                 creator: { select: { id: true, name: true } }
             },
-            orderBy: { created_at: 'desc' },
-            take: 100 // pagination placeholder
+            orderBy: { created_at: 'desc' }
         });
         res.json(questions);
     }
@@ -512,7 +511,7 @@ router.post('/bulk/preview', (0, auth_middleware_1.requirePermission)('QUESTION_
                 continue;
             const errors = [];
             let match_status = 'NOT_VALID';
-            const startsWithSpecialChar = (val) => val ? /^[^a-zA-Z0-9]/.test(val) : false;
+            const startsWithSpecialChar = (val) => val ? /^[^\p{L}\p{N}]/u.test(val) : false;
             if (!row.grade || String(row.grade).trim() === '')
                 errors.push('Missing required field: "grade"');
             else if (startsWithSpecialChar(row.grade))
@@ -717,7 +716,7 @@ router.post('/bulk/confirm', (0, auth_middleware_1.requirePermission)('QUESTION_
                     if (!row[f] || String(row[f]).trim() === '')
                         throw new Error(`Missing required field: "${f}"`);
                 }
-                const startsWithSpecialChar = (val) => val ? /^[^a-zA-Z0-9]/.test(val) : false;
+                const startsWithSpecialChar = (val) => val ? /^[^\p{L}\p{N}]/u.test(val) : false;
                 const stringFieldsToCheck = ['grade', 'section', 'subject', 'unit_lesson', 'topic', 'sub_topic'];
                 for (const f of stringFieldsToCheck) {
                     const val = String(row[f] || '').trim();

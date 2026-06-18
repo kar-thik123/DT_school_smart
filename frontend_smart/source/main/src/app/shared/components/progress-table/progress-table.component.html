@@ -10,13 +10,17 @@
   <ng-container matColumnDef="progress">
     <th mat-header-cell *matHeaderCellDef>Progress</th>
     <td mat-cell *matCellDef="let subject">
-      {{ subject.progress }}%
-      @if (subject.progress <= 30) {
+      {{ subject.progress | number:'1.0-1' }}%
+      @if (subject.progress < 60) {
         <mat-progress-bar mode="determinate" [value]="subject.progress" color="warn"
         ></mat-progress-bar>
       }
-      @if (subject.progress > 30 && subject.progress <= 100) {
-        <mat-progress-bar mode="determinate" [value]="subject.progress"
+      @if (subject.progress >= 60 && subject.progress < 80) {
+        <mat-progress-bar mode="determinate" [value]="subject.progress" color="accent"
+        ></mat-progress-bar>
+      }
+      @if (subject.progress >= 80) {
+        <mat-progress-bar mode="determinate" [value]="subject.progress" class="mat-progress-bar-success" color="primary"
         ></mat-progress-bar>
       }
     </td>

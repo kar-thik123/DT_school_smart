@@ -1,5 +1,8 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
-import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
+import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
+import { forkJoin, of } from 'rxjs';
+import { catchError, switchMap } from 'rxjs/operators';
 import {
   ChartComponent,
   ApexAxisChartSeries,
@@ -15,37 +18,26 @@ import {
   ApexLegend,
   ApexFill,
   NgApexchartsModule,
+  ApexNonAxisChartSeries,
 } from 'ng-apexcharts';
 import { MatButtonModule } from '@angular/material/button';
 import { NgScrollbar } from 'ngx-scrollbar';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { BaseChartDirective } from 'ng2-charts';
 import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.component';
 import { MatCardModule } from '@angular/material/card';
-import {
-  ProgressTableComponent,
-  SubjectProgress,
-} from '@shared/components/progress-table/progress-table.component';
-import { EmpScheduleComponent } from '@shared/components/emp-schedule/emp-schedule.component';
-import { TableCardComponent } from '@shared/components/table-card/table-card.component';
-import { ColumnDefinition } from '@shared/components/master-table/master-table.component';
-// Import new components
-import { RecentGradesComponent } from '@shared/components/recent-grades/recent-grades.component';
-import { UpcomingAssignmentsComponent } from '@shared/components/upcoming-assignments/upcoming-assignments.component';
-import { CourseProgressComponent } from '@shared/components/course-progress/course-progress.component';
-import { DailyTimetableComponent } from '@shared/components/daily-timetable/daily-timetable.component';
+import { MatIconModule } from '@angular/material/icon';
 
-export type barChartOptions = {
-  series: ApexAxisChartSeries;
-  chart: ApexChart;
-  dataLabels: ApexDataLabels;
-  plotOptions: ApexPlotOptions;
-  responsive: ApexResponsive[];
-  xaxis: ApexXAxis;
-  grid: ApexGrid;
-  legend: ApexLegend;
-  fill: ApexFill;
-};
+import { StudentDashboardService } from './dashboard.service';
+import {
+  StudentOverview,
+  StudentKPIs,
+  SubjectPerformance,
+  WeeklyTrend,
+  CurriculumProgress,
+  TeacherAssignment,
+  TimelineActivity,
+  StudentSkill
+} from './dashboard.model';
 
 export type areaChartOptions = {
   series: ApexAxisChartSeries;
@@ -60,31 +52,40 @@ export type areaChartOptions = {
   colors: string[];
 };
 
+export type radialChartOptions = {
+  series: ApexNonAxisChartSeries;
+  chart: ApexChart;
+  plotOptions: ApexPlotOptions;
+  labels: string[];
+  colors: string[];
+};
+
+interface Achievement {
+  title: string;
+  icon: string;
+  colorClass: string;
+  conditionMet: boolean;
+}
+
 @Component({
   selector: 'app-dashboard',
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss'],
   imports: [
+    CommonModule,
     BreadcrumbComponent,
-    BaseChartDirective,
     MatProgressBarModule,
     MatCardModule,
+    MatIconModule,
     NgApexchartsModule,
     NgScrollbar,
-    MatButtonModule,
-    ProgressTableComponent,
-    EmpScheduleComponent,
-    TableCardComponent,
-    RecentGradesComponent,
-    UpcomingAssignmentsComponent,
-    CourseProgressComponent,
-    DailyTimetableComponent,
+    MatButtonModule
   ],
 })
 export class DashboardComponent implements OnInit {
   @ViewChild('chart') chart!: ChartComponent;
-  public barChartOptions!: Partial<barChartOptions>;
   public areaChartOptions!: Partial<areaChartOptions>;
+  public radialChartOptions!: Partial<radialChartOptions>;
 
   breadscrums = [
     {
@@ -93,55 +94,207 @@ export class DashboardComponent implements OnInit {
       active: 'Dashboard',
     },
   ];
-  constructor() {
-    //constructor
-  }
 
-  // Doughnut chart start
+  // State Variables
+  loading: boolean = true;
+  error: string | null = null;
 
-  public doughnutChartOptions: ChartConfiguration['options'] = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        display: false,
-      },
-    },
-  };
-  public doughnutChartLabels: string[] = [
-    'Development',
-    'Java Classes',
-    'Painting ',
-    'Geography Class',
-  ];
-  public doughnutChartData: ChartData<'doughnut'> = {
-    labels: this.doughnutChartLabels,
-    datasets: [
-      {
-        data: [32, 25, 20, 23],
-        backgroundColor: ['#5A5FAF', '#F7BF31', '#EA6E6C', '#28BDB8'],
-      },
-    ],
-  };
-  public doughnutChartType: ChartType = 'doughnut';
+  overview: StudentOverview | null = null;
+  kpis: StudentKPIs | null = null;
+  subjects: SubjectPerformance[] = [];
+  weeklyTrend: WeeklyTrend[] = [];
+  curriculum: CurriculumProgress[] = [];
+  mappedCurriculum: any[] = [];
+  teachers: TeacherAssignment[] = [];
+  mappedTeachers: any[] = [];
+  activities: TimelineActivity[] = [];
 
-  // Doughnut chart end
+  // Derived KPIs
+  subjectsAttempted: number = 0;
+  topicsCompleted: number = 0;
+  pendingTopics: number = 0;
+  curriculumCompletionPercentage: number = 0;
+  weeklyTrendSubtitle: string = '';
+  achievements: Achievement[] = [];
+
+  // New State Variables
+  notifications: TimelineActivity[] = [];
+  hasPracticePermission: boolean = true;
+  isEnrolled: boolean = true;
+  notEnrolledInActiveYear: boolean = false;
+  skills: StudentSkill[] = [];
+  verifiedSkillsCount: number = 0;
+  pendingSkillsCount: number = 0;
+
+  constructor(
+    private dashboardService: StudentDashboardService,
+    private router: Router
+  ) {}
 
   ngOnInit() {
-    this.chart1();
-    this.chart2();
+    this.loadDashboardData();
   }
 
-  private chart1() {
+  loadDashboardData() {
+    this.loading = true;
+    this.error = null;
+
+    this.dashboardService.getOverview().pipe(
+      catchError(() => of(null)),
+      switchMap((overview: any) => {
+        const skills$ = overview && overview.academic_year_id
+          ? this.dashboardService.getSkills(overview.academic_year_id).pipe(catchError(() => of([])))
+          : of([]);
+
+        return forkJoin({
+          overview: of(overview),
+          skills: skills$,
+          kpis: this.dashboardService.getKPIs().pipe(catchError(() => of(null))),
+          subjects: this.dashboardService.getSubjectPerformance().pipe(catchError(() => of([]))),
+          weeklyTrend: this.dashboardService.getWeeklyTrend().pipe(catchError(() => of([]))),
+          curriculum: this.dashboardService.getCurriculumProgress().pipe(catchError(() => of([]))),
+          teachers: this.dashboardService.getTeachers().pipe(catchError(() => of([]))),
+          activities: this.dashboardService.getActivities().pipe(catchError(() => of([])))
+        });
+      })
+    ).subscribe({
+      next: (data: any) => {
+        this.overview = data.overview;
+        this.kpis = data.kpis;
+        this.subjects = data.subjects || [];
+        this.weeklyTrend = data.weeklyTrend || [];
+        this.curriculum = data.curriculum || [];
+        this.teachers = data.teachers || [];
+        this.skills = data.skills || [];
+        const allActivities = data.activities || [];
+        
+        // Permission & State Tracking
+        this.hasPracticePermission = this.kpis !== null;
+        this.isEnrolled = !!(this.overview && (this.overview.grade || this.overview.last_enrollment));
+        this.notEnrolledInActiveYear = !!(this.overview && !this.overview.grade);
+
+        // Skills logic
+        this.verifiedSkillsCount = this.skills.filter((s: StudentSkill) => s.status === 'approved').length;
+        this.pendingSkillsCount = this.skills.filter((s: StudentSkill) => s.status === 'pending').length;
+
+        // Activity Filtering
+        this.notifications = allActivities
+          .filter((a: any) => a.type === 'notification')
+          .slice(0, 5);
+
+        this.activities = allActivities
+          .filter((a: any) => ['practice', 'completion', 'skill', 'notification'].includes(a.type))
+          .slice(0, 10);
+        
+        // Derived KPIs
+        this.subjectsAttempted = this.subjects.length;
+        this.topicsCompleted = this.curriculum.reduce((sum, c) => sum + c.topics_completed, 0);
+        this.pendingTopics = this.curriculum.reduce((sum, c) => sum + (c.topics_total - c.topics_completed), 0);
+        
+        const totalTopics = this.topicsCompleted + this.pendingTopics;
+        this.curriculumCompletionPercentage = totalTopics > 0 ? (this.topicsCompleted / totalTopics) * 100 : 0;
+
+        // Achievements Logic
+        this.achievements = [];
+        if (this.kpis) {
+          if (this.kpis.practice_accuracy >= 90) {
+            this.achievements.push({ title: 'Top Performer', icon: 'fas fa-crown', colorClass: 'text-warning', conditionMet: true });
+          } else if (this.kpis.practice_accuracy >= 80) {
+            this.achievements.push({ title: 'Accuracy Champion', icon: 'fas fa-bullseye', colorClass: 'text-danger', conditionMet: true });
+          }
+
+          if (this.kpis.questions_attempted >= 50) {
+            this.achievements.push({ title: 'Relentless Learner', icon: 'fas fa-book-reader', colorClass: 'text-primary', conditionMet: true });
+          }
+
+          if (this.kpis.skills_completion > 0) {
+            this.achievements.push({ title: 'Skill Builder', icon: 'fas fa-star', colorClass: 'text-warning', conditionMet: true });
+          }
+
+          if (this.curriculumCompletionPercentage >= 75) {
+            this.achievements.push({ title: 'Curriculum Master', icon: 'fas fa-trophy', colorClass: 'text-success', conditionMet: true });
+          }
+        }
+
+        // Map Teachers to schedule format to reuse app-emp-schedule
+        this.mappedTeachers = this.teachers.map((t, index) => ({
+          name: t.teacher_name,
+          degree: t.assigned_subjects.join(', '),
+          date: t.official_email || 'No Email',
+          time: '',
+          imageUrl: `assets/images/user/user${(index % 6) + 1}.jpg`
+        }));
+
+        
+        // Map CurriculumProgress to Course format for app-course-progress
+        this.mappedCurriculum = this.curriculum.map((c, idx) => ({
+          id: idx,
+          name: c.subject_name,
+          instructor: 'Assigned Teacher',
+          progress: c.completion_percentage,
+          totalModules: c.topics_total,
+          completedModules: c.topics_completed,
+          grade: 'N/A',
+          lastAccessed: new Date().toISOString()
+        }));
+
+        this.initWeeklyTrendChart();
+        this.initRadialChart();
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error('Error loading dashboard data', err);
+        this.error = 'Unable to load dashboard data.';
+        this.loading = false;
+      }
+    });
+  }
+
+  private initWeeklyTrendChart() {
+    // Check if we have trend data
+    if (!this.weeklyTrend || this.weeklyTrend.length === 0) {
+      this.weeklyTrendSubtitle = "Start practicing to unlock your learning insights.";
+      return;
+    }
+
+    // Sort by week start if not already sorted
+    const sortedData = [...this.weeklyTrend].sort((a, b) => 
+      new Date(a.week_start).getTime() - new Date(b.week_start).getTime()
+    );
+
+    // Calculate trend difference
+    if (sortedData.length >= 2) {
+      const lastWeek = sortedData[sortedData.length - 2].overall_accuracy;
+      const thisWeek = sortedData[sortedData.length - 1].overall_accuracy;
+      const diff = thisWeek - lastWeek;
+      if (diff > 0) {
+        this.weeklyTrendSubtitle = `You improved ${diff.toFixed(1)}% this week 🎉`;
+      } else if (diff < 0) {
+        this.weeklyTrendSubtitle = `You dropped ${Math.abs(diff).toFixed(1)}% this week. Keep practicing!`;
+      } else {
+        this.weeklyTrendSubtitle = `Consistent performance this week!`;
+      }
+    } else {
+      this.weeklyTrendSubtitle = `Great start! Keep practicing to see your trend.`;
+    }
+
+    const categories = sortedData.map(item => {
+      const d = new Date(item.week_start);
+      return `${d.getMonth() + 1}/${d.getDate()}`;
+    });
+
+    const accuracyData = sortedData.map(item => item.overall_accuracy);
+    const questionsData = sortedData.map(item => item.total_questions);
+
     this.areaChartOptions = {
       series: [
         {
-          name: 'Mathes',
-          data: [31, 40, 28, 51, 42, 85, 77],
+          name: 'Overall Accuracy %',
+          data: accuracyData,
         },
         {
-          name: 'Science',
-          data: [11, 32, 45, 32, 34, 52, 41],
+          name: 'Total Questions',
+          data: questionsData,
         },
       ],
       chart: {
@@ -160,15 +313,7 @@ export class DashboardComponent implements OnInit {
         curve: 'smooth',
       },
       xaxis: {
-        categories: [
-          'test 1',
-          'test 2',
-          'test 3',
-          'test 4',
-          'test 5',
-          'test 6',
-          'test 7',
-        ],
+        categories: categories,
       },
       grid: {
         show: true,
@@ -185,262 +330,72 @@ export class DashboardComponent implements OnInit {
     };
   }
 
-  private chart2() {
-    this.barChartOptions = {
-      series: [
-        {
-          name: 'Physics',
-          data: [44, 55, 41, 67, 22, 43],
-        },
-        {
-          name: 'Computer',
-          data: [13, 23, 20, 8, 13, 27],
-        },
-        {
-          name: 'Management',
-          data: [11, 17, 15, 15, 21, 14],
-        },
-        {
-          name: 'Mathes',
-          data: [21, 7, 25, 13, 22, 8],
-        },
-      ],
+  private initRadialChart() {
+    this.radialChartOptions = {
+      series: [this.curriculumCompletionPercentage],
       chart: {
-        type: 'bar',
-        height: 345,
-        foreColor: '#9aa0ac',
-        stacked: true,
-        toolbar: {
-          show: false,
-        },
+        height: 300,
+        type: 'radialBar',
       },
-      responsive: [
-        {
-          breakpoint: 480,
-          options: {
-            legend: {
-              position: 'bottom',
-              offsetX: -10,
-              offsetY: 0,
-            },
-          },
-        },
-      ],
       plotOptions: {
-        bar: {
-          horizontal: false,
-          columnWidth: '20%',
+        radialBar: {
+          hollow: {
+            size: '70%',
+          },
+          dataLabels: {
+            name: {
+              show: true,
+              color: '#888',
+              fontSize: '16px'
+            },
+            value: {
+              show: true,
+              color: '#111',
+              fontSize: '24px',
+              formatter: function (val) {
+                return val.toFixed(1) + "%";
+              }
+            }
+          }
         },
       },
-      dataLabels: {
-        enabled: false,
-      },
-      xaxis: {
-        type: 'category',
-        categories: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-      },
-      legend: {
-        show: false,
-      },
-      grid: {
-        show: true,
-        borderColor: '#9aa0ac',
-        strokeDashArray: 1,
-      },
-      fill: {
-        opacity: 1,
-        colors: ['#25B9C1', '#4B4BCB', '#EA9022', '#9E9E9E'],
-      },
+      labels: ['Completed'],
+      colors: ['#4caf50'],
     };
   }
 
-  // Progress table data
+  navigateToPractice(subjectId?: string) {
+    // Optional parameter for subject-specific practice routing
+    this.router.navigate(['/student/practice']);
+  }
 
-  subjects: SubjectProgress[] = [
-    { subject: 'Chemistry', progress: 30, duration: '2 Months' },
-    { subject: 'Mathematics', progress: 55, duration: '3 Months' },
-    { subject: 'Painting', progress: 67, duration: '1 Month' },
-    { subject: 'Business Studies', progress: 70, duration: '2 Months' },
-    { subject: 'Biology', progress: 24, duration: '3 Months' },
-    { subject: 'Computer Studies', progress: 77, duration: '4 Months' },
-    { subject: 'Geography', progress: 41, duration: '2 Months' },
-  ];
+  navigateToSkills() {
+    this.router.navigate(['/student/skills']);
+  }
 
-  // schedule
+  navigateToNotifications() {
+    this.router.navigate(['/student/notifications']);
+  }
 
-  scheduleList = [
-    {
-      name: 'Cara Stevens',
-      degree: 'Mathematics',
-      date: "12 June '20",
-      time: '09:00-10:00',
-      imageUrl: 'assets/images/user/user1.jpg',
-    },
-    {
-      name: 'Airi Satou',
-      degree: 'Computer Studies',
-      date: "13 June '20",
-      time: '11:00-12:00',
-      imageUrl: 'assets/images/user/user2.jpg',
-    },
-    {
-      name: 'Jens Brincker',
-      degree: 'Geography',
-      date: "15 June '20",
-      time: '09:30-10:30',
-      imageUrl: 'assets/images/user/user3.jpg',
-    },
-    {
-      name: 'Angelica Ramos',
-      degree: 'Chemistry',
-      date: "16 June '20",
-      time: '14:00-15:00',
-      imageUrl: 'assets/images/user/user4.jpg',
-    },
-    {
-      name: 'Cara Stevens',
-      degree: 'Painting',
-      date: "18 June '20",
-      time: '11:00-12:30',
-      imageUrl: 'assets/images/user/user5.jpg',
-    },
-    {
-      name: 'Jacob Ryan',
-      degree: 'Business Studies',
-      date: "22 June '20",
-      time: '13:00-14:15',
-      imageUrl: 'assets/images/user/user6.jpg',
-    },
-  ];
+  // Format activity icons based on type
+  getActivityIcon(type: string): string {
+    switch (type) {
+      case 'practice': return 'edit';
+      case 'completion': return 'check_circle';
+      case 'skill': return 'stars';
+      case 'notification': return 'notifications';
+      default: return 'info';
+    }
+  }
 
-  // document list
-
-  documentList = [
-    {
-      title: 'Java Programming',
-      type: '.doc',
-      size: 4.3,
-      icon: 'far fa-file-word',
-      iconClass: 'primary-rgba text-primary',
-      textClass: '',
-    },
-    {
-      title: 'Angular Theory',
-      type: '.xls',
-      size: 2.5,
-      icon: 'far fa-file-excel',
-      iconClass: 'success-rgba text-success',
-      textClass: '',
-    },
-    {
-      title: 'Maths Sums Solution',
-      type: '.pdf',
-      size: 10.5,
-      icon: 'far fa-file-pdf',
-      iconClass: 'danger-rgba text-danger',
-      textClass: '',
-    },
-    {
-      title: 'Submit Science Journal',
-      type: '.zip',
-      size: 53.2,
-      icon: 'far fa-file-archive',
-      iconClass: 'info-rgba text-info',
-      textClass: '',
-    },
-    {
-      title: 'Marketing Instructions',
-      type: '.doc',
-      size: 5.3,
-      icon: 'far fa-file-word',
-      iconClass: 'primary-rgba text-primary',
-      textClass: '',
-    },
-  ];
-
-  // Library Book data start
-  libraryColumnDefinitions: ColumnDefinition[] = [
-    { def: 'bookId', label: 'Book ID', type: 'text', visible: true },
-    { def: 'bookTitle', label: 'Book Title', type: 'text', visible: true },
-    { def: 'author', label: 'Author', type: 'text', visible: true },
-    { def: 'issueDate', label: 'Issue Date', type: 'date', visible: true },
-    { def: 'status', label: 'Status', type: 'text', visible: true },
-    { def: 'returnDate', label: 'Return Date', type: 'date', visible: true },
-    { def: 'actions', label: 'Actions', type: 'actionBtn', visible: true },
-  ];
-
-  booksData = [
-    {
-      bookId: 'AI99876',
-      bookTitle: 'Computer Programming',
-      author: 'John Deo',
-      issueDate: '10/03/2019',
-      status: 'Issue',
-      returnDate: '03/23/2019',
-    },
-    {
-      bookId: 'BT67657',
-      bookTitle: 'Design Pattern In Java',
-      author: 'Airi Satou',
-      issueDate: '04/14/2019',
-      status: 'Return',
-      returnDate: '04/28/2019',
-    },
-    {
-      bookId: 'RT67013',
-      bookTitle: 'The Mathematics Principles',
-      author: 'Angelica Ramos',
-      issueDate: '04/17/2019',
-      status: 'Issue',
-      returnDate: '04/24/2019',
-    },
-    {
-      bookId: 'PS2398',
-      bookTitle: 'Angular 10 Advance',
-      author: 'Jens Brincker',
-      issueDate: '04/21/2019',
-      status: 'Issue',
-      returnDate: '04/29/2019',
-    },
-    {
-      bookId: 'MO4987',
-      bookTitle: 'SEO Optimization',
-      author: 'Cara Stevens',
-      issueDate: '05/11/2019',
-      status: 'Return',
-      returnDate: '05/18/2019',
-    },
-    {
-      bookId: 'BE2876',
-      bookTitle: 'Android Basic Concept',
-      author: 'Jacob Ryan',
-      issueDate: '05/15/2019',
-      status: 'Issue',
-      returnDate: '05/21/2019',
-    },
-    {
-      bookId: 'JS46789',
-      bookTitle: 'Introduction to Machine Learning',
-      author: 'Liam Brown',
-      issueDate: '05/20/2019',
-      status: 'Issue',
-      returnDate: '06/10/2019',
-    },
-    {
-      bookId: 'PH38476',
-      bookTitle: 'Physics Fundamentals',
-      author: 'Emma White',
-      issueDate: '06/01/2019',
-      status: 'Return',
-      returnDate: '06/15/2019',
-    },
-    {
-      bookId: 'DA56432',
-      bookTitle: 'Data Structures and Algorithms',
-      author: 'Olivia Green',
-      issueDate: '06/05/2019',
-      status: 'Issue',
-      returnDate: '06/22/2019',
-    },
-  ];
+  getActivityColorClass(type: string): string {
+    switch (type) {
+      case 'practice': return 'bg-blue';
+      case 'completion': return 'bg-green';
+      case 'skill': return 'bg-orange';
+      case 'notification': return 'bg-purple';
+      default: return 'bg-cyan';
+    }
+  }
 }
+
