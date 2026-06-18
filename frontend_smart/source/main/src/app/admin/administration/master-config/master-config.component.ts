@@ -83,15 +83,15 @@ export class MasterConfigComponent implements OnInit {
   async loadAllData() {
     this.isLoading = true;
     try {
-      this.organization = await lastValueFrom(this.configService.getOrganizationProfile());
+      this.organization = await lastValueFrom(this.configService.getOrganizationProfile()).catch(() => undefined);
       this.initProfileForm(this.organization);
       
       // Load Masters
       [this.boards, this.mediums, this.orgTypes, this.academicYears] = await Promise.all([
-        lastValueFrom(this.configService.getEntities('boards')),
-        lastValueFrom(this.configService.getEntities('mediums')),
-        lastValueFrom(this.configService.getEntities('organization-types')),
-        lastValueFrom(this.configService.getEntities('academic-years'))
+        lastValueFrom(this.configService.getEntities('boards')).catch(() => []),
+        lastValueFrom(this.configService.getEntities('mediums')).catch(() => []),
+        lastValueFrom(this.configService.getEntities('organization-types')).catch(() => []),
+        lastValueFrom(this.configService.getEntities('academic-years')).catch(() => [])
       ]);
 
       // Load Master Config Settings

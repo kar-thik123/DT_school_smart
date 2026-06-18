@@ -51,7 +51,8 @@ export interface ColumnDefinition {
     | 'priority'
     | 'custom'
     | 'file'
-    | 'button';
+    | 'button'
+    | 'checkbox';
   visible?: boolean;
   sortable?: boolean;
   tooltip?: boolean;
@@ -119,6 +120,9 @@ export class MasterTableComponent implements OnInit, AfterViewInit {
   @Output() refresh = new EventEmitter<void>();
   @Output() bulkDelete = new EventEmitter<any[]>();
   @Output() rowClick = new EventEmitter<any>();
+  @Output() statusClick = new EventEmitter<{ row: any; column: ColumnDefinition; event: MouseEvent }>();
+  @Output() checkboxChange = new EventEmitter<{ row: any; column: ColumnDefinition; event: any }>();
+  @Output() headerCheckboxChange = new EventEmitter<{ column: ColumnDefinition; event: any }>();
 
   // Component properties
   selection = new SelectionModel<any>(true, []);
@@ -255,6 +259,37 @@ export class MasterTableComponent implements OnInit, AfterViewInit {
       this.contextMenu.menu?.focusFirstItem('mouse');
       this.contextMenu.openMenu();
     }
+  }
+
+  onStatusClick(row: any, column: ColumnDefinition, event: MouseEvent) {
+    event.stopPropagation();
+    this.statusClick.emit({ row, column, event });
+  }
+
+  onCheckboxChange(row: any, column: ColumnDefinition, event: any) {
+    this.checkboxChange.emit({ row, column, event });
+  }
+
+  onHeaderCheckboxChange(column: ColumnDefinition, event: any) {
+    this.headerCheckboxChange.emit({ column, event });
+  }
+
+  isAllChecked(column: ColumnDefinition): boolean {
+    if (!this.dataSource.data || this.dataSource.data.length === 0) return false;
+    const selectableRows = this.dataSource.data.filter(row => !row[column.def]);
+    if (selectableRows.length === 0) return false; // None are selectable
+    return selectableRows.every(row => row['_selected_' + column.def]);
+  }
+
+  hasSelectableRows(column: ColumnDefinition): boolean {
+    if (!this.dataSource.data || this.dataSource.data.length === 0) return false;
+    return this.dataSource.data.some(row => !row[column.def]);
+  }
+
+  isSomeChecked(column: ColumnDefinition): boolean {
+    if (!this.dataSource.data || this.dataSource.data.length === 0) return false;
+    const selectableRows = this.dataSource.data.filter(row => !row[column.def]);
+    return selectableRows.some(row => row['_selected_' + column.def]);
   }
 
   // Helper method to get status badge class with case-insensitive matching

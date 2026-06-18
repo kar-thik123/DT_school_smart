@@ -1,1 +1,6 @@
 /* SCSS placeholder */
+
+// Left align pagination specifically for this page
+::ng-deep .mat-mdc-paginator-container {
+  justify-content: flex-start !important;
+}

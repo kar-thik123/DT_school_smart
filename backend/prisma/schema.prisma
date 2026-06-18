@@ -30,7 +30,7 @@ model Organization {
   created_at                  DateTime                      @default(now())
   SkillVerificationAssignment SkillVerificationAssignment[]
   academic_years              AcademicYear[]
-  attendance_phases           attendance_phases[]
+  attendance_phases           AttendancePhase[]
   audit_logs                  AuditLog[]
   boards                      Board[]
   completion_trackings        CompletionTracking[]
@@ -50,7 +50,7 @@ model Organization {
   sections                    Section[]
   Skill                       Skill[]
   student_assessment_attempts StudentAssessmentAttempt[]
-  student_attendance          student_attendance[]
+  student_attendances         StudentAttendance[]
   student_enrollments         StudentEnrollment[]
   student_group_mappings      StudentGroupMapping[]
   student_profiles            StudentProfile[]
@@ -90,45 +90,45 @@ model OrganizationLicense {
 }
 
 model User {
-  id                                                      String                        @id @default(uuid()) @db.Uuid
+  id                                                      String                     @id @default(uuid()) @db.Uuid
   name                                                    String
-  email                                                   String                        @unique
+  email                                                   String                     @unique
   password_hash                                           String
-  role_id                                                 String                        @db.Uuid
-  organization_id                                         String                        @db.Uuid
-  grade_id                                                String?                       @db.Uuid
-  section_id                                              String?                       @db.Uuid
-  is_active                                               Boolean                       @default(true)
-  created_at                                              DateTime                      @default(now())
-  updated_at                                              DateTime                      @default(now()) @updatedAt
+  role_id                                                 String                     @db.Uuid
+  organization_id                                         String                     @db.Uuid
+  grade_id                                                String?                    @db.Uuid
+  section_id                                              String?                    @db.Uuid
+  is_active                                               Boolean                    @default(true)
+  created_at                                              DateTime                   @default(now())
+  updated_at                                              DateTime                   @default(now()) @updatedAt
   roll_number                                             String?
-  mails_received                                          InternalMail[]                @relation("MailReceiver")
-  mails_sent                                              InternalMail[]                @relation("MailSender")
+  mails_received                                          InternalMail[]             @relation("MailReceiver")
+  mails_sent                                              InternalMail[]             @relation("MailSender")
   notification_recipients                                 NotificationRecipient[]
   password_resets                                         PasswordReset[]
   practice_attempts                                       PracticeAttempt[]
-  promotions_made                                         PromotionHistory[]            @relation("PromotedBy")
-  promotion_history                                       PromotionHistory[]            @relation("PromotionStudent")
+  promotions_made                                         PromotionHistory[]         @relation("PromotedBy")
+  promotion_history                                       PromotionHistory[]         @relation("PromotionStudent")
   questions                                               Question[]
-  skills                                                  Skill[]                       @relation("SkillOwner")
-  verified_skills                                         Skill[]                       @relation("SkillVerifier")
+  skills                                                  Skill[]                    @relation("SkillOwner")
+  verified_skills                                         Skill[]                    @relation("SkillVerifier")
   student_assessment_attempts                             StudentAssessmentAttempt[]
-  student_attendance_student_attendance_marked_byTousers  student_attendance[]          @relation("student_attendance_marked_byTousers")
-  student_attendance_student_attendance_student_idTousers student_attendance[]          @relation("student_attendance_student_idTousers")
   enrollments                                             StudentEnrollment[]
   student_group_mappings                                  StudentGroupMapping[]
   student_profile                                         StudentProfile?
   StudentTopicCompletion                                  StudentTopicCompletion[]
   StudentDashboardSummary                                 StudentDashboardSummary[]
   StudentDashboardWeeklyTrend                             StudentDashboardWeeklyTrend[]
-  transfer_history_as_creator                             StudentTransferHistory[]      @relation("TransferCreator")
-  transfer_history_as_student                             StudentTransferHistory[]      @relation("TransferStudent")
+  transfer_history_as_creator                             StudentTransferHistory[]   @relation("TransferCreator")
+  transfer_history_as_student                             StudentTransferHistory[]   @relation("TransferStudent")
   teacher_assignments                                     TeacherAssignment[]
   user_profile                                            UserProfile?
-  grade                                                   Grade?                        @relation(fields: [grade_id], references: [id])
-  organization                                            Organization                  @relation(fields: [organization_id], references: [id], onDelete: Cascade)
-  role                                                    Role                          @relation(fields: [role_id], references: [id])
-  section                                                 Section?                      @relation(fields: [section_id], references: [id])
+  grade                                                   Grade?                     @relation(fields: [grade_id], references: [id])
+  organization                                            Organization               @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  role                                                    Role                       @relation(fields: [role_id], references: [id])
+  section                                                 Section?                   @relation(fields: [section_id], references: [id])
+  attendance_marked_for                                   StudentAttendance[]        @relation("AttendanceStudent")
+  attendance_marked_by                                    StudentAttendance[]        @relation("AttendanceMarker")
 
   @@index([organization_id])
   @@index([email])
@@ -283,7 +283,6 @@ model AcademicYear {
   promotion_to                PromotionHistory[]            @relation("ToAcademicYear")
   Skill                       Skill[]
   assessment_attempts         StudentAssessmentAttempt[]
-  student_attendance          student_attendance[]
   enrollments                 StudentEnrollment[]
   student_group_mappings      StudentGroupMapping[]
   student_transfer_history    StudentTransferHistory[]      @relation("TransferAcademicYear")
@@ -291,6 +290,7 @@ model AcademicYear {
   topic_activations           TopicActivation[]
   StudentDashboardSummary     StudentDashboardSummary[]
   StudentDashboardWeeklyTrend StudentDashboardWeeklyTrend[]
+  student_attendances         StudentAttendance[]
 
   @@unique([name, organization_id])
   @@index([organization_id])
@@ -332,7 +332,7 @@ model Grade {
   promotion_to          PromotionHistory[]       @relation("ToGrade")
   questions             Question[]
   sections              Section[]
-  student_attendance    student_attendance[]
+  student_attendances   StudentAttendance[]
   enrollments           StudentEnrollment[]
   transfer_history_from StudentTransferHistory[] @relation("TransferFromGrade")
   transfer_history_to   StudentTransferHistory[] @relation("TransferToGrade")
@@ -363,7 +363,7 @@ model Section {
   questions             Question[]
   grade                 Grade                    @relation(fields: [grade_id], references: [id], onDelete: Cascade)
   organization          Organization             @relation(fields: [organization_id], references: [id], onDelete: Cascade)
-  student_attendance    student_attendance[]
+  student_attendances   StudentAttendance[]
   enrollments           StudentEnrollment[]
   transfer_history_from StudentTransferHistory[] @relation("TransferFromSection")
   transfer_history_to   StudentTransferHistory[] @relation("TransferToSection")
@@ -1016,49 +1016,7 @@ model SkillVerificationAssignment {
   organization    Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
 }
 
-model attendance_phases {
-  id                 String               @id @db.Uuid
-  organization_id    String               @db.Uuid
-  phase_name         String
-  start_period       Int
-  end_period         Int
-  display_order      Int                  @default(0)
-  is_active          Boolean              @default(true)
-  created_at         DateTime             @default(now())
-  updated_at         DateTime             @default(now())
-  organizations      Organization         @relation(fields: [organization_id], references: [id], onDelete: Cascade)
-  student_attendance student_attendance[]
 
-  @@unique([organization_id, phase_name])
-  @@index([organization_id])
-}
-
-model student_attendance {
-  id                                         String            @id @db.Uuid
-  organization_id                            String            @db.Uuid
-  academic_year_id                           String            @db.Uuid
-  student_id                                 String            @db.Uuid
-  grade_id                                   String            @db.Uuid
-  section_id                                 String?           @db.Uuid
-  phase_id                                   String            @db.Uuid
-  attendance_date                            DateTime          @db.Date
-  status                                     AttendanceStatus  @default(PRESENT)
-  remarks                                    String?
-  marked_by                                  String            @db.Uuid
-  created_at                                 DateTime          @default(now())
-  updated_at                                 DateTime          @default(now())
-  academic_years                             AcademicYear      @relation(fields: [academic_year_id], references: [id], onDelete: Cascade)
-  grades                                     Grade             @relation(fields: [grade_id], references: [id], onDelete: Cascade)
-  users_student_attendance_marked_byTousers  User              @relation("student_attendance_marked_byTousers", fields: [marked_by], references: [id], onDelete: Cascade)
-  organizations                              Organization      @relation(fields: [organization_id], references: [id], onDelete: Cascade)
-  attendance_phases                          attendance_phases @relation(fields: [phase_id], references: [id], onDelete: Cascade)
-  sections                                   Section?          @relation(fields: [section_id], references: [id], onDelete: Cascade)
-  users_student_attendance_student_idTousers User              @relation("student_attendance_student_idTousers", fields: [student_id], references: [id], onDelete: Cascade)
-
-  @@unique([organization_id, student_id, attendance_date, phase_id])
-  @@index([organization_id, grade_id, section_id, attendance_date])
-  @@index([student_id])
-}
 
 enum OrganizationStatus {
   DRAFT
@@ -1128,12 +1086,7 @@ enum CompletionLevel {
   SUBTOPIC
 }
 
-enum AttendanceStatus {
-  PRESENT
-  ABSENT
-  LATE
-  EXCUSED
-}
+
 
 // -----------------------------------------------------------------------------
 // STUDENT DASHBOARD MODELS
@@ -1186,4 +1139,60 @@ model StudentDashboardWeeklyTrend {
   @@index([organization_id, student_id])
   @@index([academic_year_id])
   @@map("student_dashboard_weekly_trends")
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  EXCUSED
+}
+
+model AttendancePhase {
+  id              String              @id @default(uuid()) @db.Uuid
+  organization_id String              @db.Uuid
+  phase_name      String              // e.g., "Phase 1" or "Morning Session"
+  start_period    Int                 // e.g., 1
+  end_period      Int                 // e.g., 4
+  display_order   Int                 @default(0)
+  is_active       Boolean             @default(true)
+  created_at      DateTime            @default(now())
+  updated_at      DateTime            @default(now()) @updatedAt
+  
+  organization    Organization        @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  attendances     StudentAttendance[]
+
+  @@unique([organization_id, phase_name])
+  @@index([organization_id])
+  @@map("attendance_phases")
+}
+
+model StudentAttendance {
+  id               String           @id @default(uuid()) @db.Uuid
+  organization_id  String           @db.Uuid
+  academic_year_id String           @db.Uuid
+  student_id       String           @db.Uuid
+  grade_id         String           @db.Uuid
+  section_id       String?          @db.Uuid
+  phase_id         String           @db.Uuid
+  attendance_date  DateTime         @db.Date
+  status           AttendanceStatus @default(PRESENT)
+  remarks          String?
+  marked_by        String           @db.Uuid
+  
+  created_at       DateTime         @default(now())
+  updated_at       DateTime         @default(now()) @updatedAt
+
+  organization     Organization     @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  academic_year    AcademicYear     @relation(fields: [academic_year_id], references: [id], onDelete: Cascade)
+  student          User             @relation("AttendanceStudent", fields: [student_id], references: [id], onDelete: Cascade)
+  grade            Grade            @relation(fields: [grade_id], references: [id], onDelete: Cascade)
+  section          Section?         @relation(fields: [section_id], references: [id], onDelete: Cascade)
+  phase            AttendancePhase  @relation(fields: [phase_id], references: [id], onDelete: Cascade)
+  marker           User             @relation("AttendanceMarker", fields: [marked_by], references: [id], onDelete: Cascade)
+
+  @@unique([organization_id, student_id, attendance_date, phase_id])
+  @@index([organization_id, grade_id, section_id, attendance_date])
+  @@index([student_id])
+  @@map("student_attendance")
 }

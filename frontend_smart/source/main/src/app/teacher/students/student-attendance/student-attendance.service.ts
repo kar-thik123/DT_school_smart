@@ -1,52 +1,62 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
-import { StudentAttendance } from './student-attendance.model';
+import { Observable } from 'rxjs';
+import { environment } from 'environments/environment';
+
+export interface AttendancePhase {
+  id: string;
+  phase_name: string;
+  start_period: number;
+  end_period: number;
+  display_order: number;
+}
+
+export interface StudentAttendanceRecord {
+  student_id: string;
+  status: 'PRESENT' | 'ABSENT' | 'LATE' | 'EXCUSED';
+  remarks?: string;
+}
+
+export interface MarkAttendancePayload {
+  grade_id: string;
+  section_id?: string;
+  phase_id: string;
+  attendance_date: string;
+  records: StudentAttendanceRecord[];
+}
 
 @Injectable({
   providedIn: 'root',
 })
 export class StudentAttendanceService {
   private httpClient = inject(HttpClient);
+  private apiUrl = `${environment.apiUrl}/attendance`;
 
-  private readonly mockData: StudentAttendance[] = [
-    { id: 1, rollNo: '101', name: 'John Doe', date: '2025-12-26', status: 'Present', remarks: '-' },
-    { id: 2, rollNo: '102', name: 'Jane Smith', date: '2025-12-26', status: 'Present', remarks: '-' },
-    { id: 3, rollNo: '103', name: 'Alice Johnson', date: '2025-12-26', status: 'Absent', remarks: 'Sick' },
-    { id: 4, rollNo: '104', name: 'Bob Brown', date: '2025-12-26', status: 'Present', remarks: '-' },
-    { id: 5, rollNo: '105', name: 'Charlie Davis', date: '2025-12-26', status: 'Late', remarks: 'Bus late' },
-    { id: 6, rollNo: '106', name: 'Eva White', date: '2025-12-26', status: 'Present', remarks: '-' },
-    { id: 7, rollNo: '107', name: 'Frank Black', date: '2025-12-26', status: 'Present', remarks: '-' },
-    { id: 8, rollNo: '108', name: 'Grace Miller', date: '2025-12-26', status: 'Present', remarks: '-' },
-    { id: 9, rollNo: '109', name: 'Henry Wilson', date: '2025-12-26', status: 'Absent', remarks: 'Uninformed' },
-    { id: 10, rollNo: '110', name: 'Isabella Taylor', date: '2025-12-26', status: 'Present', remarks: '-' },
-    { id: 11, rollNo: '111', name: 'Jack Anderson', date: '2025-12-26', status: 'Present', remarks: '-' },
-    { id: 12, rollNo: '112', name: 'Katherine Thomas', date: '2025-12-26', status: 'Present', remarks: '-' },
-  ];
-
-  getAllAttendance(): Observable<StudentAttendance[]> {
-    return of(this.mockData);
+  getPhases(): Observable<AttendancePhase[]> {
+    return this.httpClient.get<AttendancePhase[]>(`${this.apiUrl}/phases`);
   }
 
-  addAttendance(attendance: StudentAttendance): Observable<StudentAttendance> {
-    this.mockData.unshift(attendance);
-    return of(attendance);
+  getMyAssignments(): Observable<any[]> {
+    return this.httpClient.get<any[]>(`${environment.apiUrl}/teacher-assignments/me`);
   }
 
-  updateAttendance(attendance: StudentAttendance): Observable<StudentAttendance> {
-    const index = this.mockData.findIndex((it) => it.id === attendance.id);
-    if (index !== -1) {
-      this.mockData[index] = attendance;
+  getDailyAttendance(gradeId: string, phaseId: string, date: string, sectionId?: string): Observable<any[]> {
+    let url = `${this.apiUrl}/daily?grade_id=${gradeId}&phase_id=${phaseId}&date=${date}`;
+    if (sectionId) {
+      url += `&section_id=${sectionId}`;
     }
-    return of(attendance);
+    return this.httpClient.get<any[]>(url);
   }
 
-  deleteAttendance(id: number): Observable<number> {
-    const index = this.mockData.findIndex((it) => it.id === id);
-    if (index !== -1) {
-      this.mockData.splice(index, 1);
+  markAttendance(payload: MarkAttendancePayload): Observable<any> {
+    return this.httpClient.post<any>(`${this.apiUrl}/mark`, payload);
+  }
+
+  getSummary(gradeId: string, sectionId?: string): Observable<any[]> {
+    let url = `${this.apiUrl}/summary?grade_id=${gradeId}`;
+    if (sectionId) {
+      url += `&section_id=${sectionId}`;
     }
-    return of(id);
+    return this.httpClient.get<any[]>(url);
   }
 }
-

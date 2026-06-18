@@ -38,6 +38,7 @@ router.get('/', requirePermission('ACADEMIC_STRUCTURE', 'READ'), async (req: any
             id: true,
             name: true,
             email: true,
+            roll_number: true,
             student_profile: true
           }
         },
@@ -96,6 +97,7 @@ router.get('/unenrolled', requirePermission('ACADEMIC_STRUCTURE', 'READ'), async
         id: true,
         name: true,
         email: true,
+        roll_number: true,
         student_profile: true
       }
     });

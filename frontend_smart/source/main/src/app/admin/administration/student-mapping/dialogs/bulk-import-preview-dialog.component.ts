@@ -30,8 +30,8 @@ import { MatTableModule } from '@angular/material/table';
           <div><strong class="text-danger">Invalid:</strong> {{ invalidRows.length }}</div>
         </div>
 
-        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-          <table class="table table-sm table-bordered">
+        <div class="table-responsive" style="max-height: 60vh; overflow-y: auto; overflow-x: auto;">
+          <table class="table table-sm table-bordered" style="table-layout: auto; white-space: nowrap;">
             <thead class="table-light">
               <tr>
                 <th>Status</th>

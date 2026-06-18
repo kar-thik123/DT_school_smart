@@ -16,6 +16,31 @@ const assignmentSchema = z.object({
   section_id: z.string().uuid().optional().nullable(),
   subject_id: z.string().uuid().optional().nullable()
 });
+// Get current user's assignments
+router.get('/me', async (req: any, res: Response) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  try {
+    const yearId = await AcademicContextResolver.resolveAcademicYearId(req);
+    const assignments = await prisma.teacherAssignment.findMany({
+      where: { 
+        organization_id: req.user.organization_id,
+        academic_year_id: yearId,
+        teacher_id: req.user.user_id
+      },
+      include: {
+        grade: { select: { id: true, name: true } },
+        section: { select: { id: true, name: true } },
+        subject: { select: { id: true, name: true } }
+      },
+      orderBy: { created_at: 'desc' }
+    });
+    res.json(assignments);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching your assignments' });
+  }
+});
 
 // Read all assignments
 router.get('/', requirePermission('TEACHER_ASSIGNMENT', 'VIEW'), async (req: any, res: Response) => {

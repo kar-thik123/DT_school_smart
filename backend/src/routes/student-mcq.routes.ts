@@ -53,12 +53,22 @@ router.get('/curriculum', requirePermission('MCQ', 'VIEW'), checkMcqEnabled, asy
       return res.status(404).json({ message: 'Student enrollment not found for the current academic year' });
     }
 
-    // Fetch subjects for this grade
+    // Fetch subjects for this grade (and group if applicable)
+    let subjectFilter: any = {
+      grade_id: enrollment.grade_id,
+      organization_id: org_id
+    };
+
+    if (enrollment.subject_group_id) {
+      const groupSubjects = await prisma.subjectGroupSubject.findMany({
+        where: { group_id: enrollment.subject_group_id }
+      });
+      const groupSubjectIds = groupSubjects.map((gs: any) => gs.subject_id);
+      subjectFilter.id = { in: groupSubjectIds };
+    }
+
     const subjects = await prisma.subject.findMany({
-      where: {
-        grade_id: enrollment.grade_id,
-        organization_id: org_id
-      },
+      where: subjectFilter,
       select: {
         id: true,
         name: true
@@ -71,7 +81,11 @@ router.get('/curriculum', requirePermission('MCQ', 'VIEW'), checkMcqEnabled, asy
     const units = await prisma.unit.findMany({
       where: {
         subject_id: { in: subjectIds },
-        organization_id: org_id
+        organization_id: org_id,
+        OR: [
+          { section_id: enrollment.section_id },
+          { section_id: null }
+        ]
       },
       select: {
         id: true,
@@ -127,10 +141,31 @@ router.get('/curriculum', requirePermission('MCQ', 'VIEW'), checkMcqEnabled, asy
 router.get('/questions', requirePermission('MCQ', 'VIEW'), checkMcqEnabled, async (req: any, res: Response) => {
   try {
     const org_id = req.user.organization_id;
+    const student_id = req.user.user_id;
+    const academic_year_id = req.academic_year_id;
     const { sub_topic_id, topic_id, unit_id, subject_id } = req.query;
 
+    let section_id: string | null = null;
+    if (academic_year_id) {
+      const enrollment = await prisma.studentEnrollment.findFirst({
+        where: { student_id, academic_year_id, organization_id: org_id, status: 'ACTIVE' }
+      });
+      if (enrollment) {
+        section_id = enrollment.section_id;
+      }
+    }
+
     const filter: any = { organization_id: org_id };
-    
+
+    if (section_id) {
+      filter.OR = [
+        { section_id: section_id },
+        { section_id: null }
+      ];
+    } else {
+      filter.section_id = null;
+    }
+
     if (sub_topic_id) filter.sub_topic_id = String(sub_topic_id);
     else if (topic_id) filter.topic_id = String(topic_id);
     else if (unit_id) filter.unit_id = String(unit_id);
@@ -154,7 +189,7 @@ router.get('/questions', requirePermission('MCQ', 'VIEW'), checkMcqEnabled, asyn
         // we intentionally omit 'answer' so students don't cheat by checking network responses
         // unless they are meant to self-check. We will send the answer if this is for practice.
         // For practice mode, let's include it.
-        answer: true 
+        answer: true
       }
     });
 
@@ -300,7 +335,7 @@ router.post('/topics/:topic_id/complete', requirePermission('MCQ', 'ATTEMPT'), c
     const enrollment = await prisma.studentEnrollment.findFirst({
       where: { student_id, academic_year_id: yearId, status: 'ACTIVE' }
     });
-    
+
     if (enrollment) {
       payload.context.grade_id = enrollment.grade_id;
       payload.context.section_id = enrollment.section_id;

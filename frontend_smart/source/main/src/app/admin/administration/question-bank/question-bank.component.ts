@@ -370,8 +370,8 @@ export class QuestionBankComponent implements OnInit {
     this.selectedGradeName = grade?.name || '';
     this.selectedSectionId = section === 'ALL' ? 'ALL' : section?.id || null;
     this.selectedSectionName = section === 'ALL' ? 'All Sections' : section?.name || '';
-    this.selectedSubjectId = subject?.id || null;
-    this.selectedSubjectName = subject?.name || '';
+    this.selectedSubjectId = (subject as any)?.subject_id || subject?.id || null;
+    this.selectedSubjectName = subject?.name || (subject as any)?.subject?.name || '';
 
     this.selectedUnitId = unit?.id || null;
     this.selectedUnitName = unit?.name || '';
