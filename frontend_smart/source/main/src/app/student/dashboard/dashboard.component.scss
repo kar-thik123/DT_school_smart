@@ -1,0 +1,121 @@
+/* Dashboard Theme Tokens */
+:root {
+  /* Core Brand Tokens mapped to Smart Template */
+  --dashboard-primary: var(--bs-primary);
+  --dashboard-success: var(--bs-success);
+  --dashboard-warning: var(--bs-warning);
+  --dashboard-danger: var(--bs-danger);
+  --dashboard-info: var(--bs-info);
+  
+  /* Background & Surface Tokens */
+  --dashboard-body-bg: var(--bs-body-bg);
+  --dashboard-card-bg: var(--bs-card-bg);
+  --dashboard-card-border: var(--bs-border-color);
+  
+  /* Text Tokens */
+  --dashboard-text: var(--bs-body-color);
+  --dashboard-muted-text: var(--bs-secondary-color);
+  
+  /* Gradient Tokens */
+  --dashboard-primary-gradient: linear-gradient(135deg, rgba(var(--bs-primary-rgb), 1) 0%, rgba(var(--bs-primary-rgb), 0.75) 100%);
+  
+  /* Interactions */
+  --hover-transform: translateY(-3px);
+  --hover-shadow: var(--bs-box-shadow-lg);
+}
+
+/* Base Card Enhancements (Using template card vars) */
+.card-hero {
+  border-radius: var(--bs-border-radius-xl, 12px);
+  overflow: hidden;
+  background: var(--bs-primary) !important;
+  box-shadow: var(--bs-box-shadow) !important;
+  transition: transform 0.3s ease;
+}
+
+.card-hero:hover {
+  transform: translateY(-2px);
+}
+
+.z-index-1 {
+  z-index: 1;
+  position: relative;
+}
+
+/* Interactive Element Hover States */
+.hover-shadow {
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+.hover-shadow:hover {
+  box-shadow: var(--hover-shadow) !important;
+  transform: var(--hover-transform);
+}
+
+.transition-all {
+  transition: all 0.3s ease-in-out;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+/* Subject Card Details */
+.subject-card {
+  border-radius: var(--bs-border-radius-lg, 10px);
+}
+.subject-card:hover {
+  border-color: var(--dashboard-primary) !important;
+}
+
+/* Action Center Task Item */
+.task-item {
+  border-left: 4px solid transparent;
+}
+.task-item:hover {
+  border-left-color: var(--dashboard-primary);
+}
+
+/* Theme-Aware Transparent Badges */
+.badge-solid-green { background: rgba(var(--bs-success-rgb), 0.15); color: var(--dashboard-success); }
+.badge-solid-orange { background: rgba(var(--bs-warning-rgb), 0.15); color: var(--dashboard-warning); }
+.badge-solid-gray { background: rgba(var(--bs-secondary-rgb), 0.15); color: var(--dashboard-muted-text); }
+.badge-solid-red { background: rgba(var(--bs-danger-rgb), 0.15); color: var(--dashboard-danger); }
+
+/* Theme-Aware Light Background Utilities */
+.bg-light-primary { background: rgba(var(--bs-primary-rgb), 0.1); color: var(--dashboard-primary); }
+.bg-light-success { background: rgba(var(--bs-success-rgb), 0.1); color: var(--dashboard-success); }
+.bg-light-warning { background: rgba(var(--bs-warning-rgb), 0.1); color: var(--dashboard-warning); }
+.bg-light-danger { background: rgba(var(--bs-danger-rgb), 0.1); color: var(--dashboard-danger); }
+.bg-light-info { background: rgba(var(--bs-info-rgb), 0.1); color: var(--dashboard-info); }
+
+/* Typography & Avatar Utilities */
+.tracking-wide { letter-spacing: 0.5px; }
+.font-9 { font-size: 9px !important; }
+.font-10 { font-size: 10px !important; }
+.font-11 { font-size: 11px !important; }
+.font-12 { font-size: 12px !important; }
+.font-13 { font-size: 13px !important; }
+.font-14 { font-size: 14px !important; }
+
+.avatar-md { width: 48px; height: 48px; line-height: 48px; }
+.avatar-sm { width: 36px; height: 36px; line-height: 36px; }
+
+/* Custom Overrides for NgApexcharts */
+apx-chart {
+  display: block;
+  width: 100%;
+}
+
+/* Responsive tweaks */
+@media (max-width: 768px) {
+  .card-hero .card-body {
+    flex-direction: column !important;
+    text-align: center !important;
+  }
+  .card-hero .bg-body {
+    width: 100% !important;
+    margin-top: 20px;
+    align-items: center !important;
+    text-align: center !important;
+  }
+}

@@ -48,6 +48,7 @@ export interface TeacherAssignment {
   teacher_id: string;
   teacher_name: string;
   official_email: string;
+  profile_picture?: string;
   assigned_subjects: string[];
 }
 
