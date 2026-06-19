@@ -1145,7 +1145,6 @@ enum AttendanceStatus {
   PRESENT
   ABSENT
   LATE
-  EXCUSED
 }
 
 model AttendancePhase {
@@ -1177,7 +1176,6 @@ model StudentAttendance {
   phase_id         String           @db.Uuid
   attendance_date  DateTime         @db.Date
   status           AttendanceStatus @default(PRESENT)
-  remarks          String?
   marked_by        String           @db.Uuid
   
   created_at       DateTime         @default(now())

@@ -249,7 +249,7 @@ export class TeacherAssignmentComponent implements OnInit {
   }
 
   saveClassTeacher() {
-    if (!this.selectedGradeId || !this.selectedSectionId || !this.activeAcademicYear) return;
+    if (!this.selectedGradeId || !this.selectedSectionId) return;
 
     this.isSaving = true;
 
@@ -298,7 +298,7 @@ export class TeacherAssignmentComponent implements OnInit {
   }
 
   saveSubjectTeachers() {
-    if (!this.selectedGradeId || !this.selectedSectionId || !this.activeAcademicYear) return;
+    if (!this.selectedGradeId || !this.selectedSectionId) return;
 
     const newAssignments: any[] = [];
     const loadedSubjectIds = this.sectionSubjects.map(s => s.subject.id);

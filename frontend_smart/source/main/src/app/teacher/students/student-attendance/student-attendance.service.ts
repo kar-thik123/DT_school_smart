@@ -13,8 +13,7 @@ export interface AttendancePhase {
 
 export interface StudentAttendanceRecord {
   student_id: string;
-  status: 'PRESENT' | 'ABSENT' | 'LATE' | 'EXCUSED';
-  remarks?: string;
+  status: 'PRESENT' | 'ABSENT' | 'LATE';
 }
 
 export interface MarkAttendancePayload {

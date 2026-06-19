@@ -12,7 +12,6 @@ export interface MarkAttendancePayload {
   records: Array<{
     student_id: string;
     status: AttendanceStatus;
-    remarks?: string;
   }>;
 }
 
@@ -59,7 +58,6 @@ export class StudentAttendanceService {
           },
           update: {
             status: record.status,
-            remarks: record.remarks || null,
             marked_by,
             grade_id,
             section_id: section_id || null,
@@ -71,7 +69,6 @@ export class StudentAttendanceService {
             attendance_date,
             phase_id,
             status: record.status,
-            remarks: record.remarks || null,
             marked_by,
             grade_id,
             section_id: section_id || null,
@@ -175,26 +172,25 @@ export class StudentAttendanceService {
       select: { student_id: true, status: true }
     });
 
-    const studentStats: Record<string, { present: number; absent: number; excused: number; late: number; total_marked: number }> = {};
+    const studentStats: Record<string, { present: number; absent: number; late: number; total_marked: number }> = {};
 
     attendanceRecords.forEach((record: any) => {
       if (!studentStats[record.student_id]) {
-        studentStats[record.student_id] = { present: 0, absent: 0, excused: 0, late: 0, total_marked: 0 };
+        studentStats[record.student_id] = { present: 0, absent: 0, late: 0, total_marked: 0 };
       }
       studentStats[record.student_id].total_marked++;
       if (record.status === 'PRESENT') studentStats[record.student_id].present++;
       else if (record.status === 'ABSENT') studentStats[record.student_id].absent++;
-      else if (record.status === 'EXCUSED') studentStats[record.student_id].excused++;
       else if (record.status === 'LATE') studentStats[record.student_id].late++;
     });
 
     const results = Object.keys(studentStats).map(studentId => {
       const stats = studentStats[studentId];
-      // Formula: (Present + Late + Excused) / Total Conducted Phases * 100
+      // Formula: (Present + Late) / Total Conducted Phases * 100
       // Note: If totalConductedPhases is 0, return 100% or 0%.
       let percentage = 0;
       if (totalConductedPhases > 0) {
-        percentage = ((stats.present + stats.late + stats.excused) / totalConductedPhases) * 100;
+        percentage = ((stats.present + stats.late) / totalConductedPhases) * 100;
       }
       return {
         student_id: studentId,

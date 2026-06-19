@@ -2,7 +2,8 @@
   <div class="content-block">
     <div class="d-flex justify-content-between align-items-center flex-nowrap header-responsive-wrapper gap-2 mb-3">
       <div class="block-header m-0 responsive-breadcrumb" style="min-width: 0; flex: 1 1 auto;">
-        <app-breadcrumb [title]="breadscrums[0].title" [items]="breadscrums[0].items" [active_item]="breadscrums[0].active">
+        <app-breadcrumb [title]="breadscrums[0].title" [items]="breadscrums[0].items"
+          [active_item]="breadscrums[0].active">
         </app-breadcrumb>
       </div>
 
@@ -11,11 +12,10 @@
           <app-hierarchy-dropdown [grades]="grades" [allSections]="allSections" [selectedGradeId]="selectedGradeId"
             [selectedSectionId]="selectedSectionId" [selectedGradeName]="selectedGradeName"
             [selectedSectionName]="selectedSectionName" labelName="Class"
-            [allSubjectGroups]="allSubjectGroups" [selectedGroupId]="selectedGroupId"
             (selectionChange)="onHierarchySelectionChange($event)">
           </app-hierarchy-dropdown>
         </div>
-        
+
         <div class="custom-dropdown-wrapper" style="position: relative;">
           <button class="custom-trigger" [class.open]="isPeriodOpen" (click)="togglePeriodDropdown($event)">
             <div class="trigger-content">
@@ -24,19 +24,23 @@
                 <span class="value">{{ getPeriodLabel() }}</span>
               </span>
             </div>
-            <mat-icon class="trigger-icon-right" [@iconRotate]="isPeriodOpen ? 'expanded' : 'collapsed'">chevron_right</mat-icon>
+            <mat-icon class="trigger-icon-right"
+              [@iconRotate]="isPeriodOpen ? 'expanded' : 'collapsed'">chevron_right</mat-icon>
           </button>
-          
+
           <div class="hierarchy-panel period-panel" *ngIf="isPeriodOpen" [@dropdownAnimation]>
             <div class="hierarchy-scroll-area" (click)="$event.stopPropagation()">
               <div class="grade-row" [class.expanded]="selectedPeriod === 'DAY'" (click)="setPeriod('DAY')">
-                <span class="grade-name" [style.fontWeight]="selectedPeriod === 'DAY' ? '500' : '400'" [style.color]="selectedPeriod === 'DAY' ? '#10b981' : 'inherit'">Today</span>
+                <span class="grade-name" [style.fontWeight]="selectedPeriod === 'DAY' ? '500' : '400'"
+                  [style.color]="selectedPeriod === 'DAY' ? '#10b981' : 'inherit'">Today</span>
               </div>
               <div class="grade-row" [class.expanded]="selectedPeriod === 'WEEK'" (click)="setPeriod('WEEK')">
-                <span class="grade-name" [style.fontWeight]="selectedPeriod === 'WEEK' ? '500' : '400'" [style.color]="selectedPeriod === 'WEEK' ? '#10b981' : 'inherit'">This Week</span>
+                <span class="grade-name" [style.fontWeight]="selectedPeriod === 'WEEK' ? '500' : '400'"
+                  [style.color]="selectedPeriod === 'WEEK' ? '#10b981' : 'inherit'">This Week</span>
               </div>
               <div class="grade-row" [class.expanded]="selectedPeriod === 'MONTH'" (click)="setPeriod('MONTH')">
-                <span class="grade-name" [style.fontWeight]="selectedPeriod === 'MONTH' ? '500' : '400'" [style.color]="selectedPeriod === 'MONTH' ? '#10b981' : 'inherit'">This Month</span>
+                <span class="grade-name" [style.fontWeight]="selectedPeriod === 'MONTH' ? '500' : '400'"
+                  [style.color]="selectedPeriod === 'MONTH' ? '#10b981' : 'inherit'">This Month</span>
               </div>
             </div>
           </div>
@@ -46,133 +50,156 @@
 
     <h5 class="mb-1 mt-2" [ngClass]="{'text-success': isClassTeacher, 'text-primary': !isClassTeacher}"
       style="display: flex; align-items: center; font-weight: 600;">
-      {{ classTeacherMessage }} - 
+      {{ classTeacherMessage ? classTeacherMessage + ' -' : '' }}
       <span style="cursor: pointer; display: flex; align-items: center; margin-left: 5px;" (click)="picker.open()">
         {{ selectedDate | date:'mediumDate' }}
-        <mat-icon style="font-size: 20px; width: 20px; height: 20px; margin-left: 4px; vertical-align: middle;">calendar_today</mat-icon>
+        <mat-icon
+          style="font-size: 20px; width: 20px; height: 20px; margin-left: 4px; vertical-align: middle;">calendar_today</mat-icon>
       </span>
-      <input [matDatepicker]="picker" [value]="selectedDate" (dateChange)="onDateChange($event)" style="visibility: hidden; position: absolute; width: 0; height: 0; border: none; padding: 0;">
+      <input [matDatepicker]="picker" [value]="selectedDate" (dateChange)="onDateChange($event)"
+        style="visibility: hidden; position: absolute; width: 0; height: 0; border: none; padding: 0;">
       <mat-datepicker #picker></mat-datepicker>
     </h5>
 
-      <!-- Daily View -->
-      <app-master-table *ngIf="selectedPeriod === 'DAY'" [title]="'Student Attendance'" [columnDefinitions]="columnDefinitions"
-        [dataSource]="dataSource" [isLoading]="isLoading" (refresh)="handleRefresh()" [showAdd]="false"
-        [showDelete]="false" [disableRowClickToEdit]="true" (edit)="handleEdit($event)"
-        (checkboxChange)="handleCheckboxChange($event)" (headerCheckboxChange)="handleHeaderCheckboxChange($event)">
+    <!-- Daily View -->
+    <app-master-table *ngIf="selectedPeriod === 'DAY'" [title]="'Student Attendance'"
+      [columnDefinitions]="columnDefinitions" [dataSource]="dataSource" [isLoading]="isLoading"
+      (refresh)="handleRefresh()" [showAdd]="false" [showDelete]="false" [disableRowClickToEdit]="true"
+      (edit)="handleEdit($event)" (checkboxChange)="handleCheckboxChange($event)"
+      (headerCheckboxChange)="handleHeaderCheckboxChange($event)">
 
-        <div bulk-actions *ngIf="isClassTeacher" style="display: flex; gap: 10px;">
-          <!-- Bulk Checkbox Selection Buttons -->
-          <ng-container *ngIf="hasAnySelection()">
-            <button mat-raised-button color="primary" (click)="markSelected('PRESENT')">
-              <mat-icon>check_circle</mat-icon> Mark Present
+      <div bulk-actions *ngIf="isClassTeacher" style="display: flex; gap: 10px;">
+        <!-- Bulk Checkbox Selection Buttons -->
+        <ng-container *ngIf="hasAnySelection()">
+          @if (isMorningComplete()) {
+            <button mat-stroked-button color="primary" (click)="copyMorningForSelected()">
+              <mat-icon class="me-2">content_copy</mat-icon> Copy Morning Status
             </button>
-            <button mat-raised-button color="accent" (click)="markSelected('ABSENT')">
-              <mat-icon>cancel</mat-icon> Mark Absent
-            </button>
-          </ng-container>
-
-          <!-- Mark Remaining / Save Buttons -->
-          @if (isMorningComplete() && !hasAnyAfternoonMarked() && !hasChanges) {
-          <button mat-stroked-button color="primary" [disabled]="!dataSource.data.length"
-            (click)="copyMorningToAfternoon()">
-            <mat-icon class="me-2">content_copy</mat-icon> Copy Morning Status
+          }
+          <button mat-raised-button color="primary" (click)="markSelected('PRESENT')">
+            <mat-icon>check_circle</mat-icon> Mark Present
           </button>
-          }
-
-          @if (isMorningComplete() || isAfternoonComplete()) {
-          <button mat-raised-button color="primary"
-            [disabled]="isSaving || !morningPhaseId || !afternoonPhaseId || !hasChanges" (click)="saveAttendance()">
-            <mat-icon class="me-2">save</mat-icon> Save All Changes
+          <button mat-raised-button color="accent" (click)="markSelected('ABSENT')">
+            <mat-icon>cancel</mat-icon> Mark Absent
           </button>
-          }
-          
-          @if ((!isMorningComplete() || !isAfternoonComplete()) && hasAnyMarked()) {
-            @if (suggestedRestAction === 'PRESENT') {
-            <button mat-stroked-button color="accent" [disabled]="!dataSource.data.length" (click)="markRest('PRESENT')">
-              <mat-icon class="me-2">done_all</mat-icon> Mark Rest as Present
-            </button>
-            } @else {
-            <button mat-stroked-button color="warn" [disabled]="!dataSource.data.length" (click)="markRest('ABSENT')">
-              <mat-icon class="me-2">cancel</mat-icon> Mark Rest as Absent
-            </button>
-            }
-          }
+        </ng-container>
+
+        <!-- Mark Remaining / Save Buttons -->
+        @if (isMorningComplete() && !hasAnyAfternoonMarked() && !hasChanges && !hasAnySelection()) {
+        <button mat-stroked-button color="primary" [disabled]="!dataSource.data.length"
+          (click)="copyMorningToAfternoon()">
+          <mat-icon class="me-2">content_copy</mat-icon> Copy Morning Status
+        </button>
+        }
+
+        @if ((isMorningComplete() && !hasAnyAfternoonMarked() && !hasAnySelection() && hasChanges) || isAfternoonComplete()) {
+        <button mat-raised-button color="primary"
+          [disabled]="isSaving || !morningPhaseId || !afternoonPhaseId || !hasChanges" (click)="saveAttendance()">
+          <mat-icon class="me-2">save</mat-icon> Save Changes
+        </button>
+        }
+
+        @if ((!isMorningComplete() || !isAfternoonComplete()) && hasAnyMarked()) {
+        @if (suggestedRestAction === 'PRESENT') {
+        <button mat-stroked-button color="accent" [disabled]="!dataSource.data.length" (click)="markRest('PRESENT')">
+          <mat-icon class="me-2">done_all</mat-icon> Mark Rest as Present
+        </button>
+        } @else {
+        <button mat-stroked-button color="warn" [disabled]="!dataSource.data.length" (click)="markRest('ABSENT')">
+          <mat-icon class="me-2">cancel</mat-icon> Mark Rest as Absent
+        </button>
+        }
+        }
+      </div>
+    </app-master-table>
+
+    <!-- Range View (Week/Month) -->
+    <div *ngIf="selectedPeriod === 'WEEK' || selectedPeriod === 'MONTH'" class="card mt-3">
+      <div class="body overflow-auto" style="position: relative; min-height: 200px;">
+
+        <div *ngIf="isLoading"
+          style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; align-items: center; background: rgba(255,255,255,0.7); z-index: 10;">
+          <mat-spinner diameter="40"></mat-spinner>
         </div>
-      </app-master-table>
 
-      <!-- Range View (Week/Month) -->
-      <div *ngIf="selectedPeriod === 'WEEK' || selectedPeriod === 'MONTH'" class="card mt-3">
-            <div class="body overflow-auto" style="position: relative; min-height: 200px;">
-          
-          <div *ngIf="isLoading" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; align-items: center; background: rgba(255,255,255,0.7); z-index: 10;">
-            <mat-spinner diameter="40"></mat-spinner>
-          </div>
-
-          <div class="attendance-sheet">
-            <!-- Filter Info and Legend -->
-            <div class="header-container d-flex justify-content-between align-items-center mb-3">
-              <div class="filter-info">
-                <p class="mb-0">Filtered by: Year: {{ selectedYear }} | Month: {{ selectedMonth }}</p>
+        <div class="attendance-sheet">
+          <!-- Filter Info and Legend -->
+          <div class="header-container d-flex justify-content-between align-items-center mb-3">
+            <div class="filter-info">
+              <p class="mb-0">Filtered by: Year: {{ selectedYear }} | Month: {{ selectedMonth }}</p>
+            </div>
+            <div class="legend-container d-flex gap-3">
+              <div class="legend-item d-flex align-items-center">
+                <mat-icon class="material-icons-outlined icon-gray me-1">remove_circle_outline</mat-icon>
+                <span class="fw-semibold">Weekend</span>
               </div>
-              <div class="legend-container d-flex gap-3">
-                <div class="legend-item d-flex align-items-center">
-                  <mat-icon class="material-icons-outlined icon-gray me-1">remove_circle_outline</mat-icon>
-                  <span class="fw-semibold">Weekend</span>
-                </div>
-                <div class="legend-item d-flex align-items-center">
-                  <mat-icon class="material-icons-outlined icon-success me-1">check_circle_outline</mat-icon>
-                  <span class="fw-semibold">Present</span>
-                </div>
-                <div class="legend-item d-flex align-items-center">
-                  <mat-icon class="material-icons-outlined icon-danger me-1">highlight_off</mat-icon>
-                  <span class="fw-semibold">Leave</span>
-                </div>
-                <div class="legend-item d-flex align-items-center">
-                  <mat-icon class="material-icons-outlined icon-warning me-1">star</mat-icon>
-                  <span class="fw-semibold">Holiday</span>
-                </div>
+              <div class="legend-item d-flex align-items-center">
+                <mat-icon class="material-icons-outlined icon-success me-1">check_circle_outline</mat-icon>
+                <span class="fw-semibold">Present</span>
+              </div>
+              <div class="legend-item d-flex align-items-center">
+                <mat-icon class="material-icons-outlined icon-danger me-1">highlight_off</mat-icon>
+                <span class="fw-semibold">Leave</span>
+              </div>
+              <div class="legend-item d-flex align-items-center">
+                <mat-icon class="material-icons-outlined icon-blue me-1">highlight_off</mat-icon>
+                <span class="fw-semibold">Morning Leave</span>
+              </div>
+              <div class="legend-item d-flex align-items-center">
+                <mat-icon class="material-icons-outlined icon-yellow me-1">highlight_off</mat-icon>
+                <span class="fw-semibold">Afternoon Leave</span>
+              </div>
+              <div class="legend-item d-flex align-items-center">
+                <mat-icon class="material-icons-outlined icon-warning me-1">star</mat-icon>
+                <span class="fw-semibold">Holiday</span>
               </div>
             </div>
+          </div>
 
-            <!-- Attendance Table -->
-            <table class="table table-hover text-center align-middle mb-0">
-              <thead class="table-light">
-                <tr role="row">
-                  <th class="text-start" style="width: 250px; min-width: 250px;">Student Name</th>
-                  <th *ngFor="let day of rangeDays" class="cell-dimention p-1" style="min-width: 40px;">{{ day }}</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngIf="rangeAttendanceData.length === 0 && !isLoading">
-                  <td [colSpan]="rangeDays.length + 1" class="text-center p-4">No students found</td>
-                </tr>
-                <tr *ngFor="let employee of rangeAttendanceData">
-                  <td class="text-start">
-                    <div class="d-flex align-items-center">
-                      <span class="attnd-user me-2">
-                        <img alt="image" class="rounded-circle" [src]="employee.avatar" width="30" height="30" style="object-fit: cover;" />
-                      </span>
-                      <p class="mb-0 fw-medium">{{ employee.name }}</p>
-                    </div>
-                  </td>
-                  <td *ngFor="let status of employee.attendanceStatus; let i = index; trackBy: trackByDay" class="p-1">
-                    <mat-icon class="material-icons-outlined attendance-icon" [ngClass]="{
+          <!-- Attendance Table -->
+          <table class="table table-hover text-center align-middle mb-0">
+            <thead class="table-light">
+              <tr role="row">
+                <th class="text-center" style="width: 50px; min-width: 50px;">S.No</th>
+                <th class="text-start" style="width: 250px; min-width: 250px;">Student Name</th>
+                <th *ngFor="let day of rangeDays" class="cell-dimention p-1" style="min-width: 40px;">{{ day }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngIf="rangeAttendanceData.length === 0 && !isLoading">
+                <td [colSpan]="rangeDays.length + 1" class="text-center p-4">No students found</td>
+              </tr>
+              <tr *ngFor="let employee of rangeAttendanceData; let empIndex = index">
+                <td class="text-center fw-medium text-dark">{{ empIndex + 1 }}</td>
+                <td class="text-start">
+                  <div class="d-flex align-items-center">
+                    <span class="attnd-user me-2">
+                      <img alt="image" class="rounded-circle" [src]="employee.avatar" width="30" height="30"
+                        style="object-fit: cover;" />
+                    </span>
+                    <p class="mb-0 fw-medium text-dark">{{ employee.name }}</p>
+                  </div>
+                </td>
+                <td *ngFor="let status of employee.attendanceStatus; let i = index; trackBy: trackByDay" class="p-1">
+                  <mat-icon class="material-icons-outlined attendance-icon" [ngClass]="{
                               'icon-success': status === 'present',
                               'icon-danger': status === 'leave',
                               'icon-warning': status === 'holiday',
-                              'icon-gray': status === 'weekend' || status === '-'
+                              'icon-gray': status === 'weekend' || status === '-',
+                              'icon-blue': status === 'half_day_morning',
+                              'icon-yellow': status === 'half_day_afternoon'
                             }" style="font-size: 18px; width: 18px; height: 18px;">
-                      {{ status === 'present' ? 'check_circle_outline' : 
-                         (status === 'leave' ? 'highlight_off' : 
-                         (status === 'holiday' ? 'star' : 'remove_circle_outline')) }}
-                    </mat-icon>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+                    {{ status === 'present' ? 'check_circle_outline' :
+                    (status === 'leave' || status === 'half_day_morning' || status === 'half_day_afternoon' ?
+                    'highlight_off' :
+                    (status === 'holiday' ? 'star' : 'remove_circle_outline')) }}
+                  </mat-icon>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
+    </div>
   </div>
 </section>

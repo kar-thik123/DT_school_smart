@@ -140,6 +140,12 @@
   .icon-gray {
     color: rgb(137, 137, 137);
   }
+  .icon-blue {
+    color: #3b82f6; /* Blue for morning present, afternoon absent */
+  }
+  .icon-yellow {
+    color: #eab308; /* Yellow for morning absent, afternoon present */
+  }
   .attnd-user {
     img {
       width: 30px;

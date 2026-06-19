@@ -27,7 +27,17 @@ router.get('/', requirePermission('ACADEMIC_STRUCTURE', 'READ'), async (req: any
     const isGlobalAdmin = req.user.permissions?.includes('IDENTITY:IS_MANAGEMENT') || req.user.permissions?.includes('IDENTITY:IS_SUPER_ADMIN');
     if (!isGlobalAdmin) {
       const visibilityFilter = await AssignmentVisibilityResolver.buildTeacherSectionWhereClause(req);
-      if (visibilityFilter.id) filter.section_id = visibilityFilter.id; // Either IN array or no-access
+      if (visibilityFilter.id) {
+        if (filter.section_id) {
+          filter.AND = [
+            { section_id: filter.section_id },
+            { section_id: visibilityFilter.id }
+          ];
+          delete filter.section_id;
+        } else {
+          filter.section_id = visibilityFilter.id;
+        }
+      }
     }
 
     const enrollments = await prisma.studentEnrollment.findMany({
