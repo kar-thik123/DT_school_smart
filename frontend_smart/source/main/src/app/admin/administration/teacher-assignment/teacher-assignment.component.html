@@ -66,7 +66,7 @@
                             <mat-option *ngFor="let t of teachers" [value]="t.id">{{ t.name }}</mat-option>
                           </mat-select>
                         </mat-form-field>
-                        <button mat-raised-button color="primary" class="ms-3 mb-4" [disabled]="isSaving || !activeAcademicYear || !canManageAssignments" (click)="saveClassTeacher()">
+                        <button mat-raised-button color="primary" class="ms-3 mb-4" [disabled]="isSaving || !canManageAssignments" (click)="saveClassTeacher()">
                           <mat-icon class="me-1">save</mat-icon> Save
                         </button>
                       </div>
@@ -94,7 +94,7 @@
                       <h4 class="mb-1">Subject Instructors</h4>
                       <p class="text-muted mb-0">Map instructional staff to the subjects taught in this section.</p>
                     </div>
-                    <button mat-raised-button color="primary" (click)="saveSubjectTeachers()" [disabled]="isSaving || sectionSubjects.length === 0 || !activeAcademicYear || !canManageAssignments">
+                    <button mat-raised-button color="primary" (click)="saveSubjectTeachers()" [disabled]="isSaving || sectionSubjects.length === 0 || !canManageAssignments">
                       <mat-icon class="me-1">save</mat-icon> Save All Mappings
                     </button>
                   </div>

@@ -146,9 +146,9 @@
           } @else {
           @if (column.type === 'checkbox') {
           <ng-container [matColumnDef]="column.def">
-            <mat-header-cell *matHeaderCellDef mat-sort-header style="justify-content: center; text-align: center;">
+            <mat-header-cell *matHeaderCellDef mat-sort-header class="center-header" style="justify-content: center; text-align: center;">
               <mat-checkbox 
-                *ngIf="hasSelectableRows(column)"
+                *ngIf="!column.hideHeaderCheckbox && hasSelectableRows(column)"
                 (change)="onHeaderCheckboxChange(column, $event)" 
                 [checked]="isAllChecked(column)" 
                 [indeterminate]="isSomeChecked(column) && !isAllChecked(column)"
@@ -165,14 +165,20 @@
                 [checked]="row['_selected_' + column.def]" 
                 (click)="$event.stopPropagation()"
                 color="primary"
-                class="me-2">
+                class="m-0">
               </mat-checkbox>
-              @if (column.statusBadgeMap && getStatusBadgeClass(row[column.def], column.statusBadgeMap)) {
+              @if (column.statusIconMap && getStatusBadgeClass(row[column.def], column.statusIconMap)) {
+                <mat-icon class="material-icons-outlined" 
+                          [ngClass]="column.statusBadgeMap ? getStatusBadgeClass(row[column.def], column.statusBadgeMap) : ''"
+                          style="font-size: 20px; width: 20px; height: 20px; vertical-align: middle; cursor: default;">
+                  {{ getStatusBadgeClass(row[column.def], column.statusIconMap) }}
+                </mat-icon>
+              } @else if (column.statusBadgeMap && getStatusBadgeClass(row[column.def], column.statusBadgeMap)) {
                 <span [ngClass]="getStatusBadgeClass(row[column.def], column.statusBadgeMap)">
                   {{ row[column.def] }}
                 </span>
               } @else {
-                <span class="truncate-text" [style.visibility]="row[column.def] ? 'visible' : 'hidden'">
+                <span class="truncate-text" [style.display]="row[column.def] ? 'inline' : 'none'">
                   {{ row[column.def] || column.label }}
                 </span>
               }
@@ -186,7 +192,14 @@
             </mat-header-cell>
             <mat-cell *matCellDef="let row" (contextmenu)="onContextMenu($event, row)">
               <span class="mobile-label">{{ column.label }}:</span>
-              @if (getStatusBadgeClass(row[column.def], column.statusBadgeMap)) {
+              @if (column.statusIconMap && getStatusBadgeClass(row[column.def], column.statusIconMap)) {
+              <mat-icon class="material-icons-outlined" 
+                        [ngClass]="column.statusBadgeMap ? getStatusBadgeClass(row[column.def], column.statusBadgeMap) : ''"
+                        (click)="onStatusClick(row, column, $event)"
+                        style="font-size: 20px; width: 20px; height: 20px; vertical-align: middle; cursor: pointer; user-select: none;">
+                {{ getStatusBadgeClass(row[column.def], column.statusIconMap) }}
+              </mat-icon>
+              } @else if (getStatusBadgeClass(row[column.def], column.statusBadgeMap)) {
               <span [ngClass]="getStatusBadgeClass(row[column.def], column.statusBadgeMap)"
                     (click)="onStatusClick(row, column, $event)"
                     style="cursor: pointer; user-select: none;">{{ row[column.def] }}</span>

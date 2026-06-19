@@ -13,8 +13,7 @@ export interface AttendancePhase {
 
 export interface StudentAttendanceRecord {
   student_id: string;
-  status: 'PRESENT' | 'ABSENT' | 'LATE' | 'EXCUSED';
-  remarks?: string;
+  status: 'PRESENT' | 'ABSENT' | 'LATE';
 }
 
 export interface MarkAttendancePayload {
@@ -42,6 +41,14 @@ export class StudentAttendanceService {
 
   getDailyAttendance(gradeId: string, phaseId: string, date: string, sectionId?: string): Observable<any[]> {
     let url = `${this.apiUrl}/daily?grade_id=${gradeId}&phase_id=${phaseId}&date=${date}`;
+    if (sectionId) {
+      url += `&section_id=${sectionId}`;
+    }
+    return this.httpClient.get<any[]>(url);
+  }
+
+  getRangeAttendance(gradeId: string, startDate: string, endDate: string, sectionId?: string): Observable<any[]> {
+    let url = `${this.apiUrl}/range?grade_id=${gradeId}&start_date=${startDate}&end_date=${endDate}`;
     if (sectionId) {
       url += `&section_id=${sectionId}`;
     }

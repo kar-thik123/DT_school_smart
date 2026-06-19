@@ -94,6 +94,30 @@ router.get('/daily', requirePermission('ATTENDANCE', 'VIEW'), async (req: any, r
   }
 });
 
+// GET range attendance
+router.get('/range', requirePermission('ATTENDANCE', 'VIEW'), async (req: any, res: Response) => {
+  try {
+    const orgId = req.user.organization_id;
+    const { grade_id, section_id, start_date, end_date } = req.query;
+
+    if (!grade_id || !start_date || !end_date) {
+      return res.status(400).json({ message: 'grade_id, start_date, and end_date are required' });
+    }
+
+    const records = await StudentAttendanceService.getRangeAttendance(
+      orgId,
+      String(grade_id),
+      section_id ? String(section_id) : undefined,
+      String(start_date),
+      String(end_date)
+    );
+
+    res.json(records);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // GET summary percentage
 router.get('/summary', requirePermission('ATTENDANCE', 'VIEW'), async (req: any, res: Response) => {
   try {

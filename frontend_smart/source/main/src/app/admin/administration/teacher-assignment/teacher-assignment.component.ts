@@ -65,6 +65,7 @@ export class TeacherAssignmentComponent implements OnInit {
   selectedSectionId: string | null = null;
   selectedGradeName: string = '';
   selectedSectionName: string = '';
+  selectedGroupId: string | null = null;
 
   currentClassTeacherId: string | null = null;
   currentClassTeacherAssignment: ITeacherAssignment | null = null;
@@ -124,7 +125,7 @@ export class TeacherAssignmentComponent implements OnInit {
 
 
   onAcademicContextChange(context: IAcademicContextSelection) {
-    const { grade, section } = context;
+    const { grade, section, subjectGroup } = context;
 
     this.selectedGradeId = grade?.id || null;
     this.selectedGradeName = grade?.name || '';
@@ -135,6 +136,11 @@ export class TeacherAssignmentComponent implements OnInit {
     } else {
       this.selectedSectionId = null;
       this.selectedSectionName = '';
+    }
+
+    this.selectedGroupId = subjectGroup?.id || null;
+    if (subjectGroup) {
+      this.selectedSectionName += ` (${subjectGroup.name})`;
     }
 
     this.resetAssignments();
@@ -213,6 +219,8 @@ export class TeacherAssignmentComponent implements OnInit {
           // Flatten all subjects from all groups for this section
           this.sectionSubjects = [];
           groups.forEach(g => {
+            if (this.selectedGroupId && g.id !== this.selectedGroupId) return;
+
             g.subjects.forEach(sub => {
                if(!this.sectionSubjects.find(s => s.subject.id === sub.id)) {
                  this.sectionSubjects.push({
@@ -241,7 +249,7 @@ export class TeacherAssignmentComponent implements OnInit {
   }
 
   saveClassTeacher() {
-    if (!this.selectedGradeId || !this.selectedSectionId || !this.activeAcademicYear) return;
+    if (!this.selectedGradeId || !this.selectedSectionId) return;
 
     this.isSaving = true;
 
@@ -290,13 +298,14 @@ export class TeacherAssignmentComponent implements OnInit {
   }
 
   saveSubjectTeachers() {
-    if (!this.selectedGradeId || !this.selectedSectionId || !this.activeAcademicYear) return;
+    if (!this.selectedGradeId || !this.selectedSectionId) return;
 
     const newAssignments: any[] = [];
+    const loadedSubjectIds = this.sectionSubjects.map(s => s.subject.id);
     
     // Build array of intended assignments
     for (const [subjectId, teacherId] of Object.entries(this.subjectTeacherMap)) {
-      if (teacherId) {
+      if (teacherId && loadedSubjectIds.includes(subjectId)) {
         newAssignments.push({
           assignment_type: AssignmentType.SUBJECT_TEACHER,
           grade_id: this.selectedGradeId,
@@ -307,23 +316,23 @@ export class TeacherAssignmentComponent implements OnInit {
       }
     }
 
-    if (newAssignments.length === 0) {
-      this.showNotification('error', 'Please assign at least one subject teacher to save');
-      return;
-    }
-
-    // Since our backend endpoint doesn't strictly have a "replace all" bulk endpoint,
-    // we would ideally delete existing ones for this section and insert new.
-    // For simplicity, we can do a delete and then batch insert. 
-    
     this.isSaving = true;
 
-    // First delete existing subject assignments for this section
-    const deletePromises = this.existingSubjectAssignments.map(a => 
+    // First delete existing subject assignments for the LOADED subjects
+    const assignmentsToDelete = this.existingSubjectAssignments.filter(a => loadedSubjectIds.includes(a.subject_id!));
+
+    const deletePromises = assignmentsToDelete.map(a => 
       this.assignmentService.deleteAssignment(a.id).toPromise().catch(() => null)
     );
 
     Promise.all(deletePromises).then(() => {
+      if (newAssignments.length === 0) {
+        this.showNotification('success', 'Subject Teachers mapped successfully');
+        this.refreshAssignments(); // reload
+        this.isSaving = false;
+        return;
+      }
+
       // Group by teacher for batch insert since API accepts batch grouped by teacher
       const groupedByTeacher: { [key: string]: any[] } = {};
       newAssignments.forEach(a => {
