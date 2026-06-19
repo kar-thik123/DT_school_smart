@@ -116,6 +116,40 @@ export class StudentAttendanceService {
     });
   }
 
+  static async getRangeAttendance(organizationId: string, gradeId: string, sectionId: string | undefined, startDateStr: string, endDateStr: string) {
+    const startDate = new Date(startDateStr);
+    startDate.setUTCHours(0, 0, 0, 0);
+
+    const endDate = new Date(endDateStr);
+    endDate.setUTCHours(23, 59, 59, 999);
+
+    return prisma.studentAttendance.findMany({
+      where: {
+        organization_id: organizationId,
+        grade_id: gradeId,
+        ...(sectionId ? { section_id: sectionId } : {}),
+        attendance_date: {
+          gte: startDate,
+          lte: endDate
+        }
+      },
+      include: {
+        student: { 
+          select: { 
+            id: true, 
+            name: true, 
+            roll_number: true,
+            user_profile: { select: { profile_image: true } }
+          } 
+        },
+        phase: { select: { id: true, phase_name: true } }
+      },
+      orderBy: {
+        attendance_date: 'asc'
+      }
+    });
+  }
+
   static async getSummaryPercentage(organizationId: string, academicYearId: string, gradeId: string, sectionId?: string) {
     // Determine the total conducted phases by finding distinct (date, phase) pairs for the class
     const conductedPhasesQuery = await prisma.studentAttendance.groupBy({

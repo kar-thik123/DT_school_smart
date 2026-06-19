@@ -6,7 +6,7 @@
       <!-- <mat-icon class="trigger-icon-left">inventory_2</mat-icon> -->
       <span class="trigger-text" *ngIf="selectedGradeId; else emptyState">
         <span class="label">{{ labelName }}:</span>
-        <span class="value">{{ selectedGradeName }} - Section {{ selectedSectionName }}</span>
+        <span class="value">{{ selectedGradeName }} - Section {{ selectedSectionName }}<ng-container *ngIf="selectedGroupId && selectedGroupId !== 'ALL'"> - {{ selectedGroupName }}</ng-container></span>
       </span>
       <ng-template #emptyState>
         <span class="trigger-text empty" style="font-size: medium;">{{ labelName }}</span>
@@ -39,18 +39,37 @@
                 <!-- All Sections -->
                 <div class="section-row all-sections"
                   [class.active]="selectedGradeId === grade.id && selectedSectionId === 'ALL'"
-                  (click)="selectGradeSectionForUnit(grade, 'ALL', $event)">
+                  (click)="toggleSectionOrSelect(grade, 'ALL', $event)">
                   <div class="tree-line"></div>
                   <span class="section-name">All Sections</span>
                 </div>
 
                 <!-- Individual Sections -->
-                <div class="section-row" *ngFor="let section of getSectionsForGrade(grade.id); let last = last"
-                  [class.active]="selectedGradeId === grade.id && selectedSectionId === section.id"
-                  (click)="selectGradeSectionForUnit(grade, section, $event)">
-                  <div class="tree-line" [class.last]="last"></div>
-                  <span class="section-name">{{ section.name }}</span>
-                </div>
+                <ng-container *ngFor="let section of getSectionsForGrade(grade.id); let last = last">
+                  <div class="section-row"
+                    [class.active]="selectedGradeId === grade.id && selectedSectionId === section.id && !selectedGroupId"
+                    (click)="toggleSectionOrSelect(grade, section, $event)">
+                    <div class="tree-line" [class.last]="last && expandedSection !== section.id"></div>
+                    <mat-icon class="section-chevron" *ngIf="getGroupsForSection(section.id).length > 0"
+                      [@iconRotate]="expandedSection === section.id ? 'expanded' : 'collapsed'">chevron_right</mat-icon>
+                    <span class="section-name">{{ section.name }}</span>
+                  </div>
+
+                  <!-- Groups Container -->
+                  <div class="groups-container" *ngIf="expandedSection === section.id" [@expandAnimation]="'expanded'">
+                    <div class="groups-tree">
+
+                      <!-- Individual Groups -->
+                      <div class="group-row" *ngFor="let group of getGroupsForSection(section.id); let groupLast = last"
+                        [class.active]="selectedGradeId === grade.id && selectedSectionId === section.id && selectedGroupId === group.id"
+                        (click)="selectGradeSectionGroup(grade, section, group, $event)">
+                        <div class="tree-line" [class.last]="groupLast"></div>
+                        <span class="group-name">{{ group.name }}</span>
+                      </div>
+                      
+                    </div>
+                  </div>
+                </ng-container>
               </ng-container>
 
               <ng-template #noSections>

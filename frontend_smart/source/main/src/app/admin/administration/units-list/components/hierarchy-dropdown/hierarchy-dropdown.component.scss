@@ -361,6 +361,80 @@ $themes: (
       background-color: transparent;
     }
   }
+
+  .section-chevron {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    margin-right: 4px;
+    color: $text-muted;
+  }
+}
+
+// Groups
+.groups-container {
+  overflow: hidden;
+}
+
+.groups-tree {
+  position: relative;
+  margin-left: 20px;
+  margin-top: 2px;
+  padding-left: 12px;
+  border-left: 1px solid $border-color;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+// Group Row
+.group-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 6px 12px 6px 16px;
+  border-radius: $radius-item;
+  cursor: pointer;
+  transition: $transition-smooth;
+  color: $text-muted;
+
+  .tree-line {
+    position: absolute;
+    left: -13px;
+    top: 50%;
+    width: 16px;
+    height: 1px;
+    background-color: $border-color;
+  }
+
+  .group-name {
+    font-size: 12px;
+    font-weight: 400;
+  }
+
+  &:hover {
+    background-color: $bg-hover;
+    color: $text-main;
+  }
+
+  &.active {
+    background-color: $accent-green-light;
+    color: $accent-green;
+
+    .group-name {
+      font-weight: 600;
+    }
+  }
+
+  &.all-groups {
+    .group-name {
+      font-weight: 500;
+    }
+
+    &.active {
+      font-weight: 600;
+    }
+  }
 }
 
 .empty-state {

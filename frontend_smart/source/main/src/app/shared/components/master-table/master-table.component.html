@@ -167,7 +167,13 @@
                 color="primary"
                 class="me-2">
               </mat-checkbox>
-              @if (column.statusBadgeMap && getStatusBadgeClass(row[column.def], column.statusBadgeMap)) {
+              @if (column.statusIconMap && getStatusBadgeClass(row[column.def], column.statusIconMap)) {
+                <mat-icon class="material-icons-outlined" 
+                          [ngClass]="column.statusBadgeMap ? getStatusBadgeClass(row[column.def], column.statusBadgeMap) : ''"
+                          style="font-size: 20px; width: 20px; height: 20px; vertical-align: middle; cursor: default;">
+                  {{ getStatusBadgeClass(row[column.def], column.statusIconMap) }}
+                </mat-icon>
+              } @else if (column.statusBadgeMap && getStatusBadgeClass(row[column.def], column.statusBadgeMap)) {
                 <span [ngClass]="getStatusBadgeClass(row[column.def], column.statusBadgeMap)">
                   {{ row[column.def] }}
                 </span>
@@ -186,7 +192,14 @@
             </mat-header-cell>
             <mat-cell *matCellDef="let row" (contextmenu)="onContextMenu($event, row)">
               <span class="mobile-label">{{ column.label }}:</span>
-              @if (getStatusBadgeClass(row[column.def], column.statusBadgeMap)) {
+              @if (column.statusIconMap && getStatusBadgeClass(row[column.def], column.statusIconMap)) {
+              <mat-icon class="material-icons-outlined" 
+                        [ngClass]="column.statusBadgeMap ? getStatusBadgeClass(row[column.def], column.statusBadgeMap) : ''"
+                        (click)="onStatusClick(row, column, $event)"
+                        style="font-size: 20px; width: 20px; height: 20px; vertical-align: middle; cursor: pointer; user-select: none;">
+                {{ getStatusBadgeClass(row[column.def], column.statusIconMap) }}
+              </mat-icon>
+              } @else if (getStatusBadgeClass(row[column.def], column.statusBadgeMap)) {
               <span [ngClass]="getStatusBadgeClass(row[column.def], column.statusBadgeMap)"
                     (click)="onStatusClick(row, column, $event)"
                     style="cursor: pointer; user-select: none;">{{ row[column.def] }}</span>

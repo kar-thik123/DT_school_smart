@@ -57,6 +57,7 @@ export interface ColumnDefinition {
   sortable?: boolean;
   tooltip?: boolean;
   statusBadgeMap?: { [key: string]: string }; // For status column: maps status value to badge class
+  statusIconMap?: { [key: string]: string }; // For status column: maps status value to material icon name
 }
 
 @Component({

@@ -48,6 +48,14 @@ export class StudentAttendanceService {
     return this.httpClient.get<any[]>(url);
   }
 
+  getRangeAttendance(gradeId: string, startDate: string, endDate: string, sectionId?: string): Observable<any[]> {
+    let url = `${this.apiUrl}/range?grade_id=${gradeId}&start_date=${startDate}&end_date=${endDate}`;
+    if (sectionId) {
+      url += `&section_id=${sectionId}`;
+    }
+    return this.httpClient.get<any[]>(url);
+  }
+
   markAttendance(payload: MarkAttendancePayload): Observable<any> {
     return this.httpClient.post<any>(`${this.apiUrl}/mark`, payload);
   }

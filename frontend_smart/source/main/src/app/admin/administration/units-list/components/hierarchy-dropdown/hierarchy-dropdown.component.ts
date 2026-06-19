@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { trigger, state, style, transition, animate } from '@angular/animations';
 
-import { IGrade, ISection } from '../../services/units.service';
+import { IGrade, ISection, ISubjectGroup } from '../../services/units.service';
 
 @Component({
   selector: 'app-hierarchy-dropdown',
@@ -38,14 +38,18 @@ export class HierarchyDropdownComponent {
   @Input() allSections: ISection[] = [];
   @Input() selectedGradeId: string | null = null;
   @Input() selectedSectionId: string | null = null;
+  @Input() allSubjectGroups?: ISubjectGroup[] = [];
+  @Input() selectedGroupId?: string | null = null;
   @Input() selectedGradeName: string = '';
   @Input() selectedSectionName: string = '';
+  @Input() selectedGroupName?: string = '';
   @Input() labelName: string = 'Curriculum';
 
-  @Output() selectionChange = new EventEmitter<{ grade: IGrade, section: ISection | 'ALL' }>();
+  @Output() selectionChange = new EventEmitter<{ grade: IGrade, section: ISection | 'ALL', group?: ISubjectGroup | 'ALL' }>();
 
   isHierarchyOpen = false;
   expandedGrade: string | null = null;
+  expandedSection: string | null = null;
 
   constructor(private eRef: ElementRef) {}
 
@@ -74,9 +78,31 @@ export class HierarchyDropdownComponent {
     return this.allSections.filter(s => s.grade_id === gradeId);
   }
 
-  selectGradeSectionForUnit(grade: IGrade, section: ISection | 'ALL', event: Event) {
+  getGroupsForSection(sectionId: string): ISubjectGroup[] {
+    if (!this.allSubjectGroups) return [];
+    return this.allSubjectGroups.filter(g => g.section_id === sectionId);
+  }
+
+  toggleSectionOrSelect(grade: IGrade, section: ISection | 'ALL', event: Event) {
     event.stopPropagation();
-    this.selectionChange.emit({ grade, section });
+    if (section === 'ALL') {
+      this.selectionChange.emit({ grade, section });
+      this.isHierarchyOpen = false;
+      return;
+    }
+
+    const groups = this.getGroupsForSection(section.id);
+    if (groups.length === 0) {
+      this.selectionChange.emit({ grade, section });
+      this.isHierarchyOpen = false;
+    } else {
+      this.expandedSection = this.expandedSection === section.id ? null : section.id;
+    }
+  }
+
+  selectGradeSectionGroup(grade: IGrade, section: ISection, group: ISubjectGroup | 'ALL', event: Event) {
+    event.stopPropagation();
+    this.selectionChange.emit({ grade, section, group });
     this.isHierarchyOpen = false;
   }
 }
