@@ -1,6 +1,6 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule, TitleCasePipe } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
 import {
@@ -25,6 +25,8 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.component';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
+import { MatTableModule } from '@angular/material/table';
+
 
 import { StudentDashboardService } from './dashboard.service';
 import {
@@ -35,7 +37,9 @@ import {
   CurriculumProgress,
   TeacherAssignment,
   TimelineActivity,
-  StudentSkill
+  StudentSkill,
+  AttendanceSummary,
+  ContinueLearning
 } from './dashboard.model';
 
 export type areaChartOptions = {
@@ -79,7 +83,9 @@ export type skillsDonutChartOptions = {
     MatCardModule,
     MatIconModule,
     NgApexchartsModule,
-    MatButtonModule
+    MatButtonModule,
+    MatTableModule,
+    RouterModule
   ],
 })
 export class DashboardComponent implements OnInit {
@@ -87,6 +93,7 @@ export class DashboardComponent implements OnInit {
   public areaChartOptions!: Partial<areaChartOptions>;
   public radialChartOptions!: Partial<radialChartOptions>;
   public skillsDonutChartOptions!: Partial<skillsDonutChartOptions>;
+  public attendanceChartOptions!: Partial<radialChartOptions>;
 
   breadscrums = [
     {
@@ -108,6 +115,8 @@ export class DashboardComponent implements OnInit {
   teachers: TeacherAssignment[] = [];
   activities: TimelineActivity[] = [];
   skills: StudentSkill[] = [];
+  attendance: AttendanceSummary | null = null;
+  continueLearning: ContinueLearning | null = null;
 
   // Derived KPIs
   curriculumCompletionPercentage: number = 0;
@@ -118,9 +127,9 @@ export class DashboardComponent implements OnInit {
   heroState: any = null;
   
   // KPI Trends
+  readinessTrendDiff: number = 0;
+  coverageTrendDiff: number = 0;
   accuracyTrendDiff: number = 0;
-  questionsTrendDiff: number = 0;
-  skillsTrendText: string = '+1 newly approved'; // Dynamic based on recent
 
   // Action Center
   actionableTasks: any[] = [];
@@ -139,6 +148,37 @@ export class DashboardComponent implements OnInit {
   hasPracticePermission: boolean = true;
   isEnrolled: boolean = true;
   notEnrolledInActiveYear: boolean = false;
+
+  // Table Config
+  teacherDisplayedColumns: string[] = ['name', 'action'];
+  subjectAnalyticsDisplayedColumns: string[] = ['subject', 'unit', 'topic', 'subtopic', 'coverage', 'accuracy', 'ready'];
+
+  // Getters for specific views
+  get sortedSkills(): StudentSkill[] {
+    if (!this.skills) return [];
+    return [...this.skills].sort((a, b) => {
+      if (a.status === 'approved' && b.status !== 'approved') return -1;
+      if (a.status !== 'approved' && b.status === 'approved') return 1;
+      return 0;
+    });
+  }
+
+  // Compact KPI Getters
+  get readinessTrendText(): string {
+    return this.readinessTrendDiff >= 0 
+      ? `↑ ${this.readinessTrendDiff.toFixed(1)}% Weekly` 
+      : `↓ ${Math.abs(this.readinessTrendDiff).toFixed(1)}% Weekly`;
+  }
+  
+  get coverageTrendText(): string {
+    return this.coverageTrendDiff >= 0 
+      ? `↑ ${this.coverageTrendDiff.toFixed(1)}% Weekly` 
+      : `↓ ${Math.abs(this.coverageTrendDiff).toFixed(1)}% Weekly`;
+  }
+
+  get curriculumStatusText(): string {
+    return this.curriculumCompletionPercentage > 0 ? 'On Track' : 'Needs Action';
+  }
 
   constructor(
     private dashboardService: StudentDashboardService,
@@ -168,19 +208,23 @@ export class DashboardComponent implements OnInit {
           weeklyTrend: this.dashboardService.getWeeklyTrend().pipe(catchError(() => of([]))),
           curriculum: this.dashboardService.getCurriculumProgress().pipe(catchError(() => of([]))),
           teachers: this.dashboardService.getTeachers().pipe(catchError(() => of([]))),
-          activities: this.dashboardService.getActivities().pipe(catchError(() => of([])))
+          activities: this.dashboardService.getActivities().pipe(catchError(() => of([]))),
+          attendance: this.dashboardService.getAttendance().pipe(catchError(() => of(null))),
+          continueLearning: this.dashboardService.getContinueLearning().pipe(catchError(() => of(null)))
         });
       })
     ).subscribe({
       next: (data: any) => {
         this.overview = data.overview;
         this.kpis = data.kpis;
-        this.subjects = data.subjects || [];
+        this.subjects = (data.subjects || []).sort((a: SubjectPerformance, b: SubjectPerformance) => a.readiness - b.readiness);
         this.weeklyTrend = data.weeklyTrend || [];
         this.curriculum = data.curriculum || [];
         this.teachers = data.teachers || [];
         this.skills = data.skills || [];
         this.activities = data.activities || [];
+        this.attendance = data.attendance;
+        this.continueLearning = data.continueLearning;
         
         // Validation
         this.hasPracticePermission = this.kpis !== null;
@@ -206,6 +250,7 @@ export class DashboardComponent implements OnInit {
         this.initWeeklyTrendChart();
         this.initRadialChart();
         this.initSkillsDonutChart();
+        this.initAttendanceChart();
         
         this.loading = false;
       },
@@ -233,10 +278,10 @@ export class DashboardComponent implements OnInit {
       }
 
       this.heroState = {
-        subject: activeSubject.subject_name,
+        subject: activeSubject.subjectName,
         topic: currentTopic,
-        progress: `${activeSubject.completed_topics} of ${activeSubject.completed_topics + activeSubject.pending_topics} Topics Completed`,
-        percentage: activeSubject.completed_topics > 0 ? ((activeSubject.completed_topics / (activeSubject.completed_topics + activeSubject.pending_topics)) * 100).toFixed(0) : 0
+        progress: `${activeSubject.topicCompleted} of ${activeSubject.topicTotal} Topics Completed`,
+        percentage: activeSubject.topicTotal > 0 ? ((activeSubject.topicCompleted / activeSubject.topicTotal) * 100).toFixed(0) : 0
       };
     } else {
       this.heroState = { subject: 'Introduction', topic: 'Getting Started', progress: '0 of 1 Topics Completed', percentage: 0 };
@@ -245,32 +290,31 @@ export class DashboardComponent implements OnInit {
 
   private computeTrendsAndGrowth() {
     if (this.weeklyTrend && this.weeklyTrend.length >= 2) {
-      const sortedData = [...this.weeklyTrend].sort((a, b) => new Date(a.week_start).getTime() - new Date(b.week_start).getTime());
+      const sortedData = [...this.weeklyTrend].sort((a, b) => new Date(a.week).getTime() - new Date(b.week).getTime());
       const last = sortedData[sortedData.length - 1];
       const prev = sortedData[sortedData.length - 2];
       const first = sortedData[0];
 
-      this.accuracyTrendDiff = last.overall_accuracy - prev.overall_accuracy;
-      this.questionsTrendDiff = last.total_questions - prev.total_questions;
+      this.readinessTrendDiff = last.readiness - prev.readiness;
+      this.coverageTrendDiff = last.coverage - prev.coverage;
+      this.accuracyTrendDiff = last.accuracy - prev.accuracy;
       
-      this.questionsThisWeek = last.total_questions;
-      this.accuracyThisWeek = last.overall_accuracy;
-      
-      const overallDiff = last.overall_accuracy - first.overall_accuracy;
+      const overallDiff = last.readiness - first.readiness;
       if (overallDiff > 0) {
-        this.improvementText = `You improved ${overallDiff.toFixed(1)}% compared to your first week.`;
+        this.improvementText = `Your exam readiness improved by ${overallDiff.toFixed(1)}% compared to your first week.`;
       } else {
         this.improvementText = `Stay consistent to see long-term improvement!`;
       }
     } else {
+      this.readinessTrendDiff = 0;
+      this.coverageTrendDiff = 0;
       this.accuracyTrendDiff = 0;
-      this.questionsTrendDiff = 0;
       this.improvementText = 'Keep practicing to unlock insights.';
     }
 
     if (this.subjects && this.subjects.length > 0) {
-      const best = [...this.subjects].sort((a, b) => b.practice_accuracy - a.practice_accuracy)[0];
-      this.bestSubject = best.subject_name;
+      const best = [...this.subjects].sort((a, b) => b.readiness - a.readiness)[0];
+      this.bestSubject = best.subjectName;
     }
   }
 
@@ -278,11 +322,11 @@ export class DashboardComponent implements OnInit {
     this.actionableTasks = [];
     
     if (this.subjects.length > 0) {
-      const weakest = [...this.subjects].sort((a, b) => a.practice_accuracy - b.practice_accuracy)[0];
+      const weakest = [...this.subjects].sort((a, b) => a.readiness - b.readiness)[0];
       this.actionableTasks.push({
         priority: '🔥 Recommended',
         icon: 'fas fa-book-open',
-        title: `Continue ${weakest.subject_name}`,
+        title: `Continue ${weakest.subjectName}`,
         subtitle: 'Improve your accuracy',
         duration: '15 min',
         action: 'Resume'
@@ -327,25 +371,15 @@ export class DashboardComponent implements OnInit {
 
   private buildAchievementsEngine(topicsCompleted: number) {
     this.achievementsGrid = [];
-    const acc = this.kpis?.practice_accuracy || 0;
-    const qAttempted = this.kpis?.questions_attempted || 0;
+    const read = this.kpis?.readyForExam || 0;
 
     this.achievementsGrid.push({
       id: 'acc_champ',
-      title: 'Accuracy Champion',
+      title: 'Exam Ready',
       icon: 'fas fa-trophy',
       color: 'text-warning',
-      locked: acc < 80,
-      progress: acc >= 80 ? 'Unlocked' : `${acc.toFixed(0)}% / 80%`
-    });
-
-    this.achievementsGrid.push({
-      id: 'century',
-      title: 'Century Club',
-      icon: 'fas fa-bullseye',
-      color: 'text-danger',
-      locked: qAttempted < 100,
-      progress: qAttempted >= 100 ? 'Unlocked' : `${qAttempted} / 100`
+      locked: read < 80,
+      progress: read >= 80 ? 'Unlocked' : `${read.toFixed(0)}% / 80%`
     });
 
     this.achievementsGrid.push({
@@ -422,11 +456,11 @@ export class DashboardComponent implements OnInit {
       });
     }
 
-    if ((this.kpis?.questions_attempted || 0) >= 100) {
+    if ((this.kpis?.readyForExam || 0) >= 80) { // Using readiness as a proxy
        this.groupedActivities.push({
         icon: 'fas fa-bullseye',
         bg: 'bg-light-danger text-danger',
-        title: `Reached 100 Questions Solved!`,
+        title: `Reached 80% Readiness!`,
         time: this.getRelativeTime(latestPracticeDate || latestCompletionDate)
       });
     }
@@ -445,15 +479,25 @@ export class DashboardComponent implements OnInit {
   private initWeeklyTrendChart() {
     if (!this.weeklyTrend || this.weeklyTrend.length === 0) return;
 
-    const sortedData = [...this.weeklyTrend].sort((a, b) => new Date(a.week_start).getTime() - new Date(b.week_start).getTime());
+    const sortedData = [...this.weeklyTrend].sort((a, b) => new Date(a.week).getTime() - new Date(b.week).getTime());
     const categories = sortedData.map(item => {
-      const d = new Date(item.week_start);
+      const d = new Date(item.week);
       return `${d.getMonth() + 1}/${d.getDate()}`;
     });
-    const accuracyData = sortedData.map(item => item.overall_accuracy);
+    const accuracyData = sortedData.map(item => item.accuracy);
+    const coverageData = sortedData.map(item => item.coverage);
+    const readinessData = sortedData.map(item => item.readiness);
 
     this.areaChartOptions = {
       series: [
+        {
+          name: 'Readiness %',
+          data: readinessData,
+        },
+        {
+          name: 'Coverage %',
+          data: coverageData,
+        },
         {
           name: 'Accuracy %',
           data: accuracyData,
@@ -466,13 +510,31 @@ export class DashboardComponent implements OnInit {
         foreColor: 'var(--bs-secondary-color)',
         sparkline: { enabled: false }
       },
-      colors: ['var(--bs-primary)'],
+      colors: ['var(--bs-primary)', 'var(--bs-info)', 'var(--bs-success)'],
       dataLabels: { enabled: false },
       stroke: { curve: 'smooth', width: 3 },
       xaxis: { categories: categories, labels: { style: { fontSize: '10px' } } },
       yaxis: { show: false },
       grid: { show: false },
-      legend: { show: false },
+      legend: { show: true, position: 'top' },
+    };
+  }
+
+  private initAttendanceChart() {
+    this.attendanceChartOptions = {
+      series: [this.attendance?.attendancePercentage || 0],
+      chart: { height: 250, type: 'radialBar' },
+      plotOptions: {
+        radialBar: {
+          hollow: { size: '65%' },
+          dataLabels: {
+            name: { show: true, color: 'var(--bs-secondary-color)', fontSize: '14px' },
+            value: { show: true, color: 'var(--bs-heading-color)', fontSize: '20px', formatter: (val) => val.toFixed(1) + "%" }
+          }
+        },
+      },
+      labels: ['Attendance'],
+      colors: ['var(--bs-purple)'],
     };
   }
 

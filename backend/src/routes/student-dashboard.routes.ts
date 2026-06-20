@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import prisma from '../prisma';
 import { authMiddleware } from '../middlewares/auth.middleware';
 import { getActiveAcademicYearId } from '../utils/academic-helper';
+import { StudentReadinessService } from '../services/student-readiness.service';
 
 const router = Router();
 router.use(authMiddleware);
@@ -108,7 +109,6 @@ router.get('/overview', requireStudent, async (req: any, res: Response) => {
 
 /**
  * GET /api/student/dashboard/kpis
- * Fetches pre-computed KPIs from the summary table.
  */
 router.get('/kpis', requireStudent, async (req: any, res: Response) => {
   try {
@@ -116,30 +116,8 @@ router.get('/kpis', requireStudent, async (req: any, res: Response) => {
     const organization_id = req.user.organization_id;
     const activeAcademicYearId = await getActiveAcademicYearId(organization_id);
 
-    let summary = await prisma.studentDashboardSummary.findUnique({
-      where: {
-        organization_id_student_id_academic_year_id: {
-          organization_id,
-          student_id,
-          academic_year_id: activeAcademicYearId
-        }
-      }
-    });
-
-    if (!summary) {
-      // Return defaults if no activity yet
-      return res.json({
-        practice_accuracy: 0,
-        questions_attempted: 0,
-        skills_completion_percentage: 0
-      });
-    }
-
-    res.json({
-      practice_accuracy: summary.practice_accuracy,
-      questions_attempted: summary.questions_attempted,
-      skills_completion_percentage: summary.skills_completion_percentage
-    });
+    const kpis = await StudentReadinessService.getKPIs(student_id, organization_id, activeAcademicYearId);
+    res.json(kpis);
   } catch (error) {
     console.error('[Dashboard/KPIs] Error:', error);
     res.status(500).json({ message: 'Server error fetching KPIs' });
@@ -147,69 +125,57 @@ router.get('/kpis', requireStudent, async (req: any, res: Response) => {
 });
 
 /**
- * GET /api/student/dashboard/subject-performance
- * Fetches subject performance aggregated at the database layer.
+ * GET /api/student/dashboard/attendance
  */
-router.get('/subject-performance', requireStudent, async (req: any, res: Response) => {
+router.get('/attendance', requireStudent, async (req: any, res: Response) => {
   try {
     const student_id = req.user.user_id;
     const organization_id = req.user.organization_id;
     const activeAcademicYearId = await getActiveAcademicYearId(organization_id);
 
-    interface SubjectPerformanceRow {
-      subject_name: string;
-      total_correct: bigint;
-      total_attempted: bigint;
-      completed_topics: bigint;
-      total_subject_topics: bigint;
-    }
-
-    const rawResults = await prisma.$queryRaw<SubjectPerformanceRow[]>`
-      SELECT
-        s.name as subject_name,
-        SUM(pa.correct_answers) as total_correct,
-        SUM(pa.total_questions) as total_attempted,
-        COUNT(DISTINCT stc.topic_id) as completed_topics,
-        (SELECT COUNT(t.id) FROM topics t JOIN units u ON t.unit_id = u.id WHERE u.subject_id = s.id AND t.organization_id = s.organization_id) as total_subject_topics
-      FROM practice_attempts pa
-      JOIN subjects s ON pa.subject_id = s.id
-      LEFT JOIN student_topic_completions stc 
-        ON stc.student_id = pa.student_id 
-        AND stc.topic_id = pa.topic_id
-        AND stc.organization_id = pa.organization_id
-        AND stc.academic_year_id = pa.academic_year_id
-      WHERE pa.student_id = ${student_id}::uuid 
-        AND pa.organization_id = ${organization_id}::uuid
-        AND pa.academic_year_id = ${activeAcademicYearId}::uuid
-      GROUP BY s.id, s.name, s.organization_id
-    `;
-
-    const response = rawResults.map((r: SubjectPerformanceRow) => {
-      const attempted = Number(r.total_attempted || 0);
-      const correct = Number(r.total_correct || 0);
-      const accuracy = attempted > 0 ? (correct / attempted) * 100 : 0;
-      const completedTopics = Number(r.completed_topics || 0);
-      const totalSubjectTopics = Number(r.total_subject_topics || 0);
-
-      return {
-        subject_name: r.subject_name,
-        accuracy_percentage: accuracy,
-        questions_attempted: attempted,
-        completed_topics: completedTopics,
-        pending_topics: Math.max(0, totalSubjectTopics - completedTopics)
-      };
-    });
-
-    res.json(response);
+    const attendance = await StudentReadinessService.getAttendance(student_id, organization_id, activeAcademicYearId);
+    res.json(attendance);
   } catch (error) {
-    console.error('[Dashboard/SubjectPerformance] Error:', error);
-    res.status(500).json({ message: 'Server error fetching subject performance' });
+    console.error('[Dashboard/Attendance] Error:', error);
+    res.status(500).json({ message: 'Server error fetching Attendance' });
   }
 });
 
 /**
+ * GET /api/student/dashboard/continue-learning
+ */
+router.get('/continue-learning', requireStudent, async (req: any, res: Response) => {
+  try {
+    const student_id = req.user.user_id;
+    const organization_id = req.user.organization_id;
+    const activeAcademicYearId = await getActiveAcademicYearId(organization_id);
+
+    const continueLearning = await StudentReadinessService.getContinueLearning(student_id, organization_id, activeAcademicYearId);
+    res.json(continueLearning);
+  } catch (error) {
+    console.error('[Dashboard/ContinueLearning] Error:', error);
+    res.status(500).json({ message: 'Server error fetching Continue Learning' });
+  }
+});
+/**
+ * GET /api/student/dashboard/subjects
+ */
+router.get('/subjects', requireStudent, async (req: any, res: Response) => {
+  try {
+    const student_id = req.user.user_id;
+    const organization_id = req.user.organization_id;
+    const activeAcademicYearId = await getActiveAcademicYearId(organization_id);
+
+    const subjects = await StudentReadinessService.getSubjectAnalytics(student_id, organization_id, activeAcademicYearId);
+    
+    res.json(subjects);
+  } catch (error) {
+    console.error('[Dashboard/Subjects] Error:', error);
+    res.status(500).json({ message: 'Server error fetching subjects' });
+  }
+});
+/**
  * GET /api/student/dashboard/weekly-trend
- * Fetches weekly practice trend exclusively from the summary table.
  */
 router.get('/weekly-trend', requireStudent, async (req: any, res: Response) => {
   try {
@@ -217,31 +183,13 @@ router.get('/weekly-trend', requireStudent, async (req: any, res: Response) => {
     const organization_id = req.user.organization_id;
     const activeAcademicYearId = await getActiveAcademicYearId(organization_id);
 
-    const trends = await prisma.studentDashboardWeeklyTrend.findMany({
-      where: {
-        organization_id,
-        student_id,
-        academic_year_id: activeAcademicYearId
-      },
-      orderBy: {
-        week_start_date: 'asc'
-      },
-      take: 12
-    });
-
-    const response = trends.map((t: any) => ({
-      week_start_date: t.week_start_date,
-      accuracy_percentage: t.accuracy_percentage,
-      questions_attempted: t.questions_attempted
-    }));
-
-    res.json(response);
+    const trend = await StudentReadinessService.getWeeklyTrend(student_id, organization_id, activeAcademicYearId);
+    res.json(trend);
   } catch (error) {
     console.error('[Dashboard/WeeklyTrend] Error:', error);
     res.status(500).json({ message: 'Server error fetching weekly trend' });
   }
 });
-
 /**
  * GET /api/student/dashboard/curriculum-progress
  * Fetches real-time curriculum progress using database aggregation.
@@ -323,12 +271,10 @@ router.get('/curriculum-progress', requireStudent, async (req: any, res: Respons
       return {
         subject_id: r.subject_id,
         subject_name: r.subject_name,
-        total_units: totalUnits,
-        completed_units: completedUnits,
-        pending_units: Math.max(0, totalUnits - completedUnits),
-        total_topics: totalTopics,
-        completed_topics: completedTopics,
-        pending_topics: Math.max(0, totalTopics - completedTopics),
+        units_total: totalUnits,
+        units_completed: completedUnits,
+        topics_total: totalTopics,
+        topics_completed: completedTopics,
         completion_percentage: Math.min(100, completionPercentage)
       };
     });
