@@ -5,7 +5,11 @@ export class StudentReadinessService {
   
   static async getAttendance(studentId: string, organizationId: string, academicYearId: string) {
     const attendances = await prisma.studentAttendance.findMany({
-      where: { student_id: studentId, organization_id: organizationId }
+      where: { 
+        student_id: studentId, 
+        organization_id: organizationId,
+        academic_year_id: academicYearId
+      }
     });
 
     let present = 0;
@@ -44,7 +48,14 @@ export class StudentReadinessService {
     const gradeId = enrollments[0].grade_id;
 
     const subjects = await prisma.subject.findMany({
-      where: { grade_id: gradeId, organization_id: organizationId }
+      where: { 
+        grade_id: gradeId, 
+        organization_id: organizationId, 
+        OR: [
+          { is_active: true },
+          { is_active: { not: false } }
+        ]
+      }
     });
 
     const units = await prisma.unit.findMany({ where: { organization_id: organizationId } });
@@ -128,9 +139,20 @@ export class StudentReadinessService {
         }
       }
 
-      const coverage = totalAssessmentSets > 0 ? (attemptedSets / totalAssessmentSets) * 100 : 0;
+      const coverage = topicTotal > 0 
+        ? (topicCompleted / topicTotal) * 100 
+        : unitTotal > 0 
+        ? (unitCompleted / unitTotal) * 100 
+        : 0;
+
       const accuracy = attemptedSets > 0 ? (totalAccuracySum / attemptedSets) : 0;
-      const readiness = (coverage + accuracy) / 2;
+      
+      let readiness = 0;
+      if (attemptedSets === 0) {
+        readiness = coverage * 0.8;
+      } else {
+        readiness = (coverage * 0.5) + (accuracy * 0.5);
+      }
 
       results.push({
         subjectId: subject.id,
@@ -265,9 +287,38 @@ export class StudentReadinessService {
     
     let totalReadiness = 0;
     let totalCoverage = 0;
+    let assessmentParticipation = 0;
+
     if (analytics.length > 0) {
-      totalReadiness = analytics.reduce((acc: any, curr: any) => acc + curr.readiness, 0) / analytics.length;
-      totalCoverage = analytics.reduce((acc: any, curr: any) => acc + curr.coverage, 0) / analytics.length;
+      let totalTopicsCompleted = 0;
+      let totalTopicsAvailable = 0;
+      let globalAttemptedSets = 0;
+      let globalTotalSets = 0;
+      let globalAccuracySum = 0;
+
+      analytics.forEach((s: any) => {
+        const completed = s.topicTotal > 0 ? s.topicCompleted : s.unitCompleted;
+        const total = s.topicTotal > 0 ? s.topicTotal : s.unitTotal;
+        
+        totalTopicsCompleted += completed;
+        totalTopicsAvailable += total;
+        
+        globalAttemptedSets += s.attemptedSets;
+        globalTotalSets += s.totalAssessmentSets;
+        
+        globalAccuracySum += (s.accuracy * s.attemptedSets);
+      });
+
+      totalCoverage = totalTopicsAvailable > 0 ? (totalTopicsCompleted / totalTopicsAvailable) * 100 : 0;
+      assessmentParticipation = globalTotalSets > 0 ? (globalAttemptedSets / globalTotalSets) * 100 : 0;
+      
+      const globalAccuracy = globalAttemptedSets > 0 ? (globalAccuracySum / globalAttemptedSets) : 0;
+
+      if (globalAttemptedSets === 0) {
+        totalReadiness = totalCoverage * 0.8;
+      } else {
+        totalReadiness = (totalCoverage * 0.5) + (globalAccuracy * 0.5);
+      }
     }
 
     const weakSubject = await this.getWeakSubject(studentId, organizationId, academicYearId);
@@ -278,7 +329,8 @@ export class StudentReadinessService {
       subjects: analytics.length,
       weakSubject: weakSubject,
       curriculumCoverage: Number(totalCoverage.toFixed(1)),
-      attendance: attendanceData.attendancePercentage
+      attendance: attendanceData.attendancePercentage,
+      assessmentParticipation: Number(assessmentParticipation.toFixed(1))
     };
   }
   
@@ -292,8 +344,29 @@ export class StudentReadinessService {
 
     const gradeId = enrollments[0].grade_id;
     const subjects = await prisma.subject.findMany({
-      where: { grade_id: gradeId, organization_id: organizationId }
+      where: { 
+        grade_id: gradeId, 
+        organization_id: organizationId, 
+        OR: [
+          { is_active: true },
+          { is_active: { not: false } }
+        ]
+      }
     });
+    
+    const units = await prisma.unit.findMany({ where: { organization_id: organizationId } });
+    const topics = await prisma.topic.findMany({ where: { organization_id: organizationId } });
+
+    let globalTopicsTotal = 0;
+    const subjectItems = new Map<string, { topics: any[], units: any[] }>();
+    subjects.forEach((s: any) => {
+      const subjectUnits = units.filter((u: any) => u.subject_id === s.id);
+      const subjectTopics = topics.filter((t: any) => subjectUnits.some((u: any) => u.id === t.unit_id));
+      subjectItems.set(s.id, { topics: subjectTopics, units: subjectUnits });
+      const total = subjectTopics.length > 0 ? subjectTopics.length : subjectUnits.length;
+      globalTopicsTotal += total;
+    });
+
     const questions = await prisma.question.findMany({
       where: { organization_id: organizationId },
       select: { subject_id: true, unit_id: true, topic_id: true, sub_topic_id: true }
@@ -307,20 +380,29 @@ export class StudentReadinessService {
       else assessmentSets.set(`subject_${q.subject_id}`, { type: 'subject', id: q.subject_id!, subjectId: q.subject_id });
     });
 
-    // Filter sets to only enrolled subjects
     const subjectIds = new Set(subjects.map((s: any) => s.id));
     const validSets = Array.from(assessmentSets.values()).filter(set => subjectIds.has(set.subjectId));
-    const totalValidSets = validSets.length;
-
+    
     const allAttempts = await prisma.studentAssessmentAttempt.findMany({
       where: { student_id: studentId, organization_id: organizationId }
     });
 
-    // Generate 8 weeks ending on Sundays
+    const allCompletions = await prisma.completionTracking.findMany({
+      where: {
+        organization_id: organizationId,
+        academic_year_id: academicYearId,
+        grade_id: gradeId,
+        is_completed: true,
+        OR: [
+          { section_id: enrollments[0].section_id },
+          { section_id: null }
+        ]
+      }
+    });
+
     const trends = [];
     const now = new Date();
-    // find most recent Sunday at 23:59:59
-    const dayOfWeek = now.getDay(); // 0 is Sunday
+    const dayOfWeek = now.getDay();
     const daysSinceSunday = dayOfWeek === 0 ? 0 : dayOfWeek;
     
     const latestSunday = new Date(now);
@@ -335,8 +417,20 @@ export class StudentReadinessService {
       weekStart.setDate(weekStart.getDate() - 6);
       weekStart.setHours(0, 0, 0, 0);
 
-      // Filter attempts up to this weekEnd
       const attemptsUpToWeek = allAttempts.filter((a: any) => new Date(a.start_time) <= weekEnd);
+      const completionsUpToWeek = allCompletions.filter((c: any) => c.completed_at && new Date(c.completed_at) <= weekEnd);
+
+      let globalTopicsCompleted = 0;
+      subjects.forEach((s: any) => {
+        const sItems = subjectItems.get(s.id);
+        if (!sItems) return;
+        const topicTotal = sItems.topics.length;
+        const topicCompleted = completionsUpToWeek.filter((c: any) => c.subject_id === s.id && c.completion_level === 'TOPIC').length;
+        const unitCompleted = completionsUpToWeek.filter((c: any) => c.subject_id === s.id && c.completion_level === 'UNIT').length;
+        globalTopicsCompleted += topicTotal > 0 ? topicCompleted : unitCompleted;
+      });
+
+      const coverage = globalTopicsTotal > 0 ? (globalTopicsCompleted / globalTopicsTotal) * 100 : 0;
 
       let attemptedSets = 0;
       let totalAccuracySum = 0;
@@ -360,12 +454,17 @@ export class StudentReadinessService {
         }
       }
 
-      const coverage = totalValidSets > 0 ? (attemptedSets / totalValidSets) * 100 : 0;
       const accuracy = attemptedSets > 0 ? (totalAccuracySum / attemptedSets) : 0;
-      const readiness = (coverage + accuracy) / 2;
+      
+      let readiness = 0;
+      if (attemptedSets === 0) {
+        readiness = coverage * 0.8;
+      } else {
+        readiness = (coverage * 0.5) + (accuracy * 0.5);
+      }
 
       trends.push({
-        week: weekStart, // Represent week by its start date (Monday)
+        week: weekStart,
         readiness: Number(readiness.toFixed(1)),
         coverage: Number(coverage.toFixed(1)),
         accuracy: Number(accuracy.toFixed(1))
