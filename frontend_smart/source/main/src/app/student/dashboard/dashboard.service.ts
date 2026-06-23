@@ -12,7 +12,8 @@ import {
   TimelineActivity,
   StudentSkill,
   AttendanceSummary,
-  ContinueLearning
+  ContinueLearning,
+  ExaminationAnalyticsResponse
 } from './dashboard.model';
 import { AuthService } from '@core/service/auth.service';
 
@@ -63,5 +64,9 @@ export class StudentDashboardService {
   getSkills(academicYearId: string): Observable<StudentSkill[]> {
     const userId = this.authService.currentUserValue?.id || this.authService.currentUserValue?.user_id;
     return this.http.get<StudentSkill[]>(`${environment.apiUrl}/skills/user/${userId}?academic_year_id=${academicYearId}`);
+  }
+
+  getExaminationAnalytics(): Observable<ExaminationAnalyticsResponse> {
+    return this.http.get<ExaminationAnalyticsResponse>(`${this.apiUrl}/examination`);
   }
 }

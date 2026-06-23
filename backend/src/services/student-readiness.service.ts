@@ -473,4 +473,65 @@ export class StudentReadinessService {
 
     return trends;
   }
+
+  static async getExaminationAnalytics(studentId: string, organizationId: string, academicYearId: string) {
+    const results = await prisma.studentExamResult.findMany({
+      where: {
+        student_id: studentId,
+        examination: {
+          organization_id: organizationId,
+          academic_year_id: academicYearId
+        }
+      },
+      include: {
+        examination: true,
+        subject_results: {
+          include: {
+            subject: true
+          }
+        }
+      },
+      orderBy: {
+        examination: {
+          created_at: 'asc'
+        }
+      }
+    });
+
+    if (results.length === 0) {
+      return {
+        summary: null,
+        history: [],
+        subjects: []
+      };
+    }
+
+    const history = results.map((r: any) => ({
+      examName: r.examination.exam_name,
+      percentage: r.percentage,
+      date: r.examination.created_at
+    }));
+
+    const latestResult = results[results.length - 1];
+
+    const subjects = latestResult.subject_results.map((sr: any) => ({
+      subjectName: sr.subject?.name || 'Unknown Subject',
+      obtainedMarks: sr.obtained_marks,
+      maxMarks: sr.max_marks,
+      percentage: sr.percentage
+    }));
+
+    const summary = {
+      examName: latestResult.examination.exam_name,
+      totalObtainedMarks: latestResult.total_obtained_marks,
+      totalMaxMarks: latestResult.total_max_marks,
+      percentage: latestResult.percentage
+    };
+
+    return {
+      summary,
+      history,
+      subjects
+    };
+  }
 }

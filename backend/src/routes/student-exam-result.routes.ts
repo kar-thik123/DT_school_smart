@@ -4,6 +4,28 @@ import { authMiddleware, requirePermission } from '../middlewares/auth.middlewar
 import { z } from 'zod';
 import { AuthorizationService } from '../services/authorization.service';
 import { AcademicContextResolver } from '../utils/academic-context.resolver';
+import { ExaminationCalculationService } from '../services/ExaminationCalculationService';
+
+async function validateTeacherScope(req: any, grade_id: string, section_id?: string | null) {
+  const permissions = req.user?.permissions || [];
+  if (permissions.includes('IDENTITY:IS_SUPER_ADMIN') || permissions.includes('IDENTITY:IS_MANAGEMENT')) {
+    return true;
+  }
+
+  const assignment = await prisma.teacherAssignment.findFirst({
+    where: {
+      teacher_id: req.user.user_id,
+      grade_id: grade_id,
+      ...(section_id ? { section_id } : {}),
+      organization_id: req.user.organization_id,
+      academic_year_id: await AcademicContextResolver.resolveAcademicYearId(req)
+    }
+  });
+
+  if (!assignment) {
+    throw new Error('Forbidden: You are not assigned to this class');
+  }
+}
 
 const router = Router();
 
@@ -46,6 +68,8 @@ router.get('/', async (req: any, res: Response) => {
       return res.status(403).json({ message: 'Forbidden: Requires STUDENT_EXAM_RESULT:VIEW or STUDENT_EXAM_RESULT:MANAGE' });
     }
 
+    const isStudent = userPermissions.includes('IDENTITY:IS_STUDENT');
+
     const academic_year_id = await AcademicContextResolver.resolveAcademicYearId(req);
     const { examination_id, grade_id, section_id } = req.query;
 
@@ -53,6 +77,12 @@ router.get('/', async (req: any, res: Response) => {
       organization_id: req.user.organization_id,
       academic_year_id
     };
+
+    if (isStudent) {
+      filter.student_id = req.user.user_id;
+    } else if (req.query.student_id) {
+      filter.student_id = String(req.query.student_id);
+    }
 
     if (examination_id) filter.examination_id = String(examination_id);
     if (grade_id) filter.grade_id = String(grade_id);
@@ -110,6 +140,11 @@ router.get('/:id', async (req: any, res: Response) => {
     if (!result) return res.status(404).json({ message: 'Student Exam Result not found' });
     if (result.organization_id !== req.user.organization_id) return res.status(403).json({ message: 'Forbidden' });
 
+    const isStudent = userPermissions.includes('IDENTITY:IS_STUDENT');
+    if (isStudent && result.student_id !== req.user.user_id) {
+      return res.status(403).json({ message: 'Forbidden: Cannot access another student\'s results' });
+    }
+
     res.json(result);
   } catch (error) {
     console.error('[StudentExamResultRoutes] GET /:id error', error);
@@ -125,6 +160,9 @@ router.post('/', requirePermission('STUDENT_EXAM_RESULT', 'MANAGE'), async (req:
   try {
     const parsed = studentExamResultSchema.parse(req.body);
     const academic_year_id = await AcademicContextResolver.resolveAcademicYearId(req);
+
+    await validateTeacherScope(req, parsed.grade_id, parsed.section_id);
+    const calcResult = ExaminationCalculationService.calculateAggregateResult(parsed.subject_results || [] as any);
 
     const existing = await prisma.studentExamResult.findFirst({
       where: {
@@ -144,11 +182,11 @@ router.post('/', requirePermission('STUDENT_EXAM_RESULT', 'MANAGE'), async (req:
         academic_year_id: academic_year_id,
         grade_id: parsed.grade_id,
         section_id: parsed.section_id || null,
-        total_max_marks: parsed.total_max_marks,
-        total_obtained_marks: parsed.total_obtained_marks,
-        percentage: parsed.percentage,
-        result_status: parsed.result_status as any,
-        grade: parsed.grade,
+        total_max_marks: calcResult.total_max_marks,
+        total_obtained_marks: calcResult.total_obtained_marks,
+        percentage: calcResult.percentage,
+        result_status: null,
+        grade: null,
         remarks: parsed.remarks,
         created_by: req.user.user_id,
         subject_results: {
@@ -192,6 +230,9 @@ router.post('/bulk', requirePermission('STUDENT_EXAM_RESULT', 'MANAGE'), async (
         const parsed = studentExamResultSchema.parse(payload);
         const existing_id = payload.existing_result_id;
 
+        await validateTeacherScope(req, parsed.grade_id, parsed.section_id);
+        const calcResult = ExaminationCalculationService.calculateAggregateResult(parsed.subject_results || [] as any);
+
         if (existing_id) {
           // Verify existing record
           const existingResult = await tx.studentExamResult.findUnique({ where: { id: existing_id } });
@@ -213,11 +254,11 @@ router.post('/bulk', requirePermission('STUDENT_EXAM_RESULT', 'MANAGE'), async (
               academic_year_id: academic_year_id,
               grade_id: parsed.grade_id,
               section_id: parsed.section_id || null,
-              total_max_marks: parsed.total_max_marks,
-              total_obtained_marks: parsed.total_obtained_marks,
-              percentage: parsed.percentage,
-              result_status: parsed.result_status as any,
-              grade: parsed.grade,
+              total_max_marks: calcResult.total_max_marks,
+              total_obtained_marks: calcResult.total_obtained_marks,
+              percentage: calcResult.percentage,
+              result_status: null,
+              grade: null,
               remarks: parsed.remarks,
               modified_by: req.user.user_id,
               subject_results: {
@@ -259,11 +300,11 @@ router.post('/bulk', requirePermission('STUDENT_EXAM_RESULT', 'MANAGE'), async (
               academic_year_id: academic_year_id,
               grade_id: parsed.grade_id,
               section_id: parsed.section_id || null,
-              total_max_marks: parsed.total_max_marks,
-              total_obtained_marks: parsed.total_obtained_marks,
-              percentage: parsed.percentage,
-              result_status: parsed.result_status as any,
-              grade: parsed.grade,
+              total_max_marks: calcResult.total_max_marks,
+              total_obtained_marks: calcResult.total_obtained_marks,
+              percentage: calcResult.percentage,
+              result_status: null,
+              grade: null,
               remarks: parsed.remarks,
               created_by: req.user.user_id,
               subject_results: {
@@ -302,6 +343,10 @@ router.put('/:id', requirePermission('STUDENT_EXAM_RESULT', 'MANAGE'), async (re
   try {
     const parsed = studentExamResultSchema.parse(req.body);
     const academic_year_id = await AcademicContextResolver.resolveAcademicYearId(req);
+    
+    await validateTeacherScope(req, parsed.grade_id, parsed.section_id);
+    const calcResult = ExaminationCalculationService.calculateAggregateResult(parsed.subject_results || [] as any);
+
     const result = await prisma.studentExamResult.findUnique({ where: { id: req.params.id } });
 
     if (!result) return res.status(404).json({ message: 'Student Exam Result not found' });
@@ -322,11 +367,11 @@ router.put('/:id', requirePermission('STUDENT_EXAM_RESULT', 'MANAGE'), async (re
           academic_year_id: academic_year_id,
           grade_id: parsed.grade_id,
           section_id: parsed.section_id || null,
-          total_max_marks: parsed.total_max_marks,
-          total_obtained_marks: parsed.total_obtained_marks,
-          percentage: parsed.percentage,
-          result_status: parsed.result_status as any,
-          grade: parsed.grade,
+          total_max_marks: calcResult.total_max_marks,
+          total_obtained_marks: calcResult.total_obtained_marks,
+          percentage: calcResult.percentage,
+          result_status: null,
+          grade: null,
           remarks: parsed.remarks,
           modified_by: req.user.user_id,
           subject_results: {

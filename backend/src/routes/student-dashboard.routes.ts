@@ -500,4 +500,23 @@ router.get('/activities', requireStudent, async (req: any, res: Response) => {
   }
 });
 
+/**
+ * GET /api/student/dashboard/examination
+ * Fetches Examination Analytics for the Student Dashboard.
+ */
+router.get('/examination', requireStudent, async (req: any, res: Response) => {
+  try {
+    const student_id = req.user.user_id;
+    const organization_id = req.user.organization_id;
+    const activeAcademicYearId = await getActiveAcademicYearId(organization_id);
+
+    const analytics = await StudentReadinessService.getExaminationAnalytics(student_id, organization_id, activeAcademicYearId);
+    
+    res.json(analytics);
+  } catch (error) {
+    console.error('[Dashboard/ExaminationAnalytics] Error:', error);
+    res.status(500).json({ message: 'Server error fetching examination analytics' });
+  }
+});
+
 export default router;

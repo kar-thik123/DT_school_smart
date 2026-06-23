@@ -39,7 +39,11 @@ import {
   TimelineActivity,
   StudentSkill,
   AttendanceSummary,
-  ContinueLearning
+  ContinueLearning,
+  ExaminationAnalyticsResponse,
+  ExaminationSummary,
+  ExaminationHistory,
+  ExaminationSubject
 } from './dashboard.model';
 
 export type areaChartOptions = {
@@ -94,6 +98,7 @@ export class DashboardComponent implements OnInit {
   public radialChartOptions!: Partial<radialChartOptions>;
   public skillsDonutChartOptions!: Partial<skillsDonutChartOptions>;
   public attendanceChartOptions!: Partial<radialChartOptions>;
+  public examTrendChartOptions!: Partial<areaChartOptions>;
 
   breadscrums = [
     {
@@ -117,6 +122,7 @@ export class DashboardComponent implements OnInit {
   skills: StudentSkill[] = [];
   attendance: AttendanceSummary | null = null;
   continueLearning: ContinueLearning | null = null;
+  examAnalytics: ExaminationAnalyticsResponse | null = null;
 
   // Derived KPIs
   curriculumCompletionPercentage: number = 0;
@@ -210,7 +216,8 @@ export class DashboardComponent implements OnInit {
           teachers: this.dashboardService.getTeachers().pipe(catchError(() => of([]))),
           activities: this.dashboardService.getActivities().pipe(catchError(() => of([]))),
           attendance: this.dashboardService.getAttendance().pipe(catchError(() => of(null))),
-          continueLearning: this.dashboardService.getContinueLearning().pipe(catchError(() => of(null)))
+          continueLearning: this.dashboardService.getContinueLearning().pipe(catchError(() => of(null))),
+          examAnalytics: this.dashboardService.getExaminationAnalytics().pipe(catchError(() => of(null)))
         });
       })
     ).subscribe({
@@ -225,6 +232,7 @@ export class DashboardComponent implements OnInit {
         this.activities = data.activities || [];
         this.attendance = data.attendance;
         this.continueLearning = data.continueLearning;
+        this.examAnalytics = data.examAnalytics;
         
         // Validation
         this.hasPracticePermission = this.kpis !== null;
@@ -251,6 +259,7 @@ export class DashboardComponent implements OnInit {
         this.initRadialChart();
         this.initSkillsDonutChart();
         this.initAttendanceChart();
+        this.initExamTrendChart();
         
         this.loading = false;
       },
@@ -584,5 +593,38 @@ export class DashboardComponent implements OnInit {
 
   navigateToPractice() {
     this.router.navigate(['/student/practice']);
+  }
+
+  private initExamTrendChart() {
+    if (!this.examAnalytics || !this.examAnalytics.history || this.examAnalytics.history.length === 0) {
+      return;
+    }
+
+    const historyData = this.examAnalytics.history;
+    const categories = historyData.map(h => h.examName);
+    const dataPoints = historyData.map(h => h.percentage);
+
+    this.examTrendChartOptions = {
+      series: [
+        {
+          name: 'Percentage',
+          data: dataPoints,
+        }
+      ],
+      chart: {
+        height: 250,
+        type: 'area',
+        toolbar: { show: false },
+        foreColor: 'var(--bs-secondary-color)',
+        sparkline: { enabled: false }
+      },
+      colors: ['#3b82f6'],
+      dataLabels: { enabled: false },
+      stroke: { curve: 'smooth', width: 3 },
+      xaxis: { categories: categories, labels: { style: { fontSize: '10px' } } },
+      yaxis: { min: 0, max: 100, labels: { formatter: (val) => val.toFixed(0) + '%' } },
+      grid: { borderColor: 'rgba(0,0,0,0.05)', strokeDashArray: 4 },
+      legend: { show: false },
+    };
   }
 }

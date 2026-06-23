@@ -99,3 +99,29 @@ export interface StudentSkill {
   verified_by?: string;
   remarks?: string;
 }
+
+export interface ExaminationSummary {
+  examName: string;
+  totalObtainedMarks: number;
+  totalMaxMarks: number;
+  percentage: number;
+}
+
+export interface ExaminationHistory {
+  examName: string;
+  percentage: number;
+  date: string | Date;
+}
+
+export interface ExaminationSubject {
+  subjectName: string;
+  obtainedMarks: number;
+  maxMarks: number;
+  percentage: number;
+}
+
+export interface ExaminationAnalyticsResponse {
+  summary: ExaminationSummary | null;
+  history: ExaminationHistory[];
+  subjects: ExaminationSubject[];
+}
