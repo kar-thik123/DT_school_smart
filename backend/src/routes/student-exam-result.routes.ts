@@ -47,12 +47,19 @@ router.get('/', async (req: any, res: Response) => {
     }
 
     const academic_year_id = await AcademicContextResolver.resolveAcademicYearId(req);
+    const { examination_id, grade_id, section_id } = req.query;
+
+    const filter: any = {
+      organization_id: req.user.organization_id,
+      academic_year_id
+    };
+
+    if (examination_id) filter.examination_id = String(examination_id);
+    if (grade_id) filter.grade_id = String(grade_id);
+    if (section_id) filter.section_id = String(section_id);
 
     const results = await prisma.studentExamResult.findMany({
-      where: {
-        organization_id: req.user.organization_id,
-        academic_year_id
-      },
+      where: filter,
       include: {
         examination: true,
         student: { select: { id: true, name: true, email: true } },
@@ -164,6 +171,125 @@ router.post('/', requirePermission('STUDENT_EXAM_RESULT', 'MANAGE'), async (req:
     res.status(201).json(result);
   } catch (error: any) {
     console.error('[StudentExamResultRoutes] POST / error', error);
+    res.status(400).json({ message: error.message || 'Bad request' });
+  }
+});
+
+/**
+ * POST /api/student-exam-results/bulk
+ * Upsert multiple student exam results
+ */
+router.post('/bulk', requirePermission('STUDENT_EXAM_RESULT', 'MANAGE'), async (req: any, res: Response) => {
+  try {
+    const payloads = req.body;
+    if (!Array.isArray(payloads)) return res.status(400).json({ message: 'Expected an array of payloads' });
+
+    const academic_year_id = await AcademicContextResolver.resolveAcademicYearId(req);
+
+    const updatedResults = await prisma.$transaction(async (tx: any) => {
+      const results = [];
+      for (const payload of payloads) {
+        const parsed = studentExamResultSchema.parse(payload);
+        const existing_id = payload.existing_result_id;
+
+        if (existing_id) {
+          // Verify existing record
+          const existingResult = await tx.studentExamResult.findUnique({ where: { id: existing_id } });
+          if (!existingResult || existingResult.organization_id !== req.user.organization_id) {
+            throw new Error(`Forbidden or not found: result ID ${existing_id}`);
+          }
+
+          // Delete existing subject results
+          await tx.studentExamSubjectResult.deleteMany({
+            where: { student_exam_result_id: existing_id }
+          });
+
+          // Update main result and create new subject results
+          const updated = await tx.studentExamResult.update({
+            where: { id: existing_id },
+            data: {
+              examination_id: parsed.examination_id,
+              student_id: parsed.student_id,
+              academic_year_id: academic_year_id,
+              grade_id: parsed.grade_id,
+              section_id: parsed.section_id || null,
+              total_max_marks: parsed.total_max_marks,
+              total_obtained_marks: parsed.total_obtained_marks,
+              percentage: parsed.percentage,
+              result_status: parsed.result_status as any,
+              grade: parsed.grade,
+              remarks: parsed.remarks,
+              modified_by: req.user.user_id,
+              subject_results: {
+                create: parsed.subject_results?.map(s => ({
+                  subject_id: s.subject_id,
+                  max_marks: s.max_marks,
+                  obtained_marks: s.obtained_marks,
+                  pass_marks: s.pass_marks,
+                  is_absent: s.is_absent || false,
+                  status: s.status as any,
+                  grade: s.grade,
+                  remarks: s.remarks
+                })) || []
+              }
+            },
+            include: { subject_results: true }
+          });
+          results.push(updated);
+        } else {
+          // Verify if one already exists to prevent duplicates
+          const existing = await tx.studentExamResult.findFirst({
+            where: {
+              examination_id: parsed.examination_id,
+              student_id: parsed.student_id,
+              organization_id: req.user.organization_id,
+              academic_year_id: academic_year_id
+            }
+          });
+          
+          if (existing) {
+            throw new Error(`A result for student ${parsed.student_id} in this examination already exists`);
+          }
+
+          const created = await tx.studentExamResult.create({
+            data: {
+              examination_id: parsed.examination_id,
+              student_id: parsed.student_id,
+              organization_id: req.user.organization_id,
+              academic_year_id: academic_year_id,
+              grade_id: parsed.grade_id,
+              section_id: parsed.section_id || null,
+              total_max_marks: parsed.total_max_marks,
+              total_obtained_marks: parsed.total_obtained_marks,
+              percentage: parsed.percentage,
+              result_status: parsed.result_status as any,
+              grade: parsed.grade,
+              remarks: parsed.remarks,
+              created_by: req.user.user_id,
+              subject_results: {
+                create: parsed.subject_results?.map(s => ({
+                  subject_id: s.subject_id,
+                  max_marks: s.max_marks,
+                  obtained_marks: s.obtained_marks,
+                  pass_marks: s.pass_marks,
+                  is_absent: s.is_absent || false,
+                  status: s.status as any,
+                  grade: s.grade,
+                  remarks: s.remarks
+                })) || []
+              }
+            },
+            include: { subject_results: true }
+          });
+          results.push(created);
+        }
+      }
+      return results;
+    });
+
+    res.status(200).json({ message: 'Bulk upsert successful', data: updatedResults });
+  } catch (error: any) {
+    console.error('[StudentExamResultRoutes] POST /bulk error', error);
     res.status(400).json({ message: error.message || 'Bad request' });
   }
 });

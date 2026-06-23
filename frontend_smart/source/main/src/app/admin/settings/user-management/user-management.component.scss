@@ -52,3 +52,8 @@
 .text-danger {
   color: #f44336 !important;
 }
+
+// Right align pagination specifically for this page
+::ng-deep .mat-mdc-paginator-container {
+  justify-content: flex-end !important;
+}

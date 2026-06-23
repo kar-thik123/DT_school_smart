@@ -32,9 +32,8 @@
           <div class="hierarchy-panel period-panel" *ngIf="isExamOpen" [@dropdownAnimation]>
             <div class="hierarchy-scroll-area" (click)="$event.stopPropagation()">
               <div class="grade-row" *ngFor="let exam of examinations"
-                [class.expanded]="selectedExaminationId === exam.id" (click)="setExamination(exam)">
-                <span class="grade-name" [style.fontWeight]="selectedExaminationId === exam.id ? '500' : '400'"
-                  [style.color]="selectedExaminationId === exam.id ? '#10b981' : 'inherit'">{{ exam.exam_name }}</span>
+                (click)="setExamination(exam)">
+                <span class="grade-name" [style.fontWeight]="selectedExaminationId === exam.id ? '500' : '400'">{{ exam.exam_name }}</span>
               </div>
             </div>
           </div>
@@ -44,51 +43,105 @@
 
     <!-- Table content -->
     <div class="card mt-3" *ngIf="selectedGradeId" style="position: relative;">
-      <div class="header d-flex justify-content-between align-items-center p-3 border-bottom">
-        <h2 class="m-0">Marks Entry</h2>
-        <button *ngIf="canManage" mat-raised-button color="primary"
-          [disabled]="isSaving || studentsList.length === 0 || !selectedExaminationId" (click)="saveMarks()">
-          <mat-icon class="me-2">save</mat-icon> Save Marks
-        </button>
+      <div class="materialTableHeader">
+        <div class="left">
+          <ul class="header-buttons-left ms-0">
+            <li class="tbl-title">
+              <h2>Marks Entry</h2>
+            </li>
+            <li class="tbl-search-box">
+              <label for="search-input"><i class="material-icons search-icon">search</i></label>
+              <input id="search-input" placeholder="Search Students" type="text" [(ngModel)]="searchText"
+                (ngModelChange)="onSearchChange()" class="browser-default search-field" aria-label="Search box">
+            </li>
+          </ul>
+        </div>
+        <div class="right">
+          <div class="right-side-btn d-flex align-items-center gap-3">
+            <mat-slide-toggle *ngIf="canManage" [(ngModel)]="isEditMode" color="primary">Enable Edit</mat-slide-toggle>
+            <button *ngIf="canManage && isEditMode" mat-raised-button color="primary"
+              [disabled]="isSaving || studentsList.length === 0 || !selectedExaminationId" (click)="saveMarks()">
+              <mat-icon class="me-2">save</mat-icon> Save Marks
+            </button>
+          </div>
+        </div>
       </div>
-      <div class="body overflow-auto p-3" style="min-height: 300px;">
+      <div class="body p-3">
         <div *ngIf="isLoading"
           style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; align-items: center; background: rgba(255,255,255,0.7); z-index: 10;">
           <mat-spinner diameter="40"></mat-spinner>
         </div>
 
-        <form [formGroup]="marksForm">
-          <table class="table table-hover align-middle mb-0">
-            <thead class="table-light">
-              <tr>
-                <th class="text-center" style="width: 50px;">S.No</th>
-                <th style="min-width: 200px;">Student Name</th>
-                <th style="width: 120px;">Roll No</th>
-                <th class="text-center" *ngFor="let sub of classSubjects" style="min-width: 120px;">
-                  {{ sub.name }}<br>
-                </th>
-              </tr>
-            </thead>
-            <tbody formArrayName="students">
-              <tr *ngIf="studentsList.length === 0 && !isLoading">
-                <td [attr.colspan]="3 + classSubjects.length" class="text-center p-4 text-muted">No students found for
-                  this class.</td>
-              </tr>
-              <tr *ngFor="let student of studentsFormArray.controls; let i = index" [formGroupName]="i">
-                <td class="text-center fw-medium text-dark">{{ i + 1 }}</td>
-                <td class="text-start fw-medium text-dark">{{ student.get('student_name')?.value }}</td>
-                <td class="text-start">{{ student.get('roll_number')?.value || '-' }}</td>
-                <ng-container formGroupName="subjects">
-                  <td *ngFor="let sub of classSubjects" [formGroupName]="sub.id">
-                    <mat-form-field appearance="outline" class="w-100 mb-0" style="margin-bottom: -1.25em;">
-                      <input matInput type="number" formControlName="obtained" placeholder="Enter Mark">
-                    </mat-form-field>
+        <div class="table-responsive overflow-auto" style="min-height: 300px;">
+          <form [formGroup]="marksForm">
+            <table class="table align-middle mb-0 marks-entry-table">
+              <thead>
+                <tr>
+                  <th class="text-center" style="width: 60px;">S.No</th>
+                  <th style="min-width: 200px;">Student Name</th>
+                  <th style="width: 150px;">Roll No</th>
+                  <th class="text-center" *ngFor="let sub of classSubjects" style="min-width: 120px;">
+                    {{ sub.name }}
+                  </th>
+                  <th class="text-center" style="min-width: 120px;">Obtained Mark</th>
+                  <th class="text-center" style="min-width: 100px;">Percentage</th>
+                  <th class="text-center" style="min-width: 100px;">Total Mark</th>
+                </tr>
+              </thead>
+              <tbody formArrayName="students">
+                <tr *ngIf="studentsList.length === 0 && !isLoading">
+                  <td [attr.colspan]="4 + classSubjects.length" class="text-center p-4 text-muted">No students found for
+                    this class.</td>
+                </tr>
+                <tr *ngFor="let student of filteredStudents; let i = index" [formGroup]="$any(student)"
+                  style="height: 50px;">
+                  <td class="text-center text-muted" style="font-size: 13px;">{{ pageIndex * pageSize + i + 1 }}</td>
+                  <td class="text-start" style="font-size: 14px; font-weight: 500; color: #333;">
+                    <div class="d-flex align-items-center">
+                      <div class="table-img me-2"
+                        style="width: 32px; height: 32px; background: #e0e0e0; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #666;">
+                        {{ student.get('student_name')?.value?.charAt(0) || 'S' }}
+                      </div>
+                      <span class="truncate-text">{{ student.get('student_name')?.value }}</span>
+                    </div>
                   </td>
-                </ng-container>
-              </tr>
-            </tbody>
-          </table>
-        </form>
+                  <td class="text-start text-muted" style="font-size: 13px;">{{ student.get('roll_number')?.value || '-'
+                    }}</td>
+                  <ng-container formGroupName="subjects">
+                    <td *ngFor="let sub of classSubjects" [formGroupName]="sub.id" class="text-center">
+                      <span class="fw-medium" 
+                            [class.d-none]="isEditMode"
+                            [ngClass]="student.get('subjects.' + sub.id + '.obtained')?.value !== null && student.get('subjects.' + sub.id + '.obtained')?.value !== '' ? 'text-dark' : 'text-muted'" style="font-size: 13px;">
+                        {{ student.get('subjects.' + sub.id + '.obtained')?.value !== null && student.get('subjects.' + sub.id + '.obtained')?.value !== '' ? student.get('subjects.' + sub.id + '.obtained')?.value : '-' }}
+                      </span>
+                      <input type="number" formControlName="obtained" placeholder="-"
+                        [class.d-none]="!isEditMode"
+                        class="form-control form-control-sm text-center mx-auto"
+                        style="width: 80px; height: 32px; font-size: 13px; border: 1px solid #dce0e4; border-radius: 6px; box-shadow: none; transition: border-color 0.2s;"
+                        onfocus="this.style.borderColor='#3f51b5'; this.style.outline='none';"
+                        onblur="this.style.borderColor='#dce0e4';">
+                    </td>
+                  </ng-container>
+                  <td class="text-center fw-bold" style="font-size: 13px; color: #10b981;">{{ getTotals(student).obtained
+                    }}</td>
+                  <td class="text-center fw-medium" style="font-size: 13px;">
+                    <span class="badge badge-solid-green" *ngIf="getTotals(student).percentage !== '-'" style="font-size: 12px; padding: 4px 8px;">
+                      {{ getTotals(student).percentage }}
+                    </span>
+                    <span class="fw-bold" style="color: #10b981;" *ngIf="getTotals(student).percentage === '-'">-</span>
+                  </td>
+                  <td class="text-center text-muted fw-medium" style="font-size: 13px;">{{ getTotals(student).max }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </form>
+        </div>
+        
+        <mat-paginator [length]="totalFilteredStudents"
+                       [pageSize]="pageSize"
+                       [pageSizeOptions]="[10, 25, 50, 100]"
+                       (page)="onPageChange($event)">
+        </mat-paginator>
       </div>
     </div>
 

@@ -4,6 +4,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableDataSource } from '@angular/material/table';
 import { Subject, forkJoin, of } from 'rxjs';
 import { StudentAttendanceService } from './student-attendance.service';
+import { AuthService } from '@core';
 import { rowsAnimation } from '@shared';
 import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.component';
 import { MasterTableComponent, ColumnDefinition } from '@shared/components/master-table/master-table.component';
@@ -70,9 +71,13 @@ export class StudentAttendanceComponent implements OnInit, OnDestroy {
   attendanceService = inject(StudentAttendanceService);
   private snackBar = inject(MatSnackBar);
   private httpClient = inject(HttpClient);
+  private authService = inject(AuthService);
 
   morningPhaseId: string = '';
   afternoonPhaseId: string = '';
+
+  isSuperAdminOrManagement = false;
+  hasManagePermission = false;
 
   selectedPeriod: 'DAY' | 'WEEK' | 'MONTH' = 'DAY';
 
@@ -164,6 +169,14 @@ export class StudentAttendanceComponent implements OnInit, OnDestroy {
   dataSource = new MatTableDataSource<any>([]);
 
   ngOnInit() {
+    this.hasManagePermission = this.authService.hasPermission('ATTENDANCE', 'MANAGE');
+    this.isSuperAdminOrManagement = this.authService.hasPermission('IDENTITY', 'IS_SUPER_ADMIN') || 
+                                    this.authService.hasPermission('IDENTITY', 'IS_MANAGEMENT');
+
+    if (this.isSuperAdminOrManagement) {
+      this.isClassTeacher = this.hasManagePermission;
+    }
+
     this.loadPhases();
     this.loadMyAssignments();
   }
@@ -195,14 +208,18 @@ export class StudentAttendanceComponent implements OnInit, OnDestroy {
       this.selectedGroupName = '';
     }
 
-    // Check if the teacher is a CLASS_TEACHER for this selection
-    const isClassTeacherForSelection = this.myAssignments.some(a =>
-      a.assignment_type === 'CLASS_TEACHER' &&
-      a.grade_id === event.grade.id &&
-      (event.section === 'ALL' ? true : a.section_id === event.section.id || !a.section_id)
-    );
-
-    this.isClassTeacher = isClassTeacherForSelection;
+    if (this.isSuperAdminOrManagement) {
+      this.isClassTeacher = this.hasManagePermission;
+    } else {
+      // Check if the teacher is a CLASS_TEACHER for this selection
+      const isClassTeacherForSelection = this.hasManagePermission && this.myAssignments.some(a =>
+        a.assignment_type === 'CLASS_TEACHER' &&
+        a.grade_id === event.grade.id &&
+        (event.section === 'ALL' ? true : a.section_id === event.section.id || !a.section_id)
+      );
+      this.isClassTeacher = isClassTeacherForSelection;
+    }
+    
     this.updateColumnTypes();
 
     let groupMsg = this.selectedGroupName && this.selectedGroupName !== 'All Groups' ? ` - ${this.selectedGroupName}` : '';
@@ -273,85 +290,99 @@ export class StudentAttendanceComponent implements OnInit, OnDestroy {
   }
 
   loadMyAssignments() {
-    forkJoin({
-      assignments: this.attendanceService.getMyAssignments(),
+    const observables: any = {
       groups: this.academicService.getSubjectGroups(undefined, undefined, true)
-    }).subscribe({
-      next: (res) => {
-        const assignments = res.assignments;
-        const allGroups = res.groups;
+    };
 
-        const uniqueGrades = new Map<string, IGrade>();
-        const uniqueSections = new Map<string, ISection>();
+    if (this.isSuperAdminOrManagement) {
+      observables.grades = this.academicService.getGrades();
+      observables.sections = this.academicService.getSections();
+    } else {
+      observables.assignments = this.attendanceService.getMyAssignments();
+    }
 
-        assignments.forEach(a => {
-          if (a.grade) {
-            uniqueGrades.set(a.grade_id, a.grade as IGrade);
-          }
-          if (a.section) {
-            uniqueSections.set(a.section_id, { ...a.section, grade_id: a.grade_id } as ISection);
-          }
-        });
+    forkJoin(observables).subscribe({
+      next: (res: any) => {
+        const allGroups = res.groups.data || res.groups || [];
 
-        this.myAssignments = assignments;
-        this.grades = Array.from(uniqueGrades.values());
-        this.allSections = Array.from(uniqueSections.values());
+        if (this.isSuperAdminOrManagement) {
+          this.grades = res.grades.data || res.grades || [];
+          this.allSections = res.sections.data || res.sections || [];
+          this.allSubjectGroups = allGroups;
+        } else if (res.assignments) {
+          const assignments = res.assignments;
+          const uniqueGrades = new Map<string, IGrade>();
+          const uniqueSections = new Map<string, ISection>();
 
-        // Filter subject groups based on teacher assignments
-        this.allSubjectGroups = allGroups.filter(group => {
-          return assignments.some(a => {
-            if (a.assignment_type === 'CLASS_TEACHER' && a.grade_id === group.grade_id && (!a.section_id || a.section_id === group.section_id)) {
-              return true;
+          assignments.forEach((a: any) => {
+            if (a.grade) {
+              uniqueGrades.set(a.grade_id, a.grade as IGrade);
             }
-            if (a.assignment_type === 'SUBJECT_TEACHER' && a.subject_id && group.subjects && group.subjects.some(s => s.id === a.subject_id)) {
-              return true;
+            if (a.section) {
+              uniqueSections.set(a.section_id, { ...a.section, grade_id: a.grade_id } as ISection);
             }
-            return false;
           });
-        });
 
-        const classTeacherAssignment = assignments.find(a => a.assignment_type === 'CLASS_TEACHER');
-        if (classTeacherAssignment) {
-          this.isClassTeacher = true;
-          this.updateColumnTypes();
-          this.selectedGradeId = classTeacherAssignment.grade_id;
-          this.selectedSectionId = classTeacherAssignment.section_id || '';
-          this.selectedGradeName = classTeacherAssignment.grade?.name || '';
-          this.selectedSectionName = classTeacherAssignment.section?.name || '';
-          let sectionMsg = classTeacherAssignment.section?.name ? ` - ${classTeacherAssignment.section.name}` : '';
-          this.classTeacherMessage = `${classTeacherAssignment.grade?.name || ''}${sectionMsg}`;
-          this.handleRefresh();
-        } else if (assignments.length > 0) {
-          this.isClassTeacher = false;
-          this.updateColumnTypes();
-          const firstAssignment = assignments[0];
-          this.selectedGradeId = firstAssignment.grade_id;
-          this.selectedSectionId = firstAssignment.section_id || '';
-          this.selectedGradeName = firstAssignment.grade?.name || '';
-          this.selectedSectionName = firstAssignment.section?.name || '';
+          this.myAssignments = assignments;
+          this.grades = Array.from(uniqueGrades.values());
+          this.allSections = Array.from(uniqueSections.values());
 
-          // Find matching subject group for this assignment if possible
-          const matchingGroup = this.allSubjectGroups.find(g =>
-            g.grade_id === firstAssignment.grade_id &&
-            g.section_id === firstAssignment.section_id &&
-            g.subjects.some(s => s.id === firstAssignment.subject_id)
-          );
+          // Filter subject groups based on teacher assignments
+          this.allSubjectGroups = allGroups.filter((group: any) => {
+            return assignments.some((a: any) => {
+              if (a.assignment_type === 'CLASS_TEACHER' && a.grade_id === group.grade_id && (!a.section_id || a.section_id === group.section_id)) {
+                return true;
+              }
+              if (a.assignment_type === 'SUBJECT_TEACHER' && a.subject_id && group.subjects && group.subjects.some((s: any) => s.id === a.subject_id)) {
+                return true;
+              }
+              return false;
+            });
+          });
 
-          if (matchingGroup) {
-            this.selectedGroupId = matchingGroup.id;
-            this.selectedGroupName = matchingGroup.name;
+          const classTeacherAssignment = assignments.find((a: any) => a.assignment_type === 'CLASS_TEACHER');
+          if (classTeacherAssignment) {
+            this.isClassTeacher = this.hasManagePermission;
+            this.updateColumnTypes();
+            this.selectedGradeId = classTeacherAssignment.grade_id;
+            this.selectedSectionId = classTeacherAssignment.section_id || '';
+            this.selectedGradeName = classTeacherAssignment.grade?.name || '';
+            this.selectedSectionName = classTeacherAssignment.section?.name || '';
+            let sectionMsg = classTeacherAssignment.section?.name ? ` - ${classTeacherAssignment.section.name}` : '';
+            this.classTeacherMessage = `${classTeacherAssignment.grade?.name || ''}${sectionMsg}`;
+            this.handleRefresh();
+          } else if (assignments.length > 0) {
+            this.isClassTeacher = false;
+            this.updateColumnTypes();
+            const firstAssignment = assignments[0];
+            this.selectedGradeId = firstAssignment.grade_id;
+            this.selectedSectionId = firstAssignment.section_id || '';
+            this.selectedGradeName = firstAssignment.grade?.name || '';
+            this.selectedSectionName = firstAssignment.section?.name || '';
+
+            const matchingGroup = this.allSubjectGroups.find(g =>
+              g.grade_id === firstAssignment.grade_id &&
+              g.section_id === firstAssignment.section_id &&
+              g.subjects.some(s => s.id === firstAssignment.subject_id)
+            );
+
+            if (matchingGroup) {
+              this.selectedGroupId = matchingGroup.id;
+              this.selectedGroupName = matchingGroup.name;
+            }
+
+            let sectionMsg = firstAssignment.section?.name ? ` - ${firstAssignment.section.name}` : '';
+            let groupMsg = this.selectedGroupName ? ` - ${this.selectedGroupName}` : '';
+
+            this.classTeacherMessage = `${firstAssignment.grade?.name || ''}${sectionMsg}${groupMsg}`;
+            this.handleRefresh();
+          } else {
+            this.isClassTeacher = false;
+            this.updateColumnTypes();
+            this.classTeacherMessage = 'You have no assignments. Attendance tracking is restricted.';
           }
-
-          let sectionMsg = firstAssignment.section?.name ? ` - ${firstAssignment.section.name}` : '';
-          let groupMsg = this.selectedGroupName ? ` - ${this.selectedGroupName}` : '';
-
-          this.classTeacherMessage = `${firstAssignment.grade?.name || ''}${sectionMsg}${groupMsg}`;
-          this.handleRefresh();
-        } else {
-          this.isClassTeacher = false;
-          this.updateColumnTypes();
-          this.classTeacherMessage = 'You have no assignments. Attendance tracking is restricted.';
         }
+
       },
       error: () => {
         this.showNotification('Error loading your assignments');

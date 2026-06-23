@@ -278,7 +278,7 @@ export const PLATFORM_MODULES: RouteInfo[] = [
   },
   {
     path: '/admin/examination/student-exam-result',
-    title: 'Student Exam Results',
+    title: 'Student Exam Marks',
     iconType: 'material-icons-outlined',
     icon: 'assignment',
     class: '',

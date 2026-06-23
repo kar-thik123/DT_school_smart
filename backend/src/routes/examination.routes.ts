@@ -21,8 +21,10 @@ router.get('/', async (req: any, res: Response) => {
   try {
     const userPermissions = req.user?.permissions || [];
     if (!AuthorizationService.hasPermission(userPermissions, 'EXAMINATION', 'VIEW') &&
-        !AuthorizationService.hasPermission(userPermissions, 'EXAMINATION', 'MANAGE')) {
-      return res.status(403).json({ message: 'Forbidden: Requires EXAMINATION:VIEW or EXAMINATION:MANAGE' });
+        !AuthorizationService.hasPermission(userPermissions, 'EXAMINATION', 'MANAGE') &&
+        !AuthorizationService.hasPermission(userPermissions, 'STUDENT_EXAM_RESULT', 'VIEW') &&
+        !AuthorizationService.hasPermission(userPermissions, 'STUDENT_EXAM_RESULT', 'MANAGE')) {
+      return res.status(403).json({ message: 'Forbidden: Requires EXAMINATION:VIEW or EXAMINATION:MANAGE or STUDENT_EXAM_RESULT:VIEW' });
     }
 
     const academic_year_id = await AcademicContextResolver.resolveAcademicYearId(req);
@@ -54,8 +56,10 @@ router.get('/:id', async (req: any, res: Response) => {
   try {
     const userPermissions = req.user?.permissions || [];
     if (!AuthorizationService.hasPermission(userPermissions, 'EXAMINATION', 'VIEW') &&
-        !AuthorizationService.hasPermission(userPermissions, 'EXAMINATION', 'MANAGE')) {
-      return res.status(403).json({ message: 'Forbidden: Requires EXAMINATION:VIEW or EXAMINATION:MANAGE' });
+        !AuthorizationService.hasPermission(userPermissions, 'EXAMINATION', 'MANAGE') &&
+        !AuthorizationService.hasPermission(userPermissions, 'STUDENT_EXAM_RESULT', 'VIEW') &&
+        !AuthorizationService.hasPermission(userPermissions, 'STUDENT_EXAM_RESULT', 'MANAGE')) {
+      return res.status(403).json({ message: 'Forbidden: Requires EXAMINATION:VIEW or EXAMINATION:MANAGE or STUDENT_EXAM_RESULT:VIEW' });
     }
 
     const examination = await prisma.examination.findUnique({

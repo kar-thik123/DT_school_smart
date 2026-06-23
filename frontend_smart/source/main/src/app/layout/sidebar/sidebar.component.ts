@@ -393,6 +393,12 @@ export class SidebarComponent
       return this.authService.hasPermission('MASTER_CONFIGURATION', 'VIEW') ||
         this.authService.hasPermission('MASTER_CONFIGURATION_VIEW');
     }
+    if (path.includes('/student-exam-result')) {
+      return this.authService.hasPermission('STUDENT_EXAM_RESULT', 'VIEW') ||
+        this.authService.hasPermission('STUDENT_EXAM_RESULT_VIEW') ||
+        this.authService.hasPermission('STUDENT_EXAM_RESULT', 'MANAGE') ||
+        this.authService.hasPermission('STUDENT_EXAM_RESULT_MANAGE');
+    }
     if (path.includes('/examination')) {
       return this.authService.hasPermission('EXAMINATION', 'VIEW') ||
         this.authService.hasPermission('EXAMINATION_VIEW') ||

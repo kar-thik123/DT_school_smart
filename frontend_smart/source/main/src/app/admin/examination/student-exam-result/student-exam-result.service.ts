@@ -50,8 +50,16 @@ export class StudentExamResultService {
 
   constructor() { }
 
-  getAllResults(): Observable<any> {
-    return this.http.get<any>(this.apiUrl);
+  getAllResults(examinationId?: string, gradeId?: string, sectionId?: string): Observable<any> {
+    let url = this.apiUrl;
+    const params = [];
+    if (examinationId) params.push(`examination_id=${examinationId}`);
+    if (gradeId) params.push(`grade_id=${gradeId}`);
+    if (sectionId) params.push(`section_id=${sectionId}`);
+    if (params.length > 0) {
+      url += '?' + params.join('&');
+    }
+    return this.http.get<any>(url);
   }
 
   getResultById(id: string): Observable<any> {
@@ -62,12 +70,20 @@ export class StudentExamResultService {
     return this.http.post<any>(this.apiUrl, data);
   }
 
+  bulkUpsertResults(payloads: any[]): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/bulk`, payloads);
+  }
+
   updateResult(id: string, data: Partial<StudentExamResult>): Observable<any> {
     return this.http.put<any>(`${this.apiUrl}/${id}`, data);
   }
 
   deleteResult(id: string): Observable<any> {
     return this.http.delete<any>(`${this.apiUrl}/${id}`);
+  }
+
+  getMyAssignments(): Observable<any[]> {
+    return this.http.get<any[]>(`${environment.apiUrl}/teacher-assignments/me`);
   }
 
   // Helper methods to load dropdown data
@@ -85,9 +101,10 @@ export class StudentExamResultService {
     return this.http.get<any>(url);
   }
 
-  getStudents(gradeId: string, sectionId?: string): Observable<any> {
+  getStudents(gradeId: string, sectionId?: string, groupId?: string): Observable<any> {
     let url = `${environment.apiUrl}/student-enrollments?grade_id=${gradeId}`;
     if (sectionId) url += `&section_id=${sectionId}`;
+    if (groupId) url += `&subject_group_id=${groupId}`;
     return this.http.get<any>(url);
   }
 

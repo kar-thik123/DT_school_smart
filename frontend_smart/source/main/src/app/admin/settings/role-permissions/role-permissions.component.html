@@ -196,7 +196,7 @@
                                     (change)="toggleModule(group, $event.checked)"
                                     class="me-3">
                                   </mat-checkbox>
-                                  <span>{{ group.module }}</span>
+                                  <span>{{ group.module === 'STUDENT_EXAM_RESULT' ? 'STUDENT_EXAM_MARKS' : group.module }}</span>
                                 </div>
                               </td>
                               <td>
