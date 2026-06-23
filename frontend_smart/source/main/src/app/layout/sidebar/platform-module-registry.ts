@@ -262,6 +262,34 @@ export const PLATFORM_MODULES: RouteInfo[] = [
     showInSidebar: true,
     domain: 'TENANT'
   },
+  {
+    path: '/admin/examination/exam-types',
+    title: 'MENUITEMS.EXAMINATION.TEXT',
+    iconType: 'material-icons-outlined',
+    icon: 'event_note',
+    class: '',
+    groupTitle: false,
+    badge: '',
+    badgeClass: '',
+    role: ['EXAMINATION:VIEW', 'EXAMINATION_VIEW', 'EXAMINATION:MANAGE', 'EXAMINATION_MANAGE'],
+    submenu: [],
+    showInSidebar: true,
+    domain: 'TENANT'
+  },
+  {
+    path: '/admin/examination/student-exam-result',
+    title: 'Student Exam Results',
+    iconType: 'material-icons-outlined',
+    icon: 'assignment',
+    class: '',
+    groupTitle: false,
+    badge: '',
+    badgeClass: '',
+    role: ['STUDENT_EXAM_RESULT:VIEW', 'STUDENT_EXAM_RESULT_VIEW', 'STUDENT_EXAM_RESULT:MANAGE', 'STUDENT_EXAM_RESULT_MANAGE', 'EXAMINATION_MANAGE'],
+    submenu: [],
+    showInSidebar: true,
+    domain: 'TENANT'
+  },
 
   // 5. STUDENT MODULES
   {

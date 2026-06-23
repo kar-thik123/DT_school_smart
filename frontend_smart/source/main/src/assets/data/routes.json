@@ -547,7 +547,8 @@
       "badge": "",
       "badgeClass": "",
       "role": [
-        "ADMIN"
+        "EXAMINATION:VIEW",
+        "EXAMINATION_VIEW"
       ],
       "submenu": [
         {

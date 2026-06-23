@@ -43,6 +43,10 @@
     "MCQ": {
       "description": "Multiple Choice Questions practice module",
       "actions": ["VIEW", "ATTEMPT"]
+    },
+    "EXAMINATION": {
+      "description": "Examination and marks module",
+      "actions": ["VIEW", "MANAGE"]
     }
   }
 }

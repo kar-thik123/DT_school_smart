@@ -1,0 +1,104 @@
+<section class="content">
+  <div class="content-block">
+    <div class="d-flex justify-content-between align-items-center flex-nowrap header-responsive-wrapper gap-2 mb-3">
+      <div class="block-header m-0 responsive-breadcrumb" style="min-width: 0; flex: 1 1 auto;">
+        <app-breadcrumb [title]="breadscrums[0].title" [items]="breadscrums[0].items"
+          [active_item]="breadscrums[0].active">
+        </app-breadcrumb>
+      </div>
+
+      <div class="d-flex align-items-center gap-3 header-actions-wrapper" style="flex-shrink: 0;">
+        <div class="hierarchy-dropdown-wrapper">
+          <app-hierarchy-dropdown [grades]="grades" [allSections]="allSections" [allSubjectGroups]="allSubjectGroups"
+            [selectedGradeId]="selectedGradeId" [selectedSectionId]="selectedSectionId"
+            [selectedGroupId]="selectedGroupId" [selectedGradeName]="selectedGradeName"
+            [selectedSectionName]="selectedSectionName" [selectedGroupName]="selectedGroupName" labelName="Class"
+            (selectionChange)="onHierarchySelectionChange($event)">
+          </app-hierarchy-dropdown>
+        </div>
+
+        <div class="custom-dropdown-wrapper" style="position: relative;">
+          <button class="custom-trigger" [class.open]="isExamOpen" (click)="toggleExamDropdown($event)">
+            <div class="trigger-content">
+              <span class="trigger-text">
+                <span class="label">Exam:</span>
+                <span class="value">{{ selectedExaminationName }}</span>
+              </span>
+            </div>
+            <mat-icon class="trigger-icon-right"
+              [@iconRotate]="isExamOpen ? 'expanded' : 'collapsed'">chevron_right</mat-icon>
+          </button>
+
+          <div class="hierarchy-panel period-panel" *ngIf="isExamOpen" [@dropdownAnimation]>
+            <div class="hierarchy-scroll-area" (click)="$event.stopPropagation()">
+              <div class="grade-row" *ngFor="let exam of examinations"
+                [class.expanded]="selectedExaminationId === exam.id" (click)="setExamination(exam)">
+                <span class="grade-name" [style.fontWeight]="selectedExaminationId === exam.id ? '500' : '400'"
+                  [style.color]="selectedExaminationId === exam.id ? '#10b981' : 'inherit'">{{ exam.exam_name }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table content -->
+    <div class="card mt-3" *ngIf="selectedGradeId" style="position: relative;">
+      <div class="header d-flex justify-content-between align-items-center p-3 border-bottom">
+        <h2 class="m-0">Marks Entry</h2>
+        <button *ngIf="canManage" mat-raised-button color="primary"
+          [disabled]="isSaving || studentsList.length === 0 || !selectedExaminationId" (click)="saveMarks()">
+          <mat-icon class="me-2">save</mat-icon> Save Marks
+        </button>
+      </div>
+      <div class="body overflow-auto p-3" style="min-height: 300px;">
+        <div *ngIf="isLoading"
+          style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; align-items: center; background: rgba(255,255,255,0.7); z-index: 10;">
+          <mat-spinner diameter="40"></mat-spinner>
+        </div>
+
+        <form [formGroup]="marksForm">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th class="text-center" style="width: 50px;">S.No</th>
+                <th style="min-width: 200px;">Student Name</th>
+                <th style="width: 120px;">Roll No</th>
+                <th class="text-center" *ngFor="let sub of classSubjects" style="min-width: 120px;">
+                  {{ sub.name }}<br>
+                </th>
+              </tr>
+            </thead>
+            <tbody formArrayName="students">
+              <tr *ngIf="studentsList.length === 0 && !isLoading">
+                <td [attr.colspan]="3 + classSubjects.length" class="text-center p-4 text-muted">No students found for
+                  this class.</td>
+              </tr>
+              <tr *ngFor="let student of studentsFormArray.controls; let i = index" [formGroupName]="i">
+                <td class="text-center fw-medium text-dark">{{ i + 1 }}</td>
+                <td class="text-start fw-medium text-dark">{{ student.get('student_name')?.value }}</td>
+                <td class="text-start">{{ student.get('roll_number')?.value || '-' }}</td>
+                <ng-container formGroupName="subjects">
+                  <td *ngFor="let sub of classSubjects" [formGroupName]="sub.id">
+                    <mat-form-field appearance="outline" class="w-100 mb-0" style="margin-bottom: -1.25em;">
+                      <input matInput type="number" formControlName="obtained" placeholder="Enter Mark">
+                    </mat-form-field>
+                  </td>
+                </ng-container>
+              </tr>
+            </tbody>
+          </table>
+        </form>
+      </div>
+    </div>
+
+    <div class="card mt-3" *ngIf="!selectedGradeId">
+      <div class="body p-5 text-center text-muted" style="background-color: #fafafa;">
+        <mat-icon style="font-size: 48px; width: 48px; height: 48px; color: #ccc;" class="mb-3">checklist</mat-icon>
+        <h4>Please select a Class</h4>
+        <p>Use the dropdowns in the top right to start entering marks.</p>
+      </div>
+    </div>
+
+  </div>
+</section>

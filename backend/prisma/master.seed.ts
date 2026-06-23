@@ -151,6 +151,8 @@ async function main() {
     { module: 'IDENTITY', action: 'IS_STUDENT', description: 'Student role identifier' },
     { module: 'ACADEMIC_STRUCTURE', action: 'VIEW', description: 'Read academic data' },
     { module: 'ACADEMIC_STRUCTURE', action: 'UPDATE', description: 'Edit academic data' },
+    { module: 'EXAMINATION', action: 'VIEW', description: 'View examinations' },
+    { module: 'EXAMINATION', action: 'MANAGE', description: 'Manage examinations' },
   ];
 
   const permissions = [];
@@ -165,8 +167,8 @@ async function main() {
 
   // 4. Roles
   const rolesData = [
-    { name: 'SUPER_ADMIN', permissions: ['IS_MANAGEMENT', 'VIEW', 'UPDATE'] },
-    { name: 'MANAGEMENT', permissions: ['IS_MANAGEMENT', 'VIEW', 'UPDATE'] },
+    { name: 'SUPER_ADMIN', permissions: ['IS_MANAGEMENT', 'VIEW', 'UPDATE', 'MANAGE'] },
+    { name: 'MANAGEMENT', permissions: ['IS_MANAGEMENT', 'VIEW', 'UPDATE', 'MANAGE'] },
     { name: 'TEACHER', permissions: ['IS_TEACHER', 'VIEW'] },
     { name: 'STUDENT', permissions: ['IS_STUDENT', 'VIEW'] }
   ];
@@ -185,8 +187,10 @@ async function main() {
     roleMap[r.name] = role.id;
 
     for (const pAction of r.permissions) {
-      const perm = permissions.find(p => p.action === pAction);
-      if (perm) {
+      // Find all permissions with this action to grant them all, 
+      // or specify module:action in the array to be precise. For simplicity, grant all matching actions.
+      const perms = permissions.filter(p => p.action === pAction);
+      for (const perm of perms) {
         await prisma.rolePermission.upsert({
           where: { role_id_permission_id: { role_id: role.id, permission_id: perm.id } },
           update: {},

@@ -393,6 +393,12 @@ export class SidebarComponent
       return this.authService.hasPermission('MASTER_CONFIGURATION', 'VIEW') ||
         this.authService.hasPermission('MASTER_CONFIGURATION_VIEW');
     }
+    if (path.includes('/examination')) {
+      return this.authService.hasPermission('EXAMINATION', 'VIEW') ||
+        this.authService.hasPermission('EXAMINATION_VIEW') ||
+        this.authService.hasPermission('EXAMINATION', 'MANAGE') ||
+        this.authService.hasPermission('EXAMINATION_MANAGE');
+    }
 
     // Default legacy namespace fallback for other path patterns
     if (path.startsWith('/teacher/')) {

@@ -64,6 +64,12 @@ export class AuthorizationService {
       }
     }
 
+    if (module === 'STUDENT_EXAM_RESULT') {
+      if (userPermissions.includes('EXAMINATION:VIEW') || userPermissions.includes('EXAMINATION:MANAGE') || userPermissions.includes('IDENTITY:IS_SUPER_ADMIN')) {
+        return true;
+      }
+    }
+
     return false;
   }
 

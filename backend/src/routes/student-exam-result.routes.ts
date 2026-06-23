@@ -1,0 +1,252 @@
+import { Router, Response } from 'express';
+import prisma from '../prisma';
+import { authMiddleware, requirePermission } from '../middlewares/auth.middleware';
+import { z } from 'zod';
+import { AuthorizationService } from '../services/authorization.service';
+import { AcademicContextResolver } from '../utils/academic-context.resolver';
+
+const router = Router();
+
+router.use(authMiddleware);
+
+const studentExamSubjectResultSchema = z.object({
+  subject_id: z.string().uuid(),
+  max_marks: z.number().min(0),
+  obtained_marks: z.number().min(0),
+  pass_marks: z.number().min(0).optional().nullable(),
+  is_absent: z.boolean().optional(),
+  status: z.enum(['PASS', 'FAIL', 'WITHHELD']).optional().nullable(),
+  grade: z.string().optional().nullable(),
+  remarks: z.string().optional().nullable()
+});
+
+const studentExamResultSchema = z.object({
+  examination_id: z.string().uuid(),
+  student_id: z.string().uuid(),
+  grade_id: z.string().uuid(),
+  section_id: z.string().uuid().optional().nullable(),
+  total_max_marks: z.number().optional().nullable(),
+  total_obtained_marks: z.number().optional().nullable(),
+  percentage: z.number().optional().nullable(),
+  result_status: z.enum(['PASS', 'FAIL', 'WITHHELD']).optional().nullable(),
+  grade: z.string().optional().nullable(),
+  remarks: z.string().optional().nullable(),
+  subject_results: z.array(studentExamSubjectResultSchema).optional()
+});
+
+/**
+ * GET /api/student-exam-results
+ * List all student exam results for the current organization
+ */
+router.get('/', async (req: any, res: Response) => {
+  try {
+    const userPermissions = req.user?.permissions || [];
+    if (!AuthorizationService.hasPermission(userPermissions, 'STUDENT_EXAM_RESULT', 'VIEW') &&
+        !AuthorizationService.hasPermission(userPermissions, 'STUDENT_EXAM_RESULT', 'MANAGE')) {
+      return res.status(403).json({ message: 'Forbidden: Requires STUDENT_EXAM_RESULT:VIEW or STUDENT_EXAM_RESULT:MANAGE' });
+    }
+
+    const academic_year_id = await AcademicContextResolver.resolveAcademicYearId(req);
+
+    const results = await prisma.studentExamResult.findMany({
+      where: {
+        organization_id: req.user.organization_id,
+        academic_year_id
+      },
+      include: {
+        examination: true,
+        student: { select: { id: true, name: true, email: true } },
+        grade_rel: true,
+        section: true,
+        subject_results: {
+          include: { subject: true }
+        },
+        creator: { select: { id: true, name: true, email: true } },
+        modifier: { select: { id: true, name: true, email: true } }
+      },
+      orderBy: { created_at: 'desc' }
+    });
+    res.json(results);
+  } catch (error) {
+    console.error('[StudentExamResultRoutes] GET / error', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+/**
+ * GET /api/student-exam-results/:id
+ * Get a specific student exam result
+ */
+router.get('/:id', async (req: any, res: Response) => {
+  try {
+    const userPermissions = req.user?.permissions || [];
+    if (!AuthorizationService.hasPermission(userPermissions, 'STUDENT_EXAM_RESULT', 'VIEW') &&
+        !AuthorizationService.hasPermission(userPermissions, 'STUDENT_EXAM_RESULT', 'MANAGE')) {
+      return res.status(403).json({ message: 'Forbidden: Requires STUDENT_EXAM_RESULT:VIEW or STUDENT_EXAM_RESULT:MANAGE' });
+    }
+
+    const result = await prisma.studentExamResult.findUnique({
+      where: { id: req.params.id },
+      include: {
+        examination: true,
+        student: { select: { id: true, name: true, email: true } },
+        grade_rel: true,
+        section: true,
+        subject_results: {
+          include: { subject: true }
+        },
+        creator: { select: { id: true, name: true, email: true } },
+        modifier: { select: { id: true, name: true, email: true } }
+      }
+    });
+
+    if (!result) return res.status(404).json({ message: 'Student Exam Result not found' });
+    if (result.organization_id !== req.user.organization_id) return res.status(403).json({ message: 'Forbidden' });
+
+    res.json(result);
+  } catch (error) {
+    console.error('[StudentExamResultRoutes] GET /:id error', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+/**
+ * POST /api/student-exam-results
+ * Create a new student exam result
+ */
+router.post('/', requirePermission('STUDENT_EXAM_RESULT', 'MANAGE'), async (req: any, res: Response) => {
+  try {
+    const parsed = studentExamResultSchema.parse(req.body);
+    const academic_year_id = await AcademicContextResolver.resolveAcademicYearId(req);
+
+    const existing = await prisma.studentExamResult.findFirst({
+      where: {
+        examination_id: parsed.examination_id,
+        student_id: parsed.student_id,
+        organization_id: req.user.organization_id,
+        academic_year_id: academic_year_id
+      }
+    });
+    if (existing) return res.status(400).json({ message: 'A result for this student in this examination already exists' });
+
+    const result = await prisma.studentExamResult.create({
+      data: {
+        examination_id: parsed.examination_id,
+        student_id: parsed.student_id,
+        organization_id: req.user.organization_id,
+        academic_year_id: academic_year_id,
+        grade_id: parsed.grade_id,
+        section_id: parsed.section_id || null,
+        total_max_marks: parsed.total_max_marks,
+        total_obtained_marks: parsed.total_obtained_marks,
+        percentage: parsed.percentage,
+        result_status: parsed.result_status as any,
+        grade: parsed.grade,
+        remarks: parsed.remarks,
+        created_by: req.user.user_id,
+        subject_results: {
+          create: parsed.subject_results?.map(s => ({
+            subject_id: s.subject_id,
+            max_marks: s.max_marks,
+            obtained_marks: s.obtained_marks,
+            pass_marks: s.pass_marks,
+            is_absent: s.is_absent || false,
+            status: s.status as any,
+            grade: s.grade,
+            remarks: s.remarks
+          })) || []
+        }
+      },
+      include: {
+        subject_results: true
+      }
+    });
+    res.status(201).json(result);
+  } catch (error: any) {
+    console.error('[StudentExamResultRoutes] POST / error', error);
+    res.status(400).json({ message: error.message || 'Bad request' });
+  }
+});
+
+/**
+ * PUT /api/student-exam-results/:id
+ * Update an existing student exam result
+ */
+router.put('/:id', requirePermission('STUDENT_EXAM_RESULT', 'MANAGE'), async (req: any, res: Response) => {
+  try {
+    const parsed = studentExamResultSchema.parse(req.body);
+    const academic_year_id = await AcademicContextResolver.resolveAcademicYearId(req);
+    const result = await prisma.studentExamResult.findUnique({ where: { id: req.params.id } });
+
+    if (!result) return res.status(404).json({ message: 'Student Exam Result not found' });
+    if (result.organization_id !== req.user.organization_id) return res.status(403).json({ message: 'Forbidden' });
+
+    const updated = await prisma.$transaction(async (tx: any) => {
+      // Delete existing subject results
+      await tx.studentExamSubjectResult.deleteMany({
+        where: { student_exam_result_id: req.params.id }
+      });
+
+      // Update main result and create new subject results
+      return tx.studentExamResult.update({
+        where: { id: req.params.id },
+        data: {
+          examination_id: parsed.examination_id,
+          student_id: parsed.student_id,
+          academic_year_id: academic_year_id,
+          grade_id: parsed.grade_id,
+          section_id: parsed.section_id || null,
+          total_max_marks: parsed.total_max_marks,
+          total_obtained_marks: parsed.total_obtained_marks,
+          percentage: parsed.percentage,
+          result_status: parsed.result_status as any,
+          grade: parsed.grade,
+          remarks: parsed.remarks,
+          modified_by: req.user.user_id,
+          subject_results: {
+            create: parsed.subject_results?.map(s => ({
+              subject_id: s.subject_id,
+              max_marks: s.max_marks,
+              obtained_marks: s.obtained_marks,
+              pass_marks: s.pass_marks,
+              is_absent: s.is_absent || false,
+              status: s.status as any,
+              grade: s.grade,
+              remarks: s.remarks
+            })) || []
+          }
+        },
+        include: {
+          subject_results: true
+        }
+      });
+    });
+
+    res.json(updated);
+  } catch (error: any) {
+    console.error('[StudentExamResultRoutes] PUT /:id error', error);
+    res.status(400).json({ message: error.message || 'Bad request' });
+  }
+});
+
+/**
+ * DELETE /api/student-exam-results/:id
+ * Delete a student exam result
+ */
+router.delete('/:id', requirePermission('STUDENT_EXAM_RESULT', 'MANAGE'), async (req: any, res: Response) => {
+  try {
+    const result = await prisma.studentExamResult.findUnique({ where: { id: req.params.id } });
+
+    if (!result) return res.status(404).json({ message: 'Student Exam Result not found' });
+    if (result.organization_id !== req.user.organization_id) return res.status(403).json({ message: 'Forbidden' });
+
+    // Cascades will delete subject_results automatically
+    await prisma.studentExamResult.delete({ where: { id: req.params.id } });
+    res.json({ message: 'Student Exam Result deleted successfully' });
+  } catch (error) {
+    console.error('[StudentExamResultRoutes] DELETE /:id error', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+export default router;

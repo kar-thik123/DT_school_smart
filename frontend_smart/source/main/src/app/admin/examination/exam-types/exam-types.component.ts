@@ -1,201 +1,208 @@
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
-import { MatDialog } from '@angular/material/dialog';
-import {
-  MatSnackBar,
-  MatSnackBarHorizontalPosition,
-  MatSnackBarVerticalPosition,
-} from '@angular/material/snack-bar';
-import { MatTableDataSource } from '@angular/material/table';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule, NgForm, FormGroupDirective } from '@angular/forms';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { ExamTypesService, Examination } from './exam-types.service';
 import { Subject } from 'rxjs';
-import { FormDialogComponent } from './dialogs/form-dialog/form-dialog.component';
-import { DeleteComponent } from './dialogs/delete/delete.component';
-import { ExamTypesService } from './exam-types.service';
-import { ExamType } from './exam-types.model';
-import { rowsAnimation } from '@shared';
-
-import { HttpClient } from '@angular/common/http';
-import { Direction } from '@angular/cdk/bidi';
-import { LocalStorageService } from '@shared/services';
+import { takeUntil } from 'rxjs/operators';
+import { MatTabsModule } from '@angular/material/tabs';
+import { MatCardModule } from '@angular/material/card';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatTableModule } from '@angular/material/table';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { CommonModule } from '@angular/common';
+import Swal from 'sweetalert2';
 import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.component';
-import {
-  MasterTableComponent,
-  ColumnDefinition,
-} from '@shared/components/master-table/master-table.component';
+import { MatDialog } from '@angular/material/dialog';
+import { DeleteComponent } from './dialogs/delete/delete.component';
+import { AuthService } from '@core';
+
+import { MatMenuModule } from '@angular/material/menu';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 
 @Component({
   selector: 'app-exam-types',
   templateUrl: './exam-types.component.html',
   styleUrls: ['./exam-types.component.scss'],
-  animations: [rowsAnimation],
-  imports: [BreadcrumbComponent, MasterTableComponent],
+  standalone: true,
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    FormsModule,
+    MatTabsModule,
+    MatCardModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatButtonModule,
+    MatIconModule,
+    MatTableModule,
+    MatTooltipModule,
+    MatProgressBarModule,
+    MatMenuModule,
+    MatPaginatorModule,
+    BreadcrumbComponent
+  ],
 })
 export class ExamTypesComponent implements OnInit, OnDestroy {
-  httpClient = inject(HttpClient);
-  dialog = inject(MatDialog);
-  examTypesService = inject(ExamTypesService);
+  private fb = inject(FormBuilder);
+  private examService = inject(ExamTypesService);
   private snackBar = inject(MatSnackBar);
-  private localStorageService = inject(LocalStorageService);
+  private dialog = inject(MatDialog);
+  private authService = inject(AuthService);
 
-  columnDefinitions: ColumnDefinition[] = [
-    { def: 'select', label: 'Checkbox', type: 'check', visible: true },
-    { def: 'id', label: 'ID', type: 'text', visible: false },
-    { def: 'exam_name', label: 'Exam Name', type: 'text', visible: true },
-    { def: 'exam_code', label: 'Exam Code', type: 'text', visible: true },
-    { def: 'description', label: 'Description', type: 'text', visible: true },
-    {
-      def: 'status',
-      label: 'Status',
-      type: 'status',
-      visible: true,
-      statusBadgeMap: {
-        Active: 'badge badge-solid-green',
-        Inactive: 'badge badge-solid-orange',
-      },
-    },
-    { def: 'actions', label: 'Actions', type: 'actionBtn', visible: true },
-  ];
-
-  dataSource = new MatTableDataSource<ExamType>([]);
-  isLoading = true;
   private destroy$ = new Subject<void>();
+  examinations: Examination[] = [];
+  isLoading = false;
+  isSaving = false;
+  canManage = false;
 
-  breadscrums = [
-    {
-      title: 'Exam Types',
-      items: ['Examination'],
-      active: 'Exam Types',
-    },
-  ];
+  currentPage = 1;
+  pageSize = 10;
 
-  ngOnInit() {
-    this.loadData();
+  examForm: FormGroup;
+  editingExamId: string | null = null;
+
+  constructor() {
+    this.examForm = this.fb.group({
+      exam_name: ['', [Validators.required, Validators.maxLength(100)]]
+    });
   }
 
-  ngOnDestroy() {
+  ngOnInit(): void {
+    this.canManage = this.authService.hasPermission('EXAMINATION', 'MANAGE') || 
+                     this.authService.hasPermission('EXAMINATION_MANAGE');
+    this.loadExaminations();
+  }
+
+  ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
   }
 
-  handleRefresh() {
-    this.loadData();
-  }
-
-  loadData() {
+  loadExaminations(): void {
     this.isLoading = true;
-    this.examTypesService.getAllExamTypes().subscribe({
-      next: (data) => {
-        this.dataSource.data = data;
-        this.isLoading = false;
-        this.dataSource.filterPredicate = (data: any, filter: string) => {
-          const dataStr = Object.keys(data)
-            .reduce((currentTerm: string, key: string) => {
-              return (
-                currentTerm +
-                (data as { [key: string]: any })[key] +
-                ' '
-              );
-            }, '')
-            .toLowerCase();
-          return dataStr.indexOf(filter) !== -1;
-        };
-      },
-      error: (err) => {
-        console.error(err);
-        this.isLoading = false;
-      },
-    });
-  }
-
-  handleAdd() {
-    this.openDialog('add');
-  }
-
-  handleEdit(row: ExamType) {
-    this.openDialog('edit', row);
-  }
-
-  openDialog(action: 'add' | 'edit', data?: ExamType) {
-    const varDirection: Direction =
-      this.localStorageService.get('isRtl') === 'true' ? 'rtl' : 'ltr';
-    const dialogRef = this.dialog.open(FormDialogComponent, {
-      width: '60vw',
-      maxWidth: '100vw',
-      data: { examType: data, action },
-      direction: varDirection,
-      autoFocus: false,
-    });
-
-    dialogRef.afterClosed().subscribe((result) => {
-      if (result) {
-        if (action === 'add') {
-          this.dataSource.data = [result, ...this.dataSource.data];
-        } else {
-          this.updateRecord(result);
+    this.examService.getAllExaminations()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (data) => {
+          this.examinations = data.data || data || [];
+          this.isLoading = false;
+        },
+        error: (err) => {
+          console.error(err);
+          this.showNotification('snackbar-danger', 'Failed to load examinations');
+          this.isLoading = false;
         }
-        this.showNotification(
-          action === 'add' ? 'snackbar-success' : 'black',
-          `${action === 'add' ? 'Add' : 'Edit'} Record Successfully...!!!`,
-          'bottom',
-          'center'
-        );
-      }
-    });
+      });
   }
 
-  private updateRecord(updatedRecord: ExamType) {
-    const index = this.dataSource.data.findIndex(
-      (record) => record.id === updatedRecord.id
-    );
-    if (index !== -1) {
-      this.dataSource.data[index] = updatedRecord;
-      this.dataSource._updateChangeSubscription();
+  get paginatedExaminations() {
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this.examinations.slice(start, start + this.pageSize);
+  }
+
+  onPageChange(event: PageEvent) {
+    this.currentPage = event.pageIndex + 1;
+    this.pageSize = event.pageSize;
+  }
+
+  saveExam(formDirective: FormGroupDirective): void {
+    if (this.examForm.invalid) return;
+
+    this.isSaving = true;
+    const payload = this.examForm.value;
+
+    if (this.editingExamId) {
+      this.examService.updateExamination(this.editingExamId, payload)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            this.showNotification('snackbar-success', 'Examination updated successfully');
+            this.resetForm(formDirective);
+            this.loadExaminations();
+          },
+          error: (err) => {
+            console.error(err);
+            const msg = err.error?.message || 'Failed to update examination';
+            this.showNotification('snackbar-danger', msg);
+            this.isSaving = false;
+          }
+        });
+    } else {
+      this.examService.createExamination(payload)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            this.showNotification('snackbar-success', 'Examination created successfully');
+            this.resetForm(formDirective);
+            this.loadExaminations();
+            // User requested to stay on the same page after successful creation
+          },
+          error: (err) => {
+            console.error(err);
+            const msg = err.error?.message || 'Failed to create examination';
+            this.showNotification('snackbar-danger', msg);
+            this.isSaving = false;
+          }
+        });
     }
   }
 
-  handleDelete(row: ExamType) {
-    const dialogRef = this.dialog.open(DeleteComponent, {
-      data: row,
+  editExam(exam: Examination): void {
+    this.editingExamId = exam.id!;
+    this.examForm.patchValue({
+      exam_name: exam.exam_name
     });
-    dialogRef.afterClosed().subscribe((result) => {
-      if (result) {
-        this.dataSource.data = this.dataSource.data.filter(
-          (record) => record.id !== row.id
-        );
-        this.showNotification(
-          'snackbar-danger',
-          'Delete Record Successfully...!!!',
-          'bottom',
-          'center'
-        );
+    // Scroll to top for better UX
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  deleteExam(exam: Examination): void {
+    Swal.fire({
+      text: `Do you want to delete this record: "${exam.exam_name}"?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Delete'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.examService.deleteExamination(exam.id!)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+            next: () => {
+              this.showNotification('snackbar-danger', 'Examination deleted successfully');
+              this.loadExaminations();
+            },
+            error: (err) => {
+              console.error(err);
+              this.showNotification('snackbar-danger', 'Failed to delete examination');
+            }
+          });
       }
     });
   }
 
-  handleBulkDelete(selectedRows: ExamType[]) {
-    const totalSelect = selectedRows.length;
-    this.dataSource.data = this.dataSource.data.filter(
-      (item) => !selectedRows.includes(item)
-    );
-    this.showNotification(
-      'snackbar-danger',
-      `${totalSelect} Record(s) Deleted Successfully...!!!`,
-      'bottom',
-      'center'
-    );
+  cancelEdit(formDirective: FormGroupDirective): void {
+    this.resetForm(formDirective);
   }
 
-  showNotification(
-    colorName: string,
-    text: string,
-    placementFrom: MatSnackBarVerticalPosition,
-    placementAlign: MatSnackBarHorizontalPosition
-  ) {
+  resetForm(formDirective: FormGroupDirective): void {
+    this.editingExamId = null;
+    this.examForm.reset();
+    formDirective.resetForm();
+    this.isSaving = false;
+  }
+
+  showNotification(colorName: string, text: string): void {
     this.snackBar.open(text, '', {
       duration: 2000,
-      verticalPosition: placementFrom,
-      horizontalPosition: placementAlign,
+      verticalPosition: 'bottom',
+      horizontalPosition: 'center',
       panelClass: colorName,
     });
   }
 }
-

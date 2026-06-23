@@ -6,11 +6,16 @@ import { MarksEntryComponent } from './marks-entry/marks-entry.component';
 import { ResultGenerationComponent } from './result-generation/result-generation.component';
 import { ReportCardsComponent } from './report-cards/report-cards.component';
 import { Page404Component } from 'app/authentication/page404/page404.component';
+import { StudentExamResultComponent } from './student-exam-result/student-exam-result.component';
 
 export const ADMIN_EXAMINATION_ROUTE: Route[] = [
   {
     path: 'exam-types',
     component: ExamTypesComponent,
+  },
+  {
+    path: 'student-exam-result',
+    component: StudentExamResultComponent,
   },
   {
     path: 'exam-schedule',

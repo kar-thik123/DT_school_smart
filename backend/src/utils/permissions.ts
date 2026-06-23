@@ -17,9 +17,7 @@ export const PERMISSIONS_REGISTRY = {
       "VIEW",
       "CREATE",
       "UPDATE",
-      "DELETE",
-      "IMPORT",
-      "EXPORT"
+      "DELETE"
     ]
   },
   "ROLES_AND_PERMISSIONS": {
@@ -92,6 +90,13 @@ export const PERMISSIONS_REGISTRY = {
     "actions": [
       "VIEW",
       "ATTEMPT"
+    ]
+  },
+  "EXAMINATION": {
+    "description": "Examination and marks module",
+    "actions": [
+      "VIEW",
+      "MANAGE"
     ]
   }
 } as const;
