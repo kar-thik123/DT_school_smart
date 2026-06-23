@@ -14,24 +14,53 @@ export interface StudentOverview {
 }
 
 export interface StudentKPIs {
-  practice_accuracy: number;
-  questions_attempted: number;
-  skills_completion: number;
+  readyForExam: number;
+  subjects: number;
+  weakSubject: string;
+  curriculumCoverage: number;
+  attendance: number;
 }
 
 export interface SubjectPerformance {
-  subject_id: string;
-  subject_name: string;
-  practice_accuracy: number;
-  questions_attempted: number;
-  completed_topics: number;
-  pending_topics: number;
+  subjectId: string;
+  subjectName: string;
+  unitCompleted: number;
+  unitTotal: number;
+  topicCompleted: number;
+  topicTotal: number;
+  subtopicCompleted: number;
+  subtopicTotal: number;
+  coverage: number;
+  accuracy: number;
+  readiness: number;
+  totalAssessmentSets: number;
+  attemptedSets: number;
+  completedSets: number;
+  masteredSets: number;
 }
 
 export interface WeeklyTrend {
-  week_start: string | Date;
-  total_questions: number;
-  overall_accuracy: number;
+  week: string | Date;
+  coverage: number;
+  accuracy: number;
+  readiness: number;
+}
+
+export interface AttendanceSummary {
+  attendancePercentage: number;
+  present: number;
+  absent: number;
+  late: number;
+  excused: number;
+}
+
+export interface ContinueLearning {
+  subject: string;
+  title: string;
+  reason: string;
+  priority: string;
+  readinessImpact: number;
+  actionUrl: string;
 }
 
 export interface CurriculumProgress {
@@ -48,6 +77,7 @@ export interface TeacherAssignment {
   teacher_id: string;
   teacher_name: string;
   official_email: string;
+  profile_picture?: string;
   assigned_subjects: string[];
 }
 

@@ -1,6 +1,6 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { CommonModule, TitleCasePipe } from '@angular/common';
+import { Router, RouterModule } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
 import {
@@ -21,11 +21,12 @@ import {
   ApexNonAxisChartSeries,
 } from 'ng-apexcharts';
 import { MatButtonModule } from '@angular/material/button';
-import { NgScrollbar } from 'ngx-scrollbar';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.component';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
+import { MatTableModule } from '@angular/material/table';
+
 
 import { StudentDashboardService } from './dashboard.service';
 import {
@@ -36,7 +37,9 @@ import {
   CurriculumProgress,
   TeacherAssignment,
   TimelineActivity,
-  StudentSkill
+  StudentSkill,
+  AttendanceSummary,
+  ContinueLearning
 } from './dashboard.model';
 
 export type areaChartOptions = {
@@ -60,12 +63,14 @@ export type radialChartOptions = {
   colors: string[];
 };
 
-interface Achievement {
-  title: string;
-  icon: string;
-  colorClass: string;
-  conditionMet: boolean;
-}
+export type skillsDonutChartOptions = {
+  series: ApexNonAxisChartSeries;
+  chart: ApexChart;
+  labels: string[];
+  colors: string[];
+  legend: ApexLegend;
+  plotOptions: ApexPlotOptions;
+};
 
 @Component({
   selector: 'app-dashboard',
@@ -78,20 +83,23 @@ interface Achievement {
     MatCardModule,
     MatIconModule,
     NgApexchartsModule,
-    NgScrollbar,
-    MatButtonModule
+    MatButtonModule,
+    MatTableModule,
+    RouterModule
   ],
 })
 export class DashboardComponent implements OnInit {
   @ViewChild('chart') chart!: ChartComponent;
   public areaChartOptions!: Partial<areaChartOptions>;
   public radialChartOptions!: Partial<radialChartOptions>;
+  public skillsDonutChartOptions!: Partial<skillsDonutChartOptions>;
+  public attendanceChartOptions!: Partial<radialChartOptions>;
 
   breadscrums = [
     {
-      title: 'Dashboard',
+      title: 'Home',
       items: ['Student'],
-      active: 'Dashboard',
+      active: 'Learner Home',
     },
   ];
 
@@ -104,27 +112,73 @@ export class DashboardComponent implements OnInit {
   subjects: SubjectPerformance[] = [];
   weeklyTrend: WeeklyTrend[] = [];
   curriculum: CurriculumProgress[] = [];
-  mappedCurriculum: any[] = [];
   teachers: TeacherAssignment[] = [];
-  mappedTeachers: any[] = [];
   activities: TimelineActivity[] = [];
+  skills: StudentSkill[] = [];
+  attendance: AttendanceSummary | null = null;
+  continueLearning: ContinueLearning | null = null;
 
   // Derived KPIs
-  subjectsAttempted: number = 0;
-  topicsCompleted: number = 0;
-  pendingTopics: number = 0;
   curriculumCompletionPercentage: number = 0;
-  weeklyTrendSubtitle: string = '';
-  achievements: Achievement[] = [];
+  verifiedSkillsCount: number = 0;
+  pendingSkillsCount: number = 0;
 
-  // New State Variables
-  notifications: TimelineActivity[] = [];
+  // New Dashboard Home States
+  heroState: any = null;
+  
+  // KPI Trends
+  readinessTrendDiff: number = 0;
+  coverageTrendDiff: number = 0;
+  accuracyTrendDiff: number = 0;
+
+  // Action Center
+  actionableTasks: any[] = [];
+  
+  // Weekly Growth
+  questionsThisWeek: number = 0;
+  accuracyThisWeek: number = 0;
+  bestSubject: string = 'N/A';
+  improvementText: string = '';
+
+  // Timeline & Achievements
+  groupedActivities: any[] = [];
+  achievementsGrid: any[] = [];
+
+  // Permission & Flow
   hasPracticePermission: boolean = true;
   isEnrolled: boolean = true;
   notEnrolledInActiveYear: boolean = false;
-  skills: StudentSkill[] = [];
-  verifiedSkillsCount: number = 0;
-  pendingSkillsCount: number = 0;
+
+  // Table Config
+  teacherDisplayedColumns: string[] = ['name', 'action'];
+  subjectAnalyticsDisplayedColumns: string[] = ['subject', 'unit', 'topic', 'subtopic', 'coverage', 'accuracy', 'ready'];
+
+  // Getters for specific views
+  get sortedSkills(): StudentSkill[] {
+    if (!this.skills) return [];
+    return [...this.skills].sort((a, b) => {
+      if (a.status === 'approved' && b.status !== 'approved') return -1;
+      if (a.status !== 'approved' && b.status === 'approved') return 1;
+      return 0;
+    });
+  }
+
+  // Compact KPI Getters
+  get readinessTrendText(): string {
+    return this.readinessTrendDiff >= 0 
+      ? `↑ ${this.readinessTrendDiff.toFixed(1)}% Weekly` 
+      : `↓ ${Math.abs(this.readinessTrendDiff).toFixed(1)}% Weekly`;
+  }
+  
+  get coverageTrendText(): string {
+    return this.coverageTrendDiff >= 0 
+      ? `↑ ${this.coverageTrendDiff.toFixed(1)}% Weekly` 
+      : `↓ ${Math.abs(this.coverageTrendDiff).toFixed(1)}% Weekly`;
+  }
+
+  get curriculumStatusText(): string {
+    return this.curriculumCompletionPercentage > 0 ? 'On Track' : 'Needs Action';
+  }
 
   constructor(
     private dashboardService: StudentDashboardService,
@@ -154,92 +208,50 @@ export class DashboardComponent implements OnInit {
           weeklyTrend: this.dashboardService.getWeeklyTrend().pipe(catchError(() => of([]))),
           curriculum: this.dashboardService.getCurriculumProgress().pipe(catchError(() => of([]))),
           teachers: this.dashboardService.getTeachers().pipe(catchError(() => of([]))),
-          activities: this.dashboardService.getActivities().pipe(catchError(() => of([])))
+          activities: this.dashboardService.getActivities().pipe(catchError(() => of([]))),
+          attendance: this.dashboardService.getAttendance().pipe(catchError(() => of(null))),
+          continueLearning: this.dashboardService.getContinueLearning().pipe(catchError(() => of(null)))
         });
       })
     ).subscribe({
       next: (data: any) => {
         this.overview = data.overview;
         this.kpis = data.kpis;
-        this.subjects = data.subjects || [];
+        this.subjects = (data.subjects || []).sort((a: SubjectPerformance, b: SubjectPerformance) => a.readiness - b.readiness);
         this.weeklyTrend = data.weeklyTrend || [];
         this.curriculum = data.curriculum || [];
         this.teachers = data.teachers || [];
         this.skills = data.skills || [];
-        const allActivities = data.activities || [];
+        this.activities = data.activities || [];
+        this.attendance = data.attendance;
+        this.continueLearning = data.continueLearning;
         
-        // Permission & State Tracking
+        // Validation
         this.hasPracticePermission = this.kpis !== null;
         this.isEnrolled = !!(this.overview && (this.overview.grade || this.overview.last_enrollment));
         this.notEnrolledInActiveYear = !!(this.overview && !this.overview.grade);
 
-        // Skills logic
+        // Core Derivations
         this.verifiedSkillsCount = this.skills.filter((s: StudentSkill) => s.status === 'approved').length;
         this.pendingSkillsCount = this.skills.filter((s: StudentSkill) => s.status === 'pending').length;
+        const topicsCompleted = this.curriculum.reduce((sum, c) => sum + c.topics_completed, 0);
+        const pendingTopics = this.curriculum.reduce((sum, c) => sum + (c.topics_total - c.topics_completed), 0);
+        const totalTopics = topicsCompleted + pendingTopics;
+        this.curriculumCompletionPercentage = totalTopics > 0 ? (topicsCompleted / totalTopics) * 100 : 0;
 
-        // Activity Filtering
-        this.notifications = allActivities
-          .filter((a: any) => a.type === 'notification')
-          .slice(0, 5);
+        // Build Gamified States
+        this.computeHeroState();
+        this.computeTrendsAndGrowth();
+        this.buildActionCenter();
+        this.buildAchievementsEngine(topicsCompleted);
+        this.groupTimelineActivities();
 
-        this.activities = allActivities
-          .filter((a: any) => ['practice', 'completion', 'skill', 'notification'].includes(a.type))
-          .slice(0, 10);
-        
-        // Derived KPIs
-        this.subjectsAttempted = this.subjects.length;
-        this.topicsCompleted = this.curriculum.reduce((sum, c) => sum + c.topics_completed, 0);
-        this.pendingTopics = this.curriculum.reduce((sum, c) => sum + (c.topics_total - c.topics_completed), 0);
-        
-        const totalTopics = this.topicsCompleted + this.pendingTopics;
-        this.curriculumCompletionPercentage = totalTopics > 0 ? (this.topicsCompleted / totalTopics) * 100 : 0;
-
-        // Achievements Logic
-        this.achievements = [];
-        if (this.kpis) {
-          if (this.kpis.practice_accuracy >= 90) {
-            this.achievements.push({ title: 'Top Performer', icon: 'fas fa-crown', colorClass: 'text-warning', conditionMet: true });
-          } else if (this.kpis.practice_accuracy >= 80) {
-            this.achievements.push({ title: 'Accuracy Champion', icon: 'fas fa-bullseye', colorClass: 'text-danger', conditionMet: true });
-          }
-
-          if (this.kpis.questions_attempted >= 50) {
-            this.achievements.push({ title: 'Relentless Learner', icon: 'fas fa-book-reader', colorClass: 'text-primary', conditionMet: true });
-          }
-
-          if (this.kpis.skills_completion > 0) {
-            this.achievements.push({ title: 'Skill Builder', icon: 'fas fa-star', colorClass: 'text-warning', conditionMet: true });
-          }
-
-          if (this.curriculumCompletionPercentage >= 75) {
-            this.achievements.push({ title: 'Curriculum Master', icon: 'fas fa-trophy', colorClass: 'text-success', conditionMet: true });
-          }
-        }
-
-        // Map Teachers to schedule format to reuse app-emp-schedule
-        this.mappedTeachers = this.teachers.map((t, index) => ({
-          name: t.teacher_name,
-          degree: t.assigned_subjects.join(', '),
-          date: t.official_email || 'No Email',
-          time: '',
-          imageUrl: `assets/images/user/user${(index % 6) + 1}.jpg`
-        }));
-
-        
-        // Map CurriculumProgress to Course format for app-course-progress
-        this.mappedCurriculum = this.curriculum.map((c, idx) => ({
-          id: idx,
-          name: c.subject_name,
-          instructor: 'Assigned Teacher',
-          progress: c.completion_percentage,
-          totalModules: c.topics_total,
-          completedModules: c.topics_completed,
-          grade: 'N/A',
-          lastAccessed: new Date().toISOString()
-        }));
-
+        // Charts
         this.initWeeklyTrendChart();
         this.initRadialChart();
+        this.initSkillsDonutChart();
+        this.initAttendanceChart();
+        
         this.loading = false;
       },
       error: (err) => {
@@ -250,152 +262,327 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  private initWeeklyTrendChart() {
-    // Check if we have trend data
-    if (!this.weeklyTrend || this.weeklyTrend.length === 0) {
-      this.weeklyTrendSubtitle = "Start practicing to unlock your learning insights.";
-      return;
-    }
-
-    // Sort by week start if not already sorted
-    const sortedData = [...this.weeklyTrend].sort((a, b) => 
-      new Date(a.week_start).getTime() - new Date(b.week_start).getTime()
-    );
-
-    // Calculate trend difference
-    if (sortedData.length >= 2) {
-      const lastWeek = sortedData[sortedData.length - 2].overall_accuracy;
-      const thisWeek = sortedData[sortedData.length - 1].overall_accuracy;
-      const diff = thisWeek - lastWeek;
-      if (diff > 0) {
-        this.weeklyTrendSubtitle = `You improved ${diff.toFixed(1)}% this week 🎉`;
-      } else if (diff < 0) {
-        this.weeklyTrendSubtitle = `You dropped ${Math.abs(diff).toFixed(1)}% this week. Keep practicing!`;
+  private computeHeroState() {
+    if (this.subjects.length > 0) {
+      const activeSubject = this.subjects[0];
+      
+      let currentTopic = 'Introduction Module';
+      const lastCompletion = this.activities.find(a => a.type === 'completion');
+      if (lastCompletion && lastCompletion.description) {
+        currentTopic = lastCompletion.description.replace('Completed Topic: ', '');
       } else {
-        this.weeklyTrendSubtitle = `Consistent performance this week!`;
+        const lastPractice = this.activities.find(a => a.type === 'practice');
+        if (lastPractice && lastPractice.description) {
+          currentTopic = lastPractice.description;
+        }
+      }
+
+      this.heroState = {
+        subject: activeSubject.subjectName,
+        topic: currentTopic,
+        progress: `${activeSubject.topicCompleted} of ${activeSubject.topicTotal} Topics Completed`,
+        percentage: activeSubject.topicTotal > 0 ? ((activeSubject.topicCompleted / activeSubject.topicTotal) * 100).toFixed(0) : 0
+      };
+    } else {
+      this.heroState = { subject: 'Introduction', topic: 'Getting Started', progress: '0 of 1 Topics Completed', percentage: 0 };
+    }
+  }
+
+  private computeTrendsAndGrowth() {
+    if (this.weeklyTrend && this.weeklyTrend.length >= 2) {
+      const sortedData = [...this.weeklyTrend].sort((a, b) => new Date(a.week).getTime() - new Date(b.week).getTime());
+      const last = sortedData[sortedData.length - 1];
+      const prev = sortedData[sortedData.length - 2];
+      const first = sortedData[0];
+
+      this.readinessTrendDiff = last.readiness - prev.readiness;
+      this.coverageTrendDiff = last.coverage - prev.coverage;
+      this.accuracyTrendDiff = last.accuracy - prev.accuracy;
+      
+      const overallDiff = last.readiness - first.readiness;
+      if (overallDiff > 0) {
+        this.improvementText = `Your exam readiness improved by ${overallDiff.toFixed(1)}% compared to your first week.`;
+      } else {
+        this.improvementText = `Stay consistent to see long-term improvement!`;
       }
     } else {
-      this.weeklyTrendSubtitle = `Great start! Keep practicing to see your trend.`;
+      this.readinessTrendDiff = 0;
+      this.coverageTrendDiff = 0;
+      this.accuracyTrendDiff = 0;
+      this.improvementText = 'Keep practicing to unlock insights.';
     }
 
-    const categories = sortedData.map(item => {
-      const d = new Date(item.week_start);
-      return `${d.getMonth() + 1}/${d.getDate()}`;
+    if (this.subjects && this.subjects.length > 0) {
+      const best = [...this.subjects].sort((a, b) => b.readiness - a.readiness)[0];
+      this.bestSubject = best.subjectName;
+    }
+  }
+
+  private buildActionCenter() {
+    this.actionableTasks = [];
+    
+    if (this.subjects.length > 0) {
+      const weakest = [...this.subjects].sort((a, b) => a.readiness - b.readiness)[0];
+      this.actionableTasks.push({
+        priority: '🔥 Recommended',
+        icon: 'fas fa-book-open',
+        title: `Continue ${weakest.subjectName}`,
+        subtitle: 'Improve your accuracy',
+        duration: '15 min',
+        action: 'Resume'
+      });
+    }
+
+    const pendingCurriculums = this.curriculum.filter(c => c.topics_completed < c.topics_total);
+    if (pendingCurriculums.length > 0) {
+      this.actionableTasks.push({
+        priority: '📚 Curriculum',
+        icon: 'fas fa-tasks',
+        title: `Complete ${pendingCurriculums[0].subject_name} Quiz`,
+        subtitle: '1 topic pending',
+        duration: '10 min',
+        action: 'Start'
+      });
+    }
+
+    if (this.pendingSkillsCount > 0) {
+      const pendingSkill = this.skills.find(s => s.status === 'pending');
+      this.actionableTasks.push({
+        priority: '⭐ Portfolio',
+        icon: 'fas fa-star',
+        title: `Verify ${pendingSkill?.skill_name || 'Skill'}`,
+        subtitle: 'Submit evidence',
+        duration: '2 min',
+        action: 'Verify'
+      });
+    }
+    
+    if (this.actionableTasks.length === 0) {
+       this.actionableTasks.push({
+        priority: '🎯 Practice',
+        icon: 'fas fa-gamepad',
+        title: `Daily Challenge`,
+        subtitle: 'Solve 10 random questions',
+        duration: '5 min',
+        action: 'Play'
+      });
+    }
+  }
+
+  private buildAchievementsEngine(topicsCompleted: number) {
+    this.achievementsGrid = [];
+    const read = this.kpis?.readyForExam || 0;
+
+    this.achievementsGrid.push({
+      id: 'acc_champ',
+      title: 'Exam Ready',
+      icon: 'fas fa-trophy',
+      color: 'text-warning',
+      locked: read < 80,
+      progress: read >= 80 ? 'Unlocked' : `${read.toFixed(0)}% / 80%`
     });
 
-    const accuracyData = sortedData.map(item => item.overall_accuracy);
-    const questionsData = sortedData.map(item => item.total_questions);
+    this.achievementsGrid.push({
+      id: 'topic_master',
+      title: 'Topic Master',
+      icon: 'fas fa-medal',
+      color: 'text-primary',
+      locked: topicsCompleted < 10,
+      progress: topicsCompleted >= 10 ? 'Unlocked' : `${topicsCompleted} / 10`
+    });
+
+    this.achievementsGrid.push({
+      id: 'consistent',
+      title: 'Consistent Learner',
+      icon: 'fas fa-fire',
+      color: 'text-orange',
+      locked: this.weeklyTrend.length < 3,
+      progress: this.weeklyTrend.length >= 3 ? 'Unlocked' : `${this.weeklyTrend.length} / 3 wks`
+    });
+  }
+
+  private getRelativeTime(dateString: string): string {
+    if (!dateString) return 'Recently';
+    const actDate = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - actDate.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    
+    if (diffDays === 0) {
+      if (diffHours === 0) return 'Just now';
+      return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    }
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    return actDate.toLocaleDateString();
+  }
+
+  private groupTimelineActivities() {
+    this.groupedActivities = [];
+    if (!this.activities || this.activities.length === 0) return;
+
+    let practiceCount = 0;
+    let completionCount = 0;
+    let latestPracticeDate = '';
+    let latestCompletionDate = '';
+
+    this.activities.forEach(act => {
+      if (act.type === 'practice') {
+        practiceCount++;
+        if (!latestPracticeDate || new Date(act.date) > new Date(latestPracticeDate)) latestPracticeDate = act.date as string;
+      }
+      if (act.type === 'completion') {
+        completionCount++;
+        if (!latestCompletionDate || new Date(act.date) > new Date(latestCompletionDate)) latestCompletionDate = act.date as string;
+      }
+    });
+
+    if (completionCount > 0) {
+      this.groupedActivities.push({
+        icon: 'fas fa-book',
+        bg: 'bg-light-primary text-primary',
+        title: `Completed ${completionCount} Topics`,
+        time: this.getRelativeTime(latestCompletionDate)
+      });
+    }
+
+    if (practiceCount > 0) {
+      this.groupedActivities.push({
+        icon: 'fas fa-pen',
+        bg: 'bg-light-success text-success',
+        title: `Finished ${practiceCount} Practice Quizzes`,
+        time: this.getRelativeTime(latestPracticeDate)
+      });
+    }
+
+    if ((this.kpis?.readyForExam || 0) >= 80) { // Using readiness as a proxy
+       this.groupedActivities.push({
+        icon: 'fas fa-bullseye',
+        bg: 'bg-light-danger text-danger',
+        title: `Reached 80% Readiness!`,
+        time: this.getRelativeTime(latestPracticeDate || latestCompletionDate)
+      });
+    }
+
+    const recentSkill = this.skills.find(s => s.status === 'approved');
+    if (recentSkill) {
+      this.groupedActivities.push({
+        icon: 'fas fa-star',
+        bg: 'bg-light-warning text-warning',
+        title: `Verified ${recentSkill.skill_name} Skill`,
+        time: this.getRelativeTime(new Date().toISOString()) // Approximation for skill verify date if updated_at is missing
+      });
+    }
+  }
+
+  private initWeeklyTrendChart() {
+    if (!this.weeklyTrend || this.weeklyTrend.length === 0) return;
+
+    const sortedData = [...this.weeklyTrend].sort((a, b) => new Date(a.week).getTime() - new Date(b.week).getTime());
+    const categories = sortedData.map(item => {
+      const d = new Date(item.week);
+      return `${d.getMonth() + 1}/${d.getDate()}`;
+    });
+    const accuracyData = sortedData.map(item => item.accuracy);
+    const coverageData = sortedData.map(item => item.coverage);
+    const readinessData = sortedData.map(item => item.readiness);
 
     this.areaChartOptions = {
       series: [
         {
-          name: 'Overall Accuracy %',
-          data: accuracyData,
+          name: 'Readiness %',
+          data: readinessData,
         },
         {
-          name: 'Total Questions',
-          data: questionsData,
+          name: 'Coverage %',
+          data: coverageData,
         },
+        {
+          name: 'Accuracy %',
+          data: accuracyData,
+        }
       ],
       chart: {
-        height: 350,
+        height: 250,
         type: 'area',
-        toolbar: {
-          show: false,
+        toolbar: { show: false },
+        foreColor: 'var(--bs-secondary-color)',
+        sparkline: { enabled: false }
+      },
+      colors: ['var(--bs-primary)', 'var(--bs-info)', 'var(--bs-success)'],
+      dataLabels: { enabled: false },
+      stroke: { curve: 'smooth', width: 3 },
+      xaxis: { categories: categories, labels: { style: { fontSize: '10px' } } },
+      yaxis: { show: false },
+      grid: { show: false },
+      legend: { show: true, position: 'top' },
+    };
+  }
+
+  private initAttendanceChart() {
+    this.attendanceChartOptions = {
+      series: [this.attendance?.attendancePercentage || 0],
+      chart: { height: 250, type: 'radialBar' },
+      plotOptions: {
+        radialBar: {
+          hollow: { size: '65%' },
+          dataLabels: {
+            name: { show: true, color: 'var(--bs-secondary-color)', fontSize: '14px' },
+            value: { show: true, color: 'var(--bs-heading-color)', fontSize: '20px', formatter: (val) => val.toFixed(1) + "%" }
+          }
         },
-        foreColor: '#9aa0ac',
       },
-      colors: ['#F77A9A', '#A054F7'],
-      dataLabels: {
-        enabled: false,
-      },
-      stroke: {
-        curve: 'smooth',
-      },
-      xaxis: {
-        categories: categories,
-      },
-      grid: {
-        show: true,
-        borderColor: '#9aa0ac',
-        strokeDashArray: 1,
-      },
-      legend: {
-        show: true,
-        position: 'top',
-        horizontalAlign: 'center',
-        offsetX: 0,
-        offsetY: 0,
-      },
+      labels: ['Attendance'],
+      colors: ['var(--bs-purple)'],
     };
   }
 
   private initRadialChart() {
     this.radialChartOptions = {
       series: [this.curriculumCompletionPercentage],
-      chart: {
-        height: 300,
-        type: 'radialBar',
-      },
+      chart: { height: 300, type: 'radialBar' },
       plotOptions: {
         radialBar: {
-          hollow: {
-            size: '70%',
-          },
+          hollow: { size: '70%' },
           dataLabels: {
-            name: {
-              show: true,
-              color: '#888',
-              fontSize: '16px'
-            },
-            value: {
-              show: true,
-              color: '#111',
-              fontSize: '24px',
-              formatter: function (val) {
-                return val.toFixed(1) + "%";
-              }
-            }
+            name: { show: true, color: 'var(--bs-secondary-color)', fontSize: '16px' },
+            value: { show: true, color: 'var(--bs-heading-color)', fontSize: '24px', formatter: (val) => val.toFixed(1) + "%" }
           }
         },
       },
       labels: ['Completed'],
-      colors: ['#4caf50'],
+      colors: ['var(--bs-success)'],
     };
   }
 
-  navigateToPractice(subjectId?: string) {
-    // Optional parameter for subject-specific practice routing
-    this.router.navigate(['/student/practice']);
+  private initSkillsDonutChart() {
+    this.skillsDonutChartOptions = {
+      series: [this.verifiedSkillsCount, this.pendingSkillsCount],
+      chart: { height: 180, type: 'donut' },
+      labels: ['Verified', 'Pending'],
+      colors: ['var(--bs-success)', 'var(--bs-warning)'],
+      legend: { show: false },
+      plotOptions: {
+        pie: {
+          donut: {
+            size: '70%',
+            labels: {
+              show: true,
+              value: { fontSize: '18px', fontWeight: 'bold' },
+              total: { show: true, label: 'Total', fontSize: '14px', color: 'var(--bs-secondary-color)' }
+            }
+          }
+        }
+      }
+    };
   }
 
   navigateToSkills() {
     this.router.navigate(['/student/skills']);
   }
 
-  navigateToNotifications() {
-    this.router.navigate(['/student/notifications']);
-  }
-
-  // Format activity icons based on type
-  getActivityIcon(type: string): string {
-    switch (type) {
-      case 'practice': return 'edit';
-      case 'completion': return 'check_circle';
-      case 'skill': return 'stars';
-      case 'notification': return 'notifications';
-      default: return 'info';
-    }
-  }
-
-  getActivityColorClass(type: string): string {
-    switch (type) {
-      case 'practice': return 'bg-blue';
-      case 'completion': return 'bg-green';
-      case 'skill': return 'bg-orange';
-      case 'notification': return 'bg-purple';
-      default: return 'bg-cyan';
-    }
+  navigateToPractice() {
+    this.router.navigate(['/student/practice']);
   }
 }
-

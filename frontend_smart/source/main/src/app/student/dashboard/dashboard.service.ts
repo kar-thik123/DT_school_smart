@@ -10,7 +10,9 @@ import {
   CurriculumProgress,
   TeacherAssignment,
   TimelineActivity,
-  StudentSkill
+  StudentSkill,
+  AttendanceSummary,
+  ContinueLearning
 } from './dashboard.model';
 import { AuthService } from '@core/service/auth.service';
 
@@ -31,11 +33,19 @@ export class StudentDashboardService {
   }
 
   getSubjectPerformance(): Observable<SubjectPerformance[]> {
-    return this.http.get<SubjectPerformance[]>(`${this.apiUrl}/subject-performance`);
+    return this.http.get<SubjectPerformance[]>(`${this.apiUrl}/subjects`);
   }
 
   getWeeklyTrend(): Observable<WeeklyTrend[]> {
     return this.http.get<WeeklyTrend[]>(`${this.apiUrl}/weekly-trend`);
+  }
+
+  getAttendance(): Observable<AttendanceSummary> {
+    return this.http.get<AttendanceSummary>(`${this.apiUrl}/attendance`);
+  }
+
+  getContinueLearning(): Observable<ContinueLearning> {
+    return this.http.get<ContinueLearning>(`${this.apiUrl}/continue-learning`);
   }
 
   getCurriculumProgress(): Observable<CurriculumProgress[]> {
