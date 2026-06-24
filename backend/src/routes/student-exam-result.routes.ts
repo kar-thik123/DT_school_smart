@@ -29,6 +29,64 @@ async function validateTeacherScope(req: any, grade_id: string, section_id?: str
 
 const router = Router();
 
+router.get('/debug-get', async (req: any, res) => {
+  try {
+    const filter = {
+      organization_id: "81b84e56-276e-4f6a-8e4e-bf1d90afd5b6",
+      academic_year_id: "a7adc173-2314-41c8-b2be-329236e2410b",
+      examination_id: req.query.examination_id || "9c8fb0d5-c79f-4367-8e73-cd321e7de669",
+      grade_id: req.query.grade_id || "17677aee-c00a-4e59-b6be-eac0258a863f"
+    };
+
+    console.log('[DEBUG-GET] filter:', filter);
+
+    const results = await prisma.studentExamResult.findMany({
+      where: filter,
+      include: {
+        examination: true,
+        student: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            roll_number: true,
+            student_profile: true
+          }
+        },
+        grade_rel: true,
+        section: true,
+        subject_results: {
+          include: {
+            subject: true
+          }
+        },
+        creator: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        },
+        modifier: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        }
+      },
+      orderBy: {
+        created_at: 'desc'
+      }
+    });
+
+    res.json(results);
+  } catch (error: any) {
+    console.error('[DEBUG-GET] error', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.use(authMiddleware);
 
 const studentExamSubjectResultSchema = z.object({
@@ -68,7 +126,8 @@ router.get('/', async (req: any, res: Response) => {
       return res.status(403).json({ message: 'Forbidden: Requires STUDENT_EXAM_RESULT:VIEW or STUDENT_EXAM_RESULT:MANAGE' });
     }
 
-    const isStudent = userPermissions.includes('IDENTITY:IS_STUDENT');
+    const isRestrictedToSelf = userPermissions.includes('IDENTITY:IS_STUDENT') && 
+                               !AuthorizationService.hasPermission(userPermissions, 'STUDENT_EXAM_RESULT', 'MANAGE');
 
     const academic_year_id = await AcademicContextResolver.resolveAcademicYearId(req);
     const { examination_id, grade_id, section_id } = req.query;
@@ -78,7 +137,7 @@ router.get('/', async (req: any, res: Response) => {
       academic_year_id
     };
 
-    if (isStudent) {
+    if (isRestrictedToSelf) {
       filter.student_id = req.user.user_id;
     } else if (req.query.student_id) {
       filter.student_id = String(req.query.student_id);
@@ -86,7 +145,11 @@ router.get('/', async (req: any, res: Response) => {
 
     if (examination_id) filter.examination_id = String(examination_id);
     if (grade_id) filter.grade_id = String(grade_id);
-    if (section_id) filter.section_id = String(section_id);
+    // We purposefully omit section_id from the filter here because an exam result 
+    // might have been created with section_id = null (when "All Sections" was selected).
+    // The uniqueness is per student + examination, so fetching all for the grade is correct.
+
+    console.log('[GET /student-exam-results] filter:', filter);
 
     const results = await prisma.studentExamResult.findMany({
       where: filter,
@@ -103,6 +166,8 @@ router.get('/', async (req: any, res: Response) => {
       },
       orderBy: { created_at: 'desc' }
     });
+    
+    console.log(`[GET /student-exam-results] found ${results.length} results`);
     res.json(results);
   } catch (error) {
     console.error('[StudentExamResultRoutes] GET / error', error);
@@ -228,10 +293,24 @@ router.post('/bulk', requirePermission('STUDENT_EXAM_RESULT', 'MANAGE'), async (
       const results = [];
       for (const payload of payloads) {
         const parsed = studentExamResultSchema.parse(payload);
-        const existing_id = payload.existing_result_id;
+        let existing_id = payload.existing_result_id;
 
         await validateTeacherScope(req, parsed.grade_id, parsed.section_id);
         const calcResult = ExaminationCalculationService.calculateAggregateResult(parsed.subject_results || [] as any);
+
+        if (!existing_id) {
+          const existing = await tx.studentExamResult.findFirst({
+            where: {
+              examination_id: parsed.examination_id,
+              student_id: parsed.student_id,
+              organization_id: req.user.organization_id,
+              academic_year_id: academic_year_id
+            }
+          });
+          if (existing) {
+            existing_id = existing.id;
+          }
+        }
 
         if (existing_id) {
           // Verify existing record
@@ -278,20 +357,6 @@ router.post('/bulk', requirePermission('STUDENT_EXAM_RESULT', 'MANAGE'), async (
           });
           results.push(updated);
         } else {
-          // Verify if one already exists to prevent duplicates
-          const existing = await tx.studentExamResult.findFirst({
-            where: {
-              examination_id: parsed.examination_id,
-              student_id: parsed.student_id,
-              organization_id: req.user.organization_id,
-              academic_year_id: academic_year_id
-            }
-          });
-          
-          if (existing) {
-            throw new Error(`A result for student ${parsed.student_id} in this examination already exists`);
-          }
-
           const created = await tx.studentExamResult.create({
             data: {
               examination_id: parsed.examination_id,

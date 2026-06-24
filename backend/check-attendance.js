@@ -1,1 +1,0 @@
-const { PrismaClient } = require('@prisma/client'); const prisma = new PrismaClient(); prisma.studentAttendance.count().then(c => console.log('Records:', c)).catch(console.error).finally(() => process.exit(0));

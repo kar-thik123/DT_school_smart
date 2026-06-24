@@ -111,8 +111,8 @@
                     <td *ngFor="let sub of classSubjects" [formGroupName]="sub.id" class="text-center">
                       <span class="fw-medium" 
                             [class.d-none]="isEditMode"
-                            [ngClass]="student.get('subjects.' + sub.id + '.obtained')?.value !== null && student.get('subjects.' + sub.id + '.obtained')?.value !== '' ? 'text-dark' : 'text-muted'" style="font-size: 13px;">
-                        {{ student.get('subjects.' + sub.id + '.obtained')?.value !== null && student.get('subjects.' + sub.id + '.obtained')?.value !== '' ? student.get('subjects.' + sub.id + '.obtained')?.value : '-' }}
+                            [ngClass]="$any(student.value).subjects?.[sub.id]?.obtained !== null && $any(student.value).subjects?.[sub.id]?.obtained !== '' ? 'text-dark' : 'text-muted'" style="font-size: 13px;">
+                        {{ $any(student.value).subjects?.[sub.id]?.obtained !== null && $any(student.value).subjects?.[sub.id]?.obtained !== '' ? $any(student.value).subjects?.[sub.id]?.obtained : '-' }}
                       </span>
                       <input type="number" formControlName="obtained" placeholder="-"
                         [class.d-none]="!isEditMode"
