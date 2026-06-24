@@ -514,12 +514,18 @@ export class StudentReadinessService {
 
     const latestResult = results[results.length - 1];
 
-    const subjects = latestResult.subject_results.map((sr: any) => ({
-      subjectName: sr.subject?.name || 'Unknown Subject',
-      obtainedMarks: sr.obtained_marks,
-      maxMarks: sr.max_marks,
-      percentage: sr.percentage
-    }));
+    const subjects = latestResult.subject_results.map((sr: any) => {
+      let percentage = 0;
+      if (sr.max_marks && sr.max_marks > 0 && sr.obtained_marks != null) {
+        percentage = Number(((sr.obtained_marks / sr.max_marks) * 100).toFixed(1));
+      }
+      return {
+        subjectName: sr.subject?.name || 'Unknown Subject',
+        obtainedMarks: sr.obtained_marks,
+        maxMarks: sr.max_marks,
+        percentage: percentage
+      };
+    });
 
     const summary = {
       examName: latestResult.examination.exam_name,

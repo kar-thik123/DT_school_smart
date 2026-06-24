@@ -391,6 +391,9 @@ router.post('/bulk', requirePermission('STUDENT_EXAM_RESULT', 'MANAGE'), async (
         }
       }
       return results;
+    }, {
+      maxWait: 5000,
+      timeout: 30000
     });
 
     res.status(200).json({ message: 'Bulk upsert successful', data: updatedResults });
