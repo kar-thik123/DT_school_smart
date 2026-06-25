@@ -26,6 +26,7 @@ import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.co
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 
 
 import { StudentDashboardService } from './dashboard.service';
@@ -89,7 +90,8 @@ export type skillsDonutChartOptions = {
     NgApexchartsModule,
     MatButtonModule,
     MatTableModule,
-    RouterModule
+    RouterModule,
+    MatDialogModule
   ],
 })
 export class DashboardComponent implements OnInit {
@@ -154,6 +156,10 @@ export class DashboardComponent implements OnInit {
   hasPracticePermission: boolean = true;
   isEnrolled: boolean = true;
   notEnrolledInActiveYear: boolean = false;
+  showAllSubjects: boolean = false;
+  showAllActivities: boolean = false;
+  showAllAchievements: boolean = false;
+  showAllSkills: boolean = false;
 
   // Table Config
   teacherDisplayedColumns: string[] = ['name', 'action'];
@@ -188,8 +194,21 @@ export class DashboardComponent implements OnInit {
 
   constructor(
     private dashboardService: StudentDashboardService,
-    private router: Router
+    private router: Router,
+    private dialog: MatDialog
   ) {}
+
+  toggleActivities() {
+    this.showAllActivities = !this.showAllActivities;
+  }
+
+  toggleAchievements() {
+    this.showAllAchievements = !this.showAllAchievements;
+  }
+
+  toggleSkills() {
+    this.showAllSkills = !this.showAllSkills;
+  }
 
   ngOnInit() {
     this.loadDashboardData();
@@ -287,6 +306,8 @@ export class DashboardComponent implements OnInit {
       }
 
       this.heroState = {
+        subjectId: activeSubject.subjectId,
+        nextNode: activeSubject.nextNode,
         subject: activeSubject.subjectName,
         topic: currentTopic,
         progress: `${activeSubject.topicCompleted} of ${activeSubject.topicTotal} Topics Completed`,
@@ -408,6 +429,8 @@ export class DashboardComponent implements OnInit {
       locked: this.weeklyTrend.length < 3,
       progress: this.weeklyTrend.length >= 3 ? 'Unlocked' : `${this.weeklyTrend.length} / 3 wks`
     });
+
+
   }
 
   private getRelativeTime(dateString: string): string {
@@ -483,6 +506,8 @@ export class DashboardComponent implements OnInit {
         time: this.getRelativeTime(new Date().toISOString()) // Approximation for skill verify date if updated_at is missing
       });
     }
+
+
   }
 
   private initWeeklyTrendChart() {
@@ -591,8 +616,48 @@ export class DashboardComponent implements OnInit {
     this.router.navigate(['/student/skills']);
   }
 
-  navigateToPractice() {
-    this.router.navigate(['/student/practice']);
+  get weakSubjectId(): string | undefined {
+    if (!this.kpis?.weakSubject || !this.subjects) return undefined;
+    return this.subjects.find(s => s.subjectName === this.kpis?.weakSubject)?.subjectId;
+  }
+
+  get weakSubjectNextNode(): { type: string, id: string } | undefined {
+    if (!this.kpis?.weakSubject || !this.subjects) return undefined;
+    return this.subjects.find(s => s.subjectName === this.kpis?.weakSubject)?.nextNode;
+  }
+
+  navigateToPractice(subjectId?: string, subjectName?: string, nextNode?: any) {
+    if (subjectId) {
+      const queryParams: any = { subject_id: subjectId, subject_name: subjectName };
+      this.router.navigate(['/student/academics/mcq'], { queryParams });
+    } else {
+      this.router.navigate(['/student/academics/mcq']);
+    }
+  }
+
+  getSkillIcon(type: string) {
+    const defaultIcon = { icon: 'fas fa-star', bg: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6' };
+    if (!type) return defaultIcon;
+    const lowerType = type.toLowerCase();
+    
+    // Map to specific icons/colors based on type
+    if (lowerType.includes('run') || lowerType.includes('athletic')) {
+      return { icon: 'fas fa-running', bg: 'rgba(34, 197, 94, 0.1)', color: '#22c55e' }; // Green
+    } else if (lowerType.includes('draw') || lowerType.includes('art')) {
+      return { icon: 'fas fa-palette', bg: 'rgba(168, 85, 247, 0.1)', color: '#a855f7' }; // Purple
+    } else if (lowerType.includes('sport') || lowerType.includes('game')) {
+      return { icon: 'fas fa-futbol', bg: 'rgba(249, 115, 22, 0.1)', color: '#f97316' }; // Orange
+    } else if (lowerType.includes('music') || lowerType.includes('sing')) {
+      return { icon: 'fas fa-music', bg: 'rgba(236, 72, 153, 0.1)', color: '#ec4899' }; // Pink
+    } else if (lowerType.includes('participat') || lowerType.includes('overall') || lowerType.includes('medal')) {
+      return { icon: 'fas fa-medal', bg: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6' }; // Blue
+    }
+    
+    return defaultIcon;
+  }
+
+  toggleSubjects() {
+    this.showAllSubjects = !this.showAllSubjects;
   }
 
   private initExamTrendChart() {

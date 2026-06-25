@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, ElementRef, HostListener, OnInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ElementRef, HostListener, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { MatIconModule } from '@angular/material/icon';
@@ -33,7 +33,7 @@ import { environment } from '../../../../../../environments/environment';
     ])
   ]
 })
-export class QuestionBankDropdownComponent implements OnInit {
+export class QuestionBankDropdownComponent implements OnInit, OnChanges {
   @Input() selectedSubjectId: string | null = null;
   @Input() selectedSubjectName: string = '';
   @Input() selectedUnitId: string | null = null;
@@ -78,6 +78,12 @@ export class QuestionBankDropdownComponent implements OnInit {
     this.loadStudentCurriculum();
   }
 
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['selectedSubTopicId'] || changes['selectedTopicId'] || changes['selectedUnitId'] || changes['selectedSubjectId']) {
+      this.resolveHierarchy();
+    }
+  }
+
   loadStudentCurriculum() {
     this.http.get(`${environment.apiUrl}/student-mcq/curriculum`).subscribe({
       next: (res: any) => {
@@ -85,11 +91,82 @@ export class QuestionBankDropdownComponent implements OnInit {
         this.allUnits = res.units || [];
         this.allTopics = res.topics || [];
         this.allSubTopics = res.subTopics || [];
+        this.resolveHierarchy();
       },
       error: (err) => {
         console.error('Error fetching student curriculum', err);
       }
     });
+  }
+
+  resolveHierarchy() {
+    if (!this.selectedSubjectId || this.subjects.length === 0) {
+      this.selectedSubjectName = '';
+      this.selectedUnitName = '';
+      this.selectedTopicName = '';
+      this.selectedSubTopicName = '';
+      return;
+    }
+
+    const subject = this.subjects.find((s: any) => s.id === this.selectedSubjectId);
+    if (subject) this.selectedSubjectName = subject.name;
+    else this.selectedSubjectName = '';
+
+    let resolved = false;
+    if (this.selectedSubTopicId) {
+      const subTopic = this.allSubTopics.find((st: any) => st.id === this.selectedSubTopicId);
+      if (subTopic) {
+        this.selectedSubTopicName = subTopic.name;
+        if (!this.selectedTopicId) {
+          this.selectedTopicId = subTopic.topic_id;
+          resolved = true;
+        }
+      } else {
+        this.selectedSubTopicName = '';
+      }
+    }
+
+    if (this.selectedTopicId) {
+      const topic = this.allTopics.find((t: any) => t.id === this.selectedTopicId);
+      if (topic) {
+        this.selectedTopicName = topic.name;
+        if (!this.selectedUnitId) {
+          this.selectedUnitId = topic.unit_id;
+          resolved = true;
+        }
+      } else {
+        this.selectedTopicName = '';
+      }
+    }
+
+    if (this.selectedUnitId) {
+      const unit = this.allUnits.find((u: any) => u.id === this.selectedUnitId);
+      if (unit) {
+        this.selectedUnitName = unit.name;
+      } else {
+        this.selectedUnitName = '';
+      }
+    }
+    
+    if (resolved) {
+      setTimeout(() => {
+        const subject = this.subjects?.find((s: any) => s.id === this.selectedSubjectId);
+        const unit = this.allUnits.find((u: any) => u.id === this.selectedUnitId);
+        const topic = this.allTopics.find((t: any) => t.id === this.selectedTopicId);
+        const subTopic = this.allSubTopics.find((st: any) => st.id === this.selectedSubTopicId);
+        
+        if (subject) {
+          this.selectionChange.emit({
+            subject,
+            unit: unit || undefined,
+            topic: topic || undefined,
+            subTopic: subTopic || undefined
+          });
+        }
+      });
+    } else {
+      this.selectedUnitName = '';
+    }
   }
 
   @HostListener('document:click', ['$event'])

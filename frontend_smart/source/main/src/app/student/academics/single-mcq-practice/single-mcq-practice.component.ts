@@ -1,4 +1,5 @@
 import { Component, OnInit, ViewChild, TemplateRef } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import { CommonModule } from '@angular/common';
@@ -76,7 +77,7 @@ export class SingleMcqPracticeComponent implements OnInit {
 
   @ViewChild('scoreDialog') scoreDialog!: TemplateRef<any>;
 
-  constructor(private http: HttpClient, private dialog: MatDialog) { }
+  constructor(private http: HttpClient, private dialog: MatDialog, private route: ActivatedRoute, private router: Router) { }
 
   ngOnDestroy() {
     if (this.timerInterval) {
@@ -85,6 +86,20 @@ export class SingleMcqPracticeComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.route.queryParams.subscribe(params => {
+      if (params['subject_id']) {
+        this.selectedSubjectId = params['subject_id'];
+        this.selectedSubjectName = params['subject_name'] || '';
+        this.selectedSubTopicId = params['sub_topic_id'] || null;
+        this.selectedSubTopicName = params['sub_topic_name'] || '';
+        this.selectedTopicId = params['topic_id'] || null;
+        this.selectedTopicName = params['topic_name'] || '';
+        this.selectedUnitId = params['unit_id'] || null;
+        this.selectedUnitName = params['unit_name'] || '';
+
+        this.fetchQuestions();
+      }
+    });
   }
 
   selectGradeSectionSubjectForQuestion(grade: any, section: any, subject: any, unit: any, topic: any, subTopic: any) {
@@ -102,7 +117,20 @@ export class SingleMcqPracticeComponent implements OnInit {
     this.selectedTopicName = topic ? topic.name : '';
     this.selectedSubTopicName = subTopic ? subTopic.name : '';
 
-    this.fetchQuestions();
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        subject_id: this.selectedSubjectId || null,
+        subject_name: this.selectedSubjectName || null,
+        unit_id: this.selectedUnitId || null,
+        unit_name: this.selectedUnitName || null,
+        topic_id: this.selectedTopicId || null,
+        topic_name: this.selectedTopicName || null,
+        sub_topic_id: this.selectedSubTopicId || null,
+        sub_topic_name: this.selectedSubTopicName || null
+      },
+      queryParamsHandling: 'merge'
+    });
   }
 
   fetchQuestions() {

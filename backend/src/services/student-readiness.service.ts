@@ -117,6 +117,10 @@ export class StudentReadinessService {
 
       const subjectAttempts = attempts.filter((a: any) => a.subject_id === subject.id);
 
+      let p1Node: any = null;
+      let p2Node: any = null;
+      let p3Node: any = null;
+
       for (const [key, node] of assessmentSets.entries()) {
         let setAttempts = [];
         if (node.type === 'subtopic') setAttempts = subjectAttempts.filter((a: any) => a.sub_topic_id === node.id);
@@ -136,8 +140,18 @@ export class StudentReadinessService {
           
           if (score >= 35) completedSets++;
           if (score >= 80) masteredSets++;
+
+          if (score < 80 && !p2Node) {
+            p2Node = node;
+          } else if (score >= 80 && !p3Node) {
+            p3Node = node;
+          }
+        } else {
+          if (!p1Node) p1Node = node;
         }
       }
+
+      const nextNode = p1Node || p2Node || p3Node;
 
       const coverage = topicTotal > 0 
         ? (topicCompleted / topicTotal) * 100 
@@ -169,7 +183,8 @@ export class StudentReadinessService {
         totalAssessmentSets,
         attemptedSets,
         completedSets,
-        masteredSets
+        masteredSets,
+        nextNode
       });
     }
 
@@ -208,13 +223,13 @@ export class StudentReadinessService {
 
     for (const sub of analytics) {
       const subjectQuestions = questions.filter((q: any) => q.subject_id === sub.subjectId);
-      const assessmentSets = new Map<string, { type: string, id: string, subjectName: string }>();
+      const assessmentSets = new Map<string, { type: string, id: string, subjectName: string, subjectId: string }>();
 
       subjectQuestions.forEach((q: any) => {
-        if (q.sub_topic_id) assessmentSets.set(`subtopic_${q.sub_topic_id}`, { type: 'subtopic', id: q.sub_topic_id, subjectName: sub.subjectName });
-        else if (q.topic_id) assessmentSets.set(`topic_${q.topic_id}`, { type: 'topic', id: q.topic_id, subjectName: sub.subjectName });
-        else if (q.unit_id) assessmentSets.set(`unit_${q.unit_id}`, { type: 'unit', id: q.unit_id, subjectName: sub.subjectName });
-        else assessmentSets.set(`subject_${q.subject_id}`, { type: 'subject', id: q.subject_id!, subjectName: sub.subjectName });
+        if (q.sub_topic_id) assessmentSets.set(`subtopic_${q.sub_topic_id}`, { type: 'subtopic', id: q.sub_topic_id, subjectName: sub.subjectName, subjectId: sub.subjectId });
+        else if (q.topic_id) assessmentSets.set(`topic_${q.topic_id}`, { type: 'topic', id: q.topic_id, subjectName: sub.subjectName, subjectId: sub.subjectId });
+        else if (q.unit_id) assessmentSets.set(`unit_${q.unit_id}`, { type: 'unit', id: q.unit_id, subjectName: sub.subjectName, subjectId: sub.subjectId });
+        else assessmentSets.set(`subject_${q.subject_id}`, { type: 'subject', id: q.subject_id!, subjectName: sub.subjectName, subjectId: sub.subjectId });
       });
 
       const subjectAttempts = attempts.filter((a: any) => a.subject_id === sub.subjectId);
@@ -236,9 +251,7 @@ export class StudentReadinessService {
           });
           const score = bestAttempt.total_questions > 0 ? (bestAttempt.correct_answers / bestAttempt.total_questions) * 100 : 0;
           
-          if (score < 35 && !p1Node) {
-            p1Node = { ...node, score, reason: "Incomplete Assessment", priority: "Incomplete" };
-          } else if (score >= 35 && score < 80 && !p2Node) {
+          if (score < 80 && !p2Node) {
             p2Node = { ...node, score, reason: "Needs Improvement", priority: "Needs Improvement" };
           } else if (score >= 80 && !p3Node) {
             p3Node = { ...node, score, reason: "Revision", priority: "Revision" };
@@ -252,11 +265,12 @@ export class StudentReadinessService {
     if (!selectedNode) {
       return {
         subject: analytics[0].subjectName,
+        subjectId: analytics[0].subjectId,
         title: "General Practice",
         reason: "Keep practicing",
         priority: "None",
         readinessImpact: 1,
-        actionUrl: `/student/practice?subject=${analytics[0].subjectId}`
+        actionUrl: `/student/academics/mcq?subject_id=${analytics[0].subjectId}`
       };
     }
 
@@ -274,11 +288,12 @@ export class StudentReadinessService {
 
     return {
       subject: selectedNode.subjectName,
+      subjectId: selectedNode.subjectId,
       title: title,
       reason: selectedNode.reason,
       priority: selectedNode.priority,
       readinessImpact: selectedNode.score < 35 ? 15 : (selectedNode.score < 80 ? 10 : 5),
-      actionUrl: `/student/assessment/take/${selectedNode.id}?type=${selectedNode.type}`
+      actionUrl: `/student/academics/mcq?subject_id=${selectedNode.subjectId}&subject_name=${selectedNode.subjectName}`
     };
   }
 

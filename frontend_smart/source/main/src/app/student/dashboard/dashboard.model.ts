@@ -37,6 +37,7 @@ export interface SubjectPerformance {
   attemptedSets: number;
   completedSets: number;
   masteredSets: number;
+  nextNode?: { type: string, id: string };
 }
 
 export interface WeeklyTrend {
@@ -56,6 +57,7 @@ export interface AttendanceSummary {
 
 export interface ContinueLearning {
   subject: string;
+  subjectId?: string;
   title: string;
   reason: string;
   priority: string;
