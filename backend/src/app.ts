@@ -23,6 +23,7 @@ import studentDashboardRoutes from './routes/student-dashboard.routes';
 import attendanceRoutes from './routes/attendance.routes';
 import examinationRoutes from './routes/examination.routes';
 import studentExamResultRoutes from './routes/student-exam-result.routes';
+import teacherDashboardRoutes from './routes/teacher-dashboard.routes';
 
 const app = express();
 console.log('Starting application, mounting routes...');
@@ -62,6 +63,7 @@ app.use('/api/student-dashboard', studentDashboardRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/examinations', examinationRoutes);
 app.use('/api/student-exam-results', studentExamResultRoutes);
+app.use('/api/teacher-dashboard', teacherDashboardRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
