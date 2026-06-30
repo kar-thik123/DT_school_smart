@@ -28,9 +28,10 @@ class StudentEnrollmentService {
             return { allowed: true };
         }
         const hasGroups = await this.sectionHasGroups(organizationId, gradeId, sectionId);
-        if (hasGroups && !subjectGroupId) {
-            return { allowed: false, message: 'subject_group_id is required for grouped sections' };
-        }
+        // Removed requirement: subject_group_id is optional even for grouped sections
+        // if (hasGroups && !subjectGroupId) {
+        //   return { allowed: false, message: 'subject_group_id is required for grouped sections' };
+        // }
         if (subjectGroupId) {
             const group = await prisma_1.default.subjectGroup.findUnique({
                 where: { id: subjectGroupId }
@@ -175,20 +176,20 @@ class StudentEnrollmentService {
         }
         // 3. Commit Phase
         let successCount = 0;
-        await prisma_1.default.$transaction(async (tx) => {
-            for (const p of studentsToProcess) {
-                await tx.studentEnrollment.upsert({
-                    where: { student_id_academic_year_id_organization_id: { student_id: p.student_id, academic_year_id: academicYearId, organization_id: orgId } },
-                    update: { grade_id: p.grade_id, section_id: p.section_id || null, subject_group_id: p.subject_group_id || null, status: p.status || client_1.EnrollmentStatus.ACTIVE },
-                    create: { organization_id: orgId, student_id: p.student_id, academic_year_id: academicYearId, grade_id: p.grade_id, section_id: p.section_id || null, subject_group_id: p.subject_group_id || null, status: p.status || client_1.EnrollmentStatus.ACTIVE }
-                });
-                await tx.user.updateMany({
-                    where: { id: p.student_id, organization_id: orgId },
-                    data: { grade_id: p.grade_id, section_id: p.section_id || null }
-                });
-                successCount++;
-            }
-        }, {
+        const txOperations = [];
+        for (const p of studentsToProcess) {
+            txOperations.push(prisma_1.default.studentEnrollment.upsert({
+                where: { student_id_academic_year_id_organization_id: { student_id: p.student_id, academic_year_id: academicYearId, organization_id: orgId } },
+                update: { grade_id: p.grade_id, section_id: p.section_id || null, subject_group_id: p.subject_group_id || null, status: p.status || client_1.EnrollmentStatus.ACTIVE },
+                create: { organization_id: orgId, student_id: p.student_id, academic_year_id: academicYearId, grade_id: p.grade_id, section_id: p.section_id || null, subject_group_id: p.subject_group_id || null, status: p.status || client_1.EnrollmentStatus.ACTIVE }
+            }));
+            txOperations.push(prisma_1.default.user.updateMany({
+                where: { id: p.student_id, organization_id: orgId },
+                data: { grade_id: p.grade_id, section_id: p.section_id || null }
+            }));
+        }
+        // Execute database writes in a single fast transaction with 15s timeout
+        await prisma_1.default.$transaction(txOperations, {
             timeout: 15000 // Increase timeout for larger batches
         });
         // 4. Send Notifications Outside Transaction
@@ -205,6 +206,7 @@ class StudentEnrollmentService {
         // Don't wait for all notifications to finish to avoid blocking response for too long, 
         // or we can await them if needed. Awaiting with Promise.all is safe here since we catch errors.
         await Promise.all(notificationPromises);
+        successCount = studentsToProcess.length;
         return { success: successCount, failure: failureCount };
     }
 }

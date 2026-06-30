@@ -466,6 +466,7 @@ export class StudentExamResultComponent implements OnInit, OnDestroy {
       next: () => {
         this.showNotification('snackbar-success', 'Marks saved successfully!');
         this.isSaving = false;
+        this.isEditMode = false;
         this.loadStudentMarks(); // Reload to get updated existing_result_ids
       },
       error: (err) => {

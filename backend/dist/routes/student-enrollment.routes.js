@@ -17,7 +17,7 @@ router.use(auth_middleware_1.authMiddleware);
 // GET enrollments
 router.get('/', (0, auth_middleware_1.requirePermission)('ACADEMIC_STRUCTURE', 'READ'), async (req, res) => {
     try {
-        const { grade_id, section_id } = req.query;
+        const { grade_id, section_id, subject_group_id } = req.query;
         const yearId = await academic_context_resolver_1.AcademicContextResolver.resolveAcademicYearId(req);
         const filter = {
             organization_id: req.user.organization_id,
@@ -27,11 +27,27 @@ router.get('/', (0, auth_middleware_1.requirePermission)('ACADEMIC_STRUCTURE', '
             filter.grade_id = String(grade_id);
         if (section_id)
             filter.section_id = String(section_id);
+        if (subject_group_id) {
+            filter.OR = [
+                { subject_group_id: String(subject_group_id) },
+                { subject_group_id: null }
+            ];
+        }
         const isGlobalAdmin = req.user.permissions?.includes('IDENTITY:IS_MANAGEMENT') || req.user.permissions?.includes('IDENTITY:IS_SUPER_ADMIN');
         if (!isGlobalAdmin) {
             const visibilityFilter = await assignment_visibility_resolver_1.AssignmentVisibilityResolver.buildTeacherSectionWhereClause(req);
-            if (visibilityFilter.id)
-                filter.section_id = visibilityFilter.id; // Either IN array or no-access
+            if (visibilityFilter.id) {
+                if (filter.section_id) {
+                    filter.AND = [
+                        { section_id: filter.section_id },
+                        { section_id: visibilityFilter.id }
+                    ];
+                    delete filter.section_id;
+                }
+                else {
+                    filter.section_id = visibilityFilter.id;
+                }
+            }
         }
         const enrollments = await prisma_1.default.studentEnrollment.findMany({
             where: filter,
@@ -41,6 +57,7 @@ router.get('/', (0, auth_middleware_1.requirePermission)('ACADEMIC_STRUCTURE', '
                         id: true,
                         name: true,
                         email: true,
+                        roll_number: true,
                         student_profile: true
                     }
                 },
@@ -97,6 +114,7 @@ router.get('/unenrolled', (0, auth_middleware_1.requirePermission)('ACADEMIC_STR
                 id: true,
                 name: true,
                 email: true,
+                roll_number: true,
                 student_profile: true
             }
         });

@@ -30,7 +30,7 @@ class AssignmentVisibilityResolver {
             .filter((a) => a.assignment_type === 'SUBJECT_TEACHER')
             .map((a) => a.subject_id).filter(Boolean);
         if (inchargeGradeIds.length === 0 && specificSubjectIds.length === 0) {
-            return { id: 'no-access-0000-0000' };
+            return { id: '00000000-0000-0000-0000-000000000000' };
         }
         return {
             OR: [
@@ -56,7 +56,7 @@ class AssignmentVisibilityResolver {
         });
         const sectionIds = assignments.map((a) => a.section_id).filter(Boolean);
         if (sectionIds.length === 0) {
-            return { id: 'no-access-0000-0000' };
+            return { id: '00000000-0000-0000-0000-000000000000' };
         }
         return { id: { in: sectionIds } };
     }
@@ -77,7 +77,7 @@ class AssignmentVisibilityResolver {
         });
         const gradeIds = assignments.map((a) => a.grade_id).filter(Boolean);
         if (gradeIds.length === 0) {
-            return { id: 'no-access-0000-0000' };
+            return { id: '00000000-0000-0000-0000-000000000000' };
         }
         return { id: { in: gradeIds } };
     }

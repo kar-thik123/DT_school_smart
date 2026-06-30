@@ -25,6 +25,10 @@ const student_mcq_routes_1 = __importDefault(require("./routes/student-mcq.route
 const skill_routes_1 = __importDefault(require("./routes/skill.routes"));
 const skill_assignment_routes_1 = __importDefault(require("./routes/skill-assignment.routes"));
 const student_dashboard_routes_1 = __importDefault(require("./routes/student-dashboard.routes"));
+const attendance_routes_1 = __importDefault(require("./routes/attendance.routes"));
+const examination_routes_1 = __importDefault(require("./routes/examination.routes"));
+const student_exam_result_routes_1 = __importDefault(require("./routes/student-exam-result.routes"));
+const teacher_dashboard_routes_1 = __importDefault(require("./routes/teacher-dashboard.routes"));
 const app = (0, express_1.default)();
 console.log('Starting application, mounting routes...');
 // app.use(cors());
@@ -58,6 +62,10 @@ app.use('/api/student-mcq', student_mcq_routes_1.default);
 app.use('/api/skills', skill_routes_1.default);
 app.use('/api/skill-assignment', skill_assignment_routes_1.default);
 app.use('/api/student-dashboard', student_dashboard_routes_1.default);
+app.use('/api/attendance', attendance_routes_1.default);
+app.use('/api/examinations', examination_routes_1.default);
+app.use('/api/student-exam-results', student_exam_result_routes_1.default);
+app.use('/api/teacher-dashboard', teacher_dashboard_routes_1.default);
 app.get('/health', (req, res) => {
     res.json({ status: 'ok' });
 });

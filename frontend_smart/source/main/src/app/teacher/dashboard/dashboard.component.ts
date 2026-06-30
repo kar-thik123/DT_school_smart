@@ -26,7 +26,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
 
-import { TeacherDashboardService, OverviewMetrics, PerformanceTrend, TopicMastery, WeakStudent, RecentAssessment, SummaryStats } from './teacher-dashboard.service';
+import { TeacherDashboardService, OverviewMetrics, PerformanceTrend, TopicMastery, WeakStudent, RecentAssessment, SummaryStats, TopPerformer, SyllabusCoverage, UnreadMessages } from './teacher-dashboard.service';
 import { AuthService } from '@core/service/auth.service';
 import { AcademicContextService } from '@core/service/academic-context.service';
 import { AcademicYearService } from '../../admin/academics/academic-year/academic-year.service';
@@ -137,6 +137,22 @@ export class DashboardComponent implements OnInit {
   weakStudents: WeakStudent[] = [];
   recentAssessments: RecentAssessment[] = [];
   summaryStats: SummaryStats | null = null;
+  showAllMasterySubjects: boolean = false;
+  showAllRiskStudents: boolean = false;
+
+  topPerformers: TopPerformer[] = [];
+  unreadMessages: UnreadMessages | null = null;
+  pendingSkillsCount: number = 0;
+  syllabusCoverage: SyllabusCoverage | null = null;
+  homeworkComplianceRate: number = 0;
+
+  toggleMasterySubjects() {
+    this.showAllMasterySubjects = !this.showAllMasterySubjects;
+  }
+
+  toggleRiskStudents() {
+    this.showAllRiskStudents = !this.showAllRiskStudents;
+  }
 
   constructor(
     private dashboardService: TeacherDashboardService,
@@ -324,7 +340,12 @@ export class DashboardComponent implements OnInit {
       topicMastery: this.dashboardService.getTopicMastery(sectionId, subjectId).pipe(catchError(() => of([]))),
       weakStudents: this.dashboardService.getWeakStudents(sectionId, subjectId).pipe(catchError(() => of([]))),
       recentAssessments: this.dashboardService.getRecentAssessments(sectionId, subjectId).pipe(catchError(() => of([]))),
-      summaryStats: this.dashboardService.getSummaryStats(sectionId, subjectId).pipe(catchError(() => of(null)))
+      summaryStats: this.dashboardService.getSummaryStats(sectionId, subjectId).pipe(catchError(() => of(null))),
+      topPerformers: this.dashboardService.getTopPerformers(sectionId, subjectId).pipe(catchError(() => of([]))),
+      unreadMessages: this.dashboardService.getUnreadMessages().pipe(catchError(() => of(null))),
+      pendingSkills: this.dashboardService.getPendingSkills(sectionId).pipe(catchError(() => of({ count: 0 }))),
+      syllabusCoverage: this.dashboardService.getSyllabusCoverage(sectionId, subjectId).pipe(catchError(() => of(null))),
+      homeworkCompliance: this.dashboardService.getHomeworkCompliance(sectionId).pipe(catchError(() => of({ rate: 0 })))
     }).subscribe({
       next: (data: any) => {
         this.overview = data.overview;
@@ -333,6 +354,15 @@ export class DashboardComponent implements OnInit {
         this.weakStudents = data.weakStudents || [];
         this.recentAssessments = data.recentAssessments || [];
         this.summaryStats = data.summaryStats;
+        this.topPerformers = data.topPerformers || [];
+        this.unreadMessages = data.unreadMessages;
+        this.pendingSkillsCount = data.pendingSkills?.count || 0;
+        this.syllabusCoverage = data.syllabusCoverage;
+        this.homeworkComplianceRate = data.homeworkCompliance?.rate || 0;
+
+        if (this.availableSubjects.length === 0 && this.selectedSubjectId === '' && this.topicMastery.length > 0) {
+          this.availableSubjects = this.topicMastery.map((t: any) => ({ id: t.subjectId, name: t.topicName }));
+        }
 
         this.initCharts();
         this.loading = false;
@@ -349,6 +379,42 @@ export class DashboardComponent implements OnInit {
     this.initPerformanceTrendChart();
     this.initAttendanceChart();
     this.initTopicMasteryChart();
+  }
+
+  private initAttendanceChart() {
+    this.attendanceChartOptions = {
+      series: [this.summaryStats?.attendancePercentage || 0],
+      chart: {
+        type: 'radialBar',
+        height: 140,
+        sparkline: { enabled: true }
+      },
+      plotOptions: {
+        radialBar: {
+          startAngle: -90,
+          endAngle: 90,
+          hollow: { size: '65%' },
+          track: {
+            background: '#e2e8f0',
+            strokeWidth: '100%',
+            margin: 0
+          },
+          dataLabels: {
+            name: { show: false },
+            value: {
+              offsetY: 0,
+              fontSize: '20px',
+              fontWeight: 700,
+              formatter: function (val) {
+                return val.toFixed(1) + "%";
+              }
+            }
+          }
+        }
+      },
+      colors: ['#14b8a6'],
+      labels: ['Attendance'],
+    };
   }
 
   private initPerformanceTrendChart() {
@@ -384,24 +450,7 @@ export class DashboardComponent implements OnInit {
     };
   }
 
-  private initAttendanceChart() {
-    const attendance = this.summaryStats?.attendancePercentage || 0;
-    this.attendanceChartOptions = {
-      series: [attendance],
-      chart: { height: 250, type: 'radialBar' },
-      plotOptions: {
-        radialBar: {
-          hollow: { size: '65%' },
-          dataLabels: {
-            name: { show: true, color: 'var(--bs-secondary-color)', fontSize: '14px' },
-            value: { show: true, color: 'var(--bs-heading-color)', fontSize: '20px', formatter: (val) => val.toFixed(1) + "%" }
-          }
-        },
-      },
-      labels: ['Attendance'],
-      colors: ['var(--bs-purple)'],
-    };
-  }
+
 
   private initTopicMasteryChart() {
     if (!this.topicMastery || this.topicMastery.length === 0) {

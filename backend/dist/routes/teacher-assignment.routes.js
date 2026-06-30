@@ -19,6 +19,32 @@ const assignmentSchema = zod_1.z.object({
     section_id: zod_1.z.string().uuid().optional().nullable(),
     subject_id: zod_1.z.string().uuid().optional().nullable()
 });
+// Get current user's assignments
+router.get('/me', async (req, res) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    try {
+        const yearId = await academic_context_resolver_1.AcademicContextResolver.resolveAcademicYearId(req);
+        const assignments = await prisma_1.default.teacherAssignment.findMany({
+            where: {
+                organization_id: req.user.organization_id,
+                academic_year_id: yearId,
+                teacher_id: req.user.user_id
+            },
+            include: {
+                grade: { select: { id: true, name: true } },
+                section: { select: { id: true, name: true } },
+                subject: { select: { id: true, name: true } }
+            },
+            orderBy: { created_at: 'desc' }
+        });
+        res.json(assignments);
+    }
+    catch (error) {
+        res.status(500).json({ message: 'Error fetching your assignments' });
+    }
+});
 // Read all assignments
 router.get('/', (0, auth_middleware_1.requirePermission)('TEACHER_ASSIGNMENT', 'VIEW'), async (req, res) => {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');

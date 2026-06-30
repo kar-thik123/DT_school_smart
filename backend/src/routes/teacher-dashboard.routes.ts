@@ -20,11 +20,14 @@ async function getSubjectIds(req: any, classId: string, subjectId?: string) {
   
   const isClassTeacher = assignments.some((a: any) => a.assignment_type === 'CLASS_TEACHER');
   if (isClassTeacher) {
-    const allSubjects = await prisma.subject.findMany({
-      where: { organization_id: req.user.organization_id },
-      select: { id: true }
+    const groups = await prisma.subjectGroup.findMany({
+      where: { organization_id: req.user.organization_id, section_id: classId },
+      include: { subjects: true }
     });
-    return allSubjects.map((s: any) => s.id);
+    const classSubjectIds = groups.flatMap((g: any) => g.subjects.map((s: any) => s.subject_id));
+    if (classSubjectIds.length > 0) {
+      return Array.from(new Set(classSubjectIds));
+    }
   }
 
   return assignments.map((a: any) => a.subject_id).filter(Boolean) as string[];
@@ -79,8 +82,12 @@ router.get('/overview', async (req: any, res: Response) => {
     resultsWithStudent.forEach((r: any) => {
        const sid = r.student_exam_result.student_id;
        if (!studentAverages[sid]) studentAverages[sid] = { total: 0, obtained: 0 };
-       studentAverages[sid].total += r.max_marks || 0;
-       studentAverages[sid].obtained += r.obtained_marks || 0;
+       const max = r.max_marks || 0;
+       const obtained = r.obtained_marks || 0;
+       studentAverages[sid].total += max;
+       studentAverages[sid].obtained += obtained;
+       totalMarks += max;
+       obtainedMarks += obtained;
     });
 
     for (const sid in studentAverages) {
@@ -98,13 +105,10 @@ router.get('/overview', async (req: any, res: Response) => {
     // Mock scoreTrend (e.g. 8.4)
     const scoreTrend = 8.4;
 
-    const assessmentsCount = await prisma.examination.count({
-      where: { organization_id: req.user.organization_id, academic_year_id: req.academic_year_id }
-      // ideally filter by subject or class if possible
-    });
+    const assessmentsCount = 0;
 
     // Mock pendingEvaluations
-    const pendingEvaluations = 18;
+    const pendingEvaluations = 0;
 
     res.json({
       totalStudents,
@@ -164,33 +168,77 @@ router.get('/performance-trend', async (req: any, res: Response) => {
   }
 });
 
-// 3. Topic Mastery
+// 3. Topic Mastery (Now returning Subject Mastery based on class subjects)
 router.get('/topic-mastery', async (req: any, res: Response) => {
   try {
     const { section_id, subject_id } = req.query;
-    if (!section_id || !subject_id) return res.status(400).json({ message: 'section_id and subject_id are required' });
+    if (!section_id) return res.status(400).json({ message: 'section_id is required' });
+    // If subject_id is not passed, it fetches all subjects for the class. If passed, it fetches just that one subject.
+    // For subject mastery widget, we probably want to show all subjects if none selected, or just the selected one.
+    const subjectIds = await getSubjectIds(req, section_id as string, subject_id as string);
+    if (!subjectIds.length) return res.json([]);
 
-    const topics = await prisma.topic.findMany({
-      where: { organization_id: req.user.organization_id }, // ideally filter by subject_id via unit
+    const subjects = await prisma.subject.findMany({
+      where: { 
+        organization_id: req.user.organization_id,
+        id: { in: subjectIds }
+      },
       include: {
-        topic_activations: { where: { academic_year_id: req.academic_year_id } },
+        units: {
+          include: {
+            topics: {
+              include: { sub_topics: true }
+            }
+          }
+        },
         practice_attempts: { where: { academic_year_id: req.academic_year_id, student: { enrollments: { some: { section_id: section_id as string } } } } }
       }
     });
-    // Filter topics that belong to the subject via unit
-    const validTopics = topics.filter((t: any) => t.practice_attempts.length > 0 || t.topic_activations.length > 0);
 
-    const mastery = validTopics.map((t: any) => {
-      const isCompleted = t.topic_activations.some((a: any) => a.is_completed);
-      let t_ques = 0, c_ques = 0;
-      t.practice_attempts.forEach((p: any) => {
-        t_ques += p.total_questions;
-        c_ques += p.correct_answers;
+    const completions = await prisma.completionTracking.findMany({
+      where: {
+        organization_id: req.user.organization_id,
+        academic_year_id: req.academic_year_id,
+        section_id: section_id as string,
+        subject_id: { in: subjectIds },
+        is_completed: true
+      }
+    });
+
+    const mastery = subjects.map((subj: any) => {
+      let totalTopics = 0;
+      let completedTopics = 0;
+      const subjCompletions = completions.filter((c: any) => c.subject_id === subj.id);
+
+      subj.units.forEach((u: any) => {
+        u.topics.forEach((t: any) => {
+          totalTopics++;
+          const isTopicCompleted = subjCompletions.some((c: any) => c.topic_id === t.id && c.completion_level === 'TOPIC');
+          
+          if (isTopicCompleted) {
+            completedTopics++;
+          } else if (t.sub_topics && t.sub_topics.length > 0) {
+            const completedSubtopics = subjCompletions.filter((c: any) => c.topic_id === t.id && c.completion_level === 'SUBTOPIC').length;
+            if (completedSubtopics === t.sub_topics.length) {
+              completedTopics++;
+            }
+          }
+        });
       });
-      const avg = t_ques > 0 ? (c_ques / t_ques) * 100 : 0;
+
+      let completionPercentage = totalTopics > 0 ? Math.round((completedTopics / totalTopics) * 100) : 0;
+
+      let t_ques = 0, c_ques = 0;
+      subj.practice_attempts.forEach((p: any) => {
+        t_ques += p.total_questions || 0;
+        c_ques += p.correct_answers || 0;
+      });
+      const avg = t_ques > 0 ? Math.round((c_ques / t_ques) * 100) : 0;
+      
       return {
-        topicName: t.name,
-        completed: isCompleted,
+        subjectId: subj.id,
+        topicName: subj.name, // Using topicName to mean Subject name for UI compatibility
+        completed: completionPercentage,
         avgScore: avg,
         masteryLevel: avg >= 80 ? 'High' : (avg >= 50 ? 'Medium' : 'Low')
       };
@@ -198,7 +246,8 @@ router.get('/topic-mastery', async (req: any, res: Response) => {
 
     res.json(mastery);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching topic mastery' });
+    console.error(error);
+    res.status(500).json({ message: 'Error fetching subject mastery' });
   }
 });
 
@@ -208,39 +257,52 @@ router.get('/weak-students', async (req: any, res: Response) => {
     const { section_id, subject_id } = req.query;
     if (!section_id) return res.status(400).json({ message: 'section_id is required' });
     const subjectIds = await getSubjectIds(req, section_id as string, subject_id as string);
+    if (!subjectIds.length) return res.json([]);
 
-    // Fetch practice attempts for these subjects
-    const attempts = await prisma.practiceAttempt.findMany({
+    // Find the latest exam that has results for this section
+    const latestExam = await prisma.examination.findFirst({
       where: {
         organization_id: req.user.organization_id,
         academic_year_id: req.academic_year_id,
-        subject_id: { in: subjectIds },
-        student: { enrollments: { some: { section_id: section_id as string, academic_year_id: req.academic_year_id } } }
+        student_exam_results: {
+          some: { section_id: section_id as string }
+        }
       },
-      include: { student: { select: { id: true, name: true } }, topic: { select: { id: true, name: true } } }
-    });
-
-    const studentMap: any = {};
-    attempts.forEach((a: any) => {
-      if (!studentMap[a.student_id]) studentMap[a.student_id] = { name: a.student.name, total: 0, correct: 0, topics: {} };
-      studentMap[a.student_id].total += a.total_questions;
-      studentMap[a.student_id].correct += a.correct_answers;
-      
-      if (!studentMap[a.student_id].topics[a.topic_id]) studentMap[a.student_id].topics[a.topic_id] = { name: a.topic.name, total: 0, correct: 0 };
-      studentMap[a.student_id].topics[a.topic_id].total += a.total_questions;
-      studentMap[a.student_id].topics[a.topic_id].correct += a.correct_answers;
-    });
-
-    const weakStudents = [];
-    for (const sid in studentMap) {
-      const s = studentMap[sid];
-      const avg = s.total > 0 ? (s.correct / s.total) * 100 : 0;
-      if (avg < 50 && s.total > 0) {
-        const weakTopics = Object.values(s.topics as Record<string, any>)
-          .filter((t: any) => (t.total > 0 && (t.correct / t.total) * 100 < 50))
-          .map((t: any) => t.name);
-        weakStudents.push({ name: s.name, avgScore: avg, weakTopics });
+      orderBy: { created_at: 'desc' },
+      include: {
+        student_exam_results: {
+          where: { section_id: section_id as string },
+          include: {
+            student: { select: { id: true, name: true, roll_number: true } },
+            subject_results: { where: { subject_id: { in: subjectIds } } }
+          }
+        }
       }
+    });
+
+    const weakStudents: any[] = [];
+    if (latestExam) {
+      latestExam.student_exam_results.forEach((r: any) => {
+        let total = 0;
+        let obtained = 0;
+
+        r.subject_results.forEach((sr: any) => {
+          total += sr.max_marks || 0;
+          obtained += sr.obtained_marks || 0;
+        });
+
+        if (total > 0) {
+          const avg = (obtained / total) * 100;
+          if (avg < 40) {
+            weakStudents.push({
+              name: r.student.name,
+              rollNumber: r.student.roll_number,
+              avgScore: avg,
+              weakTopics: [latestExam.exam_name] // Repurposing this field to show the exam name
+            });
+          }
+        }
+      });
     }
 
     res.json(weakStudents);
@@ -266,34 +328,7 @@ router.get('/recent-assessments', async (req: any, res: Response) => {
   try {
     const { section_id, subject_id } = req.query;
     if (!section_id) return res.status(400).json({ message: 'section_id is required' });
-    const exams = await prisma.examination.findMany({
-      where: { organization_id: req.user.organization_id, academic_year_id: req.academic_year_id },
-      take: 5,
-      orderBy: { created_at: 'desc' },
-      include: {
-        student_exam_results: { where: { section_id: section_id as string } }
-      }
-    });
-
-    const recent = exams.map((e: any) => {
-      let highest = 0, lowest = 100, totalP = 0, count = 0;
-      e.student_exam_results.forEach((r: any) => {
-         const p = r.percentage || 0;
-         if (p > highest) highest = p;
-         if (p < lowest) lowest = p;
-         totalP += p;
-         count++;
-      });
-      return {
-        examName: e.exam_name,
-        date: e.created_at,
-        classAvg: count > 0 ? totalP / count : 0,
-        highest: count > 0 ? highest : 0,
-        lowest: count > 0 && lowest !== 100 ? lowest : 0,
-        pendingEval: 0
-      };
-    });
-    res.json(recent);
+    res.json([]);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching recent assessments' });
   }
@@ -305,11 +340,30 @@ router.get('/summary-stats', async (req: any, res: Response) => {
     const { section_id, subject_id } = req.query;
     if (!section_id) return res.status(400).json({ message: 'section_id is required' });
     
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const endOfMonth = new Date();
+    endOfMonth.setMonth(endOfMonth.getMonth() + 1);
+    endOfMonth.setDate(0); // last day of current month
+    endOfMonth.setHours(23, 59, 59, 999);
+
     const attendances = await prisma.studentAttendance.findMany({
-      where: { organization_id: req.user.organization_id, academic_year_id: req.academic_year_id, section_id: section_id as string }
+      where: { 
+        organization_id: req.user.organization_id, 
+        academic_year_id: req.academic_year_id, 
+        section_id: section_id as string,
+        attendance_date: {
+          gte: startOfMonth,
+          lte: endOfMonth
+        }
+      }
     });
     const totalAttendances = attendances.length;
     const presentCount = attendances.filter((a: any) => a.status === 'PRESENT').length;
+    const lateCount = attendances.filter((a: any) => a.status === 'LATE').length;
+    const absentCount = attendances.filter((a: any) => a.status === 'ABSENT').length;
 
     const attempts = await prisma.practiceAttempt.aggregate({
       where: { organization_id: req.user.organization_id, academic_year_id: req.academic_year_id, student: { enrollments: { some: { section_id: section_id as string } } } },
@@ -317,11 +371,178 @@ router.get('/summary-stats', async (req: any, res: Response) => {
     });
 
     res.json({
-      attendancePercentage: totalAttendances > 0 ? (presentCount / totalAttendances) * 100 : 0,
+      attendancePercentage: totalAttendances > 0 ? ((presentCount + lateCount) / totalAttendances) * 100 : 0,
+      present: totalAttendances > 0 ? (presentCount / totalAttendances) * 100 : 0,
+      late: totalAttendances > 0 ? (lateCount / totalAttendances) * 100 : 0,
+      absent: totalAttendances > 0 ? (absentCount / totalAttendances) * 100 : 0,
       practiceQuestionsAttempted: attempts._sum.total_questions || 0
     });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching summary stats' });
+  }
+});
+
+// 8. Pending Skills
+router.get('/pending-skills', async (req: any, res: Response) => {
+  try {
+    const pendingSkillsCount = await prisma.skill.count({
+      where: {
+        organization_id: req.user.organization_id,
+        status: 'pending',
+        user: { enrollments: { some: { section_id: req.query.section_id as string } } }
+      }
+    });
+    res.json({ count: pendingSkillsCount });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching pending skills' });
+  }
+});
+
+// 9. Syllabus Coverage
+router.get('/syllabus-coverage', async (req: any, res: Response) => {
+  try {
+    const { section_id, subject_id } = req.query;
+    if (!section_id) return res.status(400).json({ message: 'section_id is required' });
+    const subjectIds = await getSubjectIds(req, section_id as string, subject_id as string);
+    if (!subjectIds.length) return res.json({ total: 0, completed: 0, percentage: 0 });
+
+    const subjects = await prisma.subject.findMany({
+      where: { id: { in: subjectIds } },
+      include: { units: { include: { topics: true } } }
+    });
+
+    let totalTopics = 0;
+    subjects.forEach((s: any) => {
+      s.units.forEach((u: any) => {
+        totalTopics += u.topics.length;
+      });
+    });
+
+    const completedTopics = await prisma.completionTracking.count({
+      where: {
+        organization_id: req.user.organization_id,
+        academic_year_id: req.academic_year_id,
+        section_id: section_id as string,
+        subject_id: { in: subjectIds },
+        completion_level: 'TOPIC',
+        is_completed: true
+      }
+    });
+
+    const percentage = totalTopics > 0 ? (completedTopics / totalTopics) * 100 : 0;
+    res.json({ total: totalTopics, completed: completedTopics, percentage: Math.round(percentage) });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching syllabus coverage' });
+  }
+});
+
+// 10. Top Performers
+router.get('/top-performers', async (req: any, res: Response) => {
+  try {
+    const { section_id, subject_id } = req.query;
+    if (!section_id) return res.status(400).json({ message: 'section_id is required' });
+    const subjectIds = await getSubjectIds(req, section_id as string, subject_id as string);
+    if (!subjectIds.length) return res.json([]);
+
+    const latestExam = await prisma.examination.findFirst({
+      where: {
+        organization_id: req.user.organization_id,
+        academic_year_id: req.academic_year_id,
+        student_exam_results: { some: { section_id: section_id as string } }
+      },
+      orderBy: { created_at: 'desc' },
+      include: {
+        student_exam_results: {
+          where: { section_id: section_id as string },
+          include: {
+            student: { select: { id: true, name: true, roll_number: true } },
+            subject_results: { where: { subject_id: { in: subjectIds } } }
+          }
+        }
+      }
+    });
+
+    let performers: any[] = [];
+    if (latestExam) {
+      latestExam.student_exam_results.forEach((r: any) => {
+        let total = 0, obtained = 0;
+        r.subject_results.forEach((sr: any) => {
+          total += sr.max_marks || 0;
+          obtained += sr.obtained_marks || 0;
+        });
+        if (total > 0) {
+          performers.push({
+            name: r.student.name,
+            rollNumber: r.student.roll_number,
+            score: (obtained / total) * 100,
+            examName: latestExam.exam_name
+          });
+        }
+      });
+    }
+
+    performers.sort((a, b) => b.score - a.score);
+    res.json(performers.slice(0, 5));
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching top performers' });
+  }
+});
+
+// 11. Unread Messages & Notifications
+router.get('/unread-messages', async (req: any, res: Response) => {
+  try {
+    const unreadMailCount = await prisma.internalMail.count({
+      where: {
+        organization_id: req.user.organization_id,
+        receiverId: req.user.user_id,
+        isRead: false,
+        deletedByReceiver: false
+      }
+    });
+    
+    const unreadNotificationsCount = await prisma.notificationRecipient.count({
+      where: {
+        user_id: req.user.user_id,
+        is_read: false
+      }
+    });
+
+    res.json({ unreadMail: unreadMailCount, unreadNotifications: unreadNotificationsCount });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching unread messages' });
+  }
+});
+
+// 12. Homework Compliance
+router.get('/homework-compliance', async (req: any, res: Response) => {
+  try {
+    const { section_id } = req.query;
+    if (!section_id) return res.status(400).json({ message: 'section_id is required' });
+
+    const enrollments = await prisma.studentEnrollment.findMany({
+      where: { section_id: section_id as string, organization_id: req.user.organization_id, academic_year_id: req.academic_year_id },
+      select: { student_id: true }
+    });
+    const studentIds = enrollments.map((e: any) => e.student_id);
+
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const recentAttempts = await prisma.practiceAttempt.findMany({
+      where: {
+        student_id: { in: studentIds },
+        created_at: { gte: sevenDaysAgo }
+      },
+      select: { student_id: true }
+    });
+
+    const uniqueStudentsAttempted = new Set(recentAttempts.map((a: any) => a.student_id)).size;
+    const totalStudents = studentIds.length;
+    const complianceRate = totalStudents > 0 ? (uniqueStudentsAttempted / totalStudents) * 100 : 0;
+
+    res.json({ rate: Math.round(complianceRate) });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching homework compliance' });
   }
 });
 

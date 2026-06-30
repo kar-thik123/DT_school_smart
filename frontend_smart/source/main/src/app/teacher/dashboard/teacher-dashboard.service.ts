@@ -23,14 +23,16 @@ export interface PerformanceTrend {
 }
 
 export interface TopicMastery {
+  subjectId?: string;
   topicName: string;
-  completed: boolean;
+  completed: number;
   avgScore: number;
   masteryLevel: string;
 }
 
 export interface WeakStudent {
   name: string;
+  rollNumber?: string;
   avgScore: number;
   weakTopics: string[];
 }
@@ -54,7 +56,28 @@ export interface RecentAssessment {
 
 export interface SummaryStats {
   attendancePercentage: number;
+  present?: number;
+  late?: number;
+  absent?: number;
   practiceQuestionsAttempted: number;
+}
+
+export interface TopPerformer {
+  name: string;
+  rollNumber?: string;
+  score: number;
+  examName: string;
+}
+
+export interface SyllabusCoverage {
+  total: number;
+  completed: number;
+  percentage: number;
+}
+
+export interface UnreadMessages {
+  unreadMail: number;
+  unreadNotifications: number;
 }
 
 @Injectable({
@@ -108,5 +131,31 @@ export class TeacherDashboardService {
     let params = new HttpParams().set('section_id', sectionId);
     if (subjectId) params = params.set('subject_id', subjectId);
     return this.http.get<SummaryStats>(`${this.apiUrl}/teacher-dashboard/summary-stats`, { params });
+  }
+
+  getPendingSkills(sectionId: string): Observable<{count: number}> {
+    let params = new HttpParams().set('section_id', sectionId);
+    return this.http.get<{count: number}>(`${this.apiUrl}/teacher-dashboard/pending-skills`, { params });
+  }
+
+  getSyllabusCoverage(sectionId: string, subjectId?: string): Observable<SyllabusCoverage> {
+    let params = new HttpParams().set('section_id', sectionId);
+    if (subjectId) params = params.set('subject_id', subjectId);
+    return this.http.get<SyllabusCoverage>(`${this.apiUrl}/teacher-dashboard/syllabus-coverage`, { params });
+  }
+
+  getTopPerformers(sectionId: string, subjectId?: string): Observable<TopPerformer[]> {
+    let params = new HttpParams().set('section_id', sectionId);
+    if (subjectId) params = params.set('subject_id', subjectId);
+    return this.http.get<TopPerformer[]>(`${this.apiUrl}/teacher-dashboard/top-performers`, { params });
+  }
+
+  getUnreadMessages(): Observable<UnreadMessages> {
+    return this.http.get<UnreadMessages>(`${this.apiUrl}/teacher-dashboard/unread-messages`);
+  }
+
+  getHomeworkCompliance(sectionId: string): Observable<{rate: number}> {
+    let params = new HttpParams().set('section_id', sectionId);
+    return this.http.get<{rate: number}>(`${this.apiUrl}/teacher-dashboard/homework-compliance`, { params });
   }
 }
