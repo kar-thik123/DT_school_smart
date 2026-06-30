@@ -26,7 +26,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
 
-import { TeacherDashboardService, OverviewMetrics, PerformanceTrend, TopicMastery, WeakStudent, RecentAssessment, SummaryStats, TopPerformer, SyllabusCoverage, UnreadMessages } from './teacher-dashboard.service';
+import { TeacherDashboardService, OverviewMetrics, PerformanceTrend, TopicMastery, WeakStudent, RecentAssessment, SummaryStats, TopPerformer, SyllabusCoverage, UnreadMessages, MissingTopic, NotificationFeedItem } from './teacher-dashboard.service';
 import { AuthService } from '@core/service/auth.service';
 import { AcademicContextService } from '@core/service/academic-context.service';
 import { AcademicYearService } from '../../admin/academics/academic-year/academic-year.service';
@@ -145,6 +145,8 @@ export class DashboardComponent implements OnInit {
   pendingSkillsCount: number = 0;
   syllabusCoverage: SyllabusCoverage | null = null;
   homeworkComplianceRate: number = 0;
+  missingTopics: MissingTopic[] = [];
+  recentNotifications: NotificationFeedItem[] = [];
 
   toggleMasterySubjects() {
     this.showAllMasterySubjects = !this.showAllMasterySubjects;
@@ -345,7 +347,9 @@ export class DashboardComponent implements OnInit {
       unreadMessages: this.dashboardService.getUnreadMessages().pipe(catchError(() => of(null))),
       pendingSkills: this.dashboardService.getPendingSkills(sectionId).pipe(catchError(() => of({ count: 0 }))),
       syllabusCoverage: this.dashboardService.getSyllabusCoverage(sectionId, subjectId).pipe(catchError(() => of(null))),
-      homeworkCompliance: this.dashboardService.getHomeworkCompliance(sectionId).pipe(catchError(() => of({ rate: 0 })))
+      homeworkCompliance: this.dashboardService.getHomeworkCompliance(sectionId).pipe(catchError(() => of({ rate: 0 }))),
+      lessonPlan: this.dashboardService.getLessonPlanProgress(sectionId, subjectId).pipe(catchError(() => of({ missingTopics: [] }))),
+      notifications: this.dashboardService.getRecentNotifications().pipe(catchError(() => of([])))
     }).subscribe({
       next: (data: any) => {
         this.overview = data.overview;
@@ -359,6 +363,8 @@ export class DashboardComponent implements OnInit {
         this.pendingSkillsCount = data.pendingSkills?.count || 0;
         this.syllabusCoverage = data.syllabusCoverage;
         this.homeworkComplianceRate = data.homeworkCompliance?.rate || 0;
+        this.missingTopics = data.lessonPlan?.missingTopics || [];
+        this.recentNotifications = data.notifications || [];
 
         if (this.availableSubjects.length === 0 && this.selectedSubjectId === '' && this.topicMastery.length > 0) {
           this.availableSubjects = this.topicMastery.map((t: any) => ({ id: t.subjectId, name: t.topicName }));

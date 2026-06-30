@@ -37,11 +37,11 @@ export interface WeakStudent {
   weakTopics: string[];
 }
 
-export interface LessonPlanProgress {
-  completed: number;
-  inProgress: number;
-  pending: number;
-  nextTopic: string;
+export interface MissingTopic {
+  topicName: string;
+  unitName: string;
+  subjectName: string;
+  status: string;
   plannedDate: string;
 }
 
@@ -69,10 +69,33 @@ export interface TopPerformer {
   examName: string;
 }
 
+export interface QuestionMarksCoverage {
+  covered: number;
+  pending: number;
+  total: number;
+}
+
 export interface SyllabusCoverage {
   total: number;
   completed: number;
   percentage: number;
+  totalUnits: number;
+  completedUnits: number;
+  unitsPercentage: number;
+  questions: {
+    marks1: QuestionMarksCoverage;
+    marks2: QuestionMarksCoverage;
+    marks5: QuestionMarksCoverage;
+  }
+}
+
+export interface NotificationFeedItem {
+  id: string;
+  title: string;
+  message: string;
+  isRead: boolean;
+  createdAt: string;
+  type: string;
 }
 
 export interface UnreadMessages {
@@ -115,10 +138,10 @@ export class TeacherDashboardService {
     return this.http.get<WeakStudent[]>(`${this.apiUrl}/teacher-dashboard/weak-students`, { params });
   }
 
-  getLessonPlanProgress(sectionId: string, subjectId?: string): Observable<LessonPlanProgress> {
+  getLessonPlanProgress(sectionId: string, subjectId?: string): Observable<{missingTopics: MissingTopic[]}> {
     let params = new HttpParams().set('section_id', sectionId);
     if (subjectId) params = params.set('subject_id', subjectId);
-    return this.http.get<LessonPlanProgress>(`${this.apiUrl}/teacher-dashboard/lesson-plan-progress`, { params });
+    return this.http.get<{missingTopics: MissingTopic[]}>(`${this.apiUrl}/teacher-dashboard/lesson-plan-progress`, { params });
   }
 
   getRecentAssessments(sectionId: string, subjectId?: string): Observable<RecentAssessment[]> {
@@ -157,5 +180,9 @@ export class TeacherDashboardService {
   getHomeworkCompliance(sectionId: string): Observable<{rate: number}> {
     let params = new HttpParams().set('section_id', sectionId);
     return this.http.get<{rate: number}>(`${this.apiUrl}/teacher-dashboard/homework-compliance`, { params });
+  }
+
+  getRecentNotifications(): Observable<NotificationFeedItem[]> {
+    return this.http.get<NotificationFeedItem[]>(`${this.apiUrl}/teacher-dashboard/recent-notifications`);
   }
 }
