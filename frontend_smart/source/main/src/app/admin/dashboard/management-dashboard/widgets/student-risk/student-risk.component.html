@@ -1,0 +1,47 @@
+<style>
+.custom-scrollbar::-webkit-scrollbar { width: 5px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: #f8f9fa; border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+</style>
+<div class="card bg-white border-0 shadow-sm h-100" style="border-radius: 16px;">
+  <div class="card-header bg-transparent border-0 p-4 pb-0 d-flex justify-content-between align-items-center">
+    <div class="d-flex align-items-center">
+      <div class="rounded-circle d-flex align-items-center justify-content-center me-3 flex-shrink-0" style="width: 40px; height: 40px; background-color: #fef3c7; color: #f59e0b;">
+        <i class="fas fa-shield-alt font-16"></i>
+      </div>
+      <div>
+        <h6 class="font-weight-bold mb-0 text-dark font-16">Student Risk Radar</h6>
+        <span class="font-12 text-muted fw-bold">Top 5 At-Risk Students</span>
+      </div>
+    </div>
+    <a *ngIf="false" href="javascript:void(0)" class="text-primary font-13 fw-bold text-decoration-none">View All</a>
+  </div>
+
+  <div class="card-body p-4 pt-4 d-flex flex-column">
+    <app-dashboard-widget-wrapper 
+      [state]="widgetState" 
+      skeletonType="list" 
+      emptyMessage="No at-risk students found" 
+      (retry)="loadData()"
+      class="flex-grow-1 d-flex flex-column">
+
+      <div class="d-flex flex-column flex-grow-1 gap-3 custom-scrollbar" style="max-height: 280px; overflow-y: auto; padding-right: 8px;">
+        <div class="d-flex align-items-center justify-content-between mb-2" *ngFor="let s of students | slice:0:5">
+          <div class="d-flex align-items-center overflow-hidden">
+            <div class="rounded-circle bg-light text-muted d-flex align-items-center justify-content-center me-3 flex-shrink-0 fw-bold font-12" style="width: 36px; height: 36px;">
+              {{ s.student_name.charAt(0) }}
+            </div>
+            <div class="lh-sm text-truncate">
+              <h6 class="font-weight-bold mb-0 text-dark font-14 text-truncate" [title]="s.student_name">{{ s.student_name }}</h6>
+            </div>
+          </div>
+          <div class="text-end flex-shrink-0 ms-3">
+            <span class="fw-bold text-danger font-14">{{ s.average_score }}% Avg</span>
+          </div>
+        </div>
+      </div>
+      
+    </app-dashboard-widget-wrapper>
+  </div>
+</div>

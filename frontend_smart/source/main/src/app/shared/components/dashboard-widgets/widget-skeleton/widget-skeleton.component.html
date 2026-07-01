@@ -1,0 +1,22 @@
+<div class="skeleton-wrapper">
+  <!-- KPI Skeleton -->
+  <div *ngIf="type === 'kpi'" class="skeleton-kpi">
+    <div class="skeleton-text skeleton-title"></div>
+    <div class="skeleton-text skeleton-value"></div>
+  </div>
+
+  <!-- Chart Skeleton -->
+  <div *ngIf="type === 'chart'" class="skeleton-chart">
+    <div class="skeleton-text skeleton-title"></div>
+    <div class="skeleton-rect skeleton-chart-area"></div>
+  </div>
+
+  <!-- List Skeleton -->
+  <div *ngIf="type === 'list'" class="skeleton-list">
+    <div class="skeleton-text skeleton-title"></div>
+    <div class="skeleton-item" *ngFor="let item of [1, 2, 3, 4, 5]">
+      <div class="skeleton-circle"></div>
+      <div class="skeleton-text skeleton-line"></div>
+    </div>
+  </div>
+</div>

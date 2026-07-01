@@ -1,0 +1,16 @@
+.academic-year-container {
+  display: inline-block;
+  min-width: 150px;
+}
+.academic-year-field {
+  width: 100%;
+}
+/* Reduce padding for header usage */
+::ng-deep .academic-year-field .mat-mdc-form-field-subscript-wrapper {
+  display: none;
+}
+::ng-deep .academic-year-field .mat-mdc-form-field-flex {
+  padding: 0 12px;
+  height: 40px;
+  align-items: center;
+}

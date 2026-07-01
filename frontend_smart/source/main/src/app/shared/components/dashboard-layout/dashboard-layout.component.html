@@ -1,0 +1,27 @@
+<section class="content">
+  <div class="content-block">
+    <div class="block-header">
+      <div class="row align-items-center">
+        <div class="col-xs-12 col-sm-12 col-md-8 col-lg-8">
+          <ul class="breadcrumb breadcrumb-style">
+            <li class="breadcrumb-item">
+              <h4 class="page-title">{{ title }}</h4>
+            </li>
+          </ul>
+        </div>
+        <div class="col-xs-12 col-sm-12 col-md-4 col-lg-4 text-end">
+          <app-academic-year-selector 
+            [academicYears]="academicYears"
+            [selectedAcademicYearId]="selectedAcademicYearId"
+            (yearSelected)="onYearSelected($event)">
+          </app-academic-year-selector>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Dashboard Widget Content Area -->
+    <div class="dashboard-grid">
+      <ng-content></ng-content>
+    </div>
+  </div>
+</section>
