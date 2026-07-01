@@ -188,8 +188,8 @@ export class AuthService {
 
   getDefaultRoute(): string {
     if (this.hasPermission('IDENTITY', 'IS_SYSTEM_ADMIN')) return '/organization/list';
-    if (this.hasPermission('IDENTITY', 'IS_SUPER_ADMIN')) return '/admin/dashboard/main';
-    if (this.hasPermission('IDENTITY', 'IS_MANAGEMENT')) return '/admin/dashboard/main';
+    if (this.hasPermission('IDENTITY', 'IS_SUPER_ADMIN')) return '/admin/dashboard/management-dashboard';
+    if (this.hasPermission('IDENTITY', 'IS_MANAGEMENT')) return '/admin/dashboard/management-dashboard';
     if (this.hasPermission('IDENTITY', 'IS_TEACHER')) return '/teacher/dashboard';
     if (this.hasPermission('IDENTITY', 'IS_SKILL_VERIFIER')) return '/admin/administration/skills-verify';
     if (this.hasPermission('IDENTITY', 'IS_PARENT')) return '/parent/dashboard';

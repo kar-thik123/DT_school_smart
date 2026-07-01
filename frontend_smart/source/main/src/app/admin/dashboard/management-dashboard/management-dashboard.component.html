@@ -1,0 +1,44 @@
+<app-dashboard-layout 
+  title="Management Dashboard" 
+  [academicYears]="academicYears"
+  [selectedAcademicYearId]="selectedYearId"
+  (yearSelected)="onYearSelected($event)">
+  
+  <!-- ROW 1: KPIs -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <app-management-overview-kpis></app-management-overview-kpis>
+    </div>
+  </div>
+
+  <!-- ROW 2: Curriculum & Examination -->
+  <div class="row mb-4">
+    <div class="col-xl-7 col-lg-7 col-md-12 mb-4 mb-lg-0">
+      <app-management-curriculum-coverage></app-management-curriculum-coverage>
+    </div>
+    <div class="col-xl-5 col-lg-5 col-md-12">
+      <app-management-examination-summary></app-management-examination-summary>
+    </div>
+  </div>
+
+  <!-- ROW 3: Teacher Performance & Weak Subjects -->
+  <div class="row mb-4">
+    <div class="col-lg-6 col-md-12 mb-4 mb-lg-0">
+      <app-management-teacher-leaderboard></app-management-teacher-leaderboard>
+    </div>
+    <div class="col-lg-6 col-md-12">
+      <app-management-weak-subjects></app-management-weak-subjects>
+    </div>
+  </div>
+  
+  <!-- ROW 4: Student Risk & Recent Activity -->
+  <div class="row mb-4">
+    <div class="col-lg-6 col-md-12 mb-4 mb-lg-0">
+      <app-management-student-risk></app-management-student-risk>
+    </div>
+    <div class="col-lg-6 col-md-12">
+      <app-management-recent-activity></app-management-recent-activity>
+    </div>
+  </div>
+
+</app-dashboard-layout>

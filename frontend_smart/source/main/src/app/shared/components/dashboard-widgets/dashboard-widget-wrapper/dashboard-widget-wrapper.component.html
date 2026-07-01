@@ -1,0 +1,33 @@
+<ng-container [ngSwitch]="state">
+  
+  <!-- Loading State -->
+  <ng-container *ngSwitchCase="'loading'">
+    <app-widget-skeleton [type]="skeletonType"></app-widget-skeleton>
+  </ng-container>
+
+  <!-- Empty State -->
+  <ng-container *ngSwitchCase="'empty'">
+    <div class="wrapper-card">
+      <app-widget-empty-state 
+        [message]="emptyMessage" 
+        [icon]="emptyIcon">
+      </app-widget-empty-state>
+    </div>
+  </ng-container>
+
+  <!-- Error State -->
+  <ng-container *ngSwitchCase="'error'">
+    <div class="wrapper-card">
+      <app-widget-error-state 
+        [message]="errorMessage" 
+        (retry)="onRetry()">
+      </app-widget-error-state>
+    </div>
+  </ng-container>
+
+  <!-- Success State -->
+  <ng-container *ngSwitchCase="'success'">
+    <ng-content></ng-content>
+  </ng-container>
+
+</ng-container>

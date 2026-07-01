@@ -1,15 +1,17 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, Injector } from '@angular/core';
 import { HttpRequest, HttpHandler, HttpEvent, HttpInterceptor } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { AcademicContextService } from '../service/academic-context.service';
 
 @Injectable()
 export class AcademicContextInterceptor implements HttpInterceptor {
-  private academicContextService = inject(AcademicContextService);
+  constructor(private injector: Injector) {}
 
   intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    const activeYear = this.academicContextService.currentActiveYear;
-    const isHistoricalRoute = request.url.includes('/analytics') || request.url.includes('/reports');
+    // Lazily resolve service to break circular injection dependency with HttpClient
+    const academicContextService = this.injector.get(AcademicContextService);
+    const activeYear = academicContextService.currentHistoricalYear || academicContextService.currentActiveYear;
+    const isHistoricalRoute = request.url.includes('/analytics') || request.url.includes('/reports') || request.url.includes('/academic/grades');
     
     if (isHistoricalRoute && activeYear && activeYear.id) {
       request = request.clone({

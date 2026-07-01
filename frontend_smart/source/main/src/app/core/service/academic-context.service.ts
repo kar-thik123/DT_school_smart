@@ -63,4 +63,19 @@ export class AcademicContextService {
   get currentActiveYear(): any {
     return this.activeYearSubject.value;
   }
+
+  // --- Historical Dashboard Context ---
+  private historicalYearSubject = new BehaviorSubject<any>(null);
+
+  historicalYear$ = this.historicalYearSubject.asObservable().pipe(
+    filter(y => y !== null)
+  );
+
+  setHistoricalYear(year: any): void {
+    this.historicalYearSubject.next(year);
+  }
+
+  get currentHistoricalYear(): any {
+    return this.historicalYearSubject.value;
+  }
 }
