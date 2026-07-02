@@ -78,6 +78,13 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   }
 
   handleRefresh() {
+    if (this.filter && this.filter.nativeElement) {
+      this.filter.nativeElement.value = '';
+    }
+    this.dataSource.filter = '';
+    if (this.dataSource.paginator) {
+      this.dataSource.paginator.firstPage();
+    }
     this.loadData();
   }
 

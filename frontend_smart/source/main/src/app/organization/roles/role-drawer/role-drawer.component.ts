@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, inject, OnChanges } from '@angular/core';
+import { Component, Input, Output, EventEmitter, inject, OnChanges, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatIconModule } from '@angular/material/icon';
@@ -33,6 +33,8 @@ export class RoleDrawerComponent implements OnChanges {
   @Output() onSave = new EventEmitter<void>();
   @Output() onClose = new EventEmitter<void>();
 
+  @ViewChild(PermissionMatrixComponent) permissionMatrix!: PermissionMatrixComponent;
+
   private fb = inject(FormBuilder);
   private roleService = inject(RoleService);
   private snackBar = inject(MatSnackBar);
@@ -60,9 +62,17 @@ export class RoleDrawerComponent implements OnChanges {
       // Logic for updating metadata
       this.onSave.emit();
     } else {
-      this.roleService.createRole(this.roleForm.value).subscribe(() => {
-        this.snackBar.open('Role created successfully', 'Close', { duration: 3000 });
-        this.onSave.emit();
+      this.roleService.createRole(this.roleForm.value).subscribe((newRole) => {
+        const permissionIds = Array.from(this.permissionMatrix.activePermissionIds);
+        if (permissionIds.length > 0 && newRole.id) {
+          this.roleService.syncPermissions(newRole.id, permissionIds).subscribe(() => {
+            this.snackBar.open('Role created successfully with capabilities', 'Close', { duration: 3000 });
+            this.onSave.emit();
+          });
+        } else {
+          this.snackBar.open('Role created successfully', 'Close', { duration: 3000 });
+          this.onSave.emit();
+        }
       });
     }
   }

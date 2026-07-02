@@ -68,11 +68,21 @@ export class RolePermissionService {
 
   private handleError(error: HttpErrorResponse) {
     let errorMessage = 'Something went wrong; please try again later.';
+    
     if (error.error instanceof ErrorEvent) {
+      // Client-side error
       errorMessage = error.error.message;
-    } else if (error.error?.message) {
-      errorMessage = error.error.message;
+    } else {
+      // Server-side error
+      if (error.status === 400 || error.status === 409) {
+        errorMessage = error.error?.message || 'Duplicate entry or invalid data provided.';
+      } else if (error.status >= 500) {
+        errorMessage = 'Sorry for the issue, server encountered an error. Please try again.';
+      } else if (error.error?.message) {
+        errorMessage = error.error.message;
+      }
     }
+    
     console.error('An error occurred:', errorMessage);
     return throwError(() => new Error(errorMessage));
   }

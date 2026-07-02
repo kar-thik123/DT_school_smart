@@ -66,11 +66,13 @@ export class PermissionMatrixComponent implements OnInit, OnChanges {
     const p = this.findPermission(module, action);
     if (!p) return;
 
-    if (this.activePermissionIds.has(p.id)) {
-      this.activePermissionIds.delete(p.id);
+    const newSet = new Set(this.activePermissionIds);
+    if (newSet.has(p.id)) {
+      newSet.delete(p.id);
     } else {
-      this.activePermissionIds.add(p.id);
+      newSet.add(p.id);
     }
+    this.activePermissionIds = newSet;
   }
 
   private findPermission(module: string, action: string) {
