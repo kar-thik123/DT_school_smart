@@ -241,7 +241,14 @@ gradeRouter.get('/', requirePermission('ACADEMIC_STRUCTURE', 'READ'), async (req
   try {
     const isGlobalAdmin = req.user.permissions?.includes('ACADEMIC_STRUCTURE:READ') || req.user.permissions?.includes('ACADEMIC_STRUCTURE:VIEW');
     
-    let filter: any = { organization_id: req.user.organization_id };
+    const headerYearId = req.headers['x-academic-year-id'] as string;
+    const queryYearId = req.query.academic_year_id as string;
+    let yearId = headerYearId || queryYearId;
+    if (!yearId || yearId === 'null' || yearId === 'undefined') {
+      yearId = await getActiveAcademicYearId(req.user.organization_id);
+    }
+
+    let filter: any = { organization_id: req.user.organization_id, academic_year_id: yearId };
     if (!isGlobalAdmin) {
       const visibilityFilter = await AssignmentVisibilityResolver.buildTeacherGradeWhereClause(req);
       if (visibilityFilter.id) filter.id = visibilityFilter.id;

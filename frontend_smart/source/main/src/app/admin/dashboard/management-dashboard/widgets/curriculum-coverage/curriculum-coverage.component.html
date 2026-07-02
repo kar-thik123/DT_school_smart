@@ -1,0 +1,123 @@
+<style>
+.custom-scrollbar::-webkit-scrollbar { width: 5px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: #f8f9fa; border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+.grade-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233b82f6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1.2em;
+  padding: 0.5rem 2.5rem 0.5rem 1rem;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background-color: #fff;
+  color: #1e293b;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+}
+.grade-select:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+}
+.grade-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+.progress-animated .progress-bar {
+  transition: width 1s ease-in-out;
+}
+</style>
+<div class="card bg-white border-0 shadow-sm h-100" style="border-radius: 16px;">
+  <div class="card-header bg-transparent border-0 p-4 pb-0 d-flex justify-content-between align-items-center">
+    <div class="d-flex align-items-center">
+      <div class="rounded-circle d-flex align-items-center justify-content-center me-3 flex-shrink-0" style="width: 40px; height: 40px; background-color: #eff6ff; color: #3b82f6;">
+        <i class="fas fa-book font-16"></i>
+      </div>
+      <div>
+        <h6 class="font-weight-bold mb-0 text-dark font-16">Curriculum Progress</h6>
+        <span class="font-12 text-muted fw-bold">Grade-wise Unit Completion</span>
+      </div>
+    </div>
+    <div class="d-flex align-items-center">
+      <select class="grade-select" 
+              [(ngModel)]="selectedGradeId" 
+              (change)="onGradeChange()"
+              [disabled]="grades.length === 0">
+        <option *ngFor="let g of grades" [value]="g.id">{{ g.name }}</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="card-body p-4 pt-4 d-flex flex-column">
+    <app-dashboard-widget-wrapper 
+      [state]="widgetState" 
+      skeletonType="chart" 
+      emptyMessage="No curriculum data found for this year" 
+      (retry)="loadData()"
+      class="flex-grow-1 d-flex flex-column">
+      
+      <div class="d-flex flex-column flex-grow-1" *ngIf="coverage">
+        <!-- Overall Progress (Top) -->
+        <div class="mb-4 pb-4 border-bottom">
+          <span class="font-11 fw-bold text-muted text-uppercase tracking-wide d-block mb-2">Overall Completion</span>
+          <h2 class="mb-2 text-primary fw-bolder" style="font-size: 3rem; letter-spacing: -1px; line-height: 1;">{{ coverage.overall_progress }}%</h2>
+          <span class="font-13 fw-bold text-muted d-block mb-3">Completed Units: {{ totalCompleted }} / {{ totalPlanned }}</span>
+          
+          <div class="progress progress-animated" style="height: 8px; border-radius: 4px; background-color: #f1f5f9;">
+            <div class="progress-bar bg-primary" 
+                 role="progressbar" 
+                 [style.width.%]="coverage.overall_progress" 
+                 [attr.aria-valuenow]="coverage.overall_progress" 
+                 aria-valuemin="0" 
+                 aria-valuemax="100"></div>
+          </div>
+        </div>
+        
+        <!-- Subject Breakdown (Below) -->
+        <div class="d-flex flex-column flex-grow-1">
+          <div class="d-flex flex-column custom-scrollbar" style="max-height: 250px; overflow-y: auto; padding-right: 8px;">
+            <div class="w-100 mb-3" *ngFor="let sub of coverage.subject_breakdown">
+              <div class="d-flex align-items-center">
+                <div class="d-flex align-items-center" style="width: 140px;">
+                  <div class="rounded-circle d-flex align-items-center justify-content-center me-3 flex-shrink-0" style="width: 32px; height: 32px; background-color: #eff6ff; color: #3b82f6;">
+                    <i class="fas fa-book-open font-12"></i>
+                  </div>
+                  <span class="fw-bold text-dark font-13 text-truncate" [title]="sub.subject">{{ sub.subject }}</span>
+                </div>
+                
+                <div class="flex-grow-1 mx-3">
+                  <div class="progress progress-animated" style="height: 6px; border-radius: 3px; background-color: #f1f5f9;">
+                    <div class="progress-bar bg-primary" 
+                         role="progressbar" 
+                         [style.width.%]="sub.progress" 
+                         [attr.aria-valuenow]="sub.progress" 
+                         aria-valuemin="0" 
+                         aria-valuemax="100"></div>
+                  </div>
+                </div>
+                
+                <div class="d-flex align-items-center text-end" style="width: 90px; justify-content: flex-end;">
+                  <span class="font-12 fw-bold text-muted me-3">{{ sub.completed_topics }} / {{ sub.planned_topics }}</span>
+                  <span class="fw-bolder text-dark font-13" style="width: 35px; text-align: right;">{{ sub.progress }}%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-4 pt-2 text-start">
+            <a href="javascript:void(0)" (click)="navigateToCurriculum($event)" class="text-primary font-13 fw-bold text-decoration-none d-inline-flex align-items-center transition-all hover-translate-x">
+              View Detailed Curriculum <i class="fas fa-arrow-right ms-2 font-10"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+      
+    </app-dashboard-widget-wrapper>
+  </div>
+</div>

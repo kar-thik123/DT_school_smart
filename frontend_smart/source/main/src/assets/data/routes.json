@@ -70,7 +70,7 @@
       ],
       "submenu": [
         {
-          "path": "/admin/dashboard/main",
+          "path": "/admin/dashboard/management-dashboard",
           "title": "MENUITEMS.DASHBOARD.LIST.DASHBOARD1",
           "iconType": "",
           "icon": "",

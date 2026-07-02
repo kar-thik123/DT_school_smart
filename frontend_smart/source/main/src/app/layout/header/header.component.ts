@@ -83,13 +83,13 @@ export class HeaderComponent
     this.docElement = document.documentElement;
 
     if (this.authService.hasPermission('IDENTITY', 'IS_SUPER_ADMIN') || this.authService.hasPermission('IDENTITY', 'IS_MANAGEMENT') || this.authService.hasPermission('IDENTITY', 'IS_SYSTEM_ADMIN')) {
-      this.homePage = 'admin/dashboard/main';
+      this.homePage = 'admin/dashboard/management-dashboard';
     } else if (this.authService.hasPermission('IDENTITY', 'IS_TEACHER')) {
       this.homePage = 'teacher/dashboard';
     } else if (this.authService.hasPermission('IDENTITY', 'IS_STUDENT')) {
       this.homePage = 'student/dashboard';
     } else {
-      this.homePage = 'admin/dashboard/main';
+      this.homePage = 'admin/dashboard/management-dashboard';
     }
 
     this.langStoreValue = this.localStorageService.get('lang') as string;

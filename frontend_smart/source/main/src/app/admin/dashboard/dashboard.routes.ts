@@ -9,12 +9,17 @@ import { TransportDashboardComponent } from './transport-dashboard/transport-das
 export const DASHBOARD_ROUTE: Route[] = [
   {
     path: '',
-    redirectTo: 'main',
+    redirectTo: 'management-dashboard',
     pathMatch: 'full',
   },
   {
+    path: 'management-dashboard',
+    loadComponent: () => import('./management-dashboard/management-dashboard.component').then(m => m.ManagementDashboardComponent)
+  },
+  {
     path: 'main',
-    component: MainComponent,
+    redirectTo: 'management-dashboard',
+    pathMatch: 'full'
   },
   {
     path: 'dashboard2',
