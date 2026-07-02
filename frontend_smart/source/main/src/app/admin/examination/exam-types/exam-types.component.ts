@@ -19,6 +19,7 @@ import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.co
 import { MatDialog } from '@angular/material/dialog';
 import { DeleteComponent } from './dialogs/delete/delete.component';
 import { AuthService } from '@core';
+import { AcademicContextService } from '@core/service/academic-context.service';
 
 import { MatMenuModule } from '@angular/material/menu';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
@@ -52,6 +53,7 @@ export class ExamTypesComponent implements OnInit, OnDestroy {
   private snackBar = inject(MatSnackBar);
   private dialog = inject(MatDialog);
   private authService = inject(AuthService);
+  private academicContextService = inject(AcademicContextService);
 
   private destroy$ = new Subject<void>();
   examinations: Examination[] = [];
@@ -74,7 +76,12 @@ export class ExamTypesComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.canManage = this.authService.hasPermission('EXAMINATION', 'MANAGE') || 
                      this.authService.hasPermission('EXAMINATION_MANAGE');
-    this.loadExaminations();
+                     
+    this.academicContextService.historicalYear$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.loadExaminations();
+      });
   }
 
   ngOnDestroy(): void {

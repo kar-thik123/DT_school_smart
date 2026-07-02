@@ -129,7 +129,7 @@ router.get('/', async (req: any, res: Response) => {
     const isRestrictedToSelf = userPermissions.includes('IDENTITY:IS_STUDENT') && 
                                !AuthorizationService.hasPermission(userPermissions, 'STUDENT_EXAM_RESULT', 'MANAGE');
 
-    const academic_year_id = await AcademicContextResolver.resolveAcademicYearId(req);
+    const academic_year_id = await AcademicContextResolver.resolveHistoricalAcademicYearId(req);
     const { examination_id, grade_id, section_id } = req.query;
 
     const filter: any = {

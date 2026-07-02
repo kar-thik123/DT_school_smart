@@ -213,24 +213,41 @@ router.get('/management/overview', requirePermission('IDENTITY', 'IS_MANAGEMENT'
     const org_id = req.user.organization_id;
     const yearId = await AcademicContextResolver.resolveHistoricalAcademicYearId(req);
 
-    // Total Students from StudentEnrollment
-    const totalStudents = await prisma.studentEnrollment.count({
+    // Total Students based on Identity (Organization-wide)
+    const totalStudents = await prisma.user.count({
       where: {
         organization_id: org_id,
-        academic_year_id: yearId,
-        status: 'ACTIVE'
+        is_active: true,
+        role: {
+          permissions: {
+            some: {
+              permission: {
+                module: 'IDENTITY',
+                action: 'IS_STUDENT'
+              }
+            }
+          }
+        }
       }
     });
 
-    // Total Teachers from TeacherAssignment
-    const teacherAssignments = await prisma.teacherAssignment.groupBy({
-      by: ['teacher_id'],
+    // Total Teachers based on Identity (Organization-wide)
+    const totalTeachers = await prisma.user.count({
       where: {
         organization_id: org_id,
-        academic_year_id: yearId
+        is_active: true,
+        role: {
+          permissions: {
+            some: {
+              permission: {
+                module: 'IDENTITY',
+                action: 'IS_TEACHER'
+              }
+            }
+          }
+        }
       }
     });
-    const totalTeachers = teacherAssignments.length;
 
     // Active Classes (Count of active Sections belonging to Grade hierarchy for this year)
     const activeClasses = await prisma.section.count({
@@ -612,6 +629,7 @@ router.get('/management/weak-subjects', requirePermission('IDENTITY', 'IS_MANAGE
   try {
     const org_id = req.user.organization_id;
     const yearId = await AcademicContextResolver.resolveHistoricalAcademicYearId(req);
+    const limit = req.query.limit;
 
     const subjectStats = await prisma.studentExamSubjectResult.groupBy({
       by: ['subject_id'],
@@ -648,7 +666,12 @@ router.get('/management/weak-subjects', requirePermission('IDENTITY', 'IS_MANAGE
     }
 
     weakSubjects.sort((a, b) => a.average_score - b.average_score);
-    res.json(weakSubjects.slice(0, 5));
+    
+    if (limit === 'all') {
+      res.json(weakSubjects);
+    } else {
+      res.json(weakSubjects.slice(0, 5));
+    }
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Error fetching weak subjects' });
@@ -737,9 +760,45 @@ router.get('/management/recent-activity', requirePermission('IDENTITY', 'IS_MANA
          continue; // skip noisy logs
       }
 
-      const actionWord = l.action_type.charAt(0) + l.action_type.slice(1).toLowerCase();
-      const entityWord = l.entity_type.toLowerCase().replace(/_/g, ' ');
-      const title = `${actionWord} ${entityWord}`;
+      const BUSINESS_TITLES: Record<string, string> = {
+        'CREATE_EXAMINATION': 'Created Examination',
+        'UPDATE_SYLLABUS': 'Updated Syllabus',
+        'IMPORT_STUDENT_ENROLLMENT': 'Imported Student Enrollments',
+        'IMPORT_QUESTION_BANK': 'Imported Question Bank',
+        'ASSIGN_TEACHER_ASSIGNMENT': 'Assigned Teacher to Class',
+        'CREATE_GRADE': 'Created Grade',
+        'CREATE_SECTION': 'Created Section',
+        'CREATE_SUBJECT': 'Created Subject',
+        'CREATE_UNIT': 'Created Unit',
+        'COMPLETE_UNIT': 'Completed Unit',
+        'CREATE_USER': 'Added New User',
+        'CREATE_STUDENT': 'Added New Student',
+        'CREATE_TEACHER': 'Added New Teacher',
+        'IMPORT_ACADEMIC_STRUCTURE': 'Imported Academic Structure',
+        'TOGGLE_COMPLETION': 'Updated Topic Completion',
+        'PERMISSION_SYNC_ROLE_PERMISSION': 'Updated Role Permissions'
+      };
+
+      let title = '';
+      const meta = l.metadata as any;
+      
+      // 1. Check for explicit description in metadata
+      if (meta && meta.description && typeof meta.description === 'string') {
+        title = meta.description;
+      } else if (meta && meta.message && typeof meta.message === 'string') {
+        title = meta.message;
+      } else {
+        // 2. Map to business friendly title
+        const mapKey = `${l.action_type}_${l.entity_type}`;
+        if (BUSINESS_TITLES[mapKey]) {
+          title = BUSINESS_TITLES[mapKey];
+        } else {
+          // 3. Fallback logic
+          const actionWord = l.action_type.charAt(0) + l.action_type.slice(1).toLowerCase();
+          const entityWord = l.entity_type.toLowerCase().replace(/_/g, ' ');
+          title = `${actionWord} ${entityWord}`;
+        }
+      }
 
       activities.push({
         id: l.id,

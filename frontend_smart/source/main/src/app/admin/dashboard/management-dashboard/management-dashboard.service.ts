@@ -122,8 +122,13 @@ export class ManagementDashboardService {
     );
   }
 
-  getWeakSubjects(): Observable<WeakSubject[]> {
-    return this.fetchWithCache<WeakSubject[]>('weak-subjects', `${environment.apiUrl}/analytics/management/weak-subjects`);
+  getWeakSubjects(limit?: number | 'all'): Observable<WeakSubject[]> {
+    const url = limit === 'all' 
+      ? `${environment.apiUrl}/analytics/management/weak-subjects?limit=all`
+      : `${environment.apiUrl}/analytics/management/weak-subjects`;
+    
+    const cacheKey = limit === 'all' ? 'weak-subjects-all' : 'weak-subjects';
+    return this.fetchWithCache<WeakSubject[]>(cacheKey, url);
   }
 
   getExaminationSummary(): Observable<any> {

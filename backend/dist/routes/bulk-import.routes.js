@@ -229,8 +229,7 @@ router.post('/:entityType/commit', async (req, res) => {
             user_id: userId,
             user_name: req.user.name,
             action_type: 'IMPORT',
-            entity_type: entityType.toUpperCase() === 'QUESTION_BANK' ? 'QUESTION' :
-                entityType.toUpperCase() === 'TEACHER_ASSIGNMENT' ? 'TEACHER_ASSIGNMENT' : 'SYLLABUS',
+            entity_type: entityType.toUpperCase(),
             entity_id: 'BULK_IMPORT',
             metadata: { entity_type: entityType, success_count: result.success_count, failure_count: result.failure_count }
         });

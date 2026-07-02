@@ -194,130 +194,95 @@ router.get('/teacher', (0, auth_middleware_1.requirePermission)('IDENTITY', 'IS_
     }
 });
 // --- MANAGEMENT CONSOLIDATED OVERVIEW ---
-// Used for the management dashboard to see teachers, risk students, and general health
-// OPTIMIZED: Bulk-loads all attempts once, computes teacher + student analytics in memory
+// Used for the management dashboard to see general health
 router.get('/management/overview', (0, auth_middleware_1.requirePermission)('IDENTITY', 'IS_MANAGEMENT'), async (req, res) => {
     try {
         const org_id = req.user.organization_id;
         const yearId = await academic_context_resolver_1.AcademicContextResolver.resolveHistoricalAcademicYearId(req);
-        // 1. Overview Stats (Permission-based RBAC)
-        const studentRoles = await prisma_1.default.role.findMany({
-            where: {
-                organization_id: org_id,
-                permissions: {
-                    some: {
-                        permission: { module: 'IDENTITY', action: 'IS_STUDENT' }
-                    }
-                }
-            },
-            select: { id: true }
-        });
-        const studentRoleIds = studentRoles.map((r) => r.id);
-        const teacherRoles = await prisma_1.default.role.findMany({
-            where: {
-                organization_id: org_id,
-                permissions: {
-                    some: {
-                        permission: { module: 'IDENTITY', action: 'IS_TEACHER' }
-                    }
-                }
-            },
-            select: { id: true }
-        });
-        const teacherRoleIds = teacherRoles.map((r) => r.id);
-        if (studentRoleIds.length === 0 || teacherRoleIds.length === 0) {
-            return res.json({
-                avg_preparedness: 0,
-                total_students: 0,
-                active_modules: 0,
-                critical_alerts: 0,
-                teacher_performance: [],
-                risk_students: []
-            });
-        }
-        // BULK LOAD: All practice attempts for this org in one query
-        const allAttempts = await prisma_1.default.practiceAttempt.findMany({
-            where: { organization_id: org_id, academic_year_id: yearId }
-        });
-        // Overall preparedness
-        let totalPoints = 0;
-        allAttempts.forEach((a) => totalPoints += (a.correct_answers / Math.max(a.total_questions, 1)) * 100);
-        const avgPreparedness = allAttempts.length > 0 ? Math.round(totalPoints / allAttempts.length) : 0;
+        // Total Students based on Identity (Organization-wide)
         const totalStudents = await prisma_1.default.user.count({
-            where: { organization_id: org_id, role_id: { in: studentRoleIds }, is_active: true }
-        });
-        // Pre-index attempts by subject_id and student_id for O(1) lookups
-        const attemptsBySubject = new Map();
-        const attemptsByStudent = new Map();
-        for (const attempt of allAttempts) {
-            // By subject
-            if (!attemptsBySubject.has(attempt.subject_id))
-                attemptsBySubject.set(attempt.subject_id, []);
-            attemptsBySubject.get(attempt.subject_id).push(attempt);
-            // By student
-            if (!attemptsByStudent.has(attempt.student_id))
-                attemptsByStudent.set(attempt.student_id, []);
-            attemptsByStudent.get(attempt.student_id).push(attempt);
-        }
-        // 2. Teacher Performance (no more per-teacher DB queries)
-        const teachers = await prisma_1.default.user.findMany({
-            where: { organization_id: org_id, role_id: { in: teacherRoleIds }, is_active: true },
-            include: {
-                teacher_assignments: {
-                    include: {
-                        subject: { select: { name: true } }
+            where: {
+                organization_id: org_id,
+                is_active: true,
+                role: {
+                    permissions: {
+                        some: {
+                            permission: {
+                                module: 'IDENTITY',
+                                action: 'IS_STUDENT'
+                            }
+                        }
                     }
                 }
             }
         });
-        const teacherPerformance = [];
-        for (const t of teachers) {
-            const subjectIds = (t.teacher_assignments || []).map((a) => a.subject_id).filter(Boolean);
-            // Gather attempts from pre-indexed map instead of querying DB
-            const tAttempts = [];
-            for (const sid of subjectIds) {
-                const subAttempts = attemptsBySubject.get(sid);
-                if (subAttempts)
-                    tAttempts.push(...subAttempts);
+        // Total Teachers based on Identity (Organization-wide)
+        const totalTeachers = await prisma_1.default.user.count({
+            where: {
+                organization_id: org_id,
+                is_active: true,
+                role: {
+                    permissions: {
+                        some: {
+                            permission: {
+                                module: 'IDENTITY',
+                                action: 'IS_TEACHER'
+                            }
+                        }
+                    }
+                }
             }
-            let tPct = 0;
-            tAttempts.forEach((a) => tPct += (a.correct_answers / Math.max(a.total_questions, 1)) * 100);
-            const tAvg = tAttempts.length > 0 ? Math.round(tPct / tAttempts.length) : 0;
-            teacherPerformance.push({
-                name: t.name,
-                subject: (t.teacher_assignments && t.teacher_assignments[0]?.subject?.name) || 'Multi-Subject',
-                performance: tAvg,
-                status: tAvg >= 70 ? 'GOOD' : (tAvg >= 40 ? 'AVERAGE' : 'POOR')
-            });
-        }
-        // 3. High Risk Students (no more per-student DB queries)
-        const allStudents = await prisma_1.default.user.findMany({
-            where: { organization_id: org_id, role_id: { in: studentRoleIds }, is_active: true },
-            include: { section: { select: { name: true } } }
         });
-        const riskStudents = [];
-        for (const s of allStudents) {
-            const sAttempts = attemptsByStudent.get(s.id) || [];
-            if (sAttempts.length === 0)
-                continue;
-            let sPct = 0;
-            sAttempts.forEach((a) => sPct += (a.correct_answers / Math.max(a.total_questions, 1)) * 100);
-            const sAvg = Math.round(sPct / sAttempts.length);
-            if (sAvg < 40) {
-                riskStudents.push({
-                    name: s.name,
-                    section: s.section?.name || 'N/A',
-                    score: sAvg
-                });
+        // Active Classes (Count of active Sections belonging to Grade hierarchy for this year)
+        const activeClasses = await prisma_1.default.section.count({
+            where: {
+                organization_id: org_id,
+                is_active: true,
+                grade: { academic_year_id: yearId }
+            }
+        });
+        // Overall Attendance
+        const attendanceStats = await prisma_1.default.studentAttendance.groupBy({
+            by: ['status'],
+            where: {
+                organization_id: org_id,
+                academic_year_id: yearId,
+                status: { not: 'EXCUSED' }
+            },
+            _count: { status: true }
+        });
+        let totalAttendance = 0;
+        let presentAttendance = 0;
+        for (const stat of attendanceStats) {
+            totalAttendance += stat._count.status;
+            if (stat.status === 'PRESENT' || stat.status === 'LATE') {
+                presentAttendance += stat._count.status;
             }
         }
+        const overallAttendancePercent = totalAttendance > 0 ? Math.round((presentAttendance / totalAttendance) * 100) : 0;
+        // Overall Pass Rate
+        const examResults = await prisma_1.default.studentExamResult.groupBy({
+            by: ['result_status'],
+            where: { organization_id: org_id, academic_year_id: yearId },
+            _count: { id: true }
+        });
+        let totalAppeared = 0;
+        let passCount = 0;
+        for (const r of examResults) {
+            totalAppeared += r._count.id;
+            if (r.result_status === 'PASS') {
+                passCount += r._count.id;
+            }
+        }
+        const overallPassRate = totalAppeared > 0 ? Math.round((passCount / totalAppeared) * 100) : 0;
         res.json({
-            avg_preparedness: avgPreparedness,
+            overall_pass_rate: overallPassRate,
             total_students: totalStudents,
-            active_modules: allAttempts.length,
-            critical_alerts: 0,
-            teacher_performance: teacherPerformance.sort((a, b) => b.performance - a.performance),
-            risk_students: riskStudents.sort((a, b) => a.score - b.score).slice(0, 10)
+            total_teachers: totalTeachers,
+            active_classes: activeClasses,
+            overall_attendance_percent: overallAttendancePercent,
+            active_modules: await prisma_1.default.practiceAttempt.count({ where: { organization_id: org_id, academic_year_id: yearId } }),
+            critical_alerts: 0
         });
     }
     catch (error) {
@@ -403,6 +368,377 @@ router.get('/student', (0, auth_middleware_1.requirePermission)('IDENTITY', 'IS_
     }
     catch (error) {
         res.status(500).json({ message: 'Error fetching student analytics' });
+    }
+});
+// --- CURRICULUM COVERAGE (SPRINT 2) ---
+router.get('/management/curriculum-coverage', (0, auth_middleware_1.requirePermission)('IDENTITY', 'IS_MANAGEMENT'), async (req, res) => {
+    try {
+        const org_id = req.user.organization_id;
+        const yearId = await academic_context_resolver_1.AcademicContextResolver.resolveHistoricalAcademicYearId(req);
+        const grade_id = req.query.grade_id;
+        const subjectWhere = {
+            organization_id: org_id,
+            grade: { academic_year_id: yearId }
+        };
+        if (grade_id) {
+            subjectWhere.grade_id = grade_id;
+        }
+        // 1. Fetch all subjects and their planned units in the academic year
+        const subjects = await prisma_1.default.subject.findMany({
+            where: subjectWhere,
+            include: {
+                units: {
+                    select: { id: true }
+                }
+            }
+        });
+        // 2. Fetch completed units from tracking
+        const trackingWhere = {
+            organization_id: org_id,
+            academic_year_id: yearId,
+            completion_level: 'UNIT',
+            is_completed: true
+        };
+        if (grade_id) {
+            trackingWhere.grade_id = grade_id;
+        }
+        const subjectIds = subjects.map((s) => s.id);
+        if (subjectIds.length > 0) {
+            trackingWhere.subject_id = { in: subjectIds };
+        }
+        const completions = await prisma_1.default.completionTracking.findMany({
+            where: trackingWhere,
+            select: { unit_id: true }
+        });
+        const completedUnitIds = new Set(completions.map((c) => c.unit_id).filter(Boolean));
+        let totalPlannedSchool = 0;
+        let totalCompletedSchool = 0;
+        const subjectBreakdown = [];
+        for (const sub of subjects) {
+            const plannedUnits = sub.units.length;
+            let completedUnits = 0;
+            for (const unit of sub.units) {
+                if (completedUnitIds.has(unit.id)) {
+                    completedUnits++;
+                }
+            }
+            totalPlannedSchool += plannedUnits;
+            totalCompletedSchool += completedUnits;
+            const coverage = plannedUnits > 0 ? Math.round((completedUnits / plannedUnits) * 100) : 0;
+            // Maintain API parameter compatibility mapping Units -> topics
+            subjectBreakdown.push({
+                subject: sub.name,
+                planned_topics: plannedUnits,
+                completed_topics: completedUnits,
+                progress: coverage
+            });
+        }
+        const overallProgress = totalPlannedSchool > 0 ? Math.round((totalCompletedSchool / totalPlannedSchool) * 100) : 0;
+        res.json({
+            overall_progress: overallProgress,
+            subject_breakdown: subjectBreakdown
+        });
+    }
+    catch (error) {
+        res.status(500).json({ message: 'Error fetching curriculum coverage' });
+    }
+});
+// --- EXAMINATION SUMMARY (WIDGET 3) ---
+router.get('/management/examination-summary', (0, auth_middleware_1.requirePermission)('IDENTITY', 'IS_MANAGEMENT'), async (req, res) => {
+    try {
+        const org_id = req.user.organization_id;
+        const yearId = await academic_context_resolver_1.AcademicContextResolver.resolveHistoricalAcademicYearId(req);
+        // Get the latest examination (as published status does not exist in schema)
+        const latestExam = await prisma_1.default.examination.findFirst({
+            where: { organization_id: org_id, academic_year_id: yearId },
+            orderBy: { created_at: 'desc' }
+        });
+        if (!latestExam) {
+            return res.json({
+                average_score: 0,
+                highest_score: 0,
+                lowest_score: 0,
+                students_appeared: 0,
+                pass_percent: 0,
+                fail_percent: 0
+            });
+        }
+        const examStats = await prisma_1.default.studentExamResult.aggregate({
+            where: { examination_id: latestExam.id },
+            _avg: { percentage: true },
+            _max: { percentage: true },
+            _min: { percentage: true },
+            _count: { id: true }
+        });
+        const studentsAppeared = examStats._count.id;
+        const resultStatuses = await prisma_1.default.studentExamResult.groupBy({
+            by: ['result_status'],
+            where: { examination_id: latestExam.id },
+            _count: { id: true }
+        });
+        let passCount = 0;
+        let failCount = 0;
+        for (const s of resultStatuses) {
+            if (s.result_status === 'PASS')
+                passCount += s._count.id;
+            if (s.result_status === 'FAIL')
+                failCount += s._count.id;
+        }
+        res.json({
+            average_score: Math.round(examStats._avg.percentage || 0),
+            highest_score: Math.round(examStats._max.percentage || 0),
+            lowest_score: Math.round(examStats._min.percentage || 0),
+            students_appeared: studentsAppeared,
+            pass_percent: studentsAppeared > 0 ? Math.round((passCount / studentsAppeared) * 100) : 0,
+            fail_percent: studentsAppeared > 0 ? Math.round((failCount / studentsAppeared) * 100) : 0
+        });
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error fetching examination summary' });
+    }
+});
+// --- TEACHER PERFORMANCE (WIDGET 4) ---
+router.get('/management/teacher-performance', (0, auth_middleware_1.requirePermission)('IDENTITY', 'IS_MANAGEMENT'), async (req, res) => {
+    try {
+        const org_id = req.user.organization_id;
+        const yearId = await academic_context_resolver_1.AcademicContextResolver.resolveHistoricalAcademicYearId(req);
+        // Fetch active teachers with their assignments
+        const teachers = await prisma_1.default.user.findMany({
+            where: {
+                organization_id: org_id,
+                is_active: true,
+                teacher_assignments: { some: { academic_year_id: yearId } }
+            },
+            include: {
+                teacher_assignments: {
+                    where: { academic_year_id: yearId },
+                    include: { subject: { select: { id: true, name: true } }, section: { select: { id: true } } }
+                }
+            }
+        });
+        const subjectStats = await prisma_1.default.studentExamSubjectResult.groupBy({
+            by: ['subject_id'],
+            where: {
+                student_exam_result: { organization_id: org_id, academic_year_id: yearId },
+                is_absent: false
+            },
+            _sum: { obtained_marks: true, max_marks: true }
+        });
+        const statsMap = new Map();
+        for (const stat of subjectStats) {
+            if (stat._sum.max_marks && stat._sum.obtained_marks) {
+                statsMap.set(stat.subject_id, stat._sum.obtained_marks / stat._sum.max_marks);
+            }
+        }
+        const leaderboard = [];
+        for (const t of teachers) {
+            let totalAssignedStats = 0;
+            let matchCount = 0;
+            for (const assignment of t.teacher_assignments) {
+                if (!assignment.subject_id)
+                    continue;
+                const ratio = statsMap.get(assignment.subject_id);
+                if (ratio !== undefined) {
+                    totalAssignedStats += ratio;
+                    matchCount++;
+                }
+            }
+            if (matchCount > 0) {
+                const avgScore = Math.round((totalAssignedStats / matchCount) * 100);
+                leaderboard.push({
+                    teacher_id: t.id,
+                    teacher_name: t.name,
+                    subject: t.teacher_assignments[0]?.subject?.name || 'Multi-Subject',
+                    average_score: avgScore
+                });
+            }
+        }
+        // Sort descending by score
+        leaderboard.sort((a, b) => b.average_score - a.average_score);
+        res.json(leaderboard);
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error fetching teacher performance' });
+    }
+});
+// --- WEAK SUBJECTS (WIDGET 5) ---
+router.get('/management/weak-subjects', (0, auth_middleware_1.requirePermission)('IDENTITY', 'IS_MANAGEMENT'), async (req, res) => {
+    try {
+        const org_id = req.user.organization_id;
+        const yearId = await academic_context_resolver_1.AcademicContextResolver.resolveHistoricalAcademicYearId(req);
+        const subjectStats = await prisma_1.default.studentExamSubjectResult.groupBy({
+            by: ['subject_id'],
+            where: {
+                student_exam_result: { organization_id: org_id, academic_year_id: yearId },
+                is_absent: false
+            },
+            _sum: { obtained_marks: true, max_marks: true },
+            _count: { id: true }
+        });
+        if (subjectStats.length === 0)
+            return res.json([]);
+        // Fetch subject names
+        const subjects = await prisma_1.default.subject.findMany({
+            where: { id: { in: subjectStats.map((s) => s.subject_id) } },
+            select: { id: true, name: true }
+        });
+        const subjectMap = new Map(subjects.map((s) => [s.id, s.name]));
+        const weakSubjects = [];
+        for (const stat of subjectStats) {
+            const totalObtained = stat._sum.obtained_marks || 0;
+            const totalMax = stat._sum.max_marks || 0;
+            if (totalMax > 0) {
+                const avg = Math.round((totalObtained / totalMax) * 100);
+                weakSubjects.push({
+                    subject: subjectMap.get(stat.subject_id) || 'Unknown',
+                    average_score: avg,
+                    students_evaluated: stat._count.id,
+                    latest_exam: 'Latest' // Placeholder, cannot easily get latest per group in Prisma groupBy
+                });
+            }
+        }
+        weakSubjects.sort((a, b) => a.average_score - b.average_score);
+        res.json(weakSubjects.slice(0, 5));
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error fetching weak subjects' });
+    }
+});
+// --- STUDENT RISK (WIDGET 6) ---
+router.get('/management/student-risk', (0, auth_middleware_1.requirePermission)('IDENTITY', 'IS_MANAGEMENT'), async (req, res) => {
+    try {
+        const org_id = req.user.organization_id;
+        const yearId = await academic_context_resolver_1.AcademicContextResolver.resolveHistoricalAcademicYearId(req);
+        // Look for configurable threshold, default 40
+        let riskThreshold = 40;
+        const config = await prisma_1.default.moduleConfig.findFirst({
+            where: { organization_id: org_id, module_name: 'RISK_RADAR' }
+        });
+        if (config && config.config_data && typeof config.config_data.threshold === 'number') {
+            riskThreshold = config.config_data.threshold;
+        }
+        const results = await prisma_1.default.studentExamResult.findMany({
+            where: {
+                organization_id: org_id,
+                academic_year_id: yearId,
+                OR: [
+                    { percentage: { lt: riskThreshold } },
+                    { result_status: 'FAIL' }
+                ]
+            },
+            include: {
+                student: { select: { name: true } },
+                grade_rel: { select: { name: true } },
+                section: { select: { name: true } }
+            },
+            orderBy: { percentage: 'asc' },
+            take: 10
+        });
+        const riskStudents = results.map((r) => {
+            const avg = r.percentage || 0;
+            return {
+                student_id: r.student_id,
+                student_name: r.student.name,
+                grade_section: `${r.grade_rel.name} - ${r.section?.name || 'N/A'}`,
+                average_score: Math.round(avg),
+                risk_factor: avg < 30 ? 'Critical' : 'High'
+            };
+        });
+        res.json(riskStudents);
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error fetching student risk data' });
+    }
+});
+// --- RECENT ACTIVITY (WIDGET 7) ---
+router.get('/management/recent-activity', (0, auth_middleware_1.requirePermission)('IDENTITY', 'IS_MANAGEMENT'), async (req, res) => {
+    try {
+        const org_id = req.user.organization_id;
+        // Fetch primary from AuditLog
+        const logs = await prisma_1.default.auditLog.findMany({
+            where: {
+                organization_id: org_id,
+                action_type: {
+                    notIn: ['LOGIN', 'LOGOUT', 'TOKEN_REFRESH', 'SESSION_EXPIRED', 'AUTH_FAILED', 'PASSWORD_RESET']
+                }
+            },
+            orderBy: { timestamp: 'desc' },
+            take: 15
+        });
+        const activities = [];
+        for (const l of logs) {
+            let type = 'OTHER';
+            if (['EXAMINATION', 'STUDENT_EXAM_RESULT'].includes(l.entity_type))
+                type = 'EXAM_RESULT';
+            else if (['SYLLABUS', 'UNIT', 'TOPIC', 'SUBTOPIC', 'COMPLETION_TRACKING'].includes(l.entity_type))
+                type = 'SYLLABUS_UPDATE';
+            else if (['ACADEMIC_YEAR', 'GRADE', 'SECTION'].includes(l.entity_type))
+                type = 'ACADEMIC_YEAR';
+            else if (['STUDENT_ENROLLMENT', 'TEACHER_ASSIGNMENT'].includes(l.entity_type))
+                type = 'ADMINISTRATIVE';
+            // Discard unmapped/uninteresting entities if needed, but the rule says prioritize meaningful.
+            if (type === 'OTHER' && !['NOTIFICATION', 'INTERNAL_MAIL'].includes(l.entity_type)) {
+                continue; // skip noisy logs
+            }
+            const BUSINESS_TITLES = {
+                'CREATE_EXAMINATION': 'Created Examination',
+                'UPDATE_SYLLABUS': 'Updated Syllabus',
+                'IMPORT_STUDENT_ENROLLMENT': 'Imported Student Enrollments',
+                'IMPORT_QUESTION_BANK': 'Imported Question Bank',
+                'ASSIGN_TEACHER_ASSIGNMENT': 'Assigned Teacher to Class',
+                'CREATE_GRADE': 'Created Grade',
+                'CREATE_SECTION': 'Created Section',
+                'CREATE_SUBJECT': 'Created Subject',
+                'CREATE_UNIT': 'Created Unit',
+                'COMPLETE_UNIT': 'Completed Unit',
+                'CREATE_USER': 'Added New User',
+                'CREATE_STUDENT': 'Added New Student',
+                'CREATE_TEACHER': 'Added New Teacher',
+                'IMPORT_ACADEMIC_STRUCTURE': 'Imported Academic Structure',
+                'TOGGLE_COMPLETION': 'Updated Topic Completion',
+                'PERMISSION_SYNC_ROLE_PERMISSION': 'Updated Role Permissions'
+            };
+            let title = '';
+            const meta = l.metadata;
+            // 1. Check for explicit description in metadata
+            if (meta && meta.description && typeof meta.description === 'string') {
+                title = meta.description;
+            }
+            else if (meta && meta.message && typeof meta.message === 'string') {
+                title = meta.message;
+            }
+            else {
+                // 2. Map to business friendly title
+                const mapKey = `${l.action_type}_${l.entity_type}`;
+                if (BUSINESS_TITLES[mapKey]) {
+                    title = BUSINESS_TITLES[mapKey];
+                }
+                else {
+                    // 3. Fallback logic
+                    const actionWord = l.action_type.charAt(0) + l.action_type.slice(1).toLowerCase();
+                    const entityWord = l.entity_type.toLowerCase().replace(/_/g, ' ');
+                    title = `${actionWord} ${entityWord}`;
+                }
+            }
+            activities.push({
+                id: l.id,
+                title,
+                actor_name: l.user_name || 'System',
+                timestamp: l.timestamp,
+                type
+            });
+            if (activities.length >= 8)
+                break;
+        }
+        res.json(activities);
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error fetching recent activities' });
     }
 });
 exports.default = router;

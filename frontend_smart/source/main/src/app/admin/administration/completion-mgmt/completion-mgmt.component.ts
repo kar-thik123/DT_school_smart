@@ -14,9 +14,9 @@ import { environment } from 'environments/environment';
 import Swal from 'sweetalert2';
 import { AuthService, AcademicContextService } from '@core';
 import { AcademicContextSelectorComponent } from '@shared/components/academic-context-selector/academic-context-selector.component';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 
-import { forkJoin } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
 import { AcademicStructureService, IGrade, ISection } from '../academic-structure/services/academic-structure.service';
 
 @Component({
@@ -44,10 +44,12 @@ export class CompletionMgmtComponent implements OnInit {
   private academicService = inject(AcademicStructureService);
   private academicContextService = inject(AcademicContextService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
 
   breadscrums = [{ title: 'Completion Tracking', items: ['Administration'], active: 'Completion Tracking' }];
   
   academicYearId: string = '';
+  initialGradeId: string | null = null;
   
   grades: IGrade[] = [];
   allSections: ISection[] = [];
@@ -76,8 +78,10 @@ export class CompletionMgmtComponent implements OnInit {
     this.canManageCompletion = this.authService.hasPermission('COMPLETION_TRACKING', 'MANAGE') ||
                                this.authService.hasPermission('COMPLETION_TRACKING_MANAGE');
 
-    // Subscribe to centralized Academic Context
-    this.academicContextService.activeYear$.subscribe((year: any) => {
+    this.initialGradeId = this.route.snapshot.queryParamMap.get('grade_id');
+
+    // Subscribe to centralized Academic Context (match dashboard context)
+    this.academicContextService.historicalYear$.subscribe((year: any) => {
       this.academicYearId = year?.id || '';
       if (this.academicYearId) {
         this.loadSettings();
@@ -115,11 +119,42 @@ export class CompletionMgmtComponent implements OnInit {
     this.isInitialLoading = true;
     forkJoin({
       grades: this.academicService.getGrades(),
-      sections: this.academicService.getSections()
+      sections: this.academicService.getSections(),
+      subjects: this.initialGradeId ? this.academicService.getSubjects(this.initialGradeId) : of([])
     }).subscribe({
       next: (res) => {
         this.grades = res.grades || [];
         this.allSections = res.sections || [];
+        
+        if (this.initialGradeId) {
+          const grade = this.grades.find(g => g.id === this.initialGradeId);
+          if (grade) {
+            this.selectedGradeId = grade.id;
+            this.selectedGradeName = grade.name;
+            
+            const gradeSections = this.allSections.filter(s => s.grade_id === grade.id);
+            if (gradeSections.length === 1) {
+              this.selectedSectionId = gradeSections[0].id;
+              this.selectedSectionName = gradeSections[0].name;
+            } else if (gradeSections.length > 1) {
+              this.selectedSectionId = 'ALL';
+              this.selectedSectionName = 'All Sections';
+            }
+            
+            const subjects = res.subjects || [];
+            if (subjects.length > 0) {
+              this.selectedSubjectId = subjects[0].id;
+              this.selectedSubjectName = subjects[0].name;
+              
+              setTimeout(() => {
+                this.loadTopics();
+              });
+            }
+          }
+          // Reset initialGradeId so subsequent context changes don't auto-override
+          this.initialGradeId = null;
+        }
+        
         this.isInitialLoading = false;
       },
       error: () => {

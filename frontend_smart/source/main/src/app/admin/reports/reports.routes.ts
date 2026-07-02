@@ -24,6 +24,10 @@ export const REPORTS_ROUTE: Route[] = [
     component: ExamReportsComponent,
   },
   {
+    path: 'weak-subjects',
+    loadComponent: () => import('./weak-subjects/weak-subjects.component').then(m => m.WeakSubjectsReportComponent),
+  },
+  {
     path: 'custom-reports',
     component: CustomReportsComponent,
   },

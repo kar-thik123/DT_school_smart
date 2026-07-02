@@ -10,6 +10,11 @@ import { StudentExamResultComponent } from './student-exam-result/student-exam-r
 
 export const ADMIN_EXAMINATION_ROUTE: Route[] = [
   {
+    path: '',
+    redirectTo: 'exam-types',
+    pathMatch: 'full'
+  },
+  {
     path: 'exam-types',
     component: ExamTypesComponent,
   },

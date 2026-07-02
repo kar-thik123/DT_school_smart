@@ -27,7 +27,7 @@ router.get('/', async (req: any, res: Response) => {
       return res.status(403).json({ message: 'Forbidden: Requires EXAMINATION:VIEW or EXAMINATION:MANAGE or STUDENT_EXAM_RESULT:VIEW' });
     }
 
-    const academic_year_id = await AcademicContextResolver.resolveAcademicYearId(req);
+    const academic_year_id = await AcademicContextResolver.resolveHistoricalAcademicYearId(req);
 
     const examinations = await prisma.examination.findMany({
       where: {
