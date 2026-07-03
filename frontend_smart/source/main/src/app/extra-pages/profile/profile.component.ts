@@ -71,6 +71,9 @@ export class ProfileComponent implements OnInit {
   newPassword = '';
   selectedProfileImage: File | null = null;
   previewImageUrl: string | null = null;
+  
+  availableSubjects: any[] = [];
+  
   private http = inject(HttpClient);
   private authService = inject(AuthService);
   private snackBar = inject(MatSnackBar);
@@ -82,6 +85,16 @@ export class ProfileComponent implements OnInit {
     this.fetchUserDetails();
     this.fetchUserSkills();
     this.loadActiveAcademicYear();
+    this.fetchSubjects();
+  }
+
+  fetchSubjects(): void {
+    this.http.get<any[]>(`${environment.apiUrl}/users/me/subjects`).subscribe({
+      next: (data) => {
+        this.availableSubjects = data;
+      },
+      error: (err) => console.error('Failed to fetch subjects', err)
+    });
   }
 
   loadActiveAcademicYear() {
@@ -127,6 +140,9 @@ export class ProfileComponent implements OnInit {
       this.http.get<any>(`${environment.apiUrl}/users/profile/${currentUser.id}`).subscribe({
         next: (data) => {
           this.userDetails = data;
+          if (!this.userDetails.favorite_subjects) {
+            this.userDetails.favorite_subjects = [];
+          }
           this.academicProfiles = (data.academic_profiles || []).map((p: any) => ({
             title: p.title || '',
             listItems: Array.isArray(p.listItems) ? p.listItems : (p.list ? [p.list] : [''])
@@ -458,6 +474,8 @@ export class ProfileComponent implements OnInit {
       formData.append('country', this.userDetails.country || '');
       formData.append('address', this.userDetails.address || '');
       formData.append('about', this.userDetails.about || '');
+      formData.append('favorite_colour', this.userDetails.favorite_colour || '');
+      formData.append('favorite_subjects', JSON.stringify(this.userDetails.favorite_subjects || []));
       formData.append('roll_number', this.userDetails.roll_number || '');
       if (this.userDetails.date_of_birth) {
         formData.append('date_of_birth', new Date(this.userDetails.date_of_birth).toISOString());

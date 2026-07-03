@@ -11,6 +11,8 @@ export interface StudentOverview {
     grade?: string;
     academic_year?: string;
   };
+  favorite_subjects?: string[];
+  favorite_colour?: string;
 }
 
 export interface StudentKPIs {
