@@ -180,7 +180,13 @@ export class HeaderComponent
     this.langStoreValue = lang;
     this.languageService.setLanguage(lang);
   }
-  mobileMenuSidebarOpen(event: Event, className: string) {
+    toggleRightSidebar(): void {
+      this.rightSidebarService.setRightSidebar(
+        (this.isOpenSidebar = !this.isOpenSidebar)
+      );
+    }
+    
+    mobileMenuSidebarOpen(event: Event, className: string) {
     const hasClass = (event.target as HTMLInputElement).classList.contains(
       className
     );

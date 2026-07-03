@@ -327,6 +327,11 @@ export class SidebarComponent
         this.authService.hasPermission('ATTENDANCE_VIEW') ||
         userRoleUpper === 'SUPER_ADMIN';
     }
+    if (path.includes('/staff-attendance')) {
+      return this.authService.hasPermission('STAFF_ATTENDANCE', 'VIEW') ||
+        this.authService.hasPermission('STAFF_ATTENDANCE_VIEW') ||
+        userRoleUpper === 'SUPER_ADMIN';
+    }
     if (path.includes('/skills-verify-assignment')) {
       return this.authService.hasPermission('SKILLS_VERIFY_ASSIGNMENT', 'VIEW') ||
         this.authService.hasPermission('SKILLS_VERIFY_ASSIGNMENT_VIEW') ||

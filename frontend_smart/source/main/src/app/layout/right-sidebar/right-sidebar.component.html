@@ -1,7 +1,5 @@
 <div class="settingSidebar" [ngClass]="isOpenSidebar ? 'showSettingPanel' : ''">
-  <a href="javascript:void(0)" class="settingPanelToggle" (click)="toggleRightSidebar()">
-    <app-feather-icons [icon]="'settings'" [class]="'setting-sidebar-icon'"></app-feather-icons>
-  </a>
+
   <ng-scrollbar [style.height]="maxHeight + 'px'" visibility="hover">
     <div class="settingSidebar-body ps-container ps-theme-default">
       <div class=" fade show active">

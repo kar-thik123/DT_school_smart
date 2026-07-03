@@ -233,6 +233,20 @@ export const PLATFORM_MODULES: RouteInfo[] = [
     showInSidebar: true,
     domain: 'TENANT'
   },
+  {
+    path: '/admin/administration/staff-attendance',
+    title: 'Staff Attendance',
+    iconType: 'material-icons-outlined',
+    icon: 'badge',
+    class: '',
+    groupTitle: false,
+    badge: '',
+    badgeClass: '',
+    role: ['STAFF_ATTENDANCE:VIEW', 'STAFF_ATTENDANCE_VIEW', 'SUPER_ADMIN', 'ADMIN'],
+    submenu: [],
+    showInSidebar: true,
+    domain: 'TENANT'
+  },
   // Admin versions:
   {
     path: '/admin/administration/question-bank',

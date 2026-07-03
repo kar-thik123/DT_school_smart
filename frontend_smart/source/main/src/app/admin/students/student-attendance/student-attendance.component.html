@@ -10,8 +10,8 @@
     <div class="row">
       <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
         <app-master-table [title]="'Student Attendance'" [columnDefinitions]="columnDefinitions"
-          [dataSource]="dataSource" [isLoading]="isLoading" [exportFileName]="'attendance_export'" [showAdd]="true"
-          [showDelete]="true" [showEdit]="true" [showBulkDelete]="true" [showCheckbox]="true" (add)="handleAdd()"
+          [dataSource]="dataSource" [isLoading]="isLoading" [exportFileName]="'attendance_export'" [showAdd]="hasManagePermission"
+          [showDelete]="hasManagePermission" [showEdit]="hasManagePermission" [showBulkDelete]="hasManagePermission" [showCheckbox]="hasManagePermission" (add)="handleAdd()"
           (edit)="handleEdit($event)" (delete)="handleDelete($event)" (refresh)="handleRefresh()"
           (bulkDelete)="handleBulkDelete($event)">
         </app-master-table>

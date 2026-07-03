@@ -42,6 +42,11 @@
           </app-language-list>
         </li> -->
         <!-- #END# Multi Language-->
+        <li class="nav-item">
+          <button mat-icon-button class="nav-notification-icons" (click)="toggleRightSidebar()">
+            <i class="material-icons-outlined icon-color">settings</i>
+          </button>
+        </li>
         <li class="nav-item user_profile">
           <app-user-profile-menu [userName]="userName!" [userImg]="userImg!" (accountClicked)="onAccountClicked()"
             (inboxClicked)="onInboxClicked()" (settingsClicked)="onSettingsClicked()" (logoutClicked)="logout()">

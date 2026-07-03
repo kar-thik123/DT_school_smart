@@ -1,5 +1,5 @@
 import { NgClass } from '@angular/common';
-import { Component, ElementRef, OnInit, AfterViewInit, Renderer2, ChangeDetectionStrategy, DOCUMENT, inject } from '@angular/core';
+import { Component, ElementRef, OnInit, AfterViewInit, Renderer2, ChangeDetectionStrategy, DOCUMENT, inject, ChangeDetectorRef } from '@angular/core';
 import {
   MatSlideToggleChange,
   MatSlideToggleModule,
@@ -10,7 +10,6 @@ import { LocalStorageService } from '@shared/services';
 import { UnsubscribeOnDestroyAdapter } from '@shared';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { NgScrollbar } from 'ngx-scrollbar';
-import { FeatherIconsComponent } from '@shared/components/feather-icons/feather-icons.component';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -19,7 +18,6 @@ import { FeatherIconsComponent } from '@shared/components/feather-icons/feather-
   styleUrls: ['./right-sidebar.component.scss'],
   imports: [
     NgClass,
-    FeatherIconsComponent,
     NgScrollbar,
     MatButtonToggleModule,
     MatSlideToggleModule,
@@ -36,6 +34,7 @@ export class RightSidebarComponent
   private configService = inject(ConfigService);
   private directionService = inject(DirectionService);
   private localStorageService = inject(LocalStorageService);
+  private cdr = inject(ChangeDetectorRef);
 
   selectedBgColor = 'white';
   maxHeight!: string;
@@ -53,6 +52,7 @@ export class RightSidebarComponent
     this.subs.sink = this.rightSidebarService.sidebarState.subscribe(
       (isRunning) => {
         this.isOpenSidebar = isRunning;
+        this.cdr.markForCheck();
       }
     );
     this.setRightSidebarWindowHeight();

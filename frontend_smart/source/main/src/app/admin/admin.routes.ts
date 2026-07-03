@@ -227,6 +227,15 @@ export const ADMIN_ROUTE: Route[] = [
             (m) => m.SkillsVerifyAssignmentComponent
           ),
       },
+      {
+        path: 'staff-attendance',
+        canActivate: [AuthGuard],
+        data: { permission: ['STAFF_ATTENDANCE:VIEW', 'STAFF_ATTENDANCE_VIEW', 'IDENTITY:IS_SUPER_ADMIN', 'IDENTITY:IS_MANAGEMENT'] },
+        loadComponent: () =>
+          import('./administration/staff-attendance/staff-attendance.component').then(
+            (m) => m.StaffAttendanceComponent
+          ),
+      },
     ]
   },
 

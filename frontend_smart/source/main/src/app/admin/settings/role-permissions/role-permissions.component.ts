@@ -171,8 +171,8 @@ export class RolePermissionsComponent implements OnInit {
   }
 
   toggleModule(group: PermissionGroup, checked: boolean) {
-    if (this.selectedRole?.name === 'SUPER_ADMIN') return;
-    group.actions.forEach(a => a.selected = checked);
+    
+    if (this.selectedRole?.name === 'SUPER_ADMIN') return; group.actions.forEach(a => a.selected = checked);
   }
 
   isModuleAllSelected(group: PermissionGroup): boolean {

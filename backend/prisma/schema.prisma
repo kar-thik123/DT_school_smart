@@ -51,6 +51,7 @@ model Organization {
   Skill                       Skill[]
   student_assessment_attempts StudentAssessmentAttempt[]
   student_attendances         StudentAttendance[]
+  staff_attendances           StaffAttendance[]
   student_enrollments         StudentEnrollment[]
   student_group_mappings      StudentGroupMapping[]
   student_profiles            StudentProfile[]
@@ -131,6 +132,8 @@ model User {
   section                     Section?                      @relation(fields: [section_id], references: [id])
   attendance_marked_for       StudentAttendance[]           @relation("AttendanceStudent")
   attendance_marked_by        StudentAttendance[]           @relation("AttendanceMarker")
+  staff_attendance_records    StaffAttendance[]           @relation("StaffAttendanceRecord")
+  staff_attendance_marked     StaffAttendance[]           @relation("StaffAttendanceMarker")
   examinations_created        Examination[]                 @relation("ExaminationCreator")
   examinations_modified       Examination[]                 @relation("ExaminationModifier")
   student_exam_results_created   StudentExamResult[] @relation("StudentExamResultCreator")
@@ -300,6 +303,7 @@ model AcademicYear {
   StudentDashboardSummary     StudentDashboardSummary[]
   StudentDashboardWeeklyTrend StudentDashboardWeeklyTrend[]
   student_attendances         StudentAttendance[]
+  staff_attendances           StaffAttendance[]
   examinations                Examination[]
   student_exam_results        StudentExamResult[]
 
@@ -1171,6 +1175,7 @@ model AttendancePhase {
 
   organization Organization        @relation(fields: [organization_id], references: [id], onDelete: Cascade)
   attendances  StudentAttendance[]
+  staff_attendances StaffAttendance[]
 
   @@unique([organization_id, phase_name])
   @@index([organization_id])
@@ -1296,4 +1301,29 @@ model StudentExamSubjectResult {
   @@unique([student_exam_result_id, subject_id])
   @@index([subject_id])
   @@map("student_exam_subject_results")
+}
+
+model StaffAttendance {
+  id               String           @id @default(uuid()) @db.Uuid
+  organization_id  String           @db.Uuid
+  academic_year_id String           @db.Uuid
+  staff_id         String           @db.Uuid
+  phase_id         String           @db.Uuid
+  attendance_date  DateTime         @db.Date
+  status           AttendanceStatus @default(PRESENT)
+  marked_by        String           @db.Uuid
+
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now()) @updatedAt
+
+  organization  Organization    @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  academic_year AcademicYear    @relation(fields: [academic_year_id], references: [id], onDelete: Cascade)
+  staff         User            @relation("StaffAttendanceRecord", fields: [staff_id], references: [id], onDelete: Cascade)
+  phase         AttendancePhase @relation(fields: [phase_id], references: [id], onDelete: Cascade)
+  marker        User            @relation("StaffAttendanceMarker", fields: [marked_by], references: [id], onDelete: Cascade)
+
+  @@unique([organization_id, staff_id, attendance_date, phase_id])
+  @@index([organization_id, attendance_date])
+  @@index([staff_id])
+  @@map("staff_attendance")
 }

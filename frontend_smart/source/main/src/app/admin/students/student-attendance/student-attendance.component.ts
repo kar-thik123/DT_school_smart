@@ -12,6 +12,7 @@ import { StudentAttendanceDeleteComponent } from './dialogs/delete/delete.compon
 import { StudentAttendanceService } from './student-attendance.service';
 import { StudentAttendance } from './student-attendance.model';
 import { rowsAnimation } from '@shared';
+import { AuthService } from '@core';
 
 import { HttpClient } from '@angular/common/http';
 import { Direction } from '@angular/cdk/bidi';
@@ -35,6 +36,8 @@ export class StudentAttendanceComponent implements OnInit, OnDestroy {
   studentAttendanceService = inject(StudentAttendanceService);
   private snackBar = inject(MatSnackBar);
   private localStorageService = inject(LocalStorageService);
+  private authService = inject(AuthService);
+  hasManagePermission = false;
 
   columnDefinitions: ColumnDefinition[] = [
     { def: 'select', label: 'Checkbox', type: 'check', visible: true },
@@ -103,6 +106,16 @@ export class StudentAttendanceComponent implements OnInit, OnDestroy {
   ];
 
   ngOnInit() {
+    this.hasManagePermission = this.authService.hasPermission('ATTENDANCE', 'MANAGE');
+    
+    const actionCol = this.columnDefinitions.find(c => c.def === 'actions');
+    if (actionCol) actionCol.visible = this.hasManagePermission;
+
+    const selectCol = this.columnDefinitions.find(c => c.def === 'select');
+    if (selectCol) selectCol.visible = this.hasManagePermission;
+
+    this.columnDefinitions = [...this.columnDefinitions];
+    
     this.loadData();
   }
 

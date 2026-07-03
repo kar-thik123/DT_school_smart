@@ -61,6 +61,10 @@ export const CENTRAL_PERMISSION_REGISTRY: IRegistryPermission[] = [
     permissions: ['VIEW', 'MANAGE']
   },
   {
+    module: 'STAFF_ATTENDANCE',
+    permissions: ['VIEW', 'MANAGE']
+  },
+  {
     module: 'EXAMINATION',
     permissions: ['VIEW', 'MANAGE']
   },
