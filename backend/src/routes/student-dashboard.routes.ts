@@ -49,7 +49,7 @@ router.get('/overview', requireStudent, async (req: any, res: Response) => {
       select: {
         name: true,
         roll_number: true,
-        user_profile: { select: { profile_image: true } },
+        user_profile: { select: { profile_image: true, favorite_subjects: true, favorite_colour: true } },
         enrollments: {
           where: { 
             organization_id,
@@ -99,7 +99,9 @@ router.get('/overview', requireStudent, async (req: any, res: Response) => {
       group: enrollment?.subject_group?.name || null,
       academic_year_id: enrollment?.academic_year_id || activeAcademicYearId,
       academic_year: enrollment?.academic_year?.name || null,
-      last_enrollment
+      last_enrollment,
+      favorite_subjects: user.user_profile?.favorite_subjects || [],
+      favorite_colour: user.user_profile?.favorite_colour || null
     });
   } catch (error) {
     console.error('[Dashboard/Overview] Error:', error);

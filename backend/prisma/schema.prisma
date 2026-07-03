@@ -171,6 +171,8 @@ model UserProfile {
   country           String?
   address           String?
   about             String?
+  favorite_subjects String[]     @default([])
+  favorite_colour   String?
   profile_image     String?
   academic_profiles Json?        @default("[]")
   academic_birth    DateTime?    @db.Date

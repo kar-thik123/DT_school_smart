@@ -631,6 +631,45 @@ router.post('/:id/reset-password', requireManagement, async (req: any, res: Resp
   }
 })
 
+router.get('/me/subjects', async (req: any, res: Response) => {
+  try {
+    const userId = req.user.user_id;
+    const organizationId = req.user.organization_id;
+
+    // Check if the user is a student by getting their enrollments
+    const enrollments = await prisma.studentEnrollment.findMany({
+      where: { student_id: userId, organization_id: organizationId },
+      orderBy: { enrollment_date: 'desc' },
+      take: 1
+    });
+
+    if (enrollments.length > 0) {
+      // User is a student, fetch subjects for their grade
+      const subjects = await prisma.subject.findMany({
+        where: {
+          grade_id: enrollments[0].grade_id,
+          organization_id: organizationId,
+          is_active: true
+        },
+        select: { id: true, name: true }
+      });
+      return res.json(subjects);
+    } else {
+      // User is not a student (e.g., teacher, admin), fetch all active subjects in org
+      const subjects = await prisma.subject.findMany({
+        where: {
+          organization_id: organizationId,
+          is_active: true
+        },
+        select: { id: true, name: true }
+      });
+      return res.json(subjects);
+    }
+  } catch (error: any) {
+    console.error('Error fetching user subjects:', error);
+    res.status(500).json({ message: 'Server error fetching subjects' });
+  }
+});
 
 router.get('/profile/:id', async (req: any, res: Response) => {
   try {
@@ -669,12 +708,15 @@ router.get('/profile/:id', async (req: any, res: Response) => {
       country: user.user_profile.country,
       address: user.user_profile.address,
       about: user.user_profile.about,
+      favorite_subjects: user.user_profile.favorite_subjects,
+      favorite_colour: user.user_profile.favorite_colour,
       profile_image: user.user_profile.profile_image,
       academic_profiles: user.user_profile.academic_profiles || [],
       date_of_birth: user.user_profile.date_of_birth,
       academic_birth: user.user_profile.academic_birth
     } : {
-      academic_profiles: []
+      academic_profiles: [],
+      favorite_subjects: []
     };
 
     const roll_number = user.roll_number || user.enrollments?.[0]?.roll_number || null;
@@ -690,11 +732,14 @@ router.get('/profile/:id', async (req: any, res: Response) => {
 
 router.put('/profile/:id', upload.single('profile_image'), async (req: any, res: Response) => {
   try {
-    let { name, email, phone, city, country, address, about, academic_profiles, roll_number, date_of_birth, academic_birth } = req.body;
+    let { name, email, phone, city, country, address, about, academic_profiles, roll_number, date_of_birth, academic_birth, favorite_subjects, favorite_colour } = req.body;
 
     // Handle multipart/form-data where JSON arrays are sent as strings
     if (typeof academic_profiles === 'string') {
       try { academic_profiles = JSON.parse(academic_profiles); } catch (e) { academic_profiles = []; }
+    }
+    if (typeof favorite_subjects === 'string') {
+      try { favorite_subjects = JSON.parse(favorite_subjects); } catch (e) { favorite_subjects = []; }
     }
 
 
@@ -726,7 +771,7 @@ router.put('/profile/:id', upload.single('profile_image'), async (req: any, res:
     });
 
     // Upsert UserProfile fields
-    const updateData: any = { phone, city, country, address, about, academic_profiles };
+    const updateData: any = { phone, city, country, address, about, academic_profiles, favorite_subjects, favorite_colour };
     if (profile_image) {
       updateData.profile_image = profile_image;
     }
@@ -748,6 +793,8 @@ router.put('/profile/:id', upload.single('profile_image'), async (req: any, res:
         country,
         address,
         about,
+        favorite_subjects: favorite_subjects || [],
+        favorite_colour,
         profile_image,
         academic_profiles: academic_profiles || [],
         ...(date_of_birth !== undefined && { date_of_birth: date_of_birth ? new Date(date_of_birth) : null }),

@@ -160,6 +160,7 @@ export class DashboardComponent implements OnInit {
   showAllActivities: boolean = false;
   showAllAchievements: boolean = false;
   showAllSkills: boolean = false;
+  showAllFavoriteSubjects: boolean = false;
 
   // Table Config
   teacherDisplayedColumns: string[] = ['name', 'action'];
@@ -173,6 +174,18 @@ export class DashboardComponent implements OnInit {
       if (a.status !== 'approved' && b.status === 'approved') return 1;
       return 0;
     });
+  }
+
+  get favoriteSubjects(): SubjectPerformance[] {
+    if (this.overview?.favorite_subjects && this.overview.favorite_subjects.length > 0) {
+      const favNames = this.overview.favorite_subjects.map(s => s.toLowerCase());
+      return this.subjects.filter(s => favNames.includes(s.subjectName.toLowerCase()));
+    }
+    return [];
+  }
+
+  get favoriteColour(): string | null {
+    return this.overview?.favorite_colour || null;
   }
 
   // Compact KPI Getters
@@ -208,6 +221,10 @@ export class DashboardComponent implements OnInit {
 
   toggleSkills() {
     this.showAllSkills = !this.showAllSkills;
+  }
+
+  toggleFavoriteSubjects() {
+    this.showAllFavoriteSubjects = !this.showAllFavoriteSubjects;
   }
 
   ngOnInit() {
