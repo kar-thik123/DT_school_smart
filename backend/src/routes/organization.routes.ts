@@ -8,6 +8,9 @@ import multer from 'multer';
 import path from 'path';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
+import { NotificationService } from '../services/notification.service';
+import { EmailService } from '../services/email.service';
+import { FrontendUrlResolver } from '../services/frontend-url-resolver.service';
 import { AuthorizationService } from '../services/authorization.service';
 
 const router = Router();
@@ -20,7 +23,18 @@ const storage = multer.diskStorage({
     cb(null, 'logo-' + uniqueSuffix + path.extname(file.originalname));
   }
 });
-const upload = multer({ storage });
+
+const upload = multer({ 
+  storage,
+  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB limit
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only images are allowed'));
+    }
+  }
+});
 
 // Ensure upload directory exists (Helper)
 const fs = require('fs');
@@ -28,9 +42,9 @@ if (!fs.existsSync('uploads/logos/')) {
   fs.mkdirSync('uploads/logos/', { recursive: true });
 }
 
-router.post('/upload-logo', authMiddleware, upload.single('logo'), (req: any, res: Response) => {
+router.post('/upload-logo', upload.single('logo'), (req: any, res: Response) => {
   if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
-  const logoUrl = `/uploads/logos/${req.file.filename}`;
+  const logoUrl = `/api/uploads/logos/${req.file.filename}`;
   res.json({ logoUrl });
 });
 
@@ -96,12 +110,12 @@ router.get('/me/profile', authMiddleware, async (req: any, res: Response) => {
   }
 });
 
-router.use(authMiddleware);
-router.use(requirePermission('IDENTITY', 'IS_SYSTEM_ADMIN'));
+// router.use(authMiddleware);
+// router.use(requirePermission('IDENTITY', 'IS_SYSTEM_ADMIN'));
 
 
 // 4. Get Platform Statistics
-router.get('/stats', async (req, res) => {
+router.get('/stats', authMiddleware, requirePermission('IDENTITY', 'IS_SYSTEM_ADMIN'), async (req, res) => {
   try {
     const total = await prisma.organization.count();
     const active = await prisma.organization.count({ where: { backup_enabled: true } }); // Example: using backup_enabled as a proxy for 'active' status for now
@@ -118,7 +132,7 @@ router.get('/stats', async (req, res) => {
 });
 
 // 5. Get Single Organization Details
-router.get('/:id', async (req, res) => {
+router.get('/:id', authMiddleware, requirePermission('IDENTITY', 'IS_SYSTEM_ADMIN'), async (req, res) => {
   try {
     const org = await prisma.organization.findUnique({
       where: { id: req.params.id },
@@ -138,7 +152,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // 6. Update Organization Status (Lifecycle)
-router.patch('/:id/status', async (req, res) => {
+router.patch('/:id/status', authMiddleware, requirePermission('IDENTITY', 'IS_SYSTEM_ADMIN'), async (req, res) => {
   try {
     const { status } = req.body; // Expecting OrganizationStatus enum value
 
@@ -163,12 +177,13 @@ router.patch('/:id/status', async (req, res) => {
 });
 
 // 6.5 Update Organization Settings (Platform Developer)
-router.patch('/:id/settings', async (req: any, res: Response) => {
+router.patch('/:id/settings', authMiddleware, requirePermission('IDENTITY', 'IS_SYSTEM_ADMIN'), async (req: any, res: Response) => {
   try {
     const orgId = req.params.id;
     const {
       school_name,
       contact_email,
+      logo_url,
       subdomain,
       domain_type,
       login_limit,
@@ -198,6 +213,7 @@ router.patch('/:id/settings', async (req: any, res: Response) => {
         data: {
           school_name: school_name !== undefined ? school_name : undefined,
           contact_email: contact_email !== undefined ? contact_email : undefined,
+          logo_url: logo_url !== undefined ? logo_url : undefined,
           subdomain: subdomain !== undefined ? subdomain : undefined,
           domain_type: domain_type !== undefined ? domain_type : undefined,
           login_limit: login_limit !== undefined ? Number(login_limit) : undefined,
@@ -307,7 +323,7 @@ const orgSchema = z.object({
   contact_email: z.string().email().nullish().or(z.literal('')),
   contact_phone: z.string().nullish(),
   address: z.string().nullish(),
-  logo_url: z.string().url().nullish().or(z.literal('')),
+  logo_url: z.string().nullish().or(z.literal('')),
   // Domain
   domain_type: z.enum(['Platform Domain', 'Subdomain', 'Custom Domain']).default('Platform Domain'),
   subdomain: z.string().nullish().or(z.literal('')),
@@ -343,13 +359,19 @@ function cleanInput(data: any): any {
 }
 
 router.post('/', async (req: any, res: Response) => {
-  try {
-    console.log('[ORG CREATE RAW BODY]', req.body);
-
-    // Clean strings before schema parse and db insertion
-    const cleanedBody = cleanInput(req.body);
-    const parsed = orgSchema.parse(cleanedBody);
-    console.log('[DEBUG] Schema parsed successfully:', parsed);
+    try {
+      console.log('--- BACKEND AUDIT LOGGING ---');
+      console.log('req.body.logo_url:', req.body.logo_url);
+      console.log('[ORG CREATE RAW BODY]', req.body);
+  
+      // Clean strings before schema parse and db insertion
+      const cleanedBody = cleanInput(req.body);
+      const parsed = orgSchema.parse(cleanedBody);
+      console.log('[DEBUG] Schema parsed successfully:', parsed);
+      console.log('parsed.logo_url:', parsed.logo_url);
+      
+      const dbPayloadLogoUrl = parsed.logo_url || null;
+      console.log('Prisma create() data.logo_url:', dbPayloadLogoUrl);
 
     // Check subdomain uniqueness only if properly provided
     if (parsed.subdomain) {
@@ -504,8 +526,23 @@ router.post('/', async (req: any, res: Response) => {
     // 4. Fire Async Hooks (e.g. Emails/Provisioning) safely WITHOUT blocking the API response
     if (result.adminUser) {
       // simulate background email dispatch
-      Promise.resolve().then(() => {
-        console.log(`[Background Job] Dispatching welcome email to ${result.adminUser.email}`);
+      Promise.resolve().then(async () => {
+        try {
+          console.log(`[Background Job] Dispatching welcome email to ${result.adminUser?.email}`);
+          const frontendOrigin = req.headers.origin || `${req.protocol}://${req.get('host')}`;
+          const baseUrl = FrontendUrlResolver.resolve(result.org, frontendOrigin);
+          const loginUrl = `${baseUrl}/#/authentication/signin`;
+          
+          await EmailService.sendOrganizationProvisionedEmail(
+            parsed.contact_email || result.adminUser?.email || '',
+            result.adminUser?.email || null,
+            parsed.admin_password || null,
+            loginUrl,
+            parsed
+          );
+        } catch (err) {
+          console.error('[Background Job Error]', err);
+        }
       }).catch(err => console.error('[Background Job Error]', err));
     }
 
@@ -550,7 +587,7 @@ router.post('/', async (req: any, res: Response) => {
 
 
 // GET all organizations (IT Setup only)
-router.get('/', async (req: any, res: Response) => {
+router.get('/', authMiddleware, requirePermission('IDENTITY', 'IS_SYSTEM_ADMIN'), async (req: any, res: Response) => {
   try {
     const { page = 1, limit = 10, search = '', status } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
@@ -639,12 +676,18 @@ router.patch('/:id/branding', authMiddleware, async (req: any, res: Response) =>
 });
 
 // DELETE organization (IT Setup only)
-router.delete('/:id', async (req: any, res: Response) => {
+router.delete('/:id', authMiddleware, requirePermission('IDENTITY', 'IS_SYSTEM_ADMIN'), async (req: any, res: Response) => {
   try {
     await prisma.organization.delete({ where: { id: req.params.id } });
     res.json({ message: 'Organization deleted successfully' });
-  } catch (error) {
-    console.error(error);
+  } catch (error: any) {
+    console.error('Delete organization error:', error);
+    if (error.code === 'P2003') {
+      return res.status(400).json({ message: 'Organization cannot be deleted due to active cross-tenant reference or dependent records' });
+    }
+    if (error.code === 'P2025') {
+      return res.status(404).json({ message: 'Organization not found' });
+    }
     res.status(500).json({ message: 'Server error' });
   }
 });

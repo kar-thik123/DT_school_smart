@@ -12,6 +12,9 @@ export class OrganizationService {
   private apiUrl = `${environment.apiUrl}/organizations`;
 
   provisionOrganization(payload: ProvisioningPayload): Observable<ProvisioningResponse> {
+    console.log('--- SERVICE LAYER PAYLOAD LOGGING ---');
+    console.log('payload.logo_url:', payload.logo_url);
+    console.log('Full payload:', payload);
     return this.http.post<ProvisioningResponse>(this.apiUrl, payload);
   }
 

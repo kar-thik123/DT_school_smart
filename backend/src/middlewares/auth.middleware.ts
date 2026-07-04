@@ -19,6 +19,7 @@ export interface AuthRequest extends Request {
 }
 
 export const authMiddleware = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  console.log(`[AUTH MIDDLEWARE TRIGGERED] ${req.method} ${req.originalUrl}`);
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
