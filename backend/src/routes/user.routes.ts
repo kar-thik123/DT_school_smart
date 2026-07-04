@@ -3,6 +3,8 @@ import bcrypt from 'bcrypt';
 import prisma from '../prisma';
 import { z } from 'zod';
 import { authMiddleware, requirePermission } from '../middlewares/auth.middleware';
+import { EmailLinkBuilder } from '../services/email-link-builder.service';
+import { EmailService } from '../services/email.service';
 import { checkSeatAvailability } from '../utils/license-check';
 import multer = require('multer');
 import path = require('path');
@@ -545,7 +547,7 @@ router.post('/:id/reset-password', requireManagement, async (req: any, res: Resp
   try {
     const targetUser = await prisma.user.findFirst({
       where: { id: req.params.id, organization_id: req.user.organization_id },
-      include: { role: true }
+      include: { role: true, organization: true }
     });
 
     if (!targetUser) {
@@ -565,7 +567,6 @@ router.post('/:id/reset-password', requireManagement, async (req: any, res: Resp
     }
 
     const { randomBytes } = require('crypto');
-    const nodemailer = require('nodemailer');
 
     const token = randomBytes(32).toString('hex');
     const expires_at = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
@@ -579,33 +580,14 @@ router.post('/:id/reset-password', requireManagement, async (req: any, res: Resp
       data: { user_id: targetUser.id, token, expires_at }
     });
 
-    const baseUrl = process.env.FRONTEND_URL || 'https://app.platform.com';
-    const resetUrl = `${baseUrl}/#/authentication/reset-password?token=${token}`;
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.SMTP_EMAIL || 'sam21cs1188@gmail.com',
-        pass: process.env.SMTP_PASSWORD || 'mggc wifs yaas yika'
-      }
-    });
-
+    const frontendOrigin = req.body.frontendOrigin;
+    if (!frontendOrigin) {
+      return res.status(400).json({ message: 'frontendOrigin is required' });
+    }
+    const resetUrl = EmailLinkBuilder.buildPasswordResetUrl(targetUser.organization, token, frontendOrigin);
+    
     try {
-      await transporter.sendMail({
-        from: `"School Support" <${process.env.SMTP_EMAIL || 'sam21cs1188@gmail.com'}>`,
-        to: targetUser.email,
-        subject: 'Password Reset Request',
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; color: #333;">
-            <h2 style="color: #059669;">Reset Your Password</h2>
-            <p>Hello ${targetUser.name},</p>
-            <p>Your administrator has requested a password reset for your account. Click the secure link below to proceed:</p>
-            <div style="margin: 30px 0;">
-              <a href="${resetUrl}" style="display:inline-block; padding:12px 24px; color:#ffffff; background-color:#10b981; border-radius:8px; text-decoration:none; font-weight:bold;">Set New Password</a>
-            </div>
-            <p style="font-size:14px; color:#666;">This link is valid for 15 minutes. If you did not request a password reset, you can safely ignore this email.</p>
-          </div>
-        `
-      });
+      await EmailService.sendAdminPasswordResetEmail(targetUser.name, targetUser.email, resetUrl);
 
       await NotificationService.sendNotification({
         organization_id: req.user.organization_id,

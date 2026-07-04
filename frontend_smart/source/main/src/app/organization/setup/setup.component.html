@@ -59,7 +59,7 @@
                       <div class="row">
                         <div class="col-md-3 text-center mb-3">
                           <div class="logo-preview-box mb-2 border rounded p-2 bg-light">
-                             <img [src]="logoPreview || 'assets/images/placeholder-logo.png'" class="img-fluid" style="max-height: 100px;">
+                             <img [src]="logoPreview || 'assets/images/logo.png'" class="img-fluid" style="max-height: 100px;">
                           </div>
                           <input type="file" #logoInput hidden (change)="onLogoSelected($event)" accept="image/*">
                           <button mat-stroked-button color="primary" size="small" (click)="logoInput.click()">
@@ -75,13 +75,13 @@
                             <div class="col-md-6">
                               <mat-form-field class="w-100" appearance="outline">
                                 <mat-label>Contact Email</mat-label>
-                                <input matInput formControlName="contact_email" placeholder="admin@school.com" required>
+                                <input matInput formControlName="contact_email" placeholder="admin@school.com" autocomplete="off" required>
                               </mat-form-field>
                             </div>
                             <div class="col-md-6">
                               <mat-form-field class="w-100" appearance="outline">
                                 <mat-label>Phone</mat-label>
-                                <input matInput formControlName="contact_phone" placeholder="+1 (555) 000-0000">
+                                <input matInput formControlName="contact_phone" placeholder="+1 (555) 000-0000" autocomplete="off">
                               </mat-form-field>
                             </div>
                           </div>
@@ -252,21 +252,21 @@
                     <div formGroupName="admin">
                       <mat-form-field class="w-100 mb-3" appearance="outline">
                         <mat-label>Full Admin Name</mat-label>
-                        <input matInput formControlName="admin_name" required>
+                        <input matInput formControlName="admin_name" autocomplete="off" required>
                       </mat-form-field>
                       
                       <div class="row">
                         <div class="col-md-6">
                           <mat-form-field class="w-100" appearance="outline">
                             <mat-label>Admin Email</mat-label>
-                            <input matInput formControlName="admin_email" required (blur)="checkReadiness()">
+                            <input matInput formControlName="admin_email" autocomplete="off" required (blur)="checkReadiness()">
                             <mat-error *ngIf="!readiness.adminEmailAvailable && !isEditMode">Conflict: Email already exists</mat-error>
                           </mat-form-field>
                         </div>
                         <div class="col-md-6">
                           <mat-form-field class="w-100" appearance="outline">
                             <mat-label>Master Password</mat-label>
-                            <input matInput type="password" formControlName="admin_password" required>
+                            <input matInput type="password" formControlName="admin_password" autocomplete="new-password" required>
                           </mat-form-field>
                         </div>
                       </div>

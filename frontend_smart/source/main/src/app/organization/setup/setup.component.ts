@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit, inject } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { OrganizationService } from '../organization.service';
@@ -17,6 +17,7 @@ import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.co
 import { environment } from '../../../environments/environment';
 import { GlobalLoaderService } from '../../core/service/global-loader.service';
 import { finalize } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-setup',
@@ -38,7 +39,7 @@ import { finalize } from 'rxjs/operators';
   templateUrl: './setup.component.html',
   styleUrls: ['./setup.component.scss']
 })
-export class SetupComponent implements OnInit {
+export class SetupComponent implements OnInit, OnDestroy, AfterViewInit {
   private fb = inject(FormBuilder);
   private orgService = inject(OrganizationService);
   private snackBar = inject(MatSnackBar);
@@ -67,21 +68,61 @@ export class SetupComponent implements OnInit {
   };
 
   provisioningResult: any = null;
+  private formSub?: Subscription;
 
   ngOnInit() {
     this.editOrgId = this.route.snapshot.paramMap.get('id');
     this.isEditMode = !!this.editOrgId;
 
     this.initForm();
+    this.logFormState('1. Immediately after initForm()');
     
     if (this.isEditMode) {
       this.loadOrganizationForEdit();
+      this.logFormState('3. Immediately after loadOrganizationForEdit() patchValue()');
     } else {
       this.loadDraft();
+      this.logFormState('2. Immediately after loadDraft()');
     }
     
+    this.setupFormSubscription();
+  }
+
+  ngAfterViewInit() {
+    setTimeout(() => {
+      this.logFormState('6. After ngAfterViewInit() / first change detection cycle');
+    });
+  }
+
+  private logFormState(stage: string) {
+    if (!this.provisioningForm) return;
+    console.log(`\n--- [DEBUG-FORM] ${stage} ---`);
+    console.log('Form RawValue:', JSON.stringify(this.provisioningForm.getRawValue(), null, 2));
+    
+    // Check DOM values
+    const phoneInput = document.querySelector('input[formControlName="contact_phone"]') as HTMLInputElement;
+    const adminNameInput = document.querySelector('input[formControlName="admin_name"]') as HTMLInputElement;
+    const passwordInput = document.querySelector('input[formControlName="admin_password"]') as HTMLInputElement;
+    
+    console.log('DOM contact_phone:', phoneInput ? phoneInput.value : 'Element not found');
+    console.log('DOM admin_name:', adminNameInput ? adminNameInput.value : 'Element not found');
+    console.log('DOM admin_password:', passwordInput ? passwordInput.value : 'Element not found');
+    console.log('-----------------------------------\n');
+  }
+
+  ngOnDestroy() {
+    if (this.formSub) {
+      this.formSub.unsubscribe();
+    }
+  }
+
+  private setupFormSubscription() {
+    if (this.formSub) {
+      this.formSub.unsubscribe();
+    }
     // Auto-save draft on changes only if not in edit mode
-    this.provisioningForm.valueChanges.subscribe(() => {
+    this.formSub = this.provisioningForm.valueChanges.subscribe((val) => {
+      console.log('--- [DEBUG-FORM] 7. After valueChanges event ---', val);
       if (!this.isEditMode) {
         this.saveDraft();
       }
@@ -104,7 +145,7 @@ export class SetupComponent implements OnInit {
           logo_url: org.logo_url
         });
         if (org.logo_url) {
-          this.logoPreview = `${this.serverUrl}${org.logo_url}`;
+          this.logoPreview = org.logo_url;
         }
 
         this.domainForm.patchValue({
@@ -145,6 +186,7 @@ export class SetupComponent implements OnInit {
   }
 
   saveDraft() {
+    if (this.isProvisioned) return;
     localStorage.setItem('provisioning_draft', JSON.stringify(this.provisioningForm.value));
   }
 
@@ -179,7 +221,7 @@ export class SetupComponent implements OnInit {
         smtp_port: ['']
       }),
       admin: this.fb.group({
-        admin_name: ['School Admin', Validators.required],
+        admin_name: ['', Validators.required],
         admin_email: ['', [Validators.required, Validators.email]],
         admin_password: ['', [Validators.required, Validators.minLength(6)]],
         initial_academic_year: ['', Validators.required],
@@ -231,6 +273,7 @@ export class SetupComponent implements OnInit {
   get licenseForm() { return this.provisioningForm.get('license') as FormGroup; }
 
   setStep(step: number) {
+    this.logFormState(`8. Immediately before navigating to step ${step}`);
     this.currentStep = step;
   }
 
@@ -240,7 +283,7 @@ export class SetupComponent implements OnInit {
       this.orgService.uploadLogo(file).subscribe({
         next: (res) => {
           this.orgForm.patchValue({ logo_url: res.logoUrl });
-          this.logoPreview = `${this.serverUrl}${res.logoUrl}`;
+          this.logoPreview = res.logoUrl;
           this.snackBar.open('Logo uploaded successfully', 'Close', { duration: 2000 });
         },
         error: () => this.snackBar.open('Logo upload failed', 'Close', { duration: 3000 })
@@ -284,6 +327,14 @@ export class SetupComponent implements OnInit {
     }
     this.isSubmitting = true;
     const rawValue = this.provisioningForm.getRawValue(); // use getRawValue to include disabled fields if needed
+    
+    // RUNTIME LOGGING
+    console.log('--- RUNTIME AUDIT LOGGING ---');
+    console.log('this.logoPreview:', this.logoPreview);
+    console.log('this.orgForm.value:', this.orgForm.value);
+    console.log('this.orgForm.getRawValue():', this.orgForm.getRawValue());
+    console.log('rawValue.organization.logo_url:', rawValue.organization.logo_url);
+    
     const payload: ProvisioningPayload = {
       ...rawValue.organization,
       ...rawValue.domain,
@@ -297,6 +348,7 @@ export class SetupComponent implements OnInit {
       const updatePayload = {
         school_name: payload.school_name,
         contact_email: payload.contact_email,
+        logo_url: payload.logo_url,
         subdomain: payload.subdomain,
         domain_type: payload.domain_type,
         login_limit: rawValue.license.licensed_seats,
@@ -348,8 +400,8 @@ export class SetupComponent implements OnInit {
   resetConsole() {
     this.isProvisioned = false;
     this.clearDraft(); // Clear draft on reset — prevents stale data on next session
-    this.provisioningForm.reset();
     this.initForm();
+    this.setupFormSubscription();
     this.currentStep = 1;
     this.logoPreview = null;
   }

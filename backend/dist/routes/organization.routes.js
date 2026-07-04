@@ -27,10 +27,10 @@ const fs = require('fs');
 if (!fs.existsSync('uploads/logos/')) {
     fs.mkdirSync('uploads/logos/', { recursive: true });
 }
-router.post('/upload-logo', auth_middleware_1.authMiddleware, upload.single('logo'), (req, res) => {
+router.post('/upload-logo', upload.single('logo'), (req, res) => {
     if (!req.file)
         return res.status(400).json({ message: 'No file uploaded' });
-    const logoUrl = `/uploads/logos/${req.file.filename}`;
+    const logoUrl = `/api/uploads/logos/${req.file.filename}`;
     res.json({ logoUrl });
 });
 router.get('/debug-db', auth_middleware_1.authMiddleware, (0, auth_middleware_1.requirePermission)('IDENTITY', 'IS_SYSTEM_ADMIN'), async (req, res) => {
@@ -275,7 +275,7 @@ const orgSchema = zod_1.z.object({
     contact_email: zod_1.z.string().email().nullish().or(zod_1.z.literal('')),
     contact_phone: zod_1.z.string().nullish(),
     address: zod_1.z.string().nullish(),
-    logo_url: zod_1.z.string().url().nullish().or(zod_1.z.literal('')),
+    logo_url: zod_1.z.string().nullish().or(zod_1.z.literal('')),
     // Domain
     domain_type: zod_1.z.enum(['Platform Domain', 'Subdomain', 'Custom Domain']).default('Platform Domain'),
     subdomain: zod_1.z.string().nullish().or(zod_1.z.literal('')),
@@ -312,11 +312,16 @@ function cleanInput(data) {
 }
 router.post('/', async (req, res) => {
     try {
+        console.log('--- BACKEND AUDIT LOGGING ---');
+        console.log('req.body.logo_url:', req.body.logo_url);
         console.log('[ORG CREATE RAW BODY]', req.body);
         // Clean strings before schema parse and db insertion
         const cleanedBody = cleanInput(req.body);
         const parsed = orgSchema.parse(cleanedBody);
         console.log('[DEBUG] Schema parsed successfully:', parsed);
+        console.log('parsed.logo_url:', parsed.logo_url);
+        const dbPayloadLogoUrl = parsed.logo_url || null;
+        console.log('Prisma create() data.logo_url:', dbPayloadLogoUrl);
         // Check subdomain uniqueness only if properly provided
         if (parsed.subdomain) {
             console.log(`[DEBUG] Checking uniqueness for subdomain: ${parsed.subdomain}`);
@@ -583,7 +588,13 @@ router.delete('/:id', async (req, res) => {
         res.json({ message: 'Organization deleted successfully' });
     }
     catch (error) {
-        console.error(error);
+        console.error('Delete organization error:', error);
+        if (error.code === 'P2003') {
+            return res.status(400).json({ message: 'Organization cannot be deleted due to active cross-tenant reference or dependent records' });
+        }
+        if (error.code === 'P2025') {
+            return res.status(404).json({ message: 'Organization not found' });
+        }
         res.status(500).json({ message: 'Server error' });
     }
 });

@@ -225,7 +225,7 @@ router.post('/', requireManagement, async (req, res) => {
         const roleDb = await prisma_1.default.role.findFirst({
             where: {
                 id: parsed.role_id,
-                OR: [{ organization_id: req.user.organization_id }, { is_system: true }]
+                OR: [{ organization_id: req.user.organization_id }, { is_system: true, organization_id: null }]
             }
         });
         if (!roleDb)
@@ -326,7 +326,7 @@ router.post('/bulk', requireManagement, async (req, res) => {
                     const roleDb = await prisma_1.default.role.findFirst({
                         where: {
                             name: { equals: u.role, mode: 'insensitive' },
-                            OR: [{ organization_id: req.user.organization_id }, { is_system: true }]
+                            OR: [{ organization_id: req.user.organization_id }, { is_system: true, organization_id: null }]
                         }
                     });
                     if (roleDb)
@@ -337,7 +337,7 @@ router.post('/bulk', requireManagement, async (req, res) => {
                     const studentRole = await prisma_1.default.role.findFirst({
                         where: {
                             permissions: { some: { permission: { module: 'IDENTITY', action: 'IS_STUDENT' } } },
-                            OR: [{ organization_id: req.user.organization_id }, { is_system: true }]
+                            OR: [{ organization_id: req.user.organization_id }, { is_system: true, organization_id: null }]
                         }
                     });
                     if (studentRole)
@@ -412,7 +412,7 @@ router.put('/:id', requireManagement, async (req, res) => {
             const roleDb = await prisma_1.default.role.findFirst({
                 where: {
                     id: req.body.role_id,
-                    OR: [{ organization_id: req.user.organization_id }, { is_system: true }]
+                    OR: [{ organization_id: req.user.organization_id }, { is_system: true, organization_id: null }]
                 }
             });
             if (roleDb)
@@ -421,7 +421,7 @@ router.put('/:id', requireManagement, async (req, res) => {
         else if (req.body.role) {
             // Legacy support for string updates if any still exist
             const roleDb = await prisma_1.default.role.findFirst({
-                where: { name: req.body.role, OR: [{ organization_id: req.user.organization_id }, { is_system: true }] }
+                where: { name: req.body.role, OR: [{ organization_id: req.user.organization_id }, { is_system: true, organization_id: null }] }
             });
             if (roleDb)
                 updateData.role_id = roleDb.id;
@@ -597,6 +597,45 @@ router.post('/:id/reset-password', requireManagement, async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 });
+router.get('/me/subjects', async (req, res) => {
+    try {
+        const userId = req.user.user_id;
+        const organizationId = req.user.organization_id;
+        // Check if the user is a student by getting their enrollments
+        const enrollments = await prisma_1.default.studentEnrollment.findMany({
+            where: { student_id: userId, organization_id: organizationId },
+            orderBy: { enrollment_date: 'desc' },
+            take: 1
+        });
+        if (enrollments.length > 0) {
+            // User is a student, fetch subjects for their grade
+            const subjects = await prisma_1.default.subject.findMany({
+                where: {
+                    grade_id: enrollments[0].grade_id,
+                    organization_id: organizationId,
+                    is_active: true
+                },
+                select: { id: true, name: true }
+            });
+            return res.json(subjects);
+        }
+        else {
+            // User is not a student (e.g., teacher, admin), fetch all active subjects in org
+            const subjects = await prisma_1.default.subject.findMany({
+                where: {
+                    organization_id: organizationId,
+                    is_active: true
+                },
+                select: { id: true, name: true }
+            });
+            return res.json(subjects);
+        }
+    }
+    catch (error) {
+        console.error('Error fetching user subjects:', error);
+        res.status(500).json({ message: 'Server error fetching subjects' });
+    }
+});
 router.get('/profile/:id', async (req, res) => {
     try {
         // First, fetch basic user to determine role
@@ -631,12 +670,15 @@ router.get('/profile/:id', async (req, res) => {
             country: user.user_profile.country,
             address: user.user_profile.address,
             about: user.user_profile.about,
+            favorite_subjects: user.user_profile.favorite_subjects,
+            favorite_colour: user.user_profile.favorite_colour,
             profile_image: user.user_profile.profile_image,
             academic_profiles: user.user_profile.academic_profiles || [],
             date_of_birth: user.user_profile.date_of_birth,
             academic_birth: user.user_profile.academic_birth
         } : {
-            academic_profiles: []
+            academic_profiles: [],
+            favorite_subjects: []
         };
         const roll_number = user.roll_number || user.enrollments?.[0]?.roll_number || null;
         const date_of_birth = user.user_profile?.date_of_birth || user.student_profile?.date_of_birth || null;
@@ -650,7 +692,7 @@ router.get('/profile/:id', async (req, res) => {
 });
 router.put('/profile/:id', upload.single('profile_image'), async (req, res) => {
     try {
-        let { name, email, phone, city, country, address, about, academic_profiles, roll_number, date_of_birth, academic_birth } = req.body;
+        let { name, email, phone, city, country, address, about, academic_profiles, roll_number, date_of_birth, academic_birth, favorite_subjects, favorite_colour } = req.body;
         // Handle multipart/form-data where JSON arrays are sent as strings
         if (typeof academic_profiles === 'string') {
             try {
@@ -658,6 +700,14 @@ router.put('/profile/:id', upload.single('profile_image'), async (req, res) => {
             }
             catch (e) {
                 academic_profiles = [];
+            }
+        }
+        if (typeof favorite_subjects === 'string') {
+            try {
+                favorite_subjects = JSON.parse(favorite_subjects);
+            }
+            catch (e) {
+                favorite_subjects = [];
             }
         }
         let profile_image = undefined;
@@ -685,7 +735,7 @@ router.put('/profile/:id', upload.single('profile_image'), async (req, res) => {
             data: { name, email }
         });
         // Upsert UserProfile fields
-        const updateData = { phone, city, country, address, about, academic_profiles };
+        const updateData = { phone, city, country, address, about, academic_profiles, favorite_subjects, favorite_colour };
         if (profile_image) {
             updateData.profile_image = profile_image;
         }
@@ -706,6 +756,8 @@ router.put('/profile/:id', upload.single('profile_image'), async (req, res) => {
                 country,
                 address,
                 about,
+                favorite_subjects: favorite_subjects || [],
+                favorite_colour,
                 profile_image,
                 academic_profiles: academic_profiles || [],
                 ...(date_of_birth !== undefined && { date_of_birth: date_of_birth ? new Date(date_of_birth) : null }),

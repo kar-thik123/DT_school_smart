@@ -7,7 +7,7 @@ import { ManageComponent } from './manage/manage.component';
 export const ORGANIZATION_ROUTE: Route[] = [
   {
     path: '',
-    redirectTo: 'setup',
+    redirectTo: 'list',
     pathMatch: 'full'
   },
   {

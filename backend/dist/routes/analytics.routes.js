@@ -568,6 +568,7 @@ router.get('/management/weak-subjects', (0, auth_middleware_1.requirePermission)
     try {
         const org_id = req.user.organization_id;
         const yearId = await academic_context_resolver_1.AcademicContextResolver.resolveHistoricalAcademicYearId(req);
+        const limit = req.query.limit;
         const subjectStats = await prisma_1.default.studentExamSubjectResult.groupBy({
             by: ['subject_id'],
             where: {
@@ -600,7 +601,12 @@ router.get('/management/weak-subjects', (0, auth_middleware_1.requirePermission)
             }
         }
         weakSubjects.sort((a, b) => a.average_score - b.average_score);
-        res.json(weakSubjects.slice(0, 5));
+        if (limit === 'all') {
+            res.json(weakSubjects);
+        }
+        else {
+            res.json(weakSubjects.slice(0, 5));
+        }
     }
     catch (error) {
         console.error(error);
