@@ -33,7 +33,7 @@
 
                 @if (isLoading) {
                   <div class="loading-spinner">
-                    <mat-spinner></mat-spinner>
+                    <app-global-loader [inline]="true"></app-global-loader>
                     <p>Loading subjects...</p>
                   </div>
                 }

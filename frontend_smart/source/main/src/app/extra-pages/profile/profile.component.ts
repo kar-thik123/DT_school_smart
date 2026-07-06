@@ -11,6 +11,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.component';
+import { GlobalLoaderComponent } from '@shared/components/global-loader/global-loader.component';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '@core/service/auth.service';
 import { ImageCompressionService } from '@core/service/image-compression.service';
@@ -25,6 +26,7 @@ import Swal from 'sweetalert2';
   styleUrls: ['./profile.component.scss'],
   imports: [
     BreadcrumbComponent,
+    GlobalLoaderComponent,
     MatTabsModule,
     MatIconModule,
     MatFormFieldModule,
@@ -48,6 +50,7 @@ export class ProfileComponent implements OnInit {
     },
   ];
 
+  isLoadingProfile = true;
   userDetails: any = {};
   academicProfiles: { title: string, listItems: string[] }[] = [];
   skills: any[] = [];
@@ -140,6 +143,7 @@ export class ProfileComponent implements OnInit {
       this.http.get<any>(`${environment.apiUrl}/users/profile/${currentUser.id}`).subscribe({
         next: (data) => {
           this.userDetails = data;
+          this.isLoadingProfile = false;
           if (!this.userDetails.favorite_subjects) {
             this.userDetails.favorite_subjects = [];
           }
@@ -151,6 +155,7 @@ export class ProfileComponent implements OnInit {
         },
         error: (err) => {
           console.error('Failed to fetch user details:', err);
+          this.isLoadingProfile = false;
         }
       });
     }

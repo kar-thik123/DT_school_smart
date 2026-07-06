@@ -1,3 +1,4 @@
+import { GlobalLoaderComponent } from '@shared/components/global-loader/global-loader.component';
 import { Component, OnDestroy, OnInit, inject, HostListener } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -48,7 +49,7 @@ import { trigger, state, style, transition, animate } from '@angular/animations'
     ])
   ],
   standalone: true,
-  imports: [
+  imports: [GlobalLoaderComponent, 
     BreadcrumbComponent,
     MasterTableComponent,
     HierarchyDropdownComponent,

@@ -1,3 +1,4 @@
+import { GlobalLoaderComponent } from '@shared/components/global-loader/global-loader.component';
 import { Component, OnInit, OnDestroy, inject, HostListener } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, FormArray, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -39,7 +40,7 @@ import { HierarchyDropdownComponent } from '../../administration/units-list/comp
       transition('collapsed <=> expanded', animate('200ms ease-in-out'))
     ])
   ],
-  imports: [
+  imports: [GlobalLoaderComponent, 
     CommonModule,
     ReactiveFormsModule,
     FormsModule,

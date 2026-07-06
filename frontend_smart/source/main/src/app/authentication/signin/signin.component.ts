@@ -102,7 +102,7 @@ export class SigninComponent
           this.router.navigate([this.authService.getDefaultRoute()]);
         },
         error: (error) => {
-          this.error = error;
+          this.error = error?.error?.message || error?.error || error?.message || 'An error occurred';
           this.submitted = false;
           this.loading = false;
         },

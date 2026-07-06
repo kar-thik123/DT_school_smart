@@ -14,6 +14,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.component';
+import { GlobalLoaderComponent } from '@shared/components/global-loader/global-loader.component';
 
 @Component({
   selector: 'app-skills-verify-assignment',
@@ -22,7 +23,8 @@ import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.co
     CommonModule, ReactiveFormsModule, MatCardModule,
     MatFormFieldModule, MatInputModule, MatSelectModule,
     MatButtonModule, MatIconModule, MatTableModule,
-    MatTooltipModule, BreadcrumbComponent, MatCheckboxModule
+    MatTooltipModule, BreadcrumbComponent, MatCheckboxModule,
+    GlobalLoaderComponent
   ],
   templateUrl: './skills-verify-assignment.component.html',
   styleUrls: ['./skills-verify-assignment.component.scss']
@@ -37,6 +39,7 @@ export class SkillsVerifyAssignmentComponent implements OnInit {
   ];
 
   assignments: any[] = [];
+  isLoadingAssignments: boolean = false;
   users: any[] = [];
   filteredUsers: any[] = [];
   grades: any[] = [];
@@ -139,9 +142,16 @@ export class SkillsVerifyAssignmentComponent implements OnInit {
   }
 
   loadAssignments() {
+    this.isLoadingAssignments = true;
     this.http.get<any[]>(`${environment.apiUrl}/skill-assignment`).subscribe({
-      next: (data) => this.assignments = data,
-      error: (err) => this.showError('Failed to load assignments')
+      next: (data) => {
+        this.assignments = data;
+        this.isLoadingAssignments = false;
+      },
+      error: (err) => {
+        this.showError('Failed to load assignments');
+        this.isLoadingAssignments = false;
+      }
     });
   }
 

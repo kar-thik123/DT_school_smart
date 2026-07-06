@@ -23,6 +23,7 @@ import { AcademicStructurePreviewComponent } from './academic-structure-preview/
 import * as XLSX from 'xlsx';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '@core';
+import { GlobalLoaderComponent } from '@shared/components/global-loader/global-loader.component';
 
 @Component({
   selector: 'app-academic-structure',
@@ -32,7 +33,8 @@ import { AuthService } from '@core';
     MatTabsModule, MatIconModule, MatButtonModule, MatCardModule, 
     MatTableModule, MatMenuModule, MatFormFieldModule, MatInputModule, 
     MatSelectModule, MatDialogModule, MatSnackBarModule, MatDividerModule,
-    MatTooltipModule, DragDropModule, MatProgressBarModule, AcademicStructurePreviewComponent
+    MatTooltipModule, DragDropModule, MatProgressBarModule, AcademicStructurePreviewComponent,
+    GlobalLoaderComponent
   ],
   templateUrl: './academic-structure.component.html',
   styleUrls: ['./academic-structure.component.scss']
@@ -72,6 +74,9 @@ export class AcademicStructureComponent implements OnInit {
   groupFilterSectionId: string = '';
   groupsForSelectedSection: import('./services/academic-structure.service').ISubjectGroup[] = [];
   sectionsForGroupFilter: ISection[] = [];
+
+  isSubjectsLoading = false;
+  isGroupsLoading = false;
 
   canImportStructure = false;
   canExportStructure = false;
@@ -211,11 +216,16 @@ export class AcademicStructureComponent implements OnInit {
       this.subjects = [];
       return;
     }
+    this.isSubjectsLoading = true;
     this.academicService.getSubjects(this.subjectFilterGradeId).subscribe({
       next: (subjects) => {
         this.subjects = subjects;
+        this.isSubjectsLoading = false;
       },
-      error: () => this.showNotification('error', 'Failed to load subjects')
+      error: () => {
+        this.showNotification('error', 'Failed to load subjects');
+        this.isSubjectsLoading = false;
+      }
     });
   }
 
@@ -281,9 +291,16 @@ export class AcademicStructureComponent implements OnInit {
       this.groupsForSelectedSection = [];
       return;
     }
+    this.isGroupsLoading = true;
     this.academicService.getSubjectGroups(this.groupFilterGradeId, this.groupFilterSectionId).subscribe({
-      next: (groups) => this.groupsForSelectedSection = groups,
-      error: () => this.showNotification('error', 'Failed to load Groups / Streams')
+      next: (groups) => {
+        this.groupsForSelectedSection = groups;
+        this.isGroupsLoading = false;
+      },
+      error: () => {
+        this.showNotification('error', 'Failed to load Groups / Streams');
+        this.isGroupsLoading = false;
+      }
     });
   }
 

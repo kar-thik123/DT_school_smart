@@ -1,3 +1,4 @@
+import { GlobalLoaderComponent } from '@shared/components/global-loader/global-loader.component';
 import { Component, OnInit, inject } from '@angular/core';
 
 import { MatCardModule } from '@angular/material/card';
@@ -15,7 +16,7 @@ import { MatButtonModule } from '@angular/material/button';
 @Component({
   selector: 'app-student-class',
   standalone: true,
-  imports: [
+  imports: [GlobalLoaderComponent, 
     MatCardModule,
     BreadcrumbComponent,
     MatProgressSpinnerModule,

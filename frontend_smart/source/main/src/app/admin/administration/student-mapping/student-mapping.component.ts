@@ -1,3 +1,4 @@
+import { GlobalLoaderComponent } from '@shared/components/global-loader/global-loader.component';
 import { Component, OnInit, inject, Inject, ViewChild, ViewChildren, QueryList } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -39,7 +40,7 @@ import { WithdrawStudentDialogComponent } from './dialogs/withdraw-student-dialo
 @Component({
   selector: 'app-student-mapping',
   standalone: true,
-  imports: [
+  imports: [GlobalLoaderComponent, 
     CommonModule,
     FormsModule,
     MatCardModule,

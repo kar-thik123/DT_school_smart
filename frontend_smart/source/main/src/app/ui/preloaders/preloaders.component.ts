@@ -1,3 +1,4 @@
+import { GlobalLoaderComponent } from '@shared/components/global-loader/global-loader.component';
 import { Component } from '@angular/core';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.component';
@@ -5,7 +6,7 @@ import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.co
     selector: 'app-preloaders',
     templateUrl: './preloaders.component.html',
     styleUrls: ['./preloaders.component.scss'],
-    imports: [BreadcrumbComponent, MatProgressSpinnerModule]
+    imports: [GlobalLoaderComponent, BreadcrumbComponent, MatProgressSpinnerModule]
 })
 export class PreloadersComponent {
   breadscrums = [

@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, Input, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { GlobalLoaderService } from '../../../core/service/global-loader.service';
@@ -11,5 +11,6 @@ import { GlobalLoaderService } from '../../../core/service/global-loader.service
   styleUrls: ['./global-loader.component.scss']
 })
 export class GlobalLoaderComponent {
+  @Input() inline = false;
   public loaderService = inject(GlobalLoaderService);
 }

@@ -1,3 +1,4 @@
+import { GlobalLoaderComponent } from '@shared/components/global-loader/global-loader.component';
 import { Component, OnDestroy, OnInit, inject, ViewChild, ElementRef } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
@@ -32,7 +33,7 @@ import { environment } from '../../../../environments/environment';
   styleUrls: ['./user-management.component.scss'],
   animations: [rowsAnimation],
   standalone: true,
-  imports: [
+  imports: [GlobalLoaderComponent, 
     BreadcrumbComponent, 
     CommonModule,
     MatTableModule,

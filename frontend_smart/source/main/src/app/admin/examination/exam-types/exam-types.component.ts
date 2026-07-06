@@ -77,11 +77,7 @@ export class ExamTypesComponent implements OnInit, OnDestroy {
     this.canManage = this.authService.hasPermission('EXAMINATION', 'MANAGE') || 
                      this.authService.hasPermission('EXAMINATION_MANAGE');
                      
-    this.academicContextService.historicalYear$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(() => {
-        this.loadExaminations();
-      });
+    this.loadExaminations();
   }
 
   ngOnDestroy(): void {

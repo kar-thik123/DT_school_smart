@@ -8,13 +8,18 @@
     </div>
     }
     <!-- Your content goes here  -->
-    <div class="row clearfix">
+    <div class="row clearfix" style="position: relative; min-height: 400px;">
+      @if (isLoadingProfile) {
+      <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; align-items: center; background: rgba(255,255,255,0.7); z-index: 10;">
+        <app-global-loader [inline]="true"></app-global-loader>
+      </div>
+      }
       <div class="col-lg-4 col-md-12">
         <div class="card">
           <div class="m-b-20">
             <div class="contact-grid">
               <div class="profile-header bg-dark">
-                <div class="user-name">{{ userDetails?.name || 'Loading...' }} {{ userDetails?.last_name }}</div>
+                <div class="user-name">{{ userDetails?.name }} {{ userDetails?.last_name || '' }}</div>
                 <div class="name-center">{{ userDetails?.role?.name || 'User' }}</div>
               </div>
               <img [src]="getUserProfileImage()" class="user-img" alt="Profile" (error)="onImageError($event)">

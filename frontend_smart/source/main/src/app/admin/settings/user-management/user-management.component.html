@@ -158,8 +158,7 @@
               </table>
               
               <div *ngIf="isLoading" class="tbl-spinner">
-                <mat-progress-spinner color="primary" [diameter]="40" mode="indeterminate">
-                </mat-progress-spinner>
+                <app-global-loader [inline]="true"></app-global-loader>
               </div>
 
               <div *ngIf="!isLoading && dataSource.data.length === 0" class="no-results">

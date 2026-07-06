@@ -23,6 +23,7 @@ import * as XLSX from 'xlsx';
 import Swal from 'sweetalert2';
 import { AuthService } from '@core';
 import { Router } from '@angular/router';
+import { GlobalLoaderComponent } from '@shared/components/global-loader/global-loader.component';
 
 @Component({
   selector: 'app-units-list',
@@ -32,7 +33,7 @@ import { Router } from '@angular/router';
     MatTabsModule, MatIconModule, MatButtonModule, MatCardModule,
     MatTableModule, MatMenuModule, MatFormFieldModule, MatInputModule,
     MatSelectModule, MatSnackBarModule, MatProgressBarModule, MatPaginatorModule,
-    HierarchyDropdownComponent, UnitsPreviewComponent
+    HierarchyDropdownComponent, UnitsPreviewComponent, GlobalLoaderComponent
   ],
   templateUrl: './units.component.html',
   styleUrls: ['./units.component.scss']
@@ -87,6 +88,10 @@ export class UnitsListComponent implements OnInit {
 
   subTopicCurrentPage = 1;
   subTopicPageSize = 10;
+
+  isFilteringUnits = false;
+  isFilteringTopics = false;
+  isFilteringSubTopics = false;
 
   isCurriculumLoaded = false;
 
@@ -276,6 +281,21 @@ export class UnitsListComponent implements OnInit {
     this.subTopicForm = this.fb.group({
       topic_id: ['', Validators.required],
       name: ['', Validators.required]
+    });
+
+    this.unitForm.get('subject_id')?.valueChanges.subscribe(() => {
+      this.isFilteringUnits = true;
+      setTimeout(() => this.isFilteringUnits = false, 400);
+    });
+
+    this.topicForm.get('unit_id')?.valueChanges.subscribe(() => {
+      this.isFilteringTopics = true;
+      setTimeout(() => this.isFilteringTopics = false, 400);
+    });
+
+    this.subTopicForm.get('topic_id')?.valueChanges.subscribe(() => {
+      this.isFilteringSubTopics = true;
+      setTimeout(() => this.isFilteringSubTopics = false, 400);
     });
   }
 
