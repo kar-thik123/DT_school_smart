@@ -29,6 +29,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { FeatherIconsComponent } from '@shared/components/feather-icons/feather-icons.component';
 import { TableShowHideColumnComponent } from '@shared/components/table-show-hide-column/table-show-hide-column.component';
+import { GlobalLoaderComponent } from '@shared/components/global-loader/global-loader.component';
 
 export interface ColumnDefinition {
   def: string;
@@ -67,6 +68,7 @@ export interface ColumnDefinition {
   styleUrls: ['./master-table.component.scss'],
   animations: [rowsAnimation],
   imports: [
+    GlobalLoaderComponent,
     FeatherIconsComponent,
     CommonModule,
     MatFormFieldModule,

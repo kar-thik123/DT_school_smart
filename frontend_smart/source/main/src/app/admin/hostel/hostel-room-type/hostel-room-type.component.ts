@@ -1,3 +1,4 @@
+import { GlobalLoaderComponent } from '@shared/components/global-loader/global-loader.component';
 import { Direction } from '@angular/cdk/bidi';
 import { SelectionModel } from '@angular/cdk/collections';
 import { CommonModule, NgClass, DatePipe } from '@angular/common';
@@ -38,7 +39,7 @@ import { LocalStorageService } from '@shared/services';
 @Component({
   selector: 'app-hostel-room-type',
   animations: [rowsAnimation],
-  imports: [
+  imports: [GlobalLoaderComponent, 
     BreadcrumbComponent,
     FeatherIconsComponent,
     CommonModule,

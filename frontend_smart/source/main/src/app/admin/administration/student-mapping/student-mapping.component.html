@@ -67,7 +67,7 @@
                   <!-- Removed duplicate embedded selector, Tab 1 now uses global context -->
 
                   <div *ngIf="isLoading" class="d-flex justify-content-center p-4">
-                    <mat-spinner diameter="40"></mat-spinner>
+                    <app-global-loader [inline]="true"></app-global-loader>
                   </div>
 
                   <div *ngIf="!isLoading">
@@ -139,7 +139,7 @@
                               [disabled]="!globalGradeId || selectedBulkStudentIds.length === 0 || isBulkSaving || (subjectGroups.length > 0 && !globalGroupId)" 
                               (click)="bulkEnroll()">
                         <span *ngIf="!isBulkSaving">Enroll {{ selectedBulkStudentIds.length }} Students</span>
-                        <mat-spinner *ngIf="isBulkSaving" diameter="20"></mat-spinner>
+                        <app-global-loader [inline]="true"></app-global-loader>
                       </button>
                     </div>
 

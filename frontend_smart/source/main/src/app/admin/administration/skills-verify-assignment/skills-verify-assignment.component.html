@@ -103,7 +103,12 @@
             <mat-card-title>Active Assignments</mat-card-title>
           </mat-card-header>
           <mat-card-content>
-            <div class="table-responsive">
+            <div class="table-responsive" style="position: relative; min-height: 200px;">
+              @if (isLoadingAssignments) {
+              <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; align-items: center; background: rgba(255,255,255,0.7); z-index: 10;">
+                <app-global-loader [inline]="true"></app-global-loader>
+              </div>
+              }
               <table mat-table [dataSource]="assignments" class="w-100">
                 <ng-container matColumnDef="verifier">
                   <th mat-header-cell *matHeaderCellDef> Verifiers </th>
@@ -152,7 +157,7 @@
                 <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
                 <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
               </table>
-              <div *ngIf="assignments.length === 0" class="text-center p-4 text-muted">
+              <div *ngIf="!isLoadingAssignments && assignments.length === 0" class="text-center p-4 text-muted">
                 No assignments found
               </div>
             </div>

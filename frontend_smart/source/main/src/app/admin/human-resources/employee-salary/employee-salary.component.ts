@@ -1,3 +1,4 @@
+import { GlobalLoaderComponent } from '@shared/components/global-loader/global-loader.component';
 import { Component, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { EmployeeSalaryService } from './employee-salary.service';
 import { HttpClient } from '@angular/common/http';
@@ -39,7 +40,7 @@ import { TableShowHideColumnComponent } from '@shared/components/table-show-hide
   templateUrl: './employee-salary.component.html',
   styleUrls: ['./employee-salary.component.scss'],
   animations: [rowsAnimation],
-  imports: [
+  imports: [GlobalLoaderComponent, 
     BreadcrumbComponent,
     FormsModule,
     MatTooltipModule,

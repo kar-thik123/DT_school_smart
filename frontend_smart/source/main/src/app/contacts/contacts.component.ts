@@ -1,3 +1,4 @@
+import { GlobalLoaderComponent } from '@shared/components/global-loader/global-loader.component';
 import { Component, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { ContactsService } from './contacts.service';
 import { HttpClient } from '@angular/common/http';
@@ -38,7 +39,7 @@ import { TableShowHideColumnComponent } from '@shared/components/table-show-hide
   templateUrl: './contacts.component.html',
   styleUrls: ['./contacts.component.scss'],
   animations: [rowsAnimation],
-  imports: [
+  imports: [GlobalLoaderComponent, 
     BreadcrumbComponent,
     FormsModule,
     MatTooltipModule,

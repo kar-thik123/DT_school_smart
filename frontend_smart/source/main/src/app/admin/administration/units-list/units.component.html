@@ -118,7 +118,13 @@
                     </div>
                   </form>
 
-                  <table class="table mb-0 table-hover mt-3">
+                  <div style="position: relative; min-height: 200px;">
+                    @if (isFilteringUnits) {
+                    <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; align-items: center; background: rgba(255,255,255,0.7); z-index: 10;">
+                      <app-global-loader [inline]="true"></app-global-loader>
+                    </div>
+                    }
+                    <table class="table mb-0 table-hover mt-3">
                     <thead>
                       <tr>
                         <th>S.No</th>
@@ -173,6 +179,7 @@
                                  (page)="onUnitPageChange($event)"
                                  showFirstLastButtons>
                   </mat-paginator>
+                  </div>
                 </div>
               </mat-card>
             </div>
@@ -218,7 +225,13 @@
                     </div>
                   </form>
 
-                  <table class="table mb-0 table-hover mt-3">
+                  <div style="position: relative; min-height: 200px;">
+                    @if (isFilteringTopics) {
+                    <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; align-items: center; background: rgba(255,255,255,0.7); z-index: 10;">
+                      <app-global-loader [inline]="true"></app-global-loader>
+                    </div>
+                    }
+                    <table class="table mb-0 table-hover mt-3">
                     <thead>
                       <tr>
                         <th>S.No</th>
@@ -266,6 +279,7 @@
                                  (page)="onTopicPageChange($event)"
                                  showFirstLastButtons>
                   </mat-paginator>
+                  </div>
                 </div>
               </mat-card>
             </div>
@@ -282,7 +296,12 @@
                 <div class="card-header p-3">
                   <h3 class="mb-0">Sub Topics Management</h3>
                 </div>
-                <div class="card-body p-3">
+                <div class="card-body p-3" style="position: relative; min-height: 200px;">
+                  @if (isFilteringSubTopics) {
+                  <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; align-items: center; background: rgba(255,255,255,0.7); z-index: 10;">
+                    <app-global-loader [inline]="true"></app-global-loader>
+                  </div>
+                  }
                   <form *ngIf="canManageSyllabus" [formGroup]="subTopicForm" (ngSubmit)="createSubTopic(subTopicFormDir)"
                     #subTopicFormDir="ngForm">
                     <div class="row">

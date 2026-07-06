@@ -1,3 +1,4 @@
+import { GlobalLoaderComponent } from '@shared/components/global-loader/global-loader.component';
 import { Component, OnInit, inject } from '@angular/core';
 import { MySubjectsService, SubjectModel } from './my-subjects.service';
 
@@ -15,7 +16,7 @@ import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.co
   templateUrl: './my-subjects.component.html',
   styleUrl: './my-subjects.component.scss',
   standalone: true,
-  imports: [
+  imports: [GlobalLoaderComponent, 
     MatCardModule,
     MatButtonModule,
     MatInputModule,

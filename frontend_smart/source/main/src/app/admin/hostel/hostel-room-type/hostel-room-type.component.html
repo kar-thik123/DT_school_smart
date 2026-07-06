@@ -152,8 +152,7 @@
                             <!-- Loading spinner -->
                             @if (isLoading) {
                             <div class="tbl-spinner">
-                                <mat-progress-spinner color="primary" [diameter]="40" mode="indeterminate">
-                                </mat-progress-spinner>
+                                <app-global-loader [inline]="true"></app-global-loader>
                             </div>
                             }
                             <!-- context menu start -->

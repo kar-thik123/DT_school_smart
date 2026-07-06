@@ -1,3 +1,4 @@
+import { GlobalLoaderComponent } from '@shared/components/global-loader/global-loader.component';
 import { Component, OnInit, inject, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -24,7 +25,7 @@ import { AcademicContextSelectorComponent, IAcademicContextSelection } from '@sh
 @Component({
   selector: 'app-teacher-assignment',
   standalone: true,
-  imports: [
+  imports: [GlobalLoaderComponent, 
     CommonModule,
     FormsModule,
     MatCardModule,
@@ -76,6 +77,8 @@ export class TeacherAssignmentComponent implements OnInit {
 
   isLoadingSubjects = false;
   isSaving = false;
+  isSearching = false;
+  searchTimeout: any;
   canManageAssignments = false;
 
   allAssignments: any[] = [];
@@ -203,11 +206,20 @@ export class TeacherAssignmentComponent implements OnInit {
   }
 
   applyFilter(event: Event) {
+    this.isSearching = true;
     const filterValue = (event.target as HTMLInputElement).value;
-    this.dataSource.filter = filterValue.trim().toLowerCase();
-    if (this.dataSource.paginator) {
-      this.dataSource.paginator.firstPage();
+    
+    if (this.searchTimeout) {
+      clearTimeout(this.searchTimeout);
     }
+
+    this.searchTimeout = setTimeout(() => {
+      this.dataSource.filter = filterValue.trim().toLowerCase();
+      if (this.dataSource.paginator) {
+        this.dataSource.paginator.firstPage();
+      }
+      this.isSearching = false;
+    }, 400);
   }
 
   loadSubjectsForSection() {
