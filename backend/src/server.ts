@@ -95,3 +95,4 @@ if (process.env.NODE_ENV !== 'test') {
 
 // Export io and server for use in routes and tests
 export { io, server };
+// trigger restart

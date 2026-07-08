@@ -136,7 +136,7 @@ router.get('/export', requirePermission('USERS', 'EXPORT'), async (req: any, res
     const userCount = await prisma.user.count({
       where: { organization_id: req.user.organization_id }
     });
-    
+
     const isTemplateOnly = userCount === 0;
 
     res.setHeader('Content-Type', 'text/csv');
@@ -313,90 +313,90 @@ router.post('/', requireManagement, async (req: any, res: Response) => {
   }
 });
 
-// POST bulk import users via JSON array
-router.post('/bulk', requireManagement, async (req: any, res: Response) => {
-  try {
-    const users: Array<{ name: string; email: string; password?: string; role_id?: string; role?: string; grade_id?: string; section_id?: string; admission_number?: string; mobile_number?: string }> = req.body.users;
-    if (!users || !Array.isArray(users) || users.length === 0) {
-      return res.status(400).json({ message: 'No users provided' });
-    }
+// // POST bulk import users via JSON array
+// router.post('/bulk', requireManagement, async (req: any, res: Response) => {
+//   try {
+//     const users: Array<{ name: string; email: string; password?: string; role_id?: string; role?: string; grade_id?: string; section_id?: string; admission_number?: string; mobile_number?: string }> = req.body.users;
+//     if (!users || !Array.isArray(users) || users.length === 0) {
+//       return res.status(400).json({ message: 'No users provided' });
+//     }
 
-    const org = await prisma.organization.findUnique({ where: { id: req.user.organization_id } });
-    if (!org) return res.status(404).json({ message: 'Organization not found' });
+//     const org = await prisma.organization.findUnique({ where: { id: req.user.organization_id } });
+//     if (!org) return res.status(404).json({ message: 'Organization not found' });
 
-    // Check license seat availability for bulk
-    const licenseCheck = await checkSeatAvailability(req.user.organization_id, users.length);
-    if (!licenseCheck.allowed) {
-      return res.status(403).json({
-        message: licenseCheck.message,
-        code: 'LICENSE_LIMIT_REACHED',
-        usage: licenseCheck.usagePercent
-      });
-    }
+//     // Check license seat availability for bulk
+//     const licenseCheck = await checkSeatAvailability(req.user.organization_id, users.length);
+//     if (!licenseCheck.allowed) {
+//       return res.status(403).json({
+//         message: licenseCheck.message,
+//         code: 'LICENSE_LIMIT_REACHED',
+//         usage: licenseCheck.usagePercent
+//       });
+//     }
 
-    const results = { created: 0, skipped: 0, errors: [] as string[] };
-    for (const u of users) {
-      try {
-        // Global email uniqueness check
-        const existing = await prisma.user.findUnique({ where: { email: u.email } });
-        if (existing) { results.skipped++; results.errors.push(`${u.email}: already registered in platform`); continue; }
-        let roleId = u.role_id;
+//     const results = { created: 0, skipped: 0, errors: [] as string[] };
+//     for (const u of users) {
+//       try {
+//         // Global email uniqueness check
+//         const existing = await prisma.user.findUnique({ where: { email: u.email } });
+//         if (existing) { results.skipped++; results.errors.push(`${u.email}: already registered in platform`); continue; }
+//         let roleId = u.role_id;
 
-        if (!roleId && u.role) {
-          // Dynamic fallback by name if string is provided
-          const roleDb = await prisma.role.findFirst({
-            where: {
-              name: { equals: u.role, mode: 'insensitive' },
-              OR: [{ organization_id: req.user.organization_id }, { is_system: true }]
-            }
-          });
-          if (roleDb) roleId = roleDb.id;
-        }
+//         if (!roleId && u.role) {
+//           // Dynamic fallback by name if string is provided
+//           const roleDb = await prisma.role.findFirst({
+//             where: {
+//               name: { equals: u.role, mode: 'insensitive' },
+//               OR: [{ organization_id: req.user.organization_id }, { is_system: true }]
+//             }
+//           });
+//           if (roleDb) roleId = roleDb.id;
+//         }
 
-        if (!roleId) {
-          // Ultimate fallback to ANY IS_STUDENT role
-          const studentRole = await prisma.role.findFirst({
-            where: {
-              permissions: { some: { permission: { module: 'IDENTITY', action: 'IS_STUDENT' } } },
-              OR: [{ organization_id: req.user.organization_id }, { is_system: true }]
-            }
-          });
-          if (studentRole) roleId = studentRole.id;
-        }
+//         if (!roleId) {
+//           // Ultimate fallback to ANY IS_STUDENT role
+//           const studentRole = await prisma.role.findFirst({
+//             where: {
+//               permissions: { some: { permission: { module: 'IDENTITY', action: 'IS_STUDENT' } } },
+//               OR: [{ organization_id: req.user.organization_id }, { is_system: true }]
+//             }
+//           });
+//           if (studentRole) roleId = studentRole.id;
+//         }
 
-        if (!roleId) { results.skipped++; results.errors.push(`${u.email}: valid role could not be resolved`); continue; }
+//         if (!roleId) { results.skipped++; results.errors.push(`${u.email}: valid role could not be resolved`); continue; }
 
-        const password_hash = await bcrypt.hash(u.password || 'changeme123', 10);
-        const newUser = await prisma.user.create({
-          data: { name: u.name, email: u.email, password_hash, role_id: roleId, organization_id: req.user.organization_id, grade_id: u.grade_id || null, section_id: u.section_id || null }
-        });
+//         const password_hash = await bcrypt.hash(u.password || 'changeme123', 10);
+//         const newUser = await prisma.user.create({
+//           data: { name: u.name, email: u.email, password_hash, role_id: roleId, organization_id: req.user.organization_id, grade_id: u.grade_id || null, section_id: u.section_id || null }
+//         });
 
-        // Check if student
-        const isStudent = await prisma.rolePermission.findFirst({
-          where: { role_id: roleId, permission: { module: 'IDENTITY', action: 'IS_STUDENT' } }
-        });
+//         // Check if student
+//         const isStudent = await prisma.rolePermission.findFirst({
+//           where: { role_id: roleId, permission: { module: 'IDENTITY', action: 'IS_STUDENT' } }
+//         });
 
-        if (isStudent && (u.admission_number || u.mobile_number)) {
-          await prisma.studentProfile.create({
-            data: {
-              user_id: newUser.id,
-              organization_id: req.user.organization_id,
-              admission_number: u.admission_number || null,
-              mobile_number: u.mobile_number || null
-            }
-          });
-        }
-        results.created++;
-      } catch (e) {
-        results.errors.push(`${u.email}: failed`);
-        results.skipped++;
-      }
-    }
-    res.status(201).json({ message: 'Bulk import complete', ...results });
-  } catch (error) {
-    res.status(500).json({ message: 'Server error' });
-  }
-});
+//         if (isStudent && (u.admission_number || u.mobile_number)) {
+//           await prisma.studentProfile.create({
+//             data: {
+//               user_id: newUser.id,
+//               organization_id: req.user.organization_id,
+//               admission_number: u.admission_number || null,
+//               mobile_number: u.mobile_number || null
+//             }
+//           });
+//         }
+//         results.created++;
+//       } catch (e) {
+//         results.errors.push(`${u.email}: failed`);
+//         results.skipped++;
+//       }
+//     }
+//     res.status(201).json({ message: 'Bulk import complete', ...results });
+//   } catch (error) {
+//     res.status(500).json({ message: 'Server error' });
+//   }
+// });
 
 // PUT update user by id
 router.put('/:id', requireManagement, async (req: any, res: Response) => {
@@ -585,7 +585,7 @@ router.post('/:id/reset-password', requireManagement, async (req: any, res: Resp
       return res.status(400).json({ message: 'frontendOrigin is required' });
     }
     const resetUrl = EmailLinkBuilder.buildPasswordResetUrl(targetUser.organization, token, frontendOrigin);
-    
+
     try {
       await EmailService.sendAdminPasswordResetEmail(targetUser.name, targetUser.email, resetUrl);
 

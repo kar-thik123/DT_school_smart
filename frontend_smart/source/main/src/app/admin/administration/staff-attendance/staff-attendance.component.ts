@@ -262,6 +262,7 @@ export class StaffAttendanceComponent implements OnInit, OnDestroy {
   onDateChange(event: any) {
     if (event.value) {
       this.selectedDate = event.value;
+      this.updateColumnTypes();
       this.handleRefresh();
     }
   }
@@ -567,9 +568,10 @@ export class StaffAttendanceComponent implements OnInit, OnDestroy {
         this.showNotification('Saved changes successfully', 'snackbar-success');
         this.handleRefresh();
       },
-      error: () => {
+      error: (err: any) => {
         this.isSaving = false;
-        this.showNotification('Failed to save attendance');
+        const msg = err?.error?.message || 'Failed to save attendance';
+        this.showNotification(msg, 'snackbar-danger');
       }
     });
   }
@@ -601,9 +603,16 @@ export class StaffAttendanceComponent implements OnInit, OnDestroy {
     const afternoonCol = this.columnDefinitions.find(c => c.def === 'afternoon_status');
     const actionsCol = this.columnDefinitions.find(c => c.def === 'actions');
 
-    if (morningCol) morningCol.type = this.isClassTeacher ? 'checkbox' : 'status';
-    if (afternoonCol) afternoonCol.type = this.isClassTeacher ? 'checkbox' : 'status';
-    if (actionsCol) actionsCol.visible = this.isClassTeacher;
+    const reqDate = new Date(this.selectedDate);
+    const today = new Date();
+    reqDate.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+    const isPastDate = reqDate < today;
+    const canEdit = this.isClassTeacher && !isPastDate;
+
+    if (morningCol) morningCol.type = canEdit ? 'checkbox' : 'status';
+    if (afternoonCol) afternoonCol.type = canEdit ? 'checkbox' : 'status';
+    if (actionsCol) actionsCol.visible = canEdit;
 
     // Force mat-table to re-render columns structure if necessary
     this.columnDefinitions = [...this.columnDefinitions];
@@ -1079,9 +1088,10 @@ export class StaffAttendanceComponent implements OnInit, OnDestroy {
             this.isLoading = false;
             this.showNotification('Saved changes successfully', 'snackbar-success');
           },
-          error: () => {
+          error: (err: any) => {
             this.isLoading = false;
-            this.showNotification('Failed to save attendance directly.');
+            const msg = err?.error?.message || 'Failed to save attendance directly.';
+            this.showNotification(msg, 'snackbar-danger');
           }
         });
       } else {

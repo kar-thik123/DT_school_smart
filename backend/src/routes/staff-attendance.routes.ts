@@ -78,6 +78,10 @@ router.post('/mark', requirePermission('STAFF_ATTENDANCE', 'MANAGE'), async (req
       return res.status(400).json({ message: 'Attendance cannot be marked for a future date.' });
     }
 
+    if (reqDate < today) {
+      return res.status(400).json({ message: "You can't edit past attendance." });
+    }
+
     const result = await StaffAttendanceService.markAttendance({
       organization_id: orgId,
       academic_year_id,
