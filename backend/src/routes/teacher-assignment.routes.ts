@@ -128,6 +128,23 @@ router.post('/', requirePermission('TEACHER_ASSIGNMENT', 'CREATE'), async (req: 
           });
           if (existing && existing.teacher_id !== a.teacher_id) throw new Error(`This subject is already assigned to a teacher in this section for this academic year`);
         }
+
+        // Pre-check for duplicate assignment for the exact same teacher
+        const duplicateAssignment = await prisma.teacherAssignment.findFirst({
+          where: {
+            teacher_id: a.teacher_id,
+            assignment_type: a.assignment_type,
+            grade_id: a.grade_id,
+            section_id: a.section_id || null,
+            subject_id: a.subject_id || null,
+            academic_year_id: a.academic_year_id,
+            organization_id: a.organization_id
+          }
+        });
+
+        if (duplicateAssignment) {
+          return res.status(409).json({ message: 'Teacher is already assigned to this subject, grade, and section.' });
+        }
       }
 
       const assignmentProcess = await prisma.teacherAssignment.createMany({
@@ -182,6 +199,23 @@ router.post('/', requirePermission('TEACHER_ASSIGNMENT', 'CREATE'), async (req: 
         if (existing && existing.teacher_id !== parsed.teacher_id) return res.status(400).json({ message: `This subject is already assigned to a teacher in this section for this academic year` });
       }
 
+      // Pre-check for duplicate assignment for the exact same teacher
+      const duplicateAssignment = await prisma.teacherAssignment.findFirst({
+        where: {
+          teacher_id: parsed.teacher_id,
+          assignment_type: parsed.assignment_type,
+          grade_id: parsed.grade_id,
+          section_id: parsed.section_id || null,
+          subject_id: parsed.subject_id || null,
+          academic_year_id: req.academic_year_id,
+          organization_id: req.user.organization_id
+        }
+      });
+
+      if (duplicateAssignment) {
+        return res.status(409).json({ message: 'Teacher is already assigned to this subject, grade, and section.' });
+      }
+
       const assignment = await prisma.teacherAssignment.create({
         data: {
           ...parsed,
@@ -216,7 +250,7 @@ router.post('/', requirePermission('TEACHER_ASSIGNMENT', 'CREATE'), async (req: 
     }
   } catch (error: any) {
     if (error.code === 'P2002') {
-      return res.status(400).json({ message: 'Duplicate assignment detected for this teacher in the specified scope' });
+      return res.status(409).json({ message: 'Teacher is already assigned to this subject, grade, and section.' });
     }
     const fs = require('fs');
     fs.appendFileSync('error.log', new Date().toISOString() + ' - Error creating batch assignment: ' + (error.stack || error) + '\n' + (error.errors ? JSON.stringify(error.errors) : '') + '\n');
@@ -261,6 +295,24 @@ router.put('/:id', requirePermission('TEACHER_ASSIGNMENT', 'EDIT'), async (req: 
       if (exist && exist.teacher_id !== parsed.teacher_id) return res.status(400).json({ message: `This subject is already assigned to a teacher in this section` });
     }
 
+    // Pre-check for duplicate assignment for the exact same teacher
+    const duplicateAssignment = await prisma.teacherAssignment.findFirst({
+      where: {
+        teacher_id: parsed.teacher_id,
+        assignment_type: parsed.assignment_type,
+        grade_id: parsed.grade_id,
+        section_id: parsed.section_id || null,
+        subject_id: parsed.subject_id || null,
+        academic_year_id: req.academic_year_id,
+        organization_id: req.user.organization_id,
+        id: { not: req.params.id }
+      }
+    });
+
+    if (duplicateAssignment) {
+      return res.status(409).json({ message: 'Teacher is already assigned to this subject, grade, and section.' });
+    }
+
     const assignment = await prisma.teacherAssignment.update({
       where: { id: req.params.id },
       data: {
@@ -294,7 +346,7 @@ router.put('/:id', requirePermission('TEACHER_ASSIGNMENT', 'EDIT'), async (req: 
     res.json({ message: 'Teacher assignment updated', assignment });
   } catch (error: any) {
     if (error.code === 'P2002') {
-      return res.status(400).json({ message: 'Duplicate assignment detected' });
+      return res.status(409).json({ message: 'Teacher is already assigned to this subject, grade, and section.' });
     }
     res.status(400).json({ message: 'Error updating assignment', error: error.message });
   }

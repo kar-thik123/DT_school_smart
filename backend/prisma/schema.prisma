@@ -18,7 +18,7 @@ model Organization {
   logo_url                    String?
   domain_type                 String                        @default("subdomain")
   subdomain                   String?                       @unique
-  custom_domain               String?
+  custom_domain               String?                       @unique
   smtp_host                   String?
   smtp_port                   Int?
   smtp_email                  String?
@@ -73,6 +73,7 @@ model Organization {
   student_exam_results        StudentExamResult[]
 
   @@index([subdomain])
+  @@index([custom_domain])
   @@map("organizations")
 }
 
@@ -102,6 +103,8 @@ model User {
   grade_id                    String?                       @db.Uuid
   section_id                  String?                       @db.Uuid
   is_active                   Boolean                       @default(true)
+  failed_login_attempts       Int                           @default(0)
+  locked_until                DateTime?
   created_at                  DateTime                      @default(now())
   updated_at                  DateTime                      @default(now()) @updatedAt
   roll_number                 String?

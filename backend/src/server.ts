@@ -1,4 +1,9 @@
 import 'dotenv/config';
+
+if (!process.env.JWT_SECRET) {
+  console.error('❌ FATAL ERROR: JWT_SECRET is not defined in the environment.');
+  process.exit(1);
+}
 import http from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import app from './app';
@@ -32,7 +37,7 @@ io.use(async (socket, next) => {
 
     const decoded = jwt.verify(
       token as string,
-      process.env.JWT_SECRET || 'supersecret_jwt_key_for_dev_only'
+      process.env.JWT_SECRET as string
     ) as any;
 
     const user = await prisma.user.findUnique({

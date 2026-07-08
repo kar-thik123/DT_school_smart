@@ -58,7 +58,7 @@
         </div>
         <div class="right">
           <div class="right-side-btn d-flex align-items-center gap-3">
-            <mat-slide-toggle *ngIf="canManage" [(ngModel)]="isEditMode" color="primary">Enable Edit</mat-slide-toggle>
+            <mat-slide-toggle *ngIf="canManage" [(ngModel)]="isEditMode" (ngModelChange)="onEditModeChange($event)" color="primary">Enable Edit</mat-slide-toggle>
             <button *ngIf="canManage && isEditMode" mat-raised-button color="primary"
               [disabled]="isSaving || studentsList.length === 0 || !selectedExaminationId" (click)="saveMarks()">
               <mat-icon class="me-2">save</mat-icon> Save Marks
@@ -116,6 +116,7 @@
                       </span>
                       <input type="number" formControlName="obtained" placeholder="-"
                         [class.d-none]="!isEditMode"
+                        min="0" [max]="$any(student.value).subjects?.[sub.id]?.max"
                         class="form-control form-control-sm text-center mx-auto"
                         style="width: 80px; height: 32px; font-size: 13px; border: 1px solid #dce0e4; border-radius: 6px; box-shadow: none; transition: border-color 0.2s;"
                         onfocus="this.style.borderColor='#3f51b5'; this.style.outline='none';"

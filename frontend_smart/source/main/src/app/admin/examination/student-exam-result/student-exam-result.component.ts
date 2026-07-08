@@ -40,7 +40,7 @@ import { HierarchyDropdownComponent } from '../../administration/units-list/comp
       transition('collapsed <=> expanded', animate('200ms ease-in-out'))
     ])
   ],
-  imports: [GlobalLoaderComponent, 
+  imports: [GlobalLoaderComponent,
     CommonModule,
     ReactiveFormsModule,
     FormsModule,
@@ -84,9 +84,9 @@ export class StudentExamResultComponent implements OnInit, OnDestroy {
   allSubjectGroups: any[] = [];
   subjects: any[] = [];
   classSubjects: any[] = [];
-  
+
   searchText: string = '';
-  
+
   // Pagination
   pageSize = 10;
   pageIndex = 0;
@@ -94,7 +94,7 @@ export class StudentExamResultComponent implements OnInit, OnDestroy {
 
   get filteredStudents() {
     let filtered = this.studentsFormArray.controls;
-    
+
     if (this.searchText) {
       const search = this.searchText.toLowerCase().trim();
       filtered = filtered.filter(ctrl => {
@@ -103,18 +103,18 @@ export class StudentExamResultComponent implements OnInit, OnDestroy {
         return name.includes(search) || roll.includes(search);
       });
     }
-    
+
     this.totalFilteredStudents = filtered.length;
-    
+
     const startIndex = this.pageIndex * this.pageSize;
     return filtered.slice(startIndex, startIndex + this.pageSize);
   }
-  
+
   onPageChange(event: any) {
     this.pageIndex = event.pageIndex;
     this.pageSize = event.pageSize;
   }
-  
+
   onSearchChange() {
     this.pageIndex = 0;
   }
@@ -152,9 +152,9 @@ export class StudentExamResultComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.hasManagePermission = this.authService.hasPermission('STUDENT_EXAM_RESULT', 'MANAGE') ||
       this.authService.hasPermission('EXAMINATION_MANAGE');
-      
-    this.isSuperAdminOrManagement = this.authService.hasPermission('IDENTITY', 'IS_SUPER_ADMIN') || 
-                                    this.authService.hasPermission('IDENTITY', 'IS_MANAGEMENT');
+
+    this.isSuperAdminOrManagement = this.authService.hasPermission('IDENTITY', 'IS_SUPER_ADMIN') ||
+      this.authService.hasPermission('IDENTITY', 'IS_MANAGEMENT');
 
     this.canManage = this.isSuperAdminOrManagement && this.hasManagePermission;
 
@@ -230,7 +230,7 @@ export class StudentExamResultComponent implements OnInit, OnDestroy {
 
   loadInitialData() {
     this.isLoading = true;
-    
+
     const observables: any = {
       examinations: this.resultService.getExaminations(),
       subjects: this.resultService.getSubjects(),
@@ -249,13 +249,13 @@ export class StudentExamResultComponent implements OnInit, OnDestroy {
         this.examinations = res.examinations.data || res.examinations || [];
         this.subjects = res.subjects.data || res.subjects || [];
         this.allSubjectGroups = res.groups.data || res.groups || [];
-        
+
         if (this.isSuperAdminOrManagement) {
           this.grades = res.grades.data || res.grades || [];
           this.allSections = res.sections.data || res.sections || [];
         } else if (res.assignments) {
           this.myAssignments = res.assignments;
-          
+
           const uniqueGrades = new Map<string, any>();
           const uniqueSections = new Map<string, any>();
 
@@ -312,7 +312,7 @@ export class StudentExamResultComponent implements OnInit, OnDestroy {
         } else {
           this.checkAndLoadData();
         }
-        
+
         this.evaluatePermissions();
 
         this.isLoading = false;
@@ -411,20 +411,55 @@ export class StudentExamResultComponent implements OnInit, OnDestroy {
     this.marksForm.setControl('students', arr);
   }
 
-
+  onEditModeChange(isEditMode: boolean) {
+    if (!isEditMode) {
+      // Discard unsaved changes by rebuilding the form from original data
+      this.buildForm();
+    }
+  }
 
   saveMarks() {
     if (!this.canManage) return;
 
-    if (this.marksForm.invalid) {
-      this.marksForm.markAllAsTouched();
-      this.showNotification('snackbar-danger', 'Please enter valid marks for all subjects (minimum 0).');
-      console.log('Form is invalid', this.marksForm);
+    let isInvalid = false;
+    let isPartial = false;
+    const formValue = this.marksForm.value;
+
+    formValue.students.forEach((val: any) => {
+      if (val.subjects) {
+        const subjectIds = Object.keys(val.subjects);
+        let filledCount = 0;
+        let totalCount = subjectIds.length;
+
+        subjectIds.forEach(subjectId => {
+          const marks = val.subjects[subjectId];
+          if (marks && marks.obtained !== null && marks.obtained !== '') {
+            filledCount++;
+            const ob = Number(marks.obtained);
+            const mx = Number(marks.max);
+            if (ob < 0 || ob > mx || isNaN(ob)) {
+              isInvalid = true;
+            }
+          }
+        });
+
+        if (filledCount > 0 && filledCount < totalCount) {
+          isPartial = true;
+        }
+      }
+    });
+
+    if (isInvalid) {
+      this.showNotification('snackbar-danger', 'Please enter marks between 0 and 100');
+      return;
+    }
+
+    if (isPartial) {
+      this.showNotification('snackbar-danger', 'Please enter marks for all subjects for the student');
       return;
     }
 
     this.isSaving = true;
-    const formValue = this.marksForm.value;
     const payloads: any[] = [];
 
     formValue.students.forEach((val: any) => {

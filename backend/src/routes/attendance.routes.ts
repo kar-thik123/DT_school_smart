@@ -53,6 +53,15 @@ router.post('/mark', requirePermission('ATTENDANCE', 'MANAGE'), async (req: any,
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
+    const reqDate = new Date(attendance_date);
+    const today = new Date();
+    reqDate.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+
+    if (reqDate > today) {
+      return res.status(400).json({ message: 'Attendance cannot be marked for a future date.' });
+    }
+
     const result = await StudentAttendanceService.markAttendance({
       organization_id: orgId,
       academic_year_id,

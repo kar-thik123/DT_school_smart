@@ -98,6 +98,9 @@ const studentExamSubjectResultSchema = z.object({
   status: z.enum(['PASS', 'FAIL', 'WITHHELD']).optional().nullable(),
   grade: z.string().optional().nullable(),
   remarks: z.string().optional().nullable()
+}).refine(data => data.obtained_marks <= data.max_marks, {
+  message: "Obtained marks cannot be greater than maximum(100) marks",
+  path: ["obtained_marks"]
 });
 
 const studentExamResultSchema = z.object({
@@ -122,12 +125,12 @@ router.get('/', async (req: any, res: Response) => {
   try {
     const userPermissions = req.user?.permissions || [];
     if (!AuthorizationService.hasPermission(userPermissions, 'STUDENT_EXAM_RESULT', 'VIEW') &&
-        !AuthorizationService.hasPermission(userPermissions, 'STUDENT_EXAM_RESULT', 'MANAGE')) {
+      !AuthorizationService.hasPermission(userPermissions, 'STUDENT_EXAM_RESULT', 'MANAGE')) {
       return res.status(403).json({ message: 'Forbidden: Requires STUDENT_EXAM_RESULT:VIEW or STUDENT_EXAM_RESULT:MANAGE' });
     }
 
-    const isRestrictedToSelf = userPermissions.includes('IDENTITY:IS_STUDENT') && 
-                               !AuthorizationService.hasPermission(userPermissions, 'STUDENT_EXAM_RESULT', 'MANAGE');
+    const isRestrictedToSelf = userPermissions.includes('IDENTITY:IS_STUDENT') &&
+      !AuthorizationService.hasPermission(userPermissions, 'STUDENT_EXAM_RESULT', 'MANAGE');
 
     const academic_year_id = await AcademicContextResolver.resolveHistoricalAcademicYearId(req);
     const { examination_id, grade_id, section_id } = req.query;
@@ -166,7 +169,7 @@ router.get('/', async (req: any, res: Response) => {
       },
       orderBy: { created_at: 'desc' }
     });
-    
+
     console.log(`[GET /student-exam-results] found ${results.length} results`);
     res.json(results);
   } catch (error) {
@@ -183,7 +186,7 @@ router.get('/:id', async (req: any, res: Response) => {
   try {
     const userPermissions = req.user?.permissions || [];
     if (!AuthorizationService.hasPermission(userPermissions, 'STUDENT_EXAM_RESULT', 'VIEW') &&
-        !AuthorizationService.hasPermission(userPermissions, 'STUDENT_EXAM_RESULT', 'MANAGE')) {
+      !AuthorizationService.hasPermission(userPermissions, 'STUDENT_EXAM_RESULT', 'MANAGE')) {
       return res.status(403).json({ message: 'Forbidden: Requires STUDENT_EXAM_RESULT:VIEW or STUDENT_EXAM_RESULT:MANAGE' });
     }
 
@@ -411,7 +414,7 @@ router.put('/:id', requirePermission('STUDENT_EXAM_RESULT', 'MANAGE'), async (re
   try {
     const parsed = studentExamResultSchema.parse(req.body);
     const academic_year_id = await AcademicContextResolver.resolveAcademicYearId(req);
-    
+
     await validateTeacherScope(req, parsed.grade_id, parsed.section_id);
     const calcResult = ExaminationCalculationService.calculateAggregateResult(parsed.subject_results || [] as any);
 

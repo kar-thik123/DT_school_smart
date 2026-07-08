@@ -50,10 +50,78 @@ router.post('/login', loginLimiter, async (req: any, res: Response) => {
       return res.status(401).json({ message: 'Invalid credentials or inactive account' });
     }
 
+    if (user.locked_until && new Date(user.locked_until).getTime() > Date.now()) {
+      return res.status(401).json({ message: 'Too many failed attempts. Try again after 15 minutes' });
+    }
+
     const isMatch = await bcrypt.compare(parsed.password, user.password_hash);
     if (!isMatch) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      const failedAttempts = user.failed_login_attempts + 1;
+      let lockedUntil = null;
+      let actionType = 'LOGIN_FAILED';
+      let errorMessage = 'Invalid credentials or inactive account';
+
+      if (failedAttempts >= 5) {
+        lockedUntil = new Date(Date.now() + 15 * 60 * 1000);
+        actionType = 'ACCOUNT_LOCKED';
+        errorMessage = 'Too many failed attempts. Try again after 15 minutes.';
+      } else {
+        const remaining = 5 - failedAttempts;
+        if (remaining <= 3) {
+          errorMessage = `Invalid credentials or inactive account, ${remaining} attempt${remaining > 1 ? 's' : ''} remaining.`;
+        }
+      }
+
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { failed_login_attempts: failedAttempts, locked_until: lockedUntil }
+      });
+
+      await prisma.auditLog.create({
+        data: {
+          organization_id: user.organization_id,
+          user_id: user.id,
+          user_name: user.name,
+          action_type: actionType,
+          entity_type: 'USER',
+          entity_id: user.id,
+          metadata: { ip: req.ip, email: parsed.email }
+        }
+      });
+
+      return res.status(401).json({ message: errorMessage });
     }
+
+    if (user.failed_login_attempts > 0 || user.locked_until) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { failed_login_attempts: 0, locked_until: null }
+      });
+
+      await prisma.auditLog.create({
+        data: {
+          organization_id: user.organization_id,
+          user_id: user.id,
+          user_name: user.name,
+          action_type: 'ACCOUNT_UNLOCKED',
+          entity_type: 'USER',
+          entity_id: user.id,
+          metadata: { ip: req.ip, reason: 'successful_login' }
+        }
+      });
+    }
+
+    await prisma.auditLog.create({
+      data: {
+        organization_id: user.organization_id,
+        user_id: user.id,
+        user_name: user.name,
+        action_type: 'LOGIN_SUCCESS',
+        entity_type: 'USER',
+        entity_id: user.id,
+        metadata: { ip: req.ip }
+      }
+    });
 
     // --- HOSTNAME BASED TENANT VALIDATION ---
     const hostname = req.hostname || '';
@@ -65,7 +133,7 @@ router.post('/login', loginLimiter, async (req: any, res: Response) => {
         orgDomain = await prisma.organization.findFirst({ where: { subdomain: parts[0] } });
       }
     }
-    
+
     if (orgDomain) {
       mappedOrgId = orgDomain.id;
     }
@@ -87,7 +155,7 @@ router.post('/login', loginLimiter, async (req: any, res: Response) => {
     // ----------------------------------------
 
     const permissions = user.role.permissions.map((rp: any) => `${rp.permission.module}:${rp.permission.action}`);
-    
+
     // Inject identity fallbacks
     const roleName = user.role.name || '';
     if (roleName === 'SYSTEM_ADMIN') {
@@ -113,7 +181,7 @@ router.post('/login', loginLimiter, async (req: any, res: Response) => {
         user_id: user.id,
         organization_id: user.organization_id
       },
-      process.env.JWT_SECRET || 'supersecret_jwt_key_for_dev_only',
+      process.env.JWT_SECRET as string,
       { expiresIn: '1d' }
     );
 
@@ -163,7 +231,7 @@ router.get('/me', authMiddleware, async (req: any, res: Response) => {
     if (!user) return res.status(404).json({ message: 'User not found' });
 
     const permissions = user.role.permissions.map((rp: any) => `${rp.permission.module}:${rp.permission.action}`);
-    
+
     const roleName = user.role.name || '';
     if (roleName === 'SYSTEM_ADMIN') {
       permissions.push('IDENTITY:IS_SYSTEM_ADMIN');
@@ -227,12 +295,12 @@ const resetRequestSchema = z.object({
 });
 
 router.post('/forgot-password', async (req: Request, res: Response) => {
-    try {
-      const parsed = resetRequestSchema.parse(req.body);
-      const user = await prisma.user.findFirst({
-        where: { email: parsed.email },
-        include: { organization: true }
-      });
+  try {
+    const parsed = resetRequestSchema.parse(req.body);
+    const user = await prisma.user.findFirst({
+      where: { email: parsed.email },
+      include: { organization: true }
+    });
 
     if (!user) {
       return res.json({ message: 'If the email exists, a reset link has been sent' });
@@ -241,16 +309,16 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
     const token = randomBytes(32).toString('hex');
     const expires_at = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
 
-      await prisma.passwordReset.create({
-        data: { user_id: user.id, token, expires_at }
-      });
+    await prisma.passwordReset.create({
+      data: { user_id: user.id, token, expires_at }
+    });
 
-      const frontendOrigin = parsed.frontendOrigin;
-      const resetUrl = EmailLinkBuilder.buildPasswordResetUrl(user.organization, token, frontendOrigin);
+    const frontendOrigin = parsed.frontendOrigin;
+    const resetUrl = EmailLinkBuilder.buildPasswordResetUrl(user.organization, token, frontendOrigin);
 
-      await EmailService.sendPasswordResetEmail(user.name, user.email, resetUrl);
+    await EmailService.sendPasswordResetEmail(user.name, user.email, resetUrl);
 
-      res.json({ message: 'If the email exists, a reset link has been sent' });
+    res.json({ message: 'If the email exists, a reset link has been sent' });
   } catch (error: any) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ message: 'Validation error', errors: error.issues });

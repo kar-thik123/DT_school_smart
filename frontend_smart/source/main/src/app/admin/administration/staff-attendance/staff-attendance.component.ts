@@ -88,6 +88,7 @@ export class StaffAttendanceComponent implements OnInit, OnDestroy {
 
   phases: any[] = [];
   selectedDate: Date = new Date();
+  maxDate: Date = new Date();
 
   // Range view data
   rangeAttendanceData: any[] = [];
