@@ -14,6 +14,7 @@ import { processImage } from '../utils/image-compression.util';
 import { NotificationService } from '../services/notification.service';
 import { stringify } from 'csv-stringify';
 import { logAuditEvent } from '../services/audit.service';
+import { CreateUserSchema, AdminUpdateSchema, ProfileUpdateSchema, UserValidationService, AppValidationError } from '../services/user-validation.service';
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -22,17 +23,7 @@ router.use(authMiddleware);
 
 const requireManagement = requirePermission('IDENTITY', 'IS_MANAGEMENT');
 
-const userSchema = z.object({
-  name: z.string().min(1),
-  email: z.string().email(),
-  password: z.string().min(6),
-  role_id: z.string().uuid(),
-  grade_id: z.string().uuid().optional().or(z.literal('')),
-  section_id: z.string().uuid().optional().or(z.literal('')),
-  admission_number: z.string().optional(),
-  mobile_number: z.string().optional(),
-  roll_number: z.string().optional(),
-});
+
 
 // GET all teachers in org — only users whose role has IS_TEACHER but NOT IS_MANAGEMENT or IS_STUDENT
 router.get('/teachers', async (req: any, res: Response) => {
@@ -219,7 +210,7 @@ router.get('/export', requirePermission('USERS', 'EXPORT'), async (req: any, res
 // POST create single user
 router.post('/', requireManagement, async (req: any, res: Response) => {
   try {
-    const parsed = userSchema.parse(req.body);
+    const parsed = CreateUserSchema.parse(req.body);
     console.log('[POST /api/users] body:', JSON.stringify(req.body));
     console.log('[POST /api/users] parsed:', JSON.stringify(parsed));
     const org = await prisma.organization.findUnique({ where: { id: req.user.organization_id } });
@@ -235,9 +226,13 @@ router.post('/', requireManagement, async (req: any, res: Response) => {
       });
     }
 
-    // Global email uniqueness check — email must be unique across ALL organisations
-    const existing = await prisma.user.findFirst({ where: { email: parsed.email } });
-    if (existing) return res.status(400).json({ message: `Email '${parsed.email}' is already registered in the platform. Each email can only belong to one account.` });
+    // Standardized DB unique checks
+    await UserValidationService.checkGlobalEmailUnique(parsed.email);
+    await UserValidationService.checkTenantIdentifiersUnique(
+      req.user.organization_id, 
+      parsed.admission_number, 
+      parsed.mobile_number
+    );
 
     const password_hash = await bcrypt.hash(parsed.password, 10);
     const roleDb = await prisma.role.findFirst({
@@ -307,6 +302,10 @@ router.post('/', requireManagement, async (req: any, res: Response) => {
         message: 'Validation failed',
         errors: error.issues
       });
+    }
+    // Handle specific DB conflict errors thrown by UserValidationService
+    if (error instanceof AppValidationError) {
+      return res.status(400).json({ message: error.message });
     }
     console.error('[POST /api/users] Error:', error.stack || error);
     return res.status(500).json({ message: 'Server error' });
@@ -401,6 +400,9 @@ router.post('/bulk', requireManagement, async (req: any, res: Response) => {
 // PUT update user by id
 router.put('/:id', requireManagement, async (req: any, res: Response) => {
   try {
+    // Parse using the schema (which is now inherently partial)
+    const parsed = AdminUpdateSchema.parse(req.body);
+
     const user = await prisma.user.findFirst({
       where: { id: req.params.id, organization_id: req.user.organization_id },
       include: { role: true }
@@ -410,42 +412,38 @@ router.put('/:id', requireManagement, async (req: any, res: Response) => {
     // Self-protection: SUPER_ADMIN cannot demote or mutate their own owner account
     if (user.role?.name === 'SUPER_ADMIN' && user.id === req.user.user_id) {
       // Allow safe edits (name) but block role changes or deactivation
-      if (req.body.role_id || req.body.role || req.body.is_active === false) {
+      if (parsed.role_id || parsed.role || parsed.is_active === false) {
         return res.status(403).json({ message: 'Tenant owner account cannot perform self-destructive actions.' });
       }
     }
 
-    let updateData: any = { name: req.body.name, is_active: req.body.is_active };
-    if (req.body.email && req.body.email !== user.email) {
-      const existing = await prisma.user.findFirst({
-        where: {
-          email: req.body.email,
-          id: { not: req.params.id }
-        }
-      });
-      if (existing) {
-        return res.status(400).json({ message: `Email '${req.body.email}' is already registered in the platform. Each email can only belong to one account.` });
-      }
-      updateData.email = req.body.email;
+    let updateData: any = {};
+    if (parsed.name !== undefined) updateData.name = parsed.name;
+    if (parsed.is_active !== undefined) updateData.is_active = parsed.is_active;
+
+    if (parsed.email && parsed.email !== user.email) {
+      await UserValidationService.checkGlobalEmailUnique(parsed.email, req.params.id);
+      updateData.email = parsed.email;
     }
-    if (req.body.role_id) {
+
+    if (parsed.role_id) {
       const roleDb = await prisma.role.findFirst({
         where: {
-          id: req.body.role_id,
+          id: parsed.role_id,
           OR: [{ organization_id: req.user.organization_id }, { is_system: true }]
         }
       });
       if (roleDb) updateData.role_id = roleDb.id;
-    } else if (req.body.role) {
+    } else if (parsed.role) {
       // Legacy support for string updates if any still exist
       const roleDb = await prisma.role.findFirst({
-        where: { name: req.body.role, OR: [{ organization_id: req.user.organization_id }, { is_system: true }] }
+        where: { name: parsed.role, OR: [{ organization_id: req.user.organization_id }, { is_system: true }] }
       });
       if (roleDb) updateData.role_id = roleDb.id;
     }
 
-    if (req.body.roll_number !== undefined) {
-      updateData.roll_number = req.body.roll_number === '' ? null : req.body.roll_number;
+    if (parsed.roll_number !== undefined) {
+      updateData.roll_number = parsed.roll_number === '' ? null : parsed.roll_number;
     }
 
     const updated = await prisma.user.update({
@@ -469,9 +467,19 @@ router.put('/:id', requireManagement, async (req: any, res: Response) => {
 
     res.json({ message: 'User updated', user: { ...updated, role: updated.role.name } });
   } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        message: 'Validation failed',
+        errors: error.issues
+      });
+    }
+    if (error instanceof AppValidationError) {
+      return res.status(400).json({ message: error.message });
+    }
     if (error.code === 'P2025' || error.name === 'PrismaClientKnownRequestError') {
       return res.status(404).json({ message: 'User not found' });
     }
+    console.error('[PUT /api/users/:id] Error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -714,7 +722,8 @@ router.get('/profile/:id', async (req: any, res: Response) => {
 
 router.put('/profile/:id', upload.single('profile_image'), async (req: any, res: Response) => {
   try {
-    let { name, email, phone, city, country, address, about, academic_profiles, roll_number, date_of_birth, academic_birth, favorite_subjects, favorite_colour } = req.body;
+    const parsed = ProfileUpdateSchema.parse(req.body);
+    let { name, email, phone, city, country, address, about, academic_profiles, roll_number, date_of_birth, academic_birth, favorite_subjects, favorite_colour } = parsed;
 
     // Handle multipart/form-data where JSON arrays are sent as strings
     if (typeof academic_profiles === 'string') {
@@ -744,6 +753,10 @@ router.put('/profile/:id', upload.single('profile_image'), async (req: any, res:
     });
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (email && email !== user.email) {
+      await UserValidationService.checkGlobalEmailUnique(email, req.params.id);
     }
 
     // Update core User fields
@@ -815,6 +828,18 @@ router.put('/profile/:id', upload.single('profile_image'), async (req: any, res:
 
     res.json({ message: 'Profile updated successfully', user_profile: { profile_image } });
   } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        message: 'Validation failed',
+        errors: error.issues
+      });
+    }
+    if (error instanceof AppValidationError) {
+      return res.status(400).json({ message: error.message });
+    }
+    if (error.code === 'P2025' || error.name === 'PrismaClientKnownRequestError') {
+      return res.status(404).json({ message: 'User not found' });
+    }
     console.error('Error updating profile:', error);
     res.status(500).json({ message: 'Server error' });
   }

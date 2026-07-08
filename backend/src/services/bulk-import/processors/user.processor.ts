@@ -2,6 +2,7 @@ import { BulkImportProcessor, ResolvedDataMap, ValidationResult, CommitResult } 
 import prisma from '../../../prisma';
 import bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
+import { BulkImportSchema } from '../../user-validation.service';
 
 export class UserProcessor implements BulkImportProcessor {
   private rolesMap: Record<string, string> = {};
@@ -72,19 +73,26 @@ export class UserProcessor implements BulkImportProcessor {
   async validateRow(row: any): Promise<ValidationResult> {
     const errors: string[] = [];
     
-    // Normalize keys from CSV
-    const name = row['Name']?.trim() || row.name?.trim();
-    const email = row['Email Address']?.trim()?.toLowerCase() || row['Email']?.trim()?.toLowerCase() || row.email?.trim()?.toLowerCase();
-    const roleName = row['Role']?.trim() || row.role?.trim();
-    const rollNumber = row['Roll Number']?.trim() || row.roll_number?.trim();
-    const admissionNumber = row['Admission Number']?.trim() || row.admission_number?.trim();
-    const mobileNumber = row['Mobile Number']?.trim() || row.mobile_number?.trim();
-    const password = row['Password']?.trim() || row.password?.trim();
+    // Normalize keys from CSV for Zod
+    const mappedData = {
+      name: row['Name']?.trim() || row.name?.trim(),
+      email: row['Email Address']?.trim() || row['Email']?.trim() || row.email?.trim(),
+      role: row['Role']?.trim() || row.role?.trim(),
+      roll_number: row['Roll Number']?.trim() || row.roll_number?.trim(),
+      admission_number: row['Admission Number']?.trim() || row.admission_number?.trim(),
+      mobile_number: row['Mobile Number']?.trim() || row.mobile_number?.trim(),
+      password: row['Password']?.trim() || row.password?.trim()
+    };
 
-    if (!name) errors.push('Missing Name');
-    if (!email) errors.push('Missing Email');
-    if (!roleName) errors.push('Missing Role');
-    if (!password) errors.push('Missing Password');
+    const parseResult = BulkImportSchema.safeParse(mappedData);
+    if (!parseResult.success) {
+      parseResult.error.issues.forEach(issue => {
+        errors.push(`${issue.path.join('.')}: ${issue.message}`);
+      });
+      return { status: 'ERROR', errors, data: row };
+    }
+
+    const { name, email, role: roleName, roll_number: rollNumber, admission_number: admissionNumber, mobile_number: mobileNumber, password } = parseResult.data;
 
     // Duplicate check - File Level
     if (email) {
@@ -124,7 +132,7 @@ export class UserProcessor implements BulkImportProcessor {
       data: {
         name,
         email,
-        password,
+        password: password || 'changeme123', // Default for legacy support if optional
         role_id: roleId,
         role_name: roleName?.toUpperCase(),
         roll_number: rollNumber || null,

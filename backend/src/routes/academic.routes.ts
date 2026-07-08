@@ -444,6 +444,103 @@ router.delete('/sections/:id', requirePermission('ACADEMIC_STRUCTURE', 'DELETE')
   }
 });
 
+// Custom override for Section creation with parent Grade organization context validation
+router.post('/sections', requirePermission('ACADEMIC_STRUCTURE', 'CREATE'), async (req: any, res: Response) => {
+  try {
+    const { name, grade_id, sort_order, is_active, capacity, warning_threshold } = req.body;
+    if (!grade_id) {
+      return res.status(400).json({ message: 'Grade ID is required' });
+    }
+
+    const parentGrade = await prisma.grade.findFirst({
+      where: { id: grade_id, organization_id: req.user.organization_id },
+      select: { id: true }
+    });
+
+    if (!parentGrade) {
+      return res.status(400).json({ message: 'Invalid Grade.' });
+    }
+
+    const cleanData: any = {
+      name,
+      grade_id,
+      organization_id: req.user.organization_id
+    };
+
+    if (sort_order !== undefined) cleanData.sort_order = Number(sort_order);
+    if (is_active !== undefined) cleanData.is_active = is_active === true || is_active === 'true';
+    if (capacity !== undefined) cleanData.capacity = capacity === null || capacity === '' ? null : Number(capacity);
+    if (warning_threshold !== undefined) cleanData.warning_threshold = warning_threshold === null || warning_threshold === '' ? null : Number(warning_threshold);
+
+    const data = await prisma.section.create({
+      data: cleanData
+    });
+
+    res.status(201).json({ message: 'Section created', data });
+  } catch (error: any) {
+    if (error.code === 'P2002') {
+      return res.status(400).json({ message: 'A section with this name already exists in the selected grade.' });
+    }
+    if (error.code === 'P2003') {
+      return res.status(400).json({ message: 'Foreign key constraint failed.' });
+    }
+    if (error.code === 'P2023' || error.message?.includes('invalid input syntax for type uuid')) {
+      return res.status(400).json({ message: 'Invalid UUID format provided.' });
+    }
+    console.error('Unexpected error creating Section:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Custom override for Section update with parent Grade organization context validation
+router.put('/sections/:id', requirePermission('ACADEMIC_STRUCTURE', 'EDIT'), async (req: any, res: Response) => {
+  try {
+    const existing = await prisma.section.findFirst({
+      where: { id: req.params.id, organization_id: req.user.organization_id }
+    });
+    if (!existing) return res.status(404).json({ message: 'Not found' });
+
+    const { name, grade_id, sort_order, is_active, capacity, warning_threshold } = req.body;
+    if (grade_id && grade_id !== existing.grade_id) {
+      const parentGrade = await prisma.grade.findFirst({
+        where: { id: grade_id, organization_id: req.user.organization_id },
+        select: { id: true }
+      });
+
+      if (!parentGrade) {
+        return res.status(400).json({ message: 'Invalid Grade.' });
+      }
+    }
+
+    const cleanData: any = {};
+    if (name !== undefined) cleanData.name = name;
+    if (grade_id !== undefined) cleanData.grade_id = grade_id;
+    if (sort_order !== undefined) cleanData.sort_order = Number(sort_order);
+    if (is_active !== undefined) cleanData.is_active = is_active === true || is_active === 'true';
+    if (capacity !== undefined) cleanData.capacity = capacity === null || capacity === '' ? null : Number(capacity);
+    if (warning_threshold !== undefined) cleanData.warning_threshold = warning_threshold === null || warning_threshold === '' ? null : Number(warning_threshold);
+
+    const data = await prisma.section.update({
+      where: { id: req.params.id },
+      data: cleanData
+    });
+
+    res.json({ message: 'Section updated', data });
+  } catch (error: any) {
+    if (error.code === 'P2002') {
+      return res.status(400).json({ message: 'A section with this name already exists in the selected grade.' });
+    }
+    if (error.code === 'P2003') {
+      return res.status(400).json({ message: 'Foreign key constraint failed.' });
+    }
+    if (error.code === 'P2023' || error.code === 'P2025' || error.message?.includes('invalid input syntax for type uuid')) {
+      return res.status(404).json({ message: 'Not found' });
+    }
+    console.error('Unexpected error updating Section:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 router.use('/sections', createCrudHandlers('Section', prisma.section));
 // ── Subjects: custom handler — auto-resolves grade_id if a section_id is sent ──────────────────
 const subjectRouter = Router();

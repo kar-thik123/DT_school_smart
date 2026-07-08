@@ -42,11 +42,48 @@ if (!fs.existsSync('uploads/logos/')) {
   fs.mkdirSync('uploads/logos/', { recursive: true });
 }
 
-router.post('/upload-logo', upload.single('logo'), (req: any, res: Response) => {
-  if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
-  const logoUrl = `/api/uploads/logos/${req.file.filename}`;
-  res.json({ logoUrl });
-});
+const deleteLogoFileSafely = async (logoUrl: string | null | undefined) => {
+  if (!logoUrl) return;
+  const prefix = '/api/uploads/logos/';
+  if (!logoUrl.startsWith(prefix)) return;
+
+  const filename = logoUrl.slice(prefix.length);
+  if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+    console.warn(`[Logo Cleanup] Traversal attempt blocked: ${logoUrl}`);
+    return;
+  }
+
+  const absolutePath = path.join(process.cwd(), 'uploads', 'logos', filename);
+  try {
+    await fs.promises.unlink(absolutePath);
+    console.log(`[Logo Cleanup] Successfully deleted old logo file: ${absolutePath}`);
+  } catch (err: any) {
+    if (err.code !== 'ENOENT') {
+      console.error(`[Logo Cleanup] Failed to delete file ${absolutePath}:`, err.message || err);
+    }
+  }
+};
+
+router.post(
+  '/upload-logo',
+  authMiddleware,
+  (req: any, res: Response, next) => {
+    const userPermissions = req.user.permissions || [];
+    const isSuperAdmin = AuthorizationService.hasIdentity(userPermissions, 'IS_SUPER_ADMIN');
+    const isSystemAdmin = AuthorizationService.hasIdentity(userPermissions, 'IS_SYSTEM_ADMIN');
+    
+    if (!isSuperAdmin && !isSystemAdmin) {
+      return res.status(403).json({ message: 'Forbidden: Logo upload is restricted to administrators' });
+    }
+    next();
+  },
+  upload.single('logo'),
+  (req: any, res: Response) => {
+    if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
+    const logoUrl = `/api/uploads/logos/${req.file.filename}`;
+    res.json({ logoUrl });
+  }
+);
 
 router.get('/debug-db', authMiddleware, requirePermission('IDENTITY', 'IS_SYSTEM_ADMIN'), async (req, res) => {
   const orgs = await prisma.organization.findMany();
@@ -266,6 +303,10 @@ router.patch('/:id/settings', authMiddleware, requirePermission('IDENTITY', 'IS_
 
       return updatedOrg;
     });
+
+    if (logo_url !== undefined && logo_url !== currentOrg.logo_url) {
+      deleteLogoFileSafely(currentOrg.logo_url);
+    }
 
     res.json({ message: 'Organization settings updated', organization: updated });
   } catch (error: any) {
@@ -665,10 +706,20 @@ router.patch('/:id/branding', authMiddleware, async (req: any, res: Response) =>
     const isIT = AuthorizationService.hasIdentity(userPermissions, 'IS_SYSTEM_ADMIN');
     if (!isSelf && !isIT) return res.status(403).json({ message: 'Forbidden' });
 
+    const currentOrg = await prisma.organization.findUnique({
+      where: { id: req.params.id }
+    });
+    if (!currentOrg) return res.status(404).json({ message: 'Organization not found' });
+
     const updated = await prisma.organization.update({
       where: { id: req.params.id },
       data: { school_name, logo_url, contact_email, contact_phone, address }
     });
+
+    if (logo_url !== undefined && logo_url !== currentOrg.logo_url) {
+      deleteLogoFileSafely(currentOrg.logo_url);
+    }
+
     res.json({ message: 'Branding updated', organization: updated });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
@@ -678,7 +729,15 @@ router.patch('/:id/branding', authMiddleware, async (req: any, res: Response) =>
 // DELETE organization (IT Setup only)
 router.delete('/:id', authMiddleware, requirePermission('IDENTITY', 'IS_SYSTEM_ADMIN'), async (req: any, res: Response) => {
   try {
+    const currentOrg = await prisma.organization.findUnique({
+      where: { id: req.params.id }
+    });
+    if (!currentOrg) return res.status(404).json({ message: 'Organization not found' });
+
     await prisma.organization.delete({ where: { id: req.params.id } });
+    
+    deleteLogoFileSafely(currentOrg.logo_url);
+
     res.json({ message: 'Organization deleted successfully' });
   } catch (error: any) {
     console.error('Delete organization error:', error);
