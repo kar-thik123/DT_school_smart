@@ -189,6 +189,8 @@ export class DashboardComponent implements OnInit {
       this.selectedGradeId = defaultClass.gradeId || null;
       this.selectedGradeName = this.grades.find(g => g.id === this.selectedGradeId)?.name || '';
       this.onClassChange();
+    } else {
+      this.loading = false;
     }
   }
 

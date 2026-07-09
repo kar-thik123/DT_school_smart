@@ -9,5 +9,5 @@ import { CommonModule } from '@angular/common';
   styleUrls: ['./widget-skeleton.component.scss']
 })
 export class WidgetSkeletonComponent {
-  @Input() type: 'kpi' | 'chart' | 'list' = 'kpi';
+  @Input() type: 'kpi' | 'chart' | 'list' | 'banner' = 'kpi';
 }

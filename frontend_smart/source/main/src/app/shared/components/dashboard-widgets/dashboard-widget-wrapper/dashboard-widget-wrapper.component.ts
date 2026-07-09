@@ -22,7 +22,8 @@ export class DashboardWidgetWrapperComponent {
   @Input() state: WidgetState = 'loading';
   
   // Skeleton configuration
-  @Input() skeletonType: 'kpi' | 'chart' | 'list' = 'kpi';
+  @Input() skeletonType: 'kpi' | 'chart' | 'list' | 'banner' = 'kpi';
+  @Input() skeletonHeight: string = '100%';
   
   // Empty state configuration
   @Input() emptyMessage: string = 'No data available';

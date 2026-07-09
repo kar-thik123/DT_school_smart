@@ -87,7 +87,7 @@ export class SidebarComponent
     if (this.authService.currentUserValue) {
       this.userFullName = this.authService.currentUserValue.name;
       this.userImg =
-        './assets/images/user/' + this.authService.currentUserValue.avatar;
+        './assets/images/user/' + (this.authService.currentUserValue.avatar || 'admin.jpg');
 
       this.fetchProfileImage();
 

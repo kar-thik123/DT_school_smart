@@ -1,4 +1,4 @@
-<app-dashboard-widget-wrapper [state]="state" skeletonType="list" emptyMessage="No students currently marked at risk" (retry)="loadData(contextService.currentContext?.sectionId!, contextService.currentContext?.subjectId)">
+<app-dashboard-widget-wrapper [state]="state" skeletonType="list" skeletonHeight="350px" emptyMessage="No students currently marked at risk" (retry)="loadData(contextService.currentContext?.sectionId!, contextService.currentContext?.subjectId)">
   <div class="card bg-body border-0 shadow-sm h-100" style="border-radius: 20px; overflow: hidden;">
     <div
       class="card-header bg-transparent border-0 p-3 p-xl-4 pb-0 d-flex justify-content-between align-items-center">

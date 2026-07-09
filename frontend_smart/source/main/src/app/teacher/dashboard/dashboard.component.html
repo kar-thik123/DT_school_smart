@@ -9,7 +9,7 @@
       </div>
 
       <div class="d-flex align-items-center gap-3 header-actions-wrapper" style="flex-shrink: 0;"
-        *ngIf="assignments.length > 0 && !loading && !error">
+        *ngIf="assignments.length > 0 && !error">
 
         <div class="hierarchy-dropdown-wrapper">
           <app-hierarchy-dropdown [grades]="grades" [allSections]="allSections" [selectedGradeId]="selectedGradeId"
@@ -81,10 +81,17 @@
     </div>
 
     <div *ngIf="!error" class="dashboard-container">
-      <div *ngIf="!loading && assignments.length === 0" class="text-muted font-12 mb-3">No classes assigned.</div>
+      <!-- Global Loading State -->
+      <div *ngIf="loading" class="d-flex justify-content-center align-items-center" style="min-height: 300px;">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading dashboard...</span>
+        </div>
+      </div>
+
+      <div *ngIf="!loading && !selectedAssignment" class="text-muted font-12 mb-3">No valid classes assigned.</div>
 
       <!-- Each widget loads its own data independently -->
-      <ng-container *ngIf="loading || selectedAssignment">
+      <ng-container *ngIf="!loading && selectedAssignment">
 
         <!-- Hero Banner Widget -->
         <div class="row mb-3">

@@ -2,7 +2,7 @@
   
   <!-- Loading State -->
   <ng-container *ngSwitchCase="'loading'">
-    <app-widget-skeleton [type]="skeletonType"></app-widget-skeleton>
+    <app-widget-skeleton [type]="skeletonType" [style.height]="skeletonHeight" style="display: block;"></app-widget-skeleton>
   </ng-container>
 
   <!-- Empty State -->

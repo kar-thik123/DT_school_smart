@@ -1,4 +1,5 @@
-<app-dashboard-widget-wrapper [state]="state" skeletonType="chart" emptyMessage="No class data" (retry)="loadData(contextService.currentContext?.sectionId!, contextService.currentContext?.subjectId)">
+<app-dashboard-widget-wrapper [state]="state" skeletonType="banner" skeletonHeight="160px" emptyMessage="No class data"
+  (retry)="loadData(contextService.currentContext?.sectionId!, contextService.currentContext?.subjectId)">
   <div class="card border-0 shadow-sm position-relative overflow-hidden"
     style="border-radius: 20px; background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 35%, #3b82f6 70%, #60a5fa 100%);">
 
@@ -22,7 +23,8 @@
         </h2>
         <p class="mb-0"
           style="color: rgba(255,255,255,.9); font-size: clamp(0.9rem, 1.1vw, 1rem); line-height: 1.5; max-width: 500px;">
-          Currently viewing performance for <strong class="text-white fw-bold">{{ gradeName }} - {{ sectionName }}</strong>.
+          Currently viewing performance for <strong class="text-white fw-bold">{{ gradeName }} - {{ sectionName
+            }}</strong>.
           <br>The class average score is <strong class="text-white fw-bold">{{ (overview?.avgScore || 0) |
             number:'1.0-1' }}%</strong>.
         </p>

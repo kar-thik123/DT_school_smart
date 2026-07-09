@@ -168,6 +168,14 @@ router.post('/login', loginLimiter, async (req: any, res: Response) => {
     if (roleName === 'MANAGEMENT') {
       permissions.push('IDENTITY:IS_MANAGEMENT');
     }
+    if (roleName === 'Teacher' || roleName === 'TEACHER') {
+      permissions.push('IDENTITY:IS_TEACHER');
+      permissions.push('TEACHER_DASHBOARD_ACCESS:READ');
+    }
+    if (roleName === 'Student' || roleName === 'STUDENT') {
+      permissions.push('IDENTITY:IS_STUDENT');
+      permissions.push('STUDENT_DASHBOARD_ACCESS:READ');
+    }
 
     const verificationAssignments = await prisma.skillVerificationAssignment.findMany({
       where: { verifier_ids: { has: user.id } }
@@ -242,6 +250,14 @@ router.get('/me', authMiddleware, async (req: any, res: Response) => {
     }
     if (roleName === 'MANAGEMENT') {
       permissions.push('IDENTITY:IS_MANAGEMENT');
+    }
+    if (roleName === 'Teacher' || roleName === 'TEACHER') {
+      permissions.push('IDENTITY:IS_TEACHER');
+      permissions.push('TEACHER_DASHBOARD_ACCESS:READ');
+    }
+    if (roleName === 'Student' || roleName === 'STUDENT') {
+      permissions.push('IDENTITY:IS_STUDENT');
+      permissions.push('STUDENT_DASHBOARD_ACCESS:READ');
     }
 
     const verificationAssignments = await prisma.skillVerificationAssignment.findMany({
