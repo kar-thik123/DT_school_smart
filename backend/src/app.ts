@@ -31,7 +31,7 @@ import teacherDashboardRoutes from './routes/teacher-dashboard.routes';
 const app = express();
 
 // Trust proxy to securely resolve frontend base URLs (protocol/host) behind reverse proxies.
-app.set('trust proxy', true);
+app.set('trust proxy', 1);
 console.log('Starting application, mounting routes...');
 
 // app.use(cors());

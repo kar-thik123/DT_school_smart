@@ -17,9 +17,38 @@ export class AuthGuard {
   private store = inject(LocalStorageService);
   private authService = inject(AuthService);
 
-  canActivate(route: ActivatedRouteSnapshot, _state: RouterStateSnapshot) {
-    const currentUser = this.store.get('currentUser') as User;
-    if (currentUser) {
+  canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot) {
+    const currentUser = this.authService.currentUserValue;
+    if (currentUser && Object.keys(currentUser).length > 0) {
+      const userRole = (this.authService.getRole() || '').toUpperCase();
+      const url = state.url || '';
+
+      // Enforce strict path-level namespace constraints
+      if (url.includes('/organization')) {
+        if (userRole !== 'SYSTEM_ADMIN') {
+          this.router.navigate(['/authentication/signin']);
+          return false;
+        }
+      }
+      if (url.startsWith('/admin/')) {
+        if (!['ADMIN', 'SUPER_ADMIN', 'MANAGEMENT'].includes(userRole)) {
+          this.router.navigate(['/authentication/signin']);
+          return false;
+        }
+      }
+      if (url.startsWith('/teacher/')) {
+        if (userRole !== 'TEACHER') {
+          this.router.navigate(['/authentication/signin']);
+          return false;
+        }
+      }
+      if (url.startsWith('/student/')) {
+        if (userRole !== 'STUDENT') {
+          this.router.navigate(['/authentication/signin']);
+          return false;
+        }
+      }
+
       const permission = route.data['permission'];
       if (permission) {
         if (permission === 'IDENTITY:IS_MANAGEMENT') {

@@ -5,6 +5,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.server = exports.io = void 0;
 require("dotenv/config");
+if (!process.env.JWT_SECRET) {
+    console.error('❌ FATAL ERROR: JWT_SECRET is not defined in the environment.');
+    process.exit(1);
+}
 const http_1 = __importDefault(require("http"));
 const socket_io_1 = require("socket.io");
 const app_1 = __importDefault(require("./app"));
@@ -32,7 +36,7 @@ io.use(async (socket, next) => {
         if (!token) {
             return next(new Error('Authentication required'));
         }
-        const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET || 'supersecret_jwt_key_for_dev_only');
+        const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET);
         const user = await prisma_1.default.user.findUnique({
             where: { id: decoded.user_id },
             select: { id: true, organization_id: true, name: true }
@@ -79,3 +83,4 @@ if (process.env.NODE_ENV !== 'test') {
         console.log(`🔌 WebSocket server ready`);
     });
 }
+// trigger restart

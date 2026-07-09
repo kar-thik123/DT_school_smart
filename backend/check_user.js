@@ -1,7 +1,19 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 async function run() {
-  const user = await prisma.user.findFirst({ where: { email: 'system@gmail.com' }, include: { role: true, organization: true } });
-  console.log(user);
+  const user = await prisma.user.findFirst({
+    where: { email: 'sysadmin@platform.com' },
+    include: {
+      role: {
+        include: {
+          permissions: {
+            include: { permission: true }
+          }
+        }
+      },
+      organization: true
+    }
+  });
+  console.log(JSON.stringify(user, null, 2));
 }
-run();
+run().catch(console.error).finally(() => prisma.$disconnect());

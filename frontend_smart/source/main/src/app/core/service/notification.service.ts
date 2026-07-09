@@ -95,7 +95,10 @@ export class NotificationService implements OnDestroy {
   connectSocket(): void {
     if (this.socket) return;
 
-    const token = this.storage.get('token') as string;
+    let token = this.storage.get('token') as string;
+    if (!token) {
+      token = sessionStorage.getItem('token') as string;
+    }
     if (!token) return;
 
     // Extract base URL (without /api path)

@@ -229,6 +229,14 @@ router.delete('/units/:id', (0, auth_middleware_1.requirePermission)('ACADEMIC_S
         const existing = await prisma_1.default.unit.findFirst({ where: { id: req.params.id, organization_id: org_id } });
         if (!existing)
             return res.status(404).json({ message: 'Unit not found' });
+        // Validate: Verify if child Topics exist
+        const hasTopics = await prisma_1.default.topic.findFirst({
+            where: { unit_id: req.params.id, organization_id: org_id },
+            select: { id: true }
+        });
+        if (hasTopics) {
+            return res.status(400).json({ message: 'This curriculum item is already in use and cannot be deleted.' });
+        }
         await prisma_1.default.unit.delete({ where: { id: req.params.id } });
         res.json({ message: 'Unit deleted successfully' });
     }
@@ -365,6 +373,18 @@ router.delete('/topics/:id', (0, auth_middleware_1.requirePermission)('ACADEMIC_
         const existing = await prisma_1.default.topic.findFirst({ where: { id: req.params.id, organization_id: org_id } });
         if (!existing)
             return res.status(404).json({ message: 'Topic not found' });
+        // Sibling validations checks ran in parallel using Promise.all()
+        const [hasSubTopics, hasCompletionTracking, hasStudentCompletion, hasPracticeAttempt, hasTopicActivation, hasQuestion] = await Promise.all([
+            prisma_1.default.subTopic.findFirst({ where: { topic_id: req.params.id, organization_id: org_id }, select: { id: true } }),
+            prisma_1.default.completionTracking.findFirst({ where: { topic_id: req.params.id, organization_id: org_id }, select: { id: true } }),
+            prisma_1.default.studentTopicCompletion.findFirst({ where: { topic_id: req.params.id, organization_id: org_id }, select: { id: true } }),
+            prisma_1.default.practiceAttempt.findFirst({ where: { topic_id: req.params.id, organization_id: org_id }, select: { id: true } }),
+            prisma_1.default.topicActivation.findFirst({ where: { topic_id: req.params.id, organization_id: org_id }, select: { id: true } }),
+            prisma_1.default.question.findFirst({ where: { topic_id: req.params.id, organization_id: org_id }, select: { id: true } })
+        ]);
+        if (hasSubTopics || hasCompletionTracking || hasStudentCompletion || hasPracticeAttempt || hasTopicActivation || hasQuestion) {
+            return res.status(400).json({ message: 'This curriculum item is already in use and cannot be deleted.' });
+        }
         await prisma_1.default.topic.delete({ where: { id: req.params.id } });
         res.json({ message: 'Topic deleted successfully' });
     }
@@ -497,6 +517,14 @@ router.delete('/subtopics/:id', (0, auth_middleware_1.requirePermission)('ACADEM
         const existing = await prisma_1.default.subTopic.findFirst({ where: { id: req.params.id, organization_id: org_id } });
         if (!existing)
             return res.status(404).json({ message: 'Sub topic not found' });
+        // Validate: verify CompletionTracking and Question references in parallel
+        const [hasCompletionTracking, hasQuestion] = await Promise.all([
+            prisma_1.default.completionTracking.findFirst({ where: { sub_topic_id: req.params.id, organization_id: org_id }, select: { id: true } }),
+            prisma_1.default.question.findFirst({ where: { sub_topic_id: req.params.id, organization_id: org_id }, select: { id: true } })
+        ]);
+        if (hasCompletionTracking || hasQuestion) {
+            return res.status(400).json({ message: 'This curriculum item is already in use and cannot be deleted.' });
+        }
         await prisma_1.default.subTopic.delete({ where: { id: req.params.id } });
         res.json({ message: 'Sub topic deleted successfully' });
     }

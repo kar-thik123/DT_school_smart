@@ -9,13 +9,14 @@ const prisma_1 = __importDefault(require("../prisma"));
 const academic_context_resolver_1 = require("../utils/academic-context.resolver");
 const authorization_service_1 = require("../services/authorization.service");
 const authMiddleware = async (req, res, next) => {
+    console.log(`[AUTH MIDDLEWARE TRIGGERED] ${req.method} ${req.originalUrl}`);
     try {
         const authHeader = req.headers.authorization;
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
             return res.status(401).json({ message: 'Unauthorized: No token provided' });
         }
         const token = authHeader.split(' ')[1];
-        const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET || 'supersecret_jwt_key_for_dev_only');
+        const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET);
         const dbUser = await prisma_1.default.user.findUnique({
             where: { id: decoded.user_id },
             include: {

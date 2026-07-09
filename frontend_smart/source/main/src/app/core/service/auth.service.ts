@@ -50,10 +50,18 @@ export class AuthService {
 
   setSession(token: string, user: any, permissions: string[], rememberMe: boolean = false): void {
     if (rememberMe) {
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('currentUser');
+      sessionStorage.removeItem('permissions');
+
       this.storage.set('token', token);
       this.storage.set('currentUser', user);
       this.storage.set('permissions', permissions);
     } else {
+      this.storage.remove('token');
+      this.storage.remove('currentUser');
+      this.storage.remove('permissions');
+
       sessionStorage.setItem('token', token);
       sessionStorage.setItem('currentUser', JSON.stringify(user));
       sessionStorage.setItem('permissions', JSON.stringify(permissions));
@@ -64,12 +72,16 @@ export class AuthService {
 
 
   getUser(): any {
-    const local = this.storage.get('currentUser');
-    if (local && Object.keys(local).length > 0) return local;
+    if (this.storage.has('token')) {
+      const local = this.storage.get('currentUser');
+      if (local && Object.keys(local).length > 0) return local;
+    }
     
-    const session = sessionStorage.getItem('currentUser');
-    if (session) {
-      try { return JSON.parse(session); } catch(e) { return {}; }
+    if (sessionStorage.getItem('token')) {
+      const session = sessionStorage.getItem('currentUser');
+      if (session) {
+        try { return JSON.parse(session); } catch(e) { return {}; }
+      }
     }
     return {};
   }
@@ -81,9 +93,10 @@ export class AuthService {
 
   getPermissions(): string[] {
     let perms: string[] = [];
-    const local = this.storage.get('permissions') as string[];
-    if (local && local.length > 0) perms = local;
-    else {
+    if (this.storage.has('token')) {
+      const local = this.storage.get('permissions') as string[];
+      if (local && local.length > 0) perms = local;
+    } else if (sessionStorage.getItem('token')) {
       const session = sessionStorage.getItem('permissions');
       if (session) {
         try { perms = JSON.parse(session); } catch(e) { perms = []; }

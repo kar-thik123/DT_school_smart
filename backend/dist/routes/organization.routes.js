@@ -11,6 +11,8 @@ const permissions_1 = require("../config/permissions");
 const multer_1 = __importDefault(require("multer"));
 const path_1 = __importDefault(require("path"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
+const email_service_1 = require("../services/email.service");
+const frontend_url_resolver_service_1 = require("../services/frontend-url-resolver.service");
 const authorization_service_1 = require("../services/authorization.service");
 const router = (0, express_1.Router)();
 // Configure Multer for Logo Uploads
@@ -21,13 +23,54 @@ const storage = multer_1.default.diskStorage({
         cb(null, 'logo-' + uniqueSuffix + path_1.default.extname(file.originalname));
     }
 });
-const upload = (0, multer_1.default)({ storage });
+const upload = (0, multer_1.default)({
+    storage,
+    limits: { fileSize: 2 * 1024 * 1024 }, // 2MB limit
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype.startsWith('image/')) {
+            cb(null, true);
+        }
+        else {
+            cb(new Error('Only images are allowed'));
+        }
+    }
+});
 // Ensure upload directory exists (Helper)
 const fs = require('fs');
 if (!fs.existsSync('uploads/logos/')) {
     fs.mkdirSync('uploads/logos/', { recursive: true });
 }
-router.post('/upload-logo', upload.single('logo'), (req, res) => {
+const deleteLogoFileSafely = async (logoUrl) => {
+    if (!logoUrl)
+        return;
+    const prefix = '/api/uploads/logos/';
+    if (!logoUrl.startsWith(prefix))
+        return;
+    const filename = logoUrl.slice(prefix.length);
+    if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+        console.warn(`[Logo Cleanup] Traversal attempt blocked: ${logoUrl}`);
+        return;
+    }
+    const absolutePath = path_1.default.join(process.cwd(), 'uploads', 'logos', filename);
+    try {
+        await fs.promises.unlink(absolutePath);
+        console.log(`[Logo Cleanup] Successfully deleted old logo file: ${absolutePath}`);
+    }
+    catch (err) {
+        if (err.code !== 'ENOENT') {
+            console.error(`[Logo Cleanup] Failed to delete file ${absolutePath}:`, err.message || err);
+        }
+    }
+};
+router.post('/upload-logo', auth_middleware_1.authMiddleware, (req, res, next) => {
+    const userPermissions = req.user.permissions || [];
+    const isSuperAdmin = authorization_service_1.AuthorizationService.hasIdentity(userPermissions, 'IS_SUPER_ADMIN');
+    const isSystemAdmin = authorization_service_1.AuthorizationService.hasIdentity(userPermissions, 'IS_SYSTEM_ADMIN');
+    if (!isSuperAdmin && !isSystemAdmin) {
+        return res.status(403).json({ message: 'Forbidden: Logo upload is restricted to administrators' });
+    }
+    next();
+}, upload.single('logo'), (req, res) => {
     if (!req.file)
         return res.status(400).json({ message: 'No file uploaded' });
     const logoUrl = `/api/uploads/logos/${req.file.filename}`;
@@ -92,10 +135,10 @@ router.get('/me/profile', auth_middleware_1.authMiddleware, async (req, res) => 
         res.status(500).json({ message: 'Server error' });
     }
 });
-router.use(auth_middleware_1.authMiddleware);
-router.use((0, auth_middleware_1.requirePermission)('IDENTITY', 'IS_SYSTEM_ADMIN'));
+// router.use(authMiddleware);
+// router.use(requirePermission('IDENTITY', 'IS_SYSTEM_ADMIN'));
 // 4. Get Platform Statistics
-router.get('/stats', async (req, res) => {
+router.get('/stats', auth_middleware_1.authMiddleware, (0, auth_middleware_1.requirePermission)('IDENTITY', 'IS_SYSTEM_ADMIN'), async (req, res) => {
     try {
         const total = await prisma_1.default.organization.count();
         const active = await prisma_1.default.organization.count({ where: { backup_enabled: true } }); // Example: using backup_enabled as a proxy for 'active' status for now
@@ -111,7 +154,7 @@ router.get('/stats', async (req, res) => {
     }
 });
 // 5. Get Single Organization Details
-router.get('/:id', async (req, res) => {
+router.get('/:id', auth_middleware_1.authMiddleware, (0, auth_middleware_1.requirePermission)('IDENTITY', 'IS_SYSTEM_ADMIN'), async (req, res) => {
     try {
         const org = await prisma_1.default.organization.findUnique({
             where: { id: req.params.id },
@@ -132,7 +175,7 @@ router.get('/:id', async (req, res) => {
     }
 });
 // 6. Update Organization Status (Lifecycle)
-router.patch('/:id/status', async (req, res) => {
+router.patch('/:id/status', auth_middleware_1.authMiddleware, (0, auth_middleware_1.requirePermission)('IDENTITY', 'IS_SYSTEM_ADMIN'), async (req, res) => {
     try {
         const { status } = req.body; // Expecting OrganizationStatus enum value
         // Safety check: Prevent suspending/archiving platform core
@@ -154,10 +197,10 @@ router.patch('/:id/status', async (req, res) => {
     }
 });
 // 6.5 Update Organization Settings (Platform Developer)
-router.patch('/:id/settings', async (req, res) => {
+router.patch('/:id/settings', auth_middleware_1.authMiddleware, (0, auth_middleware_1.requirePermission)('IDENTITY', 'IS_SYSTEM_ADMIN'), async (req, res) => {
     try {
         const orgId = req.params.id;
-        const { school_name, contact_email, subdomain, domain_type, login_limit, smtp_host, smtp_port, backup_enabled } = req.body;
+        const { school_name, contact_email, logo_url, subdomain, domain_type, login_limit, smtp_host, smtp_port, backup_enabled } = req.body;
         const currentOrg = await prisma_1.default.organization.findUnique({
             where: { id: orgId },
             include: { license: true }
@@ -177,6 +220,7 @@ router.patch('/:id/settings', async (req, res) => {
                 data: {
                     school_name: school_name !== undefined ? school_name : undefined,
                     contact_email: contact_email !== undefined ? contact_email : undefined,
+                    logo_url: logo_url !== undefined ? logo_url : undefined,
                     subdomain: subdomain !== undefined ? subdomain : undefined,
                     domain_type: domain_type !== undefined ? domain_type : undefined,
                     login_limit: login_limit !== undefined ? Number(login_limit) : undefined,
@@ -226,6 +270,9 @@ router.patch('/:id/settings', async (req, res) => {
             });
             return updatedOrg;
         });
+        if (logo_url !== undefined && logo_url !== currentOrg.logo_url) {
+            deleteLogoFileSafely(currentOrg.logo_url);
+        }
         res.json({ message: 'Organization settings updated', organization: updated });
     }
     catch (error) {
@@ -458,8 +505,17 @@ router.post('/', async (req, res) => {
         // 4. Fire Async Hooks (e.g. Emails/Provisioning) safely WITHOUT blocking the API response
         if (result.adminUser) {
             // simulate background email dispatch
-            Promise.resolve().then(() => {
-                console.log(`[Background Job] Dispatching welcome email to ${result.adminUser.email}`);
+            Promise.resolve().then(async () => {
+                try {
+                    console.log(`[Background Job] Dispatching welcome email to ${result.adminUser?.email}`);
+                    const frontendOrigin = req.headers.origin || `${req.protocol}://${req.get('host')}`;
+                    const baseUrl = frontend_url_resolver_service_1.FrontendUrlResolver.resolve(result.org, frontendOrigin);
+                    const loginUrl = `${baseUrl}/#/authentication/signin`;
+                    await email_service_1.EmailService.sendOrganizationProvisionedEmail(parsed.contact_email || result.adminUser?.email || '', result.adminUser?.email || null, parsed.admin_password || null, loginUrl, parsed);
+                }
+                catch (err) {
+                    console.error('[Background Job Error]', err);
+                }
             }).catch(err => console.error('[Background Job Error]', err));
         }
         // 5. Explicit return to end execution context
@@ -498,7 +554,7 @@ router.post('/', async (req, res) => {
     }
 });
 // GET all organizations (IT Setup only)
-router.get('/', async (req, res) => {
+router.get('/', auth_middleware_1.authMiddleware, (0, auth_middleware_1.requirePermission)('IDENTITY', 'IS_SYSTEM_ADMIN'), async (req, res) => {
     try {
         const { page = 1, limit = 10, search = '', status } = req.query;
         const skip = (Number(page) - 1) * Number(limit);
@@ -571,10 +627,18 @@ router.patch('/:id/branding', auth_middleware_1.authMiddleware, async (req, res)
         const isIT = authorization_service_1.AuthorizationService.hasIdentity(userPermissions, 'IS_SYSTEM_ADMIN');
         if (!isSelf && !isIT)
             return res.status(403).json({ message: 'Forbidden' });
+        const currentOrg = await prisma_1.default.organization.findUnique({
+            where: { id: req.params.id }
+        });
+        if (!currentOrg)
+            return res.status(404).json({ message: 'Organization not found' });
         const updated = await prisma_1.default.organization.update({
             where: { id: req.params.id },
             data: { school_name, logo_url, contact_email, contact_phone, address }
         });
+        if (logo_url !== undefined && logo_url !== currentOrg.logo_url) {
+            deleteLogoFileSafely(currentOrg.logo_url);
+        }
         res.json({ message: 'Branding updated', organization: updated });
     }
     catch (error) {
@@ -582,9 +646,15 @@ router.patch('/:id/branding', auth_middleware_1.authMiddleware, async (req, res)
     }
 });
 // DELETE organization (IT Setup only)
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', auth_middleware_1.authMiddleware, (0, auth_middleware_1.requirePermission)('IDENTITY', 'IS_SYSTEM_ADMIN'), async (req, res) => {
     try {
+        const currentOrg = await prisma_1.default.organization.findUnique({
+            where: { id: req.params.id }
+        });
+        if (!currentOrg)
+            return res.status(404).json({ message: 'Organization not found' });
         await prisma_1.default.organization.delete({ where: { id: req.params.id } });
+        deleteLogoFileSafely(currentOrg.logo_url);
         res.json({ message: 'Organization deleted successfully' });
     }
     catch (error) {

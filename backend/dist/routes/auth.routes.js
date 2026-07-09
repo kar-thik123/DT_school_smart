@@ -7,11 +7,13 @@ const express_1 = require("express");
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const crypto_1 = require("crypto");
-const nodemailer_1 = __importDefault(require("nodemailer"));
+// Removed inline nodemailer import
 const prisma_1 = __importDefault(require("../prisma"));
 const zod_1 = require("zod");
 const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 const auth_middleware_1 = require("../middlewares/auth.middleware");
+const email_link_builder_service_1 = require("../services/email-link-builder.service");
+const email_service_1 = require("../services/email.service");
 const router = (0, express_1.Router)();
 const loginLimiter = (0, express_rate_limit_1.default)({
     windowMs: 15 * 60 * 1000, // 15 minutes
@@ -44,10 +46,71 @@ router.post('/login', loginLimiter, async (req, res) => {
         if (!user.is_active) {
             return res.status(401).json({ message: 'Invalid credentials or inactive account' });
         }
+        if (user.locked_until && new Date(user.locked_until).getTime() > Date.now()) {
+            return res.status(401).json({ message: 'Too many failed attempts. Try again after 15 minutes' });
+        }
         const isMatch = await bcrypt_1.default.compare(parsed.password, user.password_hash);
         if (!isMatch) {
-            return res.status(401).json({ message: 'Invalid credentials' });
+            const failedAttempts = user.failed_login_attempts + 1;
+            let lockedUntil = null;
+            let actionType = 'LOGIN_FAILED';
+            let errorMessage = 'Invalid credentials or inactive account';
+            if (failedAttempts >= 5) {
+                lockedUntil = new Date(Date.now() + 15 * 60 * 1000);
+                actionType = 'ACCOUNT_LOCKED';
+                errorMessage = 'Too many failed attempts. Try again after 15 minutes.';
+            }
+            else {
+                const remaining = 5 - failedAttempts;
+                if (remaining <= 3) {
+                    errorMessage = `Invalid credentials or inactive account, ${remaining} attempt${remaining > 1 ? 's' : ''} remaining.`;
+                }
+            }
+            await prisma_1.default.user.update({
+                where: { id: user.id },
+                data: { failed_login_attempts: failedAttempts, locked_until: lockedUntil }
+            });
+            await prisma_1.default.auditLog.create({
+                data: {
+                    organization_id: user.organization_id,
+                    user_id: user.id,
+                    user_name: user.name,
+                    action_type: actionType,
+                    entity_type: 'USER',
+                    entity_id: user.id,
+                    metadata: { ip: req.ip, email: parsed.email }
+                }
+            });
+            return res.status(401).json({ message: errorMessage });
         }
+        if (user.failed_login_attempts > 0 || user.locked_until) {
+            await prisma_1.default.user.update({
+                where: { id: user.id },
+                data: { failed_login_attempts: 0, locked_until: null }
+            });
+            await prisma_1.default.auditLog.create({
+                data: {
+                    organization_id: user.organization_id,
+                    user_id: user.id,
+                    user_name: user.name,
+                    action_type: 'ACCOUNT_UNLOCKED',
+                    entity_type: 'USER',
+                    entity_id: user.id,
+                    metadata: { ip: req.ip, reason: 'successful_login' }
+                }
+            });
+        }
+        await prisma_1.default.auditLog.create({
+            data: {
+                organization_id: user.organization_id,
+                user_id: user.id,
+                user_name: user.name,
+                action_type: 'LOGIN_SUCCESS',
+                entity_type: 'USER',
+                entity_id: user.id,
+                metadata: { ip: req.ip }
+            }
+        });
         // --- HOSTNAME BASED TENANT VALIDATION ---
         const hostname = req.hostname || '';
         let mappedOrgId = null;
@@ -90,6 +153,14 @@ router.post('/login', loginLimiter, async (req, res) => {
         if (roleName === 'MANAGEMENT') {
             permissions.push('IDENTITY:IS_MANAGEMENT');
         }
+        if (roleName === 'Teacher' || roleName === 'TEACHER') {
+            permissions.push('IDENTITY:IS_TEACHER');
+            permissions.push('TEACHER_DASHBOARD_ACCESS:READ');
+        }
+        if (roleName === 'Student' || roleName === 'STUDENT') {
+            permissions.push('IDENTITY:IS_STUDENT');
+            permissions.push('STUDENT_DASHBOARD_ACCESS:READ');
+        }
         const verificationAssignments = await prisma_1.default.skillVerificationAssignment.findMany({
             where: { verifier_ids: { has: user.id } }
         });
@@ -99,7 +170,7 @@ router.post('/login', loginLimiter, async (req, res) => {
         const token = jsonwebtoken_1.default.sign({
             user_id: user.id,
             organization_id: user.organization_id
-        }, process.env.JWT_SECRET || 'supersecret_jwt_key_for_dev_only', { expiresIn: '1d' });
+        }, process.env.JWT_SECRET, { expiresIn: '1d' });
         res.json({
             token,
             user: {
@@ -157,6 +228,14 @@ router.get('/me', auth_middleware_1.authMiddleware, async (req, res) => {
         if (roleName === 'MANAGEMENT') {
             permissions.push('IDENTITY:IS_MANAGEMENT');
         }
+        if (roleName === 'Teacher' || roleName === 'TEACHER') {
+            permissions.push('IDENTITY:IS_TEACHER');
+            permissions.push('TEACHER_DASHBOARD_ACCESS:READ');
+        }
+        if (roleName === 'Student' || roleName === 'STUDENT') {
+            permissions.push('IDENTITY:IS_STUDENT');
+            permissions.push('STUDENT_DASHBOARD_ACCESS:READ');
+        }
         const verificationAssignments = await prisma_1.default.skillVerificationAssignment.findMany({
             where: { verifier_ids: { has: user.id } }
         });
@@ -199,13 +278,15 @@ router.post('/change-password', auth_middleware_1.authMiddleware, async (req, re
     }
 });
 const resetRequestSchema = zod_1.z.object({
-    email: zod_1.z.string().email()
+    email: zod_1.z.string().email(),
+    frontendOrigin: zod_1.z.string().url()
 });
 router.post('/forgot-password', async (req, res) => {
     try {
         const parsed = resetRequestSchema.parse(req.body);
         const user = await prisma_1.default.user.findFirst({
-            where: { email: parsed.email }
+            where: { email: parsed.email },
+            include: { organization: true }
         });
         if (!user) {
             return res.json({ message: 'If the email exists, a reset link has been sent' });
@@ -215,31 +296,9 @@ router.post('/forgot-password', async (req, res) => {
         await prisma_1.default.passwordReset.create({
             data: { user_id: user.id, token, expires_at }
         });
-        const baseUrl = process.env.FRONTEND_URL || 'https://app.platform.com';
-        const resetUrl = `${baseUrl}/#/authentication/reset-password?token=${token}`;
-        const transporter = nodemailer_1.default.createTransport({
-            service: 'gmail',
-            auth: {
-                user: process.env.SMTP_EMAIL || 'sam21cs1188@gmail.com',
-                pass: process.env.SMTP_PASSWORD || 'mggc wifs yaas yika'
-            }
-        });
-        await transporter.sendMail({
-            from: `"School Support" <${process.env.SMTP_EMAIL || 'sam21cs1188@gmail.com'}>`,
-            to: user.email,
-            subject: 'Password Reset Request',
-            html: `
-        <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; color: #333;">
-          <h2 style="color: #059669;">Reset Your Password</h2>
-          <p>Hello ${user.name},</p>
-          <p>We received a request to reset your password. Click the secure link below to proceed:</p>
-          <div style="margin: 30px 0;">
-            <a href="${resetUrl}" style="display:inline-block; padding:12px 24px; color:#ffffff; background-color:#10b981; border-radius:8px; text-decoration:none; font-weight:bold;">Set New Password</a>
-          </div>
-          <p style="font-size:14px; color:#666;">This link is valid for 15 minutes. If you did not request a password reset, you can safely ignore this email.</p>
-        </div>
-      `
-        });
+        const frontendOrigin = parsed.frontendOrigin;
+        const resetUrl = email_link_builder_service_1.EmailLinkBuilder.buildPasswordResetUrl(user.organization, token, frontendOrigin);
+        await email_service_1.EmailService.sendPasswordResetEmail(user.name, user.email, resetUrl);
         res.json({ message: 'If the email exists, a reset link has been sent' });
     }
     catch (error) {
