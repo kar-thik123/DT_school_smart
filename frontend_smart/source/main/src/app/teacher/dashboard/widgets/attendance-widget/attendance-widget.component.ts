@@ -34,7 +34,7 @@ export class AttendanceWidgetComponent implements OnInit, OnDestroy {
 
   state: WidgetState = 'loading';
   summaryStats: SummaryStats | null = null;
-  chartOptions!: Partial<RadialChartOptions>;
+  chartOptions?: Partial<RadialChartOptions>;
 
   ngOnInit(): void {
     this.sub.add(

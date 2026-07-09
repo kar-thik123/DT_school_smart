@@ -13,10 +13,10 @@
         <span class="font-11 text-muted">Not enough data to display trend.</span>
       </div>
       <div *ngIf="performanceTrend.length > 0" class="w-100" style="height: 250px; overflow: hidden; margin: 0 -10px;">
-        <apx-chart *ngIf="chartOptions.series" [series]="chartOptions.series!" [chart]="chartOptions.chart!"
-          [xaxis]="chartOptions.xaxis!" [colors]="chartOptions.colors!" [stroke]="chartOptions.stroke!"
-          [dataLabels]="chartOptions.dataLabels!" [yaxis]="chartOptions.yaxis!" [grid]="chartOptions.grid!">
-        </apx-chart>
+        <apx-chart *ngIf="chartOptions?.series" [series]="chartOptions!.series!" [chart]="chartOptions!.chart!"
+          [xaxis]="chartOptions!.xaxis!" [yaxis]="chartOptions!.yaxis!" [stroke]="chartOptions!.stroke!"
+          [dataLabels]="chartOptions!.dataLabels!" [grid]="chartOptions!.grid!" [legend]="chartOptions!.legend!"
+          [colors]="chartOptions!.colors!"></apx-chart>
       </div>
     </div>
   </div>

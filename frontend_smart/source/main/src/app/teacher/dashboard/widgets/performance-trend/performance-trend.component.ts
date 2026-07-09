@@ -45,7 +45,7 @@ export class PerformanceTrendComponent implements OnInit, OnDestroy {
 
   state: WidgetState = 'loading';
   performanceTrend: PerformanceTrend[] = [];
-  chartOptions!: Partial<PerformanceTrendChartOptions>;
+  chartOptions?: Partial<PerformanceTrendChartOptions>;
 
   ngOnInit(): void {
     this.sub.add(
