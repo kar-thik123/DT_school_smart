@@ -1,0 +1,62 @@
+<app-dashboard-widget-wrapper [state]="state" skeletonType="list" emptyMessage="No topic data available" (retry)="loadData(contextService.currentContext?.sectionId!, contextService.currentContext?.subjectId)">
+  <div class="card bg-body border-0 shadow-sm h-100" style="border-radius: 20px; overflow: hidden;">
+    <div
+      class="card-header bg-transparent border-0 p-3 p-xl-4 pb-0 d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center">
+        <div
+          class="rounded-circle bg-light-info text-teal d-flex align-items-center justify-content-center me-2"
+          style="width: 24px; height: 24px;">
+          <i class="fas fa-bullseye font-10"></i>
+        </div>
+        <h6 class="font-weight-bold mb-0 text-body font-13">{{ selectedSubjectId === '' ? 'Subject Mastery' : 'Topic Mastery' }}</h6>
+      </div>
+      <a href="javascript:void(0)" *ngIf="topicMastery.length > 5"
+        class="text-primary font-10 fw-bold text-decoration-none view-all-link"
+        (click)="toggleMasterySubjects()">
+        <span *ngIf="!showAllMasterySubjects" class="d-inline-block transition-all">View All <i
+            class="fas fa-arrow-right ms-1 font-9 transition-transform"></i></span>
+        <span *ngIf="showAllMasterySubjects" class="d-inline-block transition-all"><i
+            class="fas fa-arrow-left me-1 font-9 transition-transform"></i> View Less</span>
+      </a>
+    </div>
+    <div class="card-body p-0 pt-2" style="max-height: 350px; overflow-y: auto;">
+      <div *ngIf="topicMastery.length === 0" class="text-center p-4">
+        <span class="font-11 text-muted">No topic data available.</span>
+      </div>
+      <div class="table-responsive" *ngIf="topicMastery.length > 0">
+        <table class="table w-100 bg-transparent table-hover mb-0">
+          <thead class="bg-body-secondary">
+            <tr>
+              <th class="font-weight-bold text-body font-11 border-bottom-0 py-2 ps-4">{{ selectedSubjectId === '' ? 'Subject' : 'Topic' }}</th>
+              <th class="font-weight-bold text-body font-11 border-bottom-0 py-2 text-center">{{ selectedSubjectId === '' ? 'Topics Completed' : 'Completed' }}
+              </th>
+              <th class="font-weight-bold text-body font-11 border-bottom-0 py-2 text-center pe-4">Mastery Level
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              *ngFor="let topic of topicMastery | slice:0:(showAllMasterySubjects ? topicMastery.length : 5); let i = index; let last = last">
+              <td class="font-weight-bold py-2 ps-4 font-12 text-truncate" style="max-width: 150px;"
+                [class.border-bottom]="!last" [title]="topic.topicName">
+                {{ i + 1 }}. {{ topic.topicName }}
+              </td>
+              <td class="py-2 text-center font-12" [class.border-bottom]="!last">
+                <div class="d-flex align-items-center justify-content-center gap-2">
+                  <div class="progress flex-grow-1" style="height: 4px; max-width: 50px;">
+                    <div class="progress-bar bg-success" [style.width.%]="topic.completed"></div>
+                  </div>
+                  <span class="fw-bold">{{ topic.completed }}%</span>
+                </div>
+              </td>
+              <td class="py-2 text-center pe-4 font-12 fw-bold" [class.border-bottom]="!last"
+                [ngClass]="topic.masteryLevel === 'High' ? 'text-success' : (topic.masteryLevel === 'Medium' ? 'text-warning' : 'text-danger')">
+                {{ topic.masteryLevel }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</app-dashboard-widget-wrapper>

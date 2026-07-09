@@ -1,0 +1,48 @@
+<app-dashboard-widget-wrapper [state]="state" skeletonType="list" emptyMessage="No recent assessments found" (retry)="loadData(contextService.currentContext?.sectionId!, contextService.currentContext?.subjectId)">
+  <div class="card bg-body border-0 shadow-sm h-100" style="border-radius: 20px; overflow: hidden;">
+    <div
+      class="card-header bg-transparent border-bottom p-3 p-xl-4 d-flex justify-content-between align-items-center">
+      <div class="lh-sm">
+        <h6 class="font-weight-bold mb-1 d-flex align-items-center text-body font-14"><i
+            class="fas fa-table me-2 text-primary"></i> Recent Assessments</h6>
+        <span class="font-11 text-muted">Class performance in recent exams</span>
+      </div>
+    </div>
+    <div class="card-body p-0">
+      <div *ngIf="recentAssessments.length === 0" class="text-center p-4 bg-body-secondary">
+        <span class="font-12 text-muted">No recent assessments found.</span>
+      </div>
+      <div class="table-responsive" *ngIf="recentAssessments.length > 0">
+        <table class="table w-100 bg-transparent table-hover mb-0">
+          <thead class="bg-body-secondary">
+            <tr>
+              <th class="font-weight-bold text-body font-11 border-bottom-0 py-2 ps-4">Exam Name</th>
+              <th class="font-weight-bold text-body font-11 border-bottom-0 py-2">Date</th>
+              <th class="font-weight-bold text-body font-11 border-bottom-0 py-2 text-center">Class Avg</th>
+              <th class="font-weight-bold text-body font-11 border-bottom-0 py-2 text-center">Highest</th>
+              <th class="font-weight-bold text-body font-11 border-bottom-0 py-2 text-center pe-4">Lowest</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let exam of recentAssessments; let last = last">
+              <td class="font-weight-bold py-2 ps-4 font-12" [class.border-bottom]="!last">{{ exam.examName }}
+              </td>
+              <td class="py-2 font-12 text-muted" [class.border-bottom]="!last">{{ exam.date | date:'shortDate'
+                }}</td>
+              <td class="py-2 text-center font-12 font-weight-bold" [class.border-bottom]="!last"
+                [ngClass]="exam.classAvg >= 80 ? 'text-success' : (exam.classAvg >= 50 ? 'text-warning' : 'text-danger')">
+                {{ exam.classAvg | number:'1.0-1' }}%
+              </td>
+              <td class="py-2 text-center font-12 text-success fw-bold" [class.border-bottom]="!last">{{
+                exam.highest |
+                number:'1.0-1' }}%</td>
+              <td class="py-2 text-center pe-4 font-12 text-danger fw-bold" [class.border-bottom]="!last">{{
+                exam.lowest |
+                number:'1.0-1' }}%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</app-dashboard-widget-wrapper>

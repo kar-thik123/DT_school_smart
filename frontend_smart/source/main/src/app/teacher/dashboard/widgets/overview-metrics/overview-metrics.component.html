@@ -1,0 +1,162 @@
+<div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-6 g-3 mb-4">
+  <!-- Students in Class -->
+  <div class="col">
+    <app-dashboard-widget-wrapper [state]="state" skeletonType="kpi" emptyMessage="No students found" (retry)="loadData(contextService.currentContext?.sectionId!, contextService.currentContext?.subjectId)">
+      <div class="card bg-body border-0 shadow-sm h-100 transition-all hover-shadow" style="border-radius: 12px;">
+        <div class="card-body p-3 d-flex flex-column position-relative">
+          <div class="d-flex align-items-center mb-2">
+            <div
+              class="rounded-circle d-flex align-items-center justify-content-center me-2 text-primary bg-light-primary"
+              style="width: 36px; height: 36px; flex-shrink: 0;">
+              <i class="fas fa-users font-16"></i>
+            </div>
+            <div class="lh-sm">
+              <h6 class="mb-0 font-weight-bold text-body font-12 text-truncate" title="Students in Class">Students
+                in Class</h6>
+            </div>
+          </div>
+          <div class="mt-auto pt-2">
+            <h3 class="font-weight-bold text-body mb-1" style="font-size: 1.5rem;">{{ overview?.totalStudents || 0
+              }}</h3>
+            <span class="font-10 text-muted">Boys {{ overview?.boysCount || 0 }} • Girls {{ overview?.girlsCount ||
+              0 }}</span>
+          </div>
+        </div>
+      </div>
+    </app-dashboard-widget-wrapper>
+  </div>
+
+  <!-- Subject Avg. Score -->
+  <div class="col">
+    <app-dashboard-widget-wrapper [state]="state" skeletonType="kpi" emptyMessage="No score data" (retry)="loadData(contextService.currentContext?.sectionId!, contextService.currentContext?.subjectId)">
+      <div class="card bg-body border-0 shadow-sm h-100 transition-all hover-shadow" style="border-radius: 12px;">
+        <div class="card-body p-3 d-flex flex-column position-relative">
+          <div class="d-flex align-items-center mb-2">
+            <div
+              class="rounded-circle d-flex align-items-center justify-content-center me-2 text-success bg-light-success"
+              style="width: 36px; height: 36px; flex-shrink: 0;">
+              <i class="fas fa-chart-line font-16"></i>
+            </div>
+            <div class="lh-sm">
+              <h6 class="mb-0 text-body font-12"
+                [title]="(selectedSubjectName === 'All Subjects' ? 'Overall' : selectedSubjectName) + ' Avg. Score'">
+                {{ selectedSubjectName === 'All Subjects' ? 'Overall' : (selectedSubjectName.length > 10 ?
+                (selectedSubjectName | slice:0:10) + '...' : selectedSubjectName) }} Avg.
+              </h6>
+            </div>
+          </div>
+          <div class="mt-auto pt-2">
+            <h3 class="font-weight-bold text-body mb-1" style="font-size: 1.5rem;">{{ (overview?.avgScore || 0) |
+              number:'1.0-1' }}%</h3>
+            <span class="font-10 text-success"><i class="fas fa-arrow-up"></i> {{ overview?.scoreTrend || 0 |
+              number:'1.0-1' }}% vs last term</span>
+          </div>
+        </div>
+      </div>
+    </app-dashboard-widget-wrapper>
+  </div>
+
+  <!-- Students >= 80% -->
+  <div class="col">
+    <app-dashboard-widget-wrapper [state]="state" skeletonType="kpi" emptyMessage="No data" (retry)="loadData(contextService.currentContext?.sectionId!, contextService.currentContext?.subjectId)">
+      <div class="card bg-body border-0 shadow-sm h-100 transition-all hover-shadow" style="border-radius: 12px;">
+        <div class="card-body p-3 d-flex flex-column position-relative">
+          <div class="d-flex align-items-center mb-2">
+            <div
+              class="rounded-circle d-flex align-items-center justify-content-center me-2 text-info bg-light-info"
+              style="width: 36px; height: 36px; flex-shrink: 0;">
+              <i class="fas fa-award font-16"></i>
+            </div>
+            <div class="lh-sm">
+              <h6 class="mb-0 font-weight-bold text-body font-12 text-truncate" title="Students ≥ 80%">Students ≥
+                80%</h6>
+            </div>
+          </div>
+          <div class="mt-auto pt-2">
+            <h3 class="font-weight-bold text-body mb-1" style="font-size: 1.5rem;">{{ overview?.above80 || 0 }}</h3>
+            <span class="font-10 text-muted">{{ (overview?.above80Percentage || 0) | number:'1.0-1' }}% of
+              class</span>
+          </div>
+        </div>
+      </div>
+    </app-dashboard-widget-wrapper>
+  </div>
+
+  <!-- Students < 50% -->
+  <div class="col">
+    <app-dashboard-widget-wrapper [state]="state" skeletonType="kpi" emptyMessage="No data" (retry)="loadData(contextService.currentContext?.sectionId!, contextService.currentContext?.subjectId)">
+      <div class="card bg-body border-0 shadow-sm h-100 transition-all hover-shadow" style="border-radius: 12px;">
+        <div class="card-body p-3 d-flex flex-column position-relative">
+          <div class="d-flex align-items-center mb-2">
+            <div
+              class="rounded-circle d-flex align-items-center justify-content-center me-2 text-danger bg-light-danger"
+              style="width: 36px; height: 36px; flex-shrink: 0;">
+              <i class="fas fa-exclamation-triangle font-16"></i>
+            </div>
+            <div class="lh-sm">
+              <h6 class="mb-0 font-weight-bold text-body font-12 text-truncate" title="Students < 50%">Students &lt;
+                50%</h6>
+            </div>
+          </div>
+          <div class="mt-auto pt-2">
+            <h3 class="font-weight-bold text-body mb-1" style="font-size: 1.5rem;">{{ overview?.below50 || 0 }}</h3>
+            <span class="font-10 text-muted">{{ (overview?.below50Percentage || 0) | number:'1.0-1' }}% of
+              class</span>
+          </div>
+        </div>
+      </div>
+    </app-dashboard-widget-wrapper>
+  </div>
+
+  <!-- Assessments Conducted -->
+  <div class="col">
+    <app-dashboard-widget-wrapper [state]="state" skeletonType="kpi" emptyMessage="No data" (retry)="loadData(contextService.currentContext?.sectionId!, contextService.currentContext?.subjectId)">
+      <div class="card bg-body border-0 shadow-sm h-100 transition-all hover-shadow" style="border-radius: 12px;">
+        <div class="card-body p-3 d-flex flex-column position-relative">
+          <div class="d-flex align-items-center mb-2">
+            <div
+              class="rounded-circle d-flex align-items-center justify-content-center me-2 text-purple bg-light-purple"
+              style="width: 36px; height: 36px; flex-shrink: 0;">
+              <i class="fas fa-file-signature font-16"></i>
+            </div>
+            <div class="lh-sm">
+              <h6 class="mb-0 font-weight-bold text-body font-12" title="Assessments Conducted"
+                style="line-height: 1.2;">Assessments<br>Conducted</h6>
+            </div>
+          </div>
+          <div class="mt-auto pt-2">
+            <h3 class="font-weight-bold text-body mb-1" style="font-size: 1.5rem;">{{ overview?.assessmentsCount ||
+              0 }}</h3>
+            <span class="font-10 text-muted">This Term</span>
+          </div>
+        </div>
+      </div>
+    </app-dashboard-widget-wrapper>
+  </div>
+
+  <!-- Pending Evaluations -->
+  <div class="col">
+    <app-dashboard-widget-wrapper [state]="state" skeletonType="kpi" emptyMessage="No data" (retry)="loadData(contextService.currentContext?.sectionId!, contextService.currentContext?.subjectId)">
+      <div class="card bg-body border-0 shadow-sm h-100 transition-all hover-shadow" style="border-radius: 12px;">
+        <div class="card-body p-3 d-flex flex-column position-relative">
+          <div class="d-flex align-items-center mb-2">
+            <div
+              class="rounded-circle d-flex align-items-center justify-content-center me-2 text-warning bg-light-warning"
+              style="width: 36px; height: 36px; flex-shrink: 0;">
+              <i class="fas fa-clipboard-check font-16"></i>
+            </div>
+            <div class="lh-sm">
+              <h6 class="mb-0 font-weight-bold text-body font-12" title="Pending Evaluations"
+                style="line-height: 1.2;">Pending<br>Evaluations</h6>
+            </div>
+          </div>
+          <div class="mt-auto pt-2">
+            <h3 class="font-weight-bold text-body mb-1" style="font-size: 1.5rem;">{{ overview?.pendingEvaluations
+              || 0 }}</h3>
+            <span class="font-10 text-muted">Assignments/Tests</span>
+          </div>
+        </div>
+      </div>
+    </app-dashboard-widget-wrapper>
+  </div>
+</div>

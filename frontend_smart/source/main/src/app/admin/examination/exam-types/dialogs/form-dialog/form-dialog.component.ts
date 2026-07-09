@@ -68,14 +68,20 @@ export class FormDialogComponent {
 
   submit() {
     if (this.examTypeForm.valid) {
-      const examTypeData = this.examTypeForm.getRawValue();
+      const reqData = this.examTypeForm.getRawValue();
       if (this.action === 'edit') {
-        this.examTypesService.updateExamType(examTypeData).subscribe(() => {
-          this.dialogRef.close(examTypeData);
+        this.examTypesService.updateExamination(this.examType.id.toString(), reqData).subscribe({
+          next: () => {
+            this.dialogRef.close(1);
+          },
+          error: (err) => console.error(err)
         });
       } else {
-        this.examTypesService.addExamType(examTypeData).subscribe(() => {
-          this.dialogRef.close(examTypeData);
+        this.examTypesService.createExamination(reqData).subscribe({
+          next: () => {
+            this.dialogRef.close(1);
+          },
+          error: (err) => console.error(err)
         });
       }
     }

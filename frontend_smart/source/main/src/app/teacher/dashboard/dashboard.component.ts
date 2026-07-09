@@ -1,72 +1,29 @@
-import { Component, OnInit, ViewChild, HostListener } from '@angular/core';
-import { CommonModule, TitleCasePipe } from '@angular/common';
-import { forkJoin, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
-import {
-  ChartComponent,
-  ApexAxisChartSeries,
-  ApexChart,
-  ApexXAxis,
-  ApexYAxis,
-  ApexStroke,
-  ApexTooltip,
-  ApexDataLabels,
-  ApexPlotOptions,
-  ApexResponsive,
-  ApexGrid,
-  ApexLegend,
-  ApexFill,
-  NgApexchartsModule,
-  ApexNonAxisChartSeries,
-} from 'ng-apexcharts';
-import { MatButtonModule } from '@angular/material/button';
+import { Component, OnInit, HostListener, inject, ViewChild } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.component';
-import { MatCardModule } from '@angular/material/card';
-import { MatIconModule } from '@angular/material/icon';
-import { MatTableModule } from '@angular/material/table';
+import { FormsModule } from '@angular/forms';
 
-import { TeacherDashboardService, OverviewMetrics, PerformanceTrend, TopicMastery, WeakStudent, RecentAssessment, SummaryStats, TopPerformer, SyllabusCoverage, UnreadMessages, MissingTopic, NotificationFeedItem } from './teacher-dashboard.service';
+import { TeacherDashboardService } from './teacher-dashboard.service';
+import { TeacherDashboardContextService } from './teacher-dashboard-context.service';
 import { AuthService } from '@core/service/auth.service';
 import { AcademicContextService } from '@core/service/academic-context.service';
 import { AcademicYearService } from '../../admin/academics/academic-year/academic-year.service';
-import { FormsModule } from '@angular/forms';
-import { MatSelectModule } from '@angular/material/select';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatMenuModule } from '@angular/material/menu';
 import { HierarchyDropdownComponent } from '../../admin/administration/units-list/components/hierarchy-dropdown/hierarchy-dropdown.component';
 import { IGrade, ISection } from '../../admin/administration/units-list/services/units.service';
 
-export type areaChartOptions = {
-  series: ApexAxisChartSeries;
-  chart: ApexChart;
-  xaxis: ApexXAxis;
-  yaxis: ApexYAxis;
-  stroke: ApexStroke;
-  tooltip: ApexTooltip;
-  dataLabels: ApexDataLabels;
-  legend: ApexLegend;
-  grid: ApexGrid;
-  colors: string[];
-};
-
-export type radialChartOptions = {
-  series: ApexNonAxisChartSeries;
-  chart: ApexChart;
-  plotOptions: ApexPlotOptions;
-  labels: string[];
-  colors: string[];
-};
-
-export type donutChartOptions = {
-  series: ApexNonAxisChartSeries;
-  chart: ApexChart;
-  labels: string[];
-  colors: string[];
-  legend: ApexLegend;
-  plotOptions: ApexPlotOptions;
-};
+// Widget Imports
+import { HeroBannerComponent } from './widgets/hero-banner/hero-banner.component';
+import { OverviewMetricsComponent } from './widgets/overview-metrics/overview-metrics.component';
+import { AdminKpisComponent } from './widgets/admin-kpis/admin-kpis.component';
+import { SyllabusCoverageComponent } from './widgets/syllabus-coverage/syllabus-coverage.component';
+import { PerformanceTrendComponent } from './widgets/performance-trend/performance-trend.component';
+import { AttendanceWidgetComponent } from './widgets/attendance-widget/attendance-widget.component';
+import { RecentAssessmentsComponent } from './widgets/recent-assessments/recent-assessments.component';
+import { TopicMasteryComponent } from './widgets/topic-mastery/topic-mastery.component';
+import { WeakStudentsComponent } from './widgets/weak-students/weak-students.component';
+import { TopPerformersComponent } from './widgets/top-performers/top-performers.component';
 
 @Component({
   selector: 'app-dashboard',
@@ -77,24 +34,24 @@ export type donutChartOptions = {
     CommonModule,
     BreadcrumbComponent,
     MatProgressBarModule,
-    MatCardModule,
     MatIconModule,
-    NgApexchartsModule,
-    MatButtonModule,
-    MatTableModule,
     FormsModule,
-    MatSelectModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatMenuModule,
-    HierarchyDropdownComponent
+    HierarchyDropdownComponent,
+    // Widgets
+    HeroBannerComponent,
+    OverviewMetricsComponent,
+    AdminKpisComponent,
+    SyllabusCoverageComponent,
+    PerformanceTrendComponent,
+    AttendanceWidgetComponent,
+    RecentAssessmentsComponent,
+    TopicMasteryComponent,
+    WeakStudentsComponent,
+    TopPerformersComponent
   ],
 })
 export class DashboardComponent implements OnInit {
-  @ViewChild('chart') chart!: ChartComponent;
-  public performanceTrendOptions!: Partial<areaChartOptions>;
-  public attendanceChartOptions!: Partial<radialChartOptions>;
-  public topicMasteryOptions!: Partial<donutChartOptions>;
+  @ViewChild(HeroBannerComponent) heroBanner!: HeroBannerComponent;
 
   breadscrums = [
     {
@@ -104,10 +61,9 @@ export class DashboardComponent implements OnInit {
     },
   ];
 
-  // State Variables
+  // Assignment & Filter State (stays in shell)
   loading: boolean = true;
   error: string | null = null;
-  teacherName: string = '';
 
   assignments: any[] = [];
   selectedAssignment: any = null;
@@ -131,42 +87,11 @@ export class DashboardComponent implements OnInit {
   academicYearName: string = '';
   selectedAcademicYearId: string = '';
 
-  overview: OverviewMetrics | null = null;
-  performanceTrend: PerformanceTrend[] = [];
-  topicMastery: TopicMastery[] = [];
-  weakStudents: WeakStudent[] = [];
-  recentAssessments: RecentAssessment[] = [];
-  summaryStats: SummaryStats | null = null;
-  showAllMasterySubjects: boolean = false;
-  showAllRiskStudents: boolean = false;
-
-  topPerformers: TopPerformer[] = [];
-  unreadMessages: UnreadMessages | null = null;
-  pendingSkillsCount: number = 0;
-  syllabusCoverage: SyllabusCoverage | null = null;
-  homeworkComplianceRate: number = 0;
-  missingTopics: MissingTopic[] = [];
-  recentNotifications: NotificationFeedItem[] = [];
-
-  toggleMasterySubjects() {
-    this.showAllMasterySubjects = !this.showAllMasterySubjects;
-  }
-
-  toggleRiskStudents() {
-    this.showAllRiskStudents = !this.showAllRiskStudents;
-  }
-
-  constructor(
-    private dashboardService: TeacherDashboardService,
-    private authService: AuthService,
-    private academicContext: AcademicContextService,
-    private academicYearService: AcademicYearService
-  ) {
-    const user = this.authService.currentUserValue;
-    if (user && user.name) {
-      this.teacherName = user.name;
-    }
-  }
+  private dashboardService = inject(TeacherDashboardService);
+  private contextService = inject(TeacherDashboardContextService);
+  private authService = inject(AuthService);
+  private academicContext = inject(AcademicContextService);
+  private academicYearService = inject(AcademicYearService);
 
   @HostListener('document:click', ['$event'])
   clickOut(event: Event) {
@@ -203,9 +128,6 @@ export class DashboardComponent implements OnInit {
   onYearChange(year: any) {
     this.selectedAcademicYearId = year.id;
     this.academicYearName = year.academicYear || year.name;
-    // Potentially reload dashboard data for the selected year here.
-    // For now, we update the display. If the backend endpoints support academic_year_id filtering,
-    // we would pass it to loadAssignments/dashboardService.
     this.loadAssignments();
   }
 
@@ -282,7 +204,7 @@ export class DashboardComponent implements OnInit {
   onClassChange() {
     const selectedClass = this.uniqueClasses.find(c => c.id === this.selectedClassId);
     if (selectedClass) {
-       this.selectedClassName = selectedClass.name.split(' - ')[1] || selectedClass.name; // just section name
+       this.selectedClassName = selectedClass.name.split(' - ')[1] || selectedClass.name;
     } else {
        this.selectedClassName = 'Select Class';
     }
@@ -324,167 +246,21 @@ export class DashboardComponent implements OnInit {
     if (!this.selectedAssignment && this.assignments.length > 0) {
         this.selectedAssignment = this.assignments[0];
     }
-    this.loadDashboardData();
-  }
 
-  loadDashboardData() {
-    if (!this.selectedClassId) return;
-
-    this.loading = true;
-    this.error = null;
-
-    const sectionId = this.selectedClassId;
-    const subjectId = this.selectedSubjectId || undefined;
-
-    forkJoin({
-      overview: this.dashboardService.getOverview(sectionId, subjectId).pipe(catchError(() => of(null))),
-      performanceTrend: this.dashboardService.getPerformanceTrend(sectionId, subjectId).pipe(catchError(() => of({ trend: [] }))),
-      topicMastery: this.dashboardService.getTopicMastery(sectionId, subjectId).pipe(catchError(() => of([]))),
-      weakStudents: this.dashboardService.getWeakStudents(sectionId, subjectId).pipe(catchError(() => of([]))),
-      recentAssessments: this.dashboardService.getRecentAssessments(sectionId, subjectId).pipe(catchError(() => of([]))),
-      summaryStats: this.dashboardService.getSummaryStats(sectionId, subjectId).pipe(catchError(() => of(null))),
-      topPerformers: this.dashboardService.getTopPerformers(sectionId, subjectId).pipe(catchError(() => of([]))),
-      unreadMessages: this.dashboardService.getUnreadMessages().pipe(catchError(() => of(null))),
-      pendingSkills: this.dashboardService.getPendingSkills(sectionId).pipe(catchError(() => of({ count: 0 }))),
-      syllabusCoverage: this.dashboardService.getSyllabusCoverage(sectionId, subjectId).pipe(catchError(() => of(null))),
-      homeworkCompliance: this.dashboardService.getHomeworkCompliance(sectionId).pipe(catchError(() => of({ rate: 0 }))),
-      lessonPlan: this.dashboardService.getLessonPlanProgress(sectionId, subjectId).pipe(catchError(() => of({ missingTopics: [] }))),
-      notifications: this.dashboardService.getRecentNotifications().pipe(catchError(() => of([])))
-    }).subscribe({
-      next: (data: any) => {
-        this.overview = data.overview;
-        this.performanceTrend = data.performanceTrend?.trend || [];
-        this.topicMastery = data.topicMastery || [];
-        this.weakStudents = data.weakStudents || [];
-        this.recentAssessments = data.recentAssessments || [];
-        this.summaryStats = data.summaryStats;
-        this.topPerformers = data.topPerformers || [];
-        this.unreadMessages = data.unreadMessages;
-        this.pendingSkillsCount = data.pendingSkills?.count || 0;
-        this.syllabusCoverage = data.syllabusCoverage;
-        this.homeworkComplianceRate = data.homeworkCompliance?.rate || 0;
-        this.missingTopics = data.lessonPlan?.missingTopics || [];
-        this.recentNotifications = data.notifications || [];
-
-        if (this.availableSubjects.length === 0 && this.selectedSubjectId === '' && this.topicMastery.length > 0) {
-          this.availableSubjects = this.topicMastery.map((t: any) => ({ id: t.subjectId, name: t.topicName }));
-        }
-
-        this.initCharts();
-        this.loading = false;
-      },
-      error: (err) => {
-        console.error('Error loading dashboard data', err);
-        this.error = 'Unable to load dashboard data.';
-        this.loading = false;
-      }
-    });
-  }
-
-  private initCharts() {
-    this.initPerformanceTrendChart();
-    this.initAttendanceChart();
-    this.initTopicMasteryChart();
-  }
-
-  private initAttendanceChart() {
-    this.attendanceChartOptions = {
-      series: [this.summaryStats?.attendancePercentage || 0],
-      chart: {
-        type: 'radialBar',
-        height: 140,
-        sparkline: { enabled: true }
-      },
-      plotOptions: {
-        radialBar: {
-          startAngle: -90,
-          endAngle: 90,
-          hollow: { size: '65%' },
-          track: {
-            background: '#e2e8f0',
-            strokeWidth: '100%',
-            margin: 0
-          },
-          dataLabels: {
-            name: { show: false },
-            value: {
-              offsetY: 0,
-              fontSize: '20px',
-              fontWeight: 700,
-              formatter: function (val) {
-                return val.toFixed(1) + "%";
-              }
-            }
-          }
-        }
-      },
-      colors: ['#14b8a6'],
-      labels: ['Attendance'],
-    };
-  }
-
-  private initPerformanceTrendChart() {
-    if (!this.performanceTrend || this.performanceTrend.length === 0) {
-      this.performanceTrendOptions = {};
-      return;
+    // Update the hero banner with class info
+    if (this.heroBanner && this.selectedAssignment) {
+      this.heroBanner.setClassInfo(
+        this.selectedAssignment.grade?.name || this.selectedGradeName,
+        this.selectedAssignment.section?.name || this.selectedClassName
+      );
     }
 
-    const categories = this.performanceTrend.map(item => item.examName);
-    const scores = this.performanceTrend.map(item => item.avgScore);
+    // Broadcast context to all widgets - this triggers independent data loading
+    this.contextService.setContext(
+      this.selectedClassId,
+      this.selectedSubjectId || undefined
+    );
 
-    this.performanceTrendOptions = {
-      series: [
-        {
-          name: 'Class Average %',
-          data: scores,
-        }
-      ],
-      chart: {
-        height: 250,
-        type: 'area',
-        toolbar: { show: false },
-        foreColor: 'var(--bs-secondary-color)',
-        sparkline: { enabled: false }
-      },
-      colors: ['var(--bs-primary)'],
-      dataLabels: { enabled: false },
-      stroke: { curve: 'smooth', width: 3 },
-      xaxis: { categories: categories, labels: { style: { fontSize: '10px' } } },
-      yaxis: { min: 0, max: 100, labels: { formatter: (val) => val.toFixed(0) + '%' } },
-      grid: { borderColor: 'rgba(0,0,0,0.05)', strokeDashArray: 4 },
-      legend: { show: false },
-    };
-  }
-
-
-
-  private initTopicMasteryChart() {
-    if (!this.topicMastery || this.topicMastery.length === 0) {
-      this.topicMasteryOptions = {};
-      return;
-    }
-
-    const completed = this.topicMastery.filter(t => t.completed).length;
-    const remaining = this.topicMastery.length - completed;
-
-    this.topicMasteryOptions = {
-      series: [completed, remaining],
-      chart: { height: 200, type: 'donut' },
-      labels: ['Completed', 'Pending'],
-      colors: ['var(--bs-success)', 'var(--bs-warning)'],
-      legend: { show: false },
-      plotOptions: {
-        pie: {
-          donut: {
-            size: '70%',
-            labels: {
-              show: true,
-              value: { fontSize: '18px', fontWeight: 'bold' },
-              total: { show: true, label: 'Topics', fontSize: '14px', color: 'var(--bs-secondary-color)' }
-            }
-          }
-        }
-      }
-    };
+    this.loading = false;
   }
 }

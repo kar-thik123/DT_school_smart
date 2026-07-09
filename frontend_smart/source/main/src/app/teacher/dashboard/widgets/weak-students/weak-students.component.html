@@ -1,0 +1,58 @@
+<app-dashboard-widget-wrapper [state]="state" skeletonType="list" emptyMessage="No students currently marked at risk" (retry)="loadData(contextService.currentContext?.sectionId!, contextService.currentContext?.subjectId)">
+  <div class="card bg-body border-0 shadow-sm h-100" style="border-radius: 20px; overflow: hidden;">
+    <div
+      class="card-header bg-transparent border-0 p-3 p-xl-4 pb-0 d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center">
+        <div
+          class="rounded-circle bg-light-warning text-warning d-flex align-items-center justify-content-center me-2"
+          style="width: 24px; height: 24px;">
+          <i class="fas fa-exclamation-triangle font-10"></i>
+        </div>
+        <h6 class="font-weight-bold mb-0 text-body font-13">Students At Risk</h6>
+      </div>
+      <a href="javascript:void(0)" *ngIf="weakStudents.length > 5"
+        class="text-primary font-10 fw-bold text-decoration-none view-all-link" (click)="toggleRiskStudents()">
+        <span *ngIf="!showAllRiskStudents" class="d-inline-block transition-all">View All <i
+            class="fas fa-arrow-right ms-1 font-9 transition-transform"></i></span>
+        <span *ngIf="showAllRiskStudents" class="d-inline-block transition-all"><i
+            class="fas fa-arrow-left me-1 font-9 transition-transform"></i> View Less</span>
+      </a>
+    </div>
+    <div class="card-body p-0 pt-2" style="max-height: 350px; overflow-y: auto;">
+      <div *ngIf="weakStudents.length === 0" class="text-center p-4">
+        <h6 class="text-muted mb-0 font-11">No students currently marked at risk.</h6>
+      </div>
+      <div class="table-responsive" *ngIf="weakStudents.length > 0">
+        <table class="table w-100 bg-transparent table-hover mb-0">
+          <thead class="bg-body-secondary">
+            <tr>
+              <th class="font-weight-bold text-body font-11 border-bottom-0 py-2 ps-4">Student Name</th>
+              <th class="font-weight-bold text-body font-11 border-bottom-0 py-2 text-center">Avg. Score</th>
+              <th class="font-weight-bold text-body font-11 border-bottom-0 py-2 text-center pe-4">Exam</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              *ngFor="let student of weakStudents | slice:0:(showAllRiskStudents ? weakStudents.length : 5); let last = last">
+              <td class="font-weight-bold py-2 ps-4 font-12" [class.border-bottom]="!last">
+                <div class="d-flex align-items-center gap-2">
+                  <div class="text-truncate" style="max-width: 150px;"
+                    [title]="student.name + ' (' + (student.rollNumber || 'N/A') + ')'">
+                    {{ student.name }}
+                  </div>
+                </div>
+              </td>
+              <td class="py-2 text-center font-12 fw-bold text-danger" [class.border-bottom]="!last">
+                {{ student.avgScore | number:'1.0-1' }}%
+              </td>
+              <td class="py-2 text-center pe-4 font-12 text-muted text-truncate" style="max-width: 120px;"
+                [class.border-bottom]="!last" [title]="student.weakTopics.join(', ')">
+                {{ student.weakTopics.join(', ') }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</app-dashboard-widget-wrapper>

@@ -1,0 +1,145 @@
+<app-widget-skeleton *ngIf="state === 'loading'" type="list"></app-widget-skeleton>
+
+<div *ngIf="state === 'loaded'" class="row mb-4">
+  <div class="col-12">
+    <div class="card bg-body border-0 shadow-sm" style="border-radius: 20px;">
+      <div
+        class="card-header bg-transparent border-bottom p-3 p-xl-4 d-flex justify-content-between align-items-center">
+        <div class="lh-sm">
+          <h6 class="font-weight-bold mb-1 d-flex align-items-center text-body font-14"><i
+              class="fas fa-table me-2 text-primary"></i> Subject Analytics</h6>
+          <span class="font-11 text-muted">Detailed performance analysis across all subjects</span>
+        </div>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive" style="max-height: 350px; overflow-y: auto;">
+          <table mat-table [dataSource]="subjects" class="w-100 bg-transparent table-hover mb-0">
+            <ng-container matColumnDef="subject">
+              <mat-header-cell *matHeaderCellDef
+                class="font-weight-bold text-body font-11 border-bottom-0 py-1 ps-4"> Subject </mat-header-cell>
+              <mat-cell *matCellDef="let s" class="font-weight-bold border-bottom py-1 ps-4">
+                <div class="d-flex align-items-center">
+                  <div class="rounded-3 d-flex align-items-center justify-content-center me-2"
+                    style="width: 28px; height: 28px;"
+                    [ngClass]="s.readiness >= 80 ? 'bg-light-success text-success' : (s.readiness >= 60 ? 'bg-light-info text-info' : (s.readiness >= 35 ? 'bg-light-warning text-warning' : 'bg-light-danger text-danger'))">
+                    <i class="fas fa-book font-12"></i>
+                  </div>
+                  <span class="text-body font-12 text-truncate" style="max-width: 140px;"
+                    [title]="s.subjectName">{{s.subjectName}}</span>
+                </div>
+              </mat-cell>
+            </ng-container>
+
+            <ng-container matColumnDef="unit">
+              <mat-header-cell *matHeaderCellDef
+                class="font-weight-bold text-body font-11 border-bottom-0 py-1 pe-3"> Unit Progress
+              </mat-header-cell>
+              <mat-cell *matCellDef="let s" class="border-bottom py-1 pe-3">
+                <div class="w-100" style="max-width: 120px;">
+                  <div class="d-flex justify-content-between font-10 mb-1">
+                    <span class="fw-bold text-body">{{s.unitCompleted}}/{{s.unitTotal}}</span>
+                    <span class="text-muted">{{ s.unitTotal > 0 ? ((s.unitCompleted/s.unitTotal)*100 |
+                      number:'1.0-0') : 0 }}%</span>
+                  </div>
+                  <mat-progress-bar mode="determinate"
+                    [value]="s.unitTotal > 0 ? (s.unitCompleted/s.unitTotal)*100 : 0"
+                    style="height: 3px; border-radius: 2px;" color="primary"></mat-progress-bar>
+                </div>
+              </mat-cell>
+            </ng-container>
+
+            <ng-container matColumnDef="topic">
+              <mat-header-cell *matHeaderCellDef
+                class="font-weight-bold text-body font-11 border-bottom-0 py-1 pe-3"> Topic Progress
+              </mat-header-cell>
+              <mat-cell *matCellDef="let s" class="border-bottom py-1 pe-3">
+                <div class="w-100" style="max-width: 120px;">
+                  <div class="d-flex justify-content-between font-10 mb-1">
+                    <span class="fw-bold text-body">{{s.topicCompleted}}/{{s.topicTotal}}</span>
+                    <span class="text-muted">{{ s.topicTotal > 0 ? ((s.topicCompleted/s.topicTotal)*100 |
+                      number:'1.0-0') : 0 }}%</span>
+                  </div>
+                  <mat-progress-bar mode="determinate"
+                    [value]="s.topicTotal > 0 ? (s.topicCompleted/s.topicTotal)*100 : 0"
+                    style="height: 3px; border-radius: 2px;" color="accent"></mat-progress-bar>
+                </div>
+              </mat-cell>
+            </ng-container>
+
+            <ng-container matColumnDef="subtopic">
+              <mat-header-cell *matHeaderCellDef
+                class="font-weight-bold text-body font-11 border-bottom-0 py-1 pe-3"> Subtopic </mat-header-cell>
+              <mat-cell *matCellDef="let s" class="border-bottom py-1 pe-3">
+                <div class="w-100" style="max-width: 120px;">
+                  <div class="d-flex justify-content-between font-10 mb-1">
+                    <span class="fw-bold text-body">{{s.subtopicCompleted}}/{{s.subtopicTotal}}</span>
+                    <span class="text-muted">{{ s.subtopicTotal > 0 ? ((s.subtopicCompleted/s.subtopicTotal)*100 |
+                      number:'1.0-0') : 0 }}%</span>
+                  </div>
+                  <mat-progress-bar mode="determinate"
+                    [value]="s.subtopicTotal > 0 ? (s.subtopicCompleted/s.subtopicTotal)*100 : 0"
+                    style="height: 3px; border-radius: 2px;" color="warn"></mat-progress-bar>
+                </div>
+              </mat-cell>
+            </ng-container>
+
+            <ng-container matColumnDef="coverage">
+              <mat-header-cell *matHeaderCellDef
+                class="font-weight-bold text-body font-11 border-bottom-0 py-1 text-center justify-content-center">
+                Coverage </mat-header-cell>
+              <mat-cell *matCellDef="let s" class="border-bottom py-1 text-center justify-content-center">
+                <span class="badge rounded-pill border fw-bold px-2 py-0 font-9"
+                  [ngClass]="s.coverage >= 80 ? 'border-success text-success bg-light-success' : (s.coverage >= 60 ? 'border-info text-info bg-light-info' : (s.coverage >= 35 ? 'border-warning text-warning bg-light-warning' : 'border-danger text-danger bg-light-danger'))"
+                  style="min-width: 40px;">{{s.coverage}}%</span>
+              </mat-cell>
+            </ng-container>
+
+            <ng-container matColumnDef="accuracy">
+              <mat-header-cell *matHeaderCellDef
+                class="font-weight-bold text-body font-11 border-bottom-0 py-1 text-center justify-content-center">
+                Accuracy </mat-header-cell>
+              <mat-cell *matCellDef="let s" class="border-bottom py-1 text-center justify-content-center">
+                <span class="badge rounded-pill border fw-bold px-2 py-0 font-9"
+                  [ngClass]="s.accuracy >= 80 ? 'border-success text-success bg-light-success' : (s.accuracy >= 60 ? 'border-info text-info bg-light-info' : (s.accuracy >= 35 ? 'border-warning text-warning bg-light-warning' : 'border-danger text-danger bg-light-danger'))"
+                  style="min-width: 40px;">{{s.accuracy}}%</span>
+              </mat-cell>
+            </ng-container>
+
+            <ng-container matColumnDef="ready">
+              <mat-header-cell *matHeaderCellDef
+                class="font-weight-bold text-body font-11 border-bottom-0 py-1 text-center justify-content-center pe-4">
+                Ready </mat-header-cell>
+              <mat-cell *matCellDef="let s" class="border-bottom py-1 text-center justify-content-center pe-4">
+                <span class="badge rounded-pill border fw-bold px-2 py-0 font-9"
+                  [ngClass]="s.readiness >= 80 ? 'border-success text-success bg-light-success' : (s.readiness >= 60 ? 'border-info text-info bg-light-info' : (s.readiness >= 35 ? 'border-warning text-warning bg-light-warning' : 'border-danger text-danger bg-light-danger'))"
+                  style="min-width: 40px;">{{s.readiness}}%</span>
+              </mat-cell>
+            </ng-container>
+
+            <mat-header-row
+              *matHeaderRowDef="['subject', 'unit', 'topic', 'subtopic', 'coverage', 'accuracy', 'ready']"
+              class="bg-body-secondary border-bottom-0"
+              style="position: sticky; top: 0; z-index: 100; min-height: 36px; box-shadow: 0 1px 0 var(--bs-border-color);"></mat-header-row>
+            <mat-row
+              *matRowDef="let row; columns: ['subject', 'unit', 'topic', 'subtopic', 'coverage', 'accuracy', 'ready'];"
+              class="transition-all hover-shadow-sm" style="min-height: 40px;"></mat-row>
+          </table>
+        </div>
+      </div>
+      <div
+        class="card-footer bg-transparent border-top p-2 px-4 d-flex justify-content-between align-items-center">
+        <span class="font-10 text-muted">Showing {{ subjects.length }} subjects</span>
+        <div class="d-flex gap-2 font-10">
+          <span class="d-flex align-items-center gap-1"><i class="fas fa-circle text-success font-7"></i>
+            Excellent (&ge;80%)</span>
+          <span class="d-flex align-items-center gap-1"><i class="fas fa-circle text-info font-7"></i> Good
+            (&ge;60%)</span>
+          <span class="d-flex align-items-center gap-1"><i class="fas fa-circle text-warning font-7"></i> Needs
+            Focus (&ge;35%)</span>
+          <span class="d-flex align-items-center gap-1"><i class="fas fa-circle text-danger font-7"></i> At Risk
+            (&lt;35%)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
