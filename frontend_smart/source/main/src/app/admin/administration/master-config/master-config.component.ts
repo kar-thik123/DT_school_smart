@@ -128,7 +128,11 @@ export class MasterConfigComponent implements OnInit {
   }
 
   async saveBranding() {
-    if (this.profileForm.invalid || !this.organization) return;
+    if (this.profileForm.invalid) {
+      this.showNotification('error', 'Please fill in all required fields correctly (including a valid contact email).');
+      return;
+    }
+    if (!this.organization) return;
     
     this.isSaving = true;
     try {

@@ -28,8 +28,8 @@ export class OrganizationService {
     return this.http.post<{ logoUrl: string }>(`${this.apiUrl}/upload-logo`, formData);
   }
 
-  getOrganizations(page: number = 1, limit: number = 10, search: string = ''): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}?page=${page}&limit=${limit}&search=${search}`);
+  getOrganizations(page: number = 1, limit: number = 10, search: string = '', sortBy: string = 'created_at', sortOrder: string = 'desc'): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}?page=${page}&limit=${limit}&search=${search}&sortBy=${sortBy}&sortOrder=${sortOrder}`);
   }
 
   getStats(): Observable<any> {

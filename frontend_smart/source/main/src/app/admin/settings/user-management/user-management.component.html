@@ -8,7 +8,7 @@
     <div class="row mb-3">
       <div class="col-12 d-flex justify-content-end">
         @if (authService.hasPermission('USERS', 'IMPORT')) {
-          <input type="file" #topLevelFileInput hidden (change)="handleFileSelect($event)" accept=".csv,.xlsx,.xls" />
+          <input type="file" #topLevelFileInput style="display: none" (change)="handleFileSelect($event)" accept=".csv,.xlsx,.xls" />
           <button mat-stroked-button color="primary" class="me-2" (click)="topLevelFileInput.click()">
             <mat-icon>upload</mat-icon> Import
           </button>
@@ -161,8 +161,9 @@
                 <app-global-loader [inline]="true"></app-global-loader>
               </div>
 
-              <div *ngIf="!isLoading && dataSource.data.length === 0" class="no-results">
-                No users found
+              <div *ngIf="!isLoading && dataSource.data.length === 0" class="no-results text-center p-5 text-muted">
+                <mat-icon style="font-size: 48px; width: 48px; height: 48px;" class="mb-3">group_off</mat-icon>
+                <p class="mb-0">No users yet — click Add User to get started</p>
               </div>
               <mat-paginator #paginator [pageSize]="10" [pageSizeOptions]="[5, 10, 20, 50]" showFirstLastButtons></mat-paginator>
             </div>

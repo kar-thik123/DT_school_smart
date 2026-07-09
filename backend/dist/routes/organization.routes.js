@@ -556,7 +556,11 @@ router.post('/', async (req, res) => {
 // GET all organizations (IT Setup only)
 router.get('/', auth_middleware_1.authMiddleware, (0, auth_middleware_1.requirePermission)('IDENTITY', 'IS_SYSTEM_ADMIN'), async (req, res) => {
     try {
-        const { page = 1, limit = 10, search = '', status } = req.query;
+        const { page = 1, limit = 10, search = '', status, sortBy = 'created_at', sortOrder = 'desc' } = req.query;
+        const allowedSortFields = ['school_name', 'subdomain', 'status', 'created_at'];
+        const field = allowedSortFields.includes(sortBy) ? sortBy : 'created_at';
+        const order = sortOrder === 'asc' ? 'asc' : 'desc';
+        const orderBy = { [field]: order };
         const skip = (Number(page) - 1) * Number(limit);
         // Exclude the platform core 'sys' tenant.
         // Must also include orgs where subdomain IS NULL (on-premise / custom-domain tenants)
@@ -596,7 +600,7 @@ router.get('/', auth_middleware_1.authMiddleware, (0, auth_middleware_1.requireP
                         select: { email: true }
                     }
                 },
-                orderBy: { created_at: 'desc' },
+                orderBy,
                 skip,
                 take: Number(limit)
             }),

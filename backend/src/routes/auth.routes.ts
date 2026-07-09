@@ -187,7 +187,8 @@ router.post('/login', loginLimiter, async (req: any, res: Response) => {
     const token = jwt.sign(
       {
         user_id: user.id,
-        organization_id: user.organization_id
+        organization_id: user.organization_id,
+        role: user.role.name
       },
       process.env.JWT_SECRET as string,
       { expiresIn: '1d' }
@@ -276,6 +277,10 @@ router.get('/me', authMiddleware, async (req: any, res: Response) => {
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
+});
+
+router.post('/logout', async (req: Request, res: Response) => {
+  res.json({ success: true, message: 'Logged out successfully' });
 });
 
 const changePasswordSchema = z.object({

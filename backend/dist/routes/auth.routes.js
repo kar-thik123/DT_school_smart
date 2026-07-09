@@ -169,7 +169,8 @@ router.post('/login', loginLimiter, async (req, res) => {
         }
         const token = jsonwebtoken_1.default.sign({
             user_id: user.id,
-            organization_id: user.organization_id
+            organization_id: user.organization_id,
+            role: user.role.name
         }, process.env.JWT_SECRET, { expiresIn: '1d' });
         res.json({
             token,
@@ -252,6 +253,9 @@ router.get('/me', auth_middleware_1.authMiddleware, async (req, res) => {
     catch (error) {
         res.status(500).json({ message: 'Server error' });
     }
+});
+router.post('/logout', async (req, res) => {
+    res.json({ success: true, message: 'Logged out successfully' });
 });
 const changePasswordSchema = zod_1.z.object({
     old_password: zod_1.z.string().min(1),

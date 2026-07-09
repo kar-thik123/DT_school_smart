@@ -630,7 +630,12 @@ router.post('/', async (req: any, res: Response) => {
 // GET all organizations (IT Setup only)
 router.get('/', authMiddleware, requirePermission('IDENTITY', 'IS_SYSTEM_ADMIN'), async (req: any, res: Response) => {
   try {
-    const { page = 1, limit = 10, search = '', status } = req.query;
+    const { page = 1, limit = 10, search = '', status, sortBy = 'created_at', sortOrder = 'desc' } = req.query;
+
+    const allowedSortFields = ['school_name', 'subdomain', 'status', 'created_at'];
+    const field = allowedSortFields.includes(sortBy as string) ? (sortBy as string) : 'created_at';
+    const order = sortOrder === 'asc' ? 'asc' : 'desc';
+    const orderBy = { [field]: order };
     const skip = (Number(page) - 1) * Number(limit);
 
     // Exclude the platform core 'sys' tenant.
@@ -674,7 +679,7 @@ router.get('/', authMiddleware, requirePermission('IDENTITY', 'IS_SYSTEM_ADMIN')
             select: { email: true }
           }
         },
-        orderBy: { created_at: 'desc' },
+        orderBy,
         skip,
         take: Number(limit)
       }),

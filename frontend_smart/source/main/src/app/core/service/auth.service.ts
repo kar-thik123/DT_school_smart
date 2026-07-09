@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, tap, of } from 'rxjs';
+import { BehaviorSubject, Observable, tap, of, catchError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { User } from '@core/models/interface';
 import { LocalStorageService } from '@shared/services';
@@ -112,6 +112,27 @@ export class AuthService {
     return perms;
   }
 
+  getToken(): string | null {
+    return (this.storage.get('token') as string) || sessionStorage.getItem('token');
+  }
+
+  decodeToken(token: string): any {
+    if (!token) return null;
+    try {
+      const parts = token.split('.');
+      if (parts.length !== 3) return null;
+      const decodedPayload = window.atob(parts[1]);
+      return JSON.parse(decodedPayload);
+    } catch {
+      return null;
+    }
+  }
+
+  getRoleFromToken(token: string): string | null {
+    const decoded = this.decodeToken(token);
+    return decoded ? decoded.role || null : null;
+  }
+
   isLoggedIn(): boolean {
     return this.storage.has('token') || !!sessionStorage.getItem('token');
   }
@@ -183,21 +204,35 @@ export class AuthService {
   }
 
   logout(): Observable<any> {
-    this.storage.remove('token');
-    this.storage.remove('currentUser');
-    this.storage.remove('permissions');
-    this.storage.remove('roleNames');
-    this.storage.remove('adminToken');
-    this.storage.remove('adminUser');
-    this.storage.remove('adminPermissions');
-    this.storage.remove('adminRemembered');
+    const clearStorage = () => {
+      this.storage.remove('token');
+      this.storage.remove('currentUser');
+      this.storage.remove('permissions');
+      this.storage.remove('roleNames');
+      this.storage.remove('adminToken');
+      this.storage.remove('adminUser');
+      this.storage.remove('adminPermissions');
+      this.storage.remove('adminRemembered');
 
-    sessionStorage.removeItem('token');
-    sessionStorage.removeItem('currentUser');
-    sessionStorage.removeItem('permissions');
+      // Clear legacy/unprefixed keys
+      localStorage.removeItem('token');
+      localStorage.removeItem('currentUser');
+      localStorage.removeItem('permissions');
 
-    this.user$.next({});
-    return of({ success: true });
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('currentUser');
+      sessionStorage.removeItem('permissions');
+
+      this.user$.next({});
+    };
+
+    return this.http.post<any>(`${environment.apiUrl}/auth/logout`, {}).pipe(
+      tap(() => clearStorage()),
+      catchError(() => {
+        clearStorage();
+        return of({ success: true });
+      })
+    );
   }
 
   getDefaultRoute(): string {

@@ -18,75 +18,120 @@ export class AuthGuard {
   private authService = inject(AuthService);
 
   canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot) {
-    const currentUser = this.authService.currentUserValue;
-    if (currentUser && Object.keys(currentUser).length > 0) {
-      const userRole = (this.authService.getRole() || '').toUpperCase();
-      const url = state.url || '';
-
-      // Enforce strict path-level namespace constraints
-      if (url.includes('/organization')) {
-        if (userRole !== 'SYSTEM_ADMIN') {
-          this.router.navigate(['/authentication/signin']);
-          return false;
-        }
-      }
-      if (url.startsWith('/admin/')) {
-        if (!['ADMIN', 'SUPER_ADMIN', 'MANAGEMENT'].includes(userRole)) {
-          this.router.navigate(['/authentication/signin']);
-          return false;
-        }
-      }
-      if (url.startsWith('/teacher/')) {
-        if (userRole !== 'TEACHER') {
-          this.router.navigate(['/authentication/signin']);
-          return false;
-        }
-      }
-      if (url.startsWith('/student/')) {
-        if (userRole !== 'STUDENT') {
-          this.router.navigate(['/authentication/signin']);
-          return false;
-        }
-      }
-
-      const permission = route.data['permission'];
-      if (permission) {
-        if (permission === 'IDENTITY:IS_MANAGEMENT') {
-          if (!this.authService.hasPermission('IDENTITY:IS_MANAGEMENT') && !this.authService.hasAdminNamespaceAccess()) {
-            this.router.navigate(['/authentication/signin']);
-            return false;
-          }
-        } else if (permission === 'IDENTITY:IS_TEACHER') {
-          if (!this.authService.hasPermission('IDENTITY:IS_TEACHER') && !this.authService.hasTeacherNamespaceAccess()) {
-            this.router.navigate(['/authentication/signin']);
-            return false;
-          }
-        } else if (permission === 'IDENTITY:IS_STUDENT') {
-          if (!this.authService.hasPermission('IDENTITY:IS_STUDENT') && !this.authService.hasStudentNamespaceAccess()) {
-            this.router.navigate(['/authentication/signin']);
-            return false;
-          }
-        } else if (permission === 'IDENTITY:IS_SKILL_VERIFIER') {
-          if (!this.authService.hasPermission('IDENTITY:IS_SKILL_VERIFIER') && !this.authService.hasAdminNamespaceAccess()) {
-            this.router.navigate(['/authentication/signin']);
-            return false;
-          }
-        } else if (Array.isArray(permission)) {
-          const hasAny = permission.some(p => this.authService.hasPermission(p));
-          if (!hasAny) {
-            this.router.navigate(['/authentication/signin']);
-            return false;
-          }
-        } else if (!this.authService.hasPermission(permission)) {
-          this.router.navigate(['/authentication/signin']);
-          return false;
-        }
-      }
-      return true;
+    // 1. Validate authentication (JWT exists and is valid)
+    if (!this.authService.isLoggedIn()) {
+      this.router.navigate(['/authentication/signin']);
+      return false;
+    }
+    const token = this.authService.getToken();
+    if (!token) {
+      this.router.navigate(['/authentication/signin']);
+      return false;
     }
 
-    // If no current user is found, redirect to signin
-    this.router.navigate(['/authentication/signin']);
-    return false;
+    // 2. Determine the namespace from the requested URL
+    const url = state.url || '';
+    let namespace: 'PLATFORM' | 'TENANT' | 'NONE' = 'NONE';
+    if (url.includes('/organization')) {
+      namespace = 'PLATFORM';
+    } else if (
+      url.startsWith('/admin') ||
+      url.startsWith('/teacher') ||
+      url.startsWith('/student') ||
+      url.startsWith('/parent')
+    ) {
+      namespace = 'TENANT';
+    }
+
+    // 3. Decode the signed JWT
+    const decodedToken = this.authService.decodeToken(token);
+    if (!decodedToken) {
+      this.router.navigate(['/authentication/signin']);
+      return false;
+    }
+
+    // 4. Verify that the signed JWT role matches the current authenticated session (tampering detection)
+    const currentUser = this.authService.currentUserValue;
+    const tokenRole = (decodedToken.role || '').toUpperCase();
+    const sessionRole = (currentUser?.role || '').toUpperCase();
+    if (!tokenRole || tokenRole !== sessionRole) {
+      this.router.navigate(['/authentication/signin']);
+      return false;
+    }
+
+    // 5. Verify namespace membership (Platform vs Tenant boundaries)
+    const isSystemAdmin = tokenRole === 'SYSTEM_ADMIN';
+    if (namespace === 'PLATFORM' && !isSystemAdmin) {
+      this.router.navigate(['/authentication/signin']);
+      return false;
+    }
+    if (namespace === 'TENANT' && isSystemAdmin) {
+      this.router.navigate(['/authentication/signin']);
+      return false;
+    }
+
+    // Enforce matching sub-namespaces within Tenant namespace
+    if (url.startsWith('/admin/')) {
+      if (!['ADMIN', 'SUPER_ADMIN', 'MANAGEMENT'].includes(sessionRole)) {
+        this.router.navigate(['/authentication/signin']);
+        return false;
+      }
+    }
+    if (url.startsWith('/teacher/')) {
+      if (sessionRole !== 'TEACHER') {
+        this.router.navigate(['/authentication/signin']);
+        return false;
+      }
+    }
+    if (url.startsWith('/student/')) {
+      if (sessionRole !== 'STUDENT') {
+        this.router.navigate(['/authentication/signin']);
+        return false;
+      }
+    }
+    if (url.startsWith('/parent/')) {
+      if (sessionRole !== 'PARENT') {
+        this.router.navigate(['/authentication/signin']);
+        return false;
+      }
+    }
+
+    // 6. Evaluate the required permission using this.authService.hasPermission(permission)
+    const permission = route.data['permission'];
+    if (permission) {
+      if (permission === 'IDENTITY:IS_MANAGEMENT') {
+        if (!this.authService.hasPermission('IDENTITY:IS_MANAGEMENT') && !this.authService.hasAdminNamespaceAccess()) {
+          this.router.navigate(['/authentication/signin']);
+          return false;
+        }
+      } else if (permission === 'IDENTITY:IS_TEACHER') {
+        if (!this.authService.hasPermission('IDENTITY:IS_TEACHER') && !this.authService.hasTeacherNamespaceAccess()) {
+          this.router.navigate(['/authentication/signin']);
+          return false;
+        }
+      } else if (permission === 'IDENTITY:IS_STUDENT') {
+        if (!this.authService.hasPermission('IDENTITY:IS_STUDENT') && !this.authService.hasStudentNamespaceAccess()) {
+          this.router.navigate(['/authentication/signin']);
+          return false;
+        }
+      } else if (permission === 'IDENTITY:IS_SKILL_VERIFIER') {
+        if (!this.authService.hasPermission('IDENTITY:IS_SKILL_VERIFIER') && !this.authService.hasAdminNamespaceAccess()) {
+          this.router.navigate(['/authentication/signin']);
+          return false;
+        }
+      } else if (Array.isArray(permission)) {
+        const hasAny = permission.some(p => this.authService.hasPermission(p));
+        if (!hasAny) {
+          this.router.navigate(['/authentication/signin']);
+          return false;
+        }
+      } else if (!this.authService.hasPermission(permission)) {
+        this.router.navigate(['/authentication/signin']);
+        return false;
+      }
+    }
+
+    // 7. Allow or deny access
+    return true;
   }
 }

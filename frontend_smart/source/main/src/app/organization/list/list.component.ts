@@ -1,10 +1,12 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { OrganizationService } from '../organization.service';
 import { AuthService } from '@core/service/auth.service';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule } from '@angular/material/paginator';
-import { MatSortModule } from '@angular/material/sort';
+import { MatSortModule, Sort } from '@angular/material/sort';
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatButtonModule } from '@angular/material/button';
@@ -36,7 +38,7 @@ import Swal from 'sweetalert2';
   templateUrl: './list.component.html',
   styleUrls: ['./list.component.scss']
 })
-export class ListComponent implements OnInit {
+export class ListComponent implements OnInit, OnDestroy {
   private orgService = inject(OrganizationService);
   private authService = inject(AuthService);
   private router = inject(Router);
@@ -47,18 +49,33 @@ export class ListComponent implements OnInit {
   loadingRows: Set<string> = new Set();
   serverUrl = environment.apiUrl.replace('/api', '');
   
-  // Pagination & Search
+  // Pagination, Search & Sort
   totalItems = 0;
   pageSize = 10;
   pageIndex = 0;
   searchTerm = '';
+  sortBy = 'created_at';
+  sortOrder = 'desc';
+  private searchSubject = new Subject<string>();
 
   ngOnInit() {
+    this.searchSubject.pipe(
+      debounceTime(300),
+      distinctUntilChanged()
+    ).subscribe(val => {
+      this.searchTerm = val;
+      this.pageIndex = 0;
+      this.loadOrganizations();
+    });
     this.loadOrganizations();
   }
 
+  ngOnDestroy() {
+    this.searchSubject.complete();
+  }
+
   loadOrganizations() {
-    this.orgService.getOrganizations(this.pageIndex + 1, this.pageSize, this.searchTerm).subscribe({
+    this.orgService.getOrganizations(this.pageIndex + 1, this.pageSize, this.searchTerm, this.sortBy, this.sortOrder).subscribe({
       next: (res: any) => {
         this.organizations = res.data || [];
         this.totalItems = res.meta?.total || 0;
@@ -71,7 +88,18 @@ export class ListComponent implements OnInit {
   }
 
   applyFilter(event: Event) {
-    this.searchTerm = (event.target as HTMLInputElement).value;
+    const filterValue = (event.target as HTMLInputElement).value;
+    this.searchSubject.next(filterValue);
+  }
+
+  onSortChange(sort: Sort) {
+    // Map Angular Material column names to match DB fields if necessary
+    let activeField = sort.active;
+    if (activeField === 'name') activeField = 'school_name';
+    if (activeField === 'domain') activeField = 'subdomain';
+    
+    this.sortBy = activeField;
+    this.sortOrder = sort.direction ? (sort.direction as string) : 'desc';
     this.pageIndex = 0;
     this.loadOrganizations();
   }

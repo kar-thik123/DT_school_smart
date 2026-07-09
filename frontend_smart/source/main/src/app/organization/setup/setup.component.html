@@ -61,22 +61,31 @@
                           <div class="logo-preview-box mb-2 border rounded p-2 bg-light">
                              <img [src]="logoPreview || 'assets/images/logo.png'" class="img-fluid" style="max-height: 100px;">
                           </div>
-                          <input type="file" #logoInput hidden (change)="onLogoSelected($event)" accept="image/*">
-                          <button mat-stroked-button color="primary" size="small" (click)="logoInput.click()">
-                            <mat-icon>upload</mat-icon> Logo
-                          </button>
+                           <input type="file" #logoInput hidden (change)="onLogoSelected($event)" accept="image/*">
+                           <button mat-stroked-button type="button" color="primary" size="small" (click)="logoInput.click(); $event.preventDefault()">
+                             <mat-icon>upload</mat-icon> Logo
+                           </button>
                         </div>
                         <div class="col-md-9">
-                          <mat-form-field class="w-100 mb-3" appearance="outline">
-                            <mat-label>School Name</mat-label>
-                            <input matInput formControlName="school_name" placeholder="e.g. International Heights Academy" required>
-                          </mat-form-field>
+                           <mat-form-field class="w-100 mb-3" appearance="outline">
+                             <mat-label>School Name</mat-label>
+                             <input matInput formControlName="school_name" placeholder="e.g. International Heights Academy" required>
+                             <mat-error *ngIf="orgForm.get('school_name')?.hasError('required')">
+                               School Name is required
+                             </mat-error>
+                           </mat-form-field>
                           <div class="row">
                             <div class="col-md-6">
-                              <mat-form-field class="w-100" appearance="outline">
-                                <mat-label>Contact Email</mat-label>
-                                <input matInput formControlName="contact_email" placeholder="admin@school.com" autocomplete="off" required>
-                              </mat-form-field>
+                               <mat-form-field class="w-100" appearance="outline">
+                                 <mat-label>Contact Email</mat-label>
+                                 <input matInput formControlName="contact_email" placeholder="admin@school.com" autocomplete="off" required>
+                                 <mat-error *ngIf="orgForm.get('contact_email')?.hasError('required')">
+                                   Contact Email is required
+                                 </mat-error>
+                                 <mat-error *ngIf="orgForm.get('contact_email')?.hasError('email')">
+                                   Please enter a valid email address
+                                 </mat-error>
+                               </mat-form-field>
                             </div>
                             <div class="col-md-6">
                               <mat-form-field class="w-100" appearance="outline">
@@ -90,8 +99,8 @@
                     </div>
 
                     <div class="stepper-actions mt-5 d-flex justify-content-end gap-3">
-                      <button mat-stroked-button (click)="saveDraft()">SAVE DRAFT</button>
-                      <button mat-flat-button color="primary" matStepperNext>NEXT: CONNECTIVITY</button>
+                      <button mat-stroked-button type="button" (click)="saveDraft()">SAVE DRAFT</button>
+                      <button mat-flat-button type="button" color="primary" matStepperNext (click)="stepper.next()">NEXT: CONNECTIVITY</button>
                     </div>
                   </div>
                 </mat-step>
