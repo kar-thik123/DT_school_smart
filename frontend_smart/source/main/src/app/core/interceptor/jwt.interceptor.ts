@@ -8,10 +8,9 @@ export class JwtInterceptor implements HttpInterceptor {
   private storage = inject(LocalStorageService);
 
   intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    // get token from local storage using theme-aware service
-    let token = this.storage.get('token') as string;
+    let token = sessionStorage.getItem('token') as string;
     if (!token) {
-      token = sessionStorage.getItem('token') as string;
+      token = this.storage.get('token') as string;
     }
 
     if (token) {

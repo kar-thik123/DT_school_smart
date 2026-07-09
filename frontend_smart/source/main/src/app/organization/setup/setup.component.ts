@@ -64,6 +64,7 @@ export class SetupComponent implements OnInit, OnDestroy, AfterViewInit {
     ready: false,
     subdomainAvailable: true, // Default to true until checked
     adminEmailAvailable: true, // Default to true until checked
+    schoolNameAvailable: true,
     errors: []
   };
 
@@ -256,12 +257,13 @@ export class SetupComponent implements OnInit, OnDestroy, AfterViewInit {
     // Must have all data, NO known conflicts, and not currently submitting
     const subdomainConflict = this.isEditMode ? false : (model === 'Subdomain') && !this.readiness.subdomainAvailable;
     const adminConflict = this.isEditMode ? false : !this.readiness.adminEmailAvailable;
-    const noConflicts = !subdomainConflict && !adminConflict;
+    const schoolNameConflict = this.isEditMode ? false : !this.readiness.schoolNameAvailable;
+    const noConflicts = !subdomainConflict && !adminConflict && !schoolNameConflict;
     
     const ready = orgOk && adminOk && licenseOk && deploymentOk && noConflicts && !this.isSubmitting;
     
     if (!ready && !this.isSubmitting) {
-      console.log('[DEBUG] canLaunch Check:', { orgOk, adminOk, licenseOk, deploymentOk, noConflicts, subdomainConflict, adminConflict });
+      console.log('[DEBUG] canLaunch Check:', { orgOk, adminOk, licenseOk, deploymentOk, noConflicts, subdomainConflict, adminConflict, schoolNameConflict });
     }
 
     return ready;
@@ -297,10 +299,11 @@ export class SetupComponent implements OnInit, OnDestroy, AfterViewInit {
     const subdomain = this.domainForm.get('subdomain')?.value;
     const adminEmail = this.adminForm.get('admin_email')?.value;
     const model = this.domainForm.get('deployment_model')?.value;
+    const schoolName = this.orgForm.get('school_name')?.value;
 
-    if (subdomain || adminEmail) {
+    if (subdomain || adminEmail || schoolName) {
       this.isValidating = true;
-      this.orgService.validateProvisioning({ subdomain, admin_email: adminEmail, model } as any).subscribe({
+      this.orgService.validateProvisioning({ subdomain, admin_email: adminEmail, model, school_name: schoolName } as any).subscribe({
         next: (res) => {
           this.readiness = res;
           this.isValidating = false;

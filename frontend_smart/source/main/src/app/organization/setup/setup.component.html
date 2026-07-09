@@ -69,9 +69,12 @@
                         <div class="col-md-9">
                            <mat-form-field class="w-100 mb-3" appearance="outline">
                              <mat-label>School Name</mat-label>
-                             <input matInput formControlName="school_name" placeholder="e.g. International Heights Academy" required>
+                             <input matInput formControlName="school_name" placeholder="e.g. International Heights Academy" required (blur)="checkReadiness()">
                              <mat-error *ngIf="orgForm.get('school_name')?.hasError('required')">
                                School Name is required
+                             </mat-error>
+                             <mat-error *ngIf="!readiness.schoolNameAvailable && !isEditMode">
+                               Conflict: School name already exists
                              </mat-error>
                            </mat-form-field>
                           <div class="row">

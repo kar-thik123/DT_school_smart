@@ -97,6 +97,8 @@ export class ListComponent implements OnInit, OnDestroy {
     let activeField = sort.active;
     if (activeField === 'name') activeField = 'school_name';
     if (activeField === 'domain') activeField = 'subdomain';
+    if (activeField === 'users') activeField = 'users_count';
+    if (activeField === 'superAdmin') activeField = 'super_admin';
     
     this.sortBy = activeField;
     this.sortOrder = sort.direction ? (sort.direction as string) : 'desc';

@@ -15,7 +15,7 @@
                     <h2 class="m-0 text-nowrap">Tenant Inventory</h2>
                     <mat-form-field class="mb-0" appearance="outline" style="width: 350px;">
                       <mat-label>Search schools...</mat-label>
-                      <input matInput (keyup)="applyFilter($event)" #input>
+                      <input matInput (input)="applyFilter($event)" #input>
                       <mat-icon matSuffix>search</mat-icon>
                     </mat-form-field>
                   </div>
@@ -52,13 +52,13 @@
 
                   <!-- Users Column -->
                   <ng-container matColumnDef="users">
-                    <th mat-header-cell *matHeaderCellDef> Active Users </th>
+                    <th mat-header-cell *matHeaderCellDef mat-sort-header> Active Users </th>
                     <td mat-cell *matCellDef="let row"> {{row._count?.users || 0}} </td>
                   </ng-container>
 
                   <!-- Super Admin Column -->
                   <ng-container matColumnDef="superAdmin">
-                    <th mat-header-cell *matHeaderCellDef> Super Admin </th>
+                    <th mat-header-cell *matHeaderCellDef mat-sort-header> Super Admin </th>
                     <td mat-cell *matCellDef="let row"> 
                       <div class="d-flex flex-column">
                         <span class="small font-weight-bold">{{row.users?.[0]?.email || 'N/A'}}</span>

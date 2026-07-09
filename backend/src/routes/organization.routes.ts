@@ -321,10 +321,11 @@ router.patch('/:id/settings', authMiddleware, requirePermission('IDENTITY', 'IS_
 // 3. Pre-flight Provisioning Validation
 router.post('/validate-provisioning', async (req, res) => {
   try {
-    const { subdomain, admin_email, model } = req.body;
+    const { subdomain, admin_email, model, school_name } = req.body;
     const checks = {
       subdomainAvailable: true,
       adminEmailAvailable: true,
+      schoolNameAvailable: true,
       errors: [] as string[]
     };
 
@@ -341,6 +342,16 @@ router.post('/validate-provisioning', async (req, res) => {
       if (user) {
         checks.adminEmailAvailable = false;
         checks.errors.push(`Admin email '${admin_email}' is already registered`);
+      }
+    }
+
+    if (school_name) {
+      const org = await prisma.organization.findFirst({
+        where: { school_name: { equals: school_name, mode: 'insensitive' } }
+      });
+      if (org) {
+        checks.schoolNameAvailable = false;
+        checks.errors.push(`School name '${school_name}' is already registered`);
       }
     }
 
@@ -414,12 +425,44 @@ router.post('/', async (req: any, res: Response) => {
       const dbPayloadLogoUrl = parsed.logo_url || null;
       console.log('Prisma create() data.logo_url:', dbPayloadLogoUrl);
 
-    // Check subdomain uniqueness only if properly provided
-    if (parsed.subdomain) {
-      console.log(`[DEBUG] Checking uniqueness for subdomain: ${parsed.subdomain}`);
-      const existingOrg = await prisma.organization.findUnique({ where: { subdomain: parsed.subdomain } });
+    // Auto-generate subdomain if empty
+    let subdomain = parsed.subdomain;
+    if (!subdomain && parsed.domain_type !== 'Custom Domain' && parsed.school_name) {
+      let baseSubdomain = parsed.school_name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+      
+      if (!baseSubdomain) {
+        baseSubdomain = 'school-' + Math.floor(Math.random() * 1000);
+      }
+      
+      subdomain = baseSubdomain;
+      let count = 1;
+      while (true) {
+        const existing = await prisma.organization.findUnique({ where: { subdomain } });
+        if (!existing) break;
+        subdomain = `${baseSubdomain}-${count}`;
+        count++;
+      }
+    }
+
+    // Check subdomain uniqueness only if properly provided or generated
+    if (subdomain) {
+      console.log(`[DEBUG] Checking uniqueness for subdomain: ${subdomain}`);
+      const existingOrg = await prisma.organization.findUnique({ where: { subdomain } });
       if (existingOrg) {
-        return res.status(400).json({ message: `Subdomain '${parsed.subdomain}' is already in use by '${existingOrg.school_name}'. Choose another.` });
+        return res.status(400).json({ message: `Subdomain '${subdomain}' is already in use by '${existingOrg.school_name}'. Choose another.` });
+      }
+    }
+
+    // Check duplicate school name uniqueness
+    if (parsed.school_name) {
+      const existingName = await prisma.organization.findFirst({
+        where: { school_name: { equals: parsed.school_name, mode: 'insensitive' } }
+      });
+      if (existingName) {
+        return res.status(400).json({ message: `School name '${parsed.school_name}' is already in use. Choose another.` });
       }
     }
 
@@ -444,7 +487,7 @@ router.post('/', async (req: any, res: Response) => {
           address: parsed.address || null,
           logo_url: parsed.logo_url || null,
           domain_type: parsed.domain_type || 'Platform Domain',
-          subdomain: parsed.subdomain || null,
+          subdomain: subdomain || null,
           custom_domain: parsed.custom_domain || null,
           backup_enabled: parsed.backup_enabled === true,
           login_limit: Number(parsed.licensed_seats) || 100,
@@ -632,10 +675,24 @@ router.get('/', authMiddleware, requirePermission('IDENTITY', 'IS_SYSTEM_ADMIN')
   try {
     const { page = 1, limit = 10, search = '', status, sortBy = 'created_at', sortOrder = 'desc' } = req.query;
 
-    const allowedSortFields = ['school_name', 'subdomain', 'status', 'created_at'];
+    const allowedSortFields = ['school_name', 'subdomain', 'status', 'created_at', 'users_count', 'super_admin'];
     const field = allowedSortFields.includes(sortBy as string) ? (sortBy as string) : 'created_at';
     const order = sortOrder === 'asc' ? 'asc' : 'desc';
-    const orderBy = { [field]: order };
+    
+    let orderBy: any;
+    if (field === 'users_count') {
+      orderBy = {
+        users: {
+          _count: order
+        }
+      };
+    } else if (field === 'super_admin') {
+      orderBy = {
+        created_at: order
+      };
+    } else {
+      orderBy = { [field]: order };
+    }
     const skip = (Number(page) - 1) * Number(limit);
 
     // Exclude the platform core 'sys' tenant.

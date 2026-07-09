@@ -35,5 +35,6 @@ export interface ReadinessStatus {
   ready: boolean;
   subdomainAvailable: boolean;
   adminEmailAvailable: boolean;
+  schoolNameAvailable?: boolean;
   errors: string[];
 }

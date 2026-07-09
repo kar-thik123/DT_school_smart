@@ -72,17 +72,18 @@ export class AuthService {
 
 
   getUser(): any {
-    if (this.storage.has('token')) {
-      const local = this.storage.get('currentUser');
-      if (local && Object.keys(local).length > 0) return local;
-    }
-    
     if (sessionStorage.getItem('token')) {
       const session = sessionStorage.getItem('currentUser');
       if (session) {
         try { return JSON.parse(session); } catch(e) { return {}; }
       }
     }
+
+    if (this.storage.has('token')) {
+      const local = this.storage.get('currentUser');
+      if (local && Object.keys(local).length > 0) return local;
+    }
+    
     return {};
   }
 
@@ -93,14 +94,14 @@ export class AuthService {
 
   getPermissions(): string[] {
     let perms: string[] = [];
-    if (this.storage.has('token')) {
-      const local = this.storage.get('permissions') as string[];
-      if (local && local.length > 0) perms = local;
-    } else if (sessionStorage.getItem('token')) {
+    if (sessionStorage.getItem('token')) {
       const session = sessionStorage.getItem('permissions');
       if (session) {
         try { perms = JSON.parse(session); } catch(e) { perms = []; }
       }
+    } else if (this.storage.has('token')) {
+      const local = this.storage.get('permissions') as string[];
+      if (local && local.length > 0) perms = local;
     }
 
     // Backwards compatibility for active sessions that haven't refreshed since migration
@@ -113,7 +114,7 @@ export class AuthService {
   }
 
   getToken(): string | null {
-    return (this.storage.get('token') as string) || sessionStorage.getItem('token');
+    return sessionStorage.getItem('token') || (this.storage.get('token') as string);
   }
 
   decodeToken(token: string): any {

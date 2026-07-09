@@ -40,7 +40,7 @@ export interface ImportDialogData {
         <code>Name, Email Address, Mobile Number, Role, Roll Number, Password</code>
         
         <div class="mt-4">
-          <input type="file" #fileInput hidden (change)="onFileSelected($event)" accept=".csv" />
+          <input type="file" #fileInput style="display: none" (change)="onFileSelected($event)" accept=".csv" />
           <button mat-raised-button color="primary" (click)="fileInput.click()" [disabled]="data.isLoading">
             <mat-icon>upload</mat-icon> Select File
           </button>

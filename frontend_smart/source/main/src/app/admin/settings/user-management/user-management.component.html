@@ -8,8 +8,7 @@
     <div class="row mb-3">
       <div class="col-12 d-flex justify-content-end">
         @if (authService.hasPermission('USERS', 'IMPORT')) {
-          <input type="file" #topLevelFileInput style="display: none" (change)="handleFileSelect($event)" accept=".csv,.xlsx,.xls" />
-          <button mat-stroked-button color="primary" class="me-2" (click)="topLevelFileInput.click()">
+          <button mat-stroked-button color="primary" class="me-2" (click)="openImportDialog()">
             <mat-icon>upload</mat-icon> Import
           </button>
         }
@@ -32,7 +31,7 @@
                 </li>
                 <li class="tbl-search-box">
                   <label for="search-input"><i class="material-icons search-icon">search</i></label>
-                  <input id="search-input" placeholder="Search Users" type="text" #filter (keyup)="applyFilter($event)"
+                  <input id="search-input" placeholder="Search Users" type="text" #filter (input)="applyFilter($event)"
                     class="browser-default search-field" aria-label="Search box">
                 </li>
               </ul>
@@ -155,15 +154,18 @@
                 <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
                 <mat-row *matRowDef="let row; columns: displayedColumns;" (click)="handleEdit(row)" 
                          [style.cursor]="'pointer'" matRipple></mat-row>
+
+                <!-- Row shown when there is no data. -->
+                <tr class="mat-row" *matNoDataRow>
+                  <td class="mat-cell text-center p-5 text-muted" colspan="7">
+                    <mat-icon style="font-size: 48px; width: 48px; height: 48px; display: inline-block;" class="mb-3">group_off</mat-icon>
+                    <p class="mb-0">No users yet — click Add User to get started</p>
+                  </td>
+                </tr>
               </table>
               
               <div *ngIf="isLoading" class="tbl-spinner">
                 <app-global-loader [inline]="true"></app-global-loader>
-              </div>
-
-              <div *ngIf="!isLoading && dataSource.data.length === 0" class="no-results text-center p-5 text-muted">
-                <mat-icon style="font-size: 48px; width: 48px; height: 48px;" class="mb-3">group_off</mat-icon>
-                <p class="mb-0">No users yet — click Add User to get started</p>
               </div>
               <mat-paginator #paginator [pageSize]="10" [pageSizeOptions]="[5, 10, 20, 50]" showFirstLastButtons></mat-paginator>
             </div>
