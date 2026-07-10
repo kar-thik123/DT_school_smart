@@ -27,6 +27,7 @@ import staffAttendanceRoutes from './routes/staff-attendance.routes';
 import examinationRoutes from './routes/examination.routes';
 import studentExamResultRoutes from './routes/student-exam-result.routes';
 import teacherDashboardRoutes from './routes/teacher-dashboard.routes';
+import { auditMiddleware } from './middlewares/audit.middleware';
 
 const app = express();
 
@@ -46,19 +47,21 @@ app.use(cors({
 // Security Headers
 app.use(helmet());
 
-// Rate Limiting
-const limiter = rateLimit({
-  // windowMs: 15 * 60 * 1000, // 15 minutes
-  // max: 100, // limit each IP to 100 requests per windowMs
-  windowMs: 5 * 1000, // 5 seconds for development testing
-  max: 1000,
-  message: 'Too many requests from this IP, please try again later.'
-});
-app.use('/api', limiter);
+// // Rate Limiting
+// const limiter = rateLimit({
+//   // windowMs: 15 * 60 * 1000, // 15 minutes
+//   // max: 100, // limit each IP to 100 requests per windowMs
+//   windowMs: 5 * 1000, // 5 seconds for development testing
+//   max: 1000,
+//   message: 'Too many requests from this IP, please try again later.'
+// });
+// app.use('/api', limiter);
 
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ limit: '2mb', extended: true }));
 app.use('/api/uploads', express.static('uploads'));
+
+app.use('/api', auditMiddleware);
 
 app.use('/api/organizations', organizationRoutes);
 app.use('/api/auth', authRoutes);

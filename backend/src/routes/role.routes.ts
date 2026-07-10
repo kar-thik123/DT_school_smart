@@ -126,6 +126,7 @@ router.post('/', async (req: any, res: Response) => {
         is_system: false
       }
     });
+    res.locals.audit = { entity_id: role.id };
     res.status(201).json(role);
   } catch (error: any) {
     res.status(400).json({ message: error.message });
@@ -281,6 +282,7 @@ router.post('/:id/clone', async (req: any, res: Response) => {
       return role;
     });
 
+    res.locals.audit = { entity_id: newRole.id, action_type: 'CREATE', metadata: { action: 'clone_role', source_role_id: sourceRole.id } };
     res.status(201).json(newRole);
   } catch (error: any) {
     res.status(400).json({ message: error.message });

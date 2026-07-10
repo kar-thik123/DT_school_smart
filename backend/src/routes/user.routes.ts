@@ -294,6 +294,9 @@ router.post('/', requireManagement, async (req: any, res: Response) => {
       recipient_ids: [user.id]
     });
 
+    // Provide hint for audit middleware
+    res.locals.audit = { entity_id: user.id };
+
     // Explicit return to prevent ERR_HTTP_HEADERS_SENT
     return res.status(201).json({ message: 'User created', user: { id: user.id, name: user.name, email: user.email, role_id: parsed.role_id } });
   } catch (error: any) {

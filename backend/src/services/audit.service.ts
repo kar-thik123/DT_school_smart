@@ -4,8 +4,8 @@ export interface AuditLogPayload {
   organization_id: string;
   user_id: string;
   user_name?: string;
-  action_type: 'CREATE' | 'UPDATE' | 'DELETE' | 'TOGGLE' | 'IMPORT' | 'ASSIGN';
-  entity_type: 'QUESTION' | 'COMPLETION' | 'TEACHER_ASSIGNMENT' | 'SYLLABUS' | 'ROLE_PERMISSION' | 'ACADEMIC_STRUCTURE';
+  action_type: 'CREATE' | 'UPDATE' | 'DELETE' | 'TOGGLE' | 'IMPORT' | 'ASSIGN' | 'LOGIN' | 'LOGOUT' | 'RESET_PASSWORD';
+  entity_type: 'QUESTION' | 'COMPLETION' | 'TEACHER_ASSIGNMENT' | 'SYLLABUS' | 'ROLE_PERMISSION' | 'ACADEMIC_STRUCTURE' | 'USER' | 'ORGANIZATION' | 'ROLE' | 'ATTENDANCE' | 'EXAMINATION' | 'STUDENT_ENROLLMENT' | 'SETTINGS' | 'AUTH' | 'BULK_IMPORT';
   entity_id: string;
   metadata?: any;
 }
