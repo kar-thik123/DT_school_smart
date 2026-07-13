@@ -51,7 +51,7 @@ router.post('/login', loginLimiter, async (req: any, res: Response) => {
     }
 
     if (user.locked_until && new Date(user.locked_until).getTime() > Date.now()) {
-      return res.status(401).json({ message: 'Too many failed attempts. Try again after 15 minutes' });
+      return res.status(429).json({ message: 'Too many failed attempts. Try again after 15 minutes' });
     }
 
     const isMatch = await bcrypt.compare(parsed.password, user.password_hash);
@@ -89,7 +89,7 @@ router.post('/login', loginLimiter, async (req: any, res: Response) => {
         }
       });
 
-      return res.status(401).json({ message: errorMessage });
+      return res.status(failedAttempts >= 5 ? 429 : 401).json({ message: errorMessage });
     }
 
     if (user.failed_login_attempts > 0 || user.locked_until) {

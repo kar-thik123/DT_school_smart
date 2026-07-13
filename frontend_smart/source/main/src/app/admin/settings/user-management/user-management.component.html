@@ -116,7 +116,7 @@
                 <ng-container matColumnDef="actions">
                   <mat-header-cell *matHeaderCellDef>Actions</mat-header-cell>
                   <mat-cell *matCellDef="let row" (click)="$event.stopPropagation()">
-                    <button mat-icon-button [matMenuTriggerFor]="menu">
+                    <button mat-icon-button [matMenuTriggerFor]="menu" [matTooltip]="'Actions for ' + row.name" [aria-label]="'Actions for ' + row.name">
                       <mat-icon>more_vert</mat-icon>
                     </button>
                     <mat-menu #menu="matMenu">
@@ -129,10 +129,6 @@
                         <button mat-menu-item (click)="handleStatusToggle(row)">
                           <mat-icon>{{ row.is_active ? 'block' : 'check_circle' }}</mat-icon>
                           <span>{{ row.is_active ? 'Deactivate' : 'Activate' }}</span>
-                        </button>
-                        <button mat-menu-item (click)="handleResetPassword(row)">
-                          <mat-icon>vpn_key</mat-icon>
-                          <span>Reset Password</span>
                         </button>
                         <mat-divider></mat-divider>
                         <button mat-menu-item color="warn" (click)="handleDelete(row)">
@@ -152,8 +148,8 @@
                 </ng-container>
 
                 <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
-                <mat-row *matRowDef="let row; columns: displayedColumns;" (click)="handleEdit(row)" 
-                         [style.cursor]="'pointer'" matRipple></mat-row>
+                <mat-row *matRowDef="let row; columns: displayedColumns;" (click)="handleEdit(row)" (keydown)="handleRowKeydown($event, row)"
+                         [style.cursor]="'pointer'" matRipple tabindex="0" [matTooltip]="'Press Enter to edit details of ' + row.name" [aria-label]="'Row for ' + row.name + '. Click or press Enter to edit details.'"></mat-row>
 
                 <!-- Row shown when there is no data. -->
                 <tr class="mat-row" *matNoDataRow>

@@ -244,15 +244,10 @@ export class UserManagementComponent implements OnInit, OnDestroy {
     });
   }
 
-  handleResetPassword(row: IUser) {
-    if (this.isSuperAdminSelf(row)) {
-      this.showNotification('snackbar-danger', 'Use Forgot Password to reset your own credentials.', 'bottom', 'center');
-      return;
+  handleRowKeydown(event: KeyboardEvent, row: IUser) {
+    if (event.key === 'Enter') {
+      this.handleEdit(row);
     }
-    this.userManagementService.sendResetPasswordLink(row.id).subscribe({
-      next: () => this.showNotification('snackbar-success', 'Password reset link sent to user email', 'bottom', 'center'),
-      error: (err: any) => this.showNotification('snackbar-danger', err.message, 'bottom', 'center')
-    });
   }
 
   openDialog(action: 'add' | 'edit', data?: IUser) {
@@ -288,6 +283,6 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   }
 
   showNotification(colorName: string, text: string, placementFrom: MatSnackBarVerticalPosition, placementAlign: MatSnackBarHorizontalPosition) {
-    this.snackBar.open(text, '', { duration: 3000, verticalPosition: placementFrom, horizontalPosition: placementAlign, panelClass: colorName });
+    this.snackBar.open(text, '', { duration: 6000, verticalPosition: placementFrom, horizontalPosition: placementAlign, panelClass: colorName });
   }
 }

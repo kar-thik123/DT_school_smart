@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
-import { v4 as uuidv4 } from 'uuid';
+import crypto from 'crypto';
 import * as xlsx from 'xlsx';
 import { parse } from 'csv-parse';
 import { getBulkProcessor } from '../services/bulk-import/bulk-import.registry';
@@ -147,7 +147,7 @@ router.post('/:entityType/analyze', upload.single('file'), async (req: any, res:
     const processedRows = await Promise.all(validationPromises);
 
     if (entityType.toUpperCase() === 'USERS') {
-      const jobId = uuidv4();
+      const jobId = crypto.randomUUID();
       fs.writeFileSync(path.join(IMPORTS_DIR, `${jobId}.json`), JSON.stringify(processedRows));
       
       // Clean up old jobs after 1 hour

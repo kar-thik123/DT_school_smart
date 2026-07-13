@@ -14,6 +14,8 @@ import { RolePermissionService } from '../../../role-permissions/role-permission
 import { IRole } from '../../../role-permissions/role-permission.model';
 import { lastValueFrom } from 'rxjs';
 
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+
 export interface DialogData {
   id: string;
   action: 'add' | 'edit';
@@ -36,6 +38,7 @@ export interface DialogData {
     MatSelectModule, 
     MatOptionModule, 
     MatInputModule,
+    MatSlideToggleModule,
     CommonModule
   ],
 })

@@ -53,12 +53,6 @@ export class UserManagementService {
     );
   }
 
-  sendResetPasswordLink(id: string): Observable<any> {
-    return this.httpClient.post(`${this.baseUrl}/${id}/reset-password`, {}).pipe(
-      catchError(this.handleError)
-    );
-  }
-
   getLicenseInfo(): Observable<LicenseInfo> {
     return this.httpClient.get<LicenseInfo>(`${this.orgUrl}/me/license`).pipe(
       catchError(this.handleError)

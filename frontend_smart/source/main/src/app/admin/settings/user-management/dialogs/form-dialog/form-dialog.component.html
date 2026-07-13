@@ -50,11 +50,10 @@
             <mat-icon matSuffix>lock</mat-icon>
             <mat-error *ngIf="userForm.get('password')?.invalid">{{getErrorMessage('password')}}</mat-error>
           </mat-form-field>
-          <div *ngIf="action === 'edit'" class="pt-3">
-             <mat-label class="text-muted">Status: </mat-label>
-             <span [class]="userForm.get('is_active')?.value ? 'badge badge-solid-green' : 'badge badge-solid-red'">
-               {{ userForm.get('is_active')?.value ? 'Active' : 'Inactive' }}
-             </span>
+          <div *ngIf="action === 'edit'" class="pt-2">
+             <mat-slide-toggle formControlName="is_active" color="primary">
+               Status: {{ userForm.get('is_active')?.value ? 'Active' : 'Inactive' }}
+             </mat-slide-toggle>
           </div>
         </div>
       </div>

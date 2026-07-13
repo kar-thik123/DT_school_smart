@@ -96,27 +96,88 @@ router.get('/', async (req: any, res: Response) => {
         filter.role_id = { in: roleRecords.map((r: any) => r.id) };
       }
     }
-    console.log('[GET /api/users] filter:', JSON.stringify(filter));
-    const users = await prisma.user.findMany({
-      where: filter,
-      select: {
-        id: true, name: true, email: true, section_id: true, grade_id: true, role_id: true, roll_number: true,
-        role: { select: { name: true } },
-        grade: { select: { name: true } },
-        section: { select: { name: true } },
-        is_active: true, created_at: true
-      },
-      orderBy: { name: 'asc' }
-    });
-    console.log('[GET /api/users] returned:', users.length, 'users');
-    res.json(users.map((u: any) => ({
-      ...u,
-      role: u.role?.name,
-      grade_name: u.grade?.name || null,
-      section_name: u.section?.name || null
-    })));
+
+    if (req.query.search) {
+      const searchStr = String(req.query.search);
+      filter.OR = [
+        { name: { contains: searchStr, mode: 'insensitive' } },
+        { email: { contains: searchStr, mode: 'insensitive' } }
+      ];
+    }
+
+    let orderBy: any = { name: 'asc' }; // default
+    if (req.query.sort) {
+      const sortField = String(req.query.sort);
+      const sortOrder = String(req.query.order || 'asc').toLowerCase() === 'desc' ? 'desc' : 'asc';
+      if (sortField === 'role') {
+        orderBy = { role: { name: sortOrder } };
+      } else if (sortField === 'status') {
+        orderBy = { is_active: sortOrder };
+      } else if (['name', 'email', 'roll_number', 'created_at'].includes(sortField)) {
+        orderBy = { [sortField]: sortOrder };
+      }
+    }
+
+    let page = req.query.page ? parseInt(String(req.query.page), 10) : undefined;
+    let limit = req.query.limit ? parseInt(String(req.query.limit), 10) : undefined;
+
+    console.log('[GET /api/users] filter:', JSON.stringify(filter), 'orderBy:', JSON.stringify(orderBy));
+
+    if (page !== undefined || limit !== undefined) {
+      const p = page || 1;
+      const l = limit || 10;
+      const skip = (p - 1) * l;
+
+      const total = await prisma.user.count({ where: filter });
+      const users = await prisma.user.findMany({
+        where: filter,
+        select: {
+          id: true, name: true, email: true, section_id: true, grade_id: true, role_id: true, roll_number: true,
+          role: { select: { name: true } },
+          grade: { select: { name: true } },
+          section: { select: { name: true } },
+          is_active: true, created_at: true
+        },
+        orderBy,
+        skip,
+        take: l
+      });
+
+      console.log('[GET /api/users] returned paginated:', users.length, 'total:', total);
+      res.json({
+        data: users.map((u: any) => ({
+          ...u,
+          role: u.role?.name,
+          grade_name: u.grade?.name || null,
+          section_name: u.section?.name || null
+        })),
+        total,
+        page: p,
+        limit: l
+      });
+    } else {
+      const users = await prisma.user.findMany({
+        where: filter,
+        select: {
+          id: true, name: true, email: true, section_id: true, grade_id: true, role_id: true, roll_number: true,
+          role: { select: { name: true } },
+          grade: { select: { name: true } },
+          section: { select: { name: true } },
+          is_active: true, created_at: true
+        },
+        orderBy
+      });
+
+      console.log('[GET /api/users] returned all:', users.length);
+      res.json(users.map((u: any) => ({
+        ...u,
+        role: u.role?.name,
+        grade_name: u.grade?.name || null,
+        section_name: u.section?.name || null
+      })));
+    }
   } catch (error: any) {
-    console.error('[GET /api/users] ERROR:', error.message);
+    console.error('[GET /api/users] ERROR:', error.stack || error.message);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -400,6 +461,36 @@ router.post('/', requireManagement, async (req: any, res: Response) => {
 //   }
 // });
 
+// GET user by id
+router.get('/:id', requireManagement, async (req: any, res: Response) => {
+  try {
+    const user = await prisma.user.findFirst({
+      where: { id: req.params.id, organization_id: req.user.organization_id },
+      select: {
+        id: true, name: true, email: true, section_id: true, grade_id: true, role_id: true, roll_number: true,
+        role: { select: { name: true } },
+        grade: { select: { name: true } },
+        section: { select: { name: true } },
+        is_active: true, created_at: true, updated_at: true
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({
+      ...user,
+      role: user.role?.name,
+      grade_name: user.grade?.name || null,
+      section_name: user.section?.name || null
+    });
+  } catch (error) {
+    console.error('[GET /api/users/:id] ERROR:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // PUT update user by id
 router.put('/:id', requireManagement, async (req: any, res: Response) => {
   try {
@@ -468,7 +559,8 @@ router.put('/:id', requireManagement, async (req: any, res: Response) => {
       });
     }
 
-    res.json({ message: 'User updated', user: { ...updated, role: updated.role.name } });
+    const { password_hash, ...userWithoutPassword } = updated;
+    res.json({ message: 'User updated', user: { ...userWithoutPassword, role: updated.role.name } });
   } catch (error: any) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({
@@ -483,6 +575,91 @@ router.put('/:id', requireManagement, async (req: any, res: Response) => {
       return res.status(404).json({ message: 'User not found' });
     }
     console.error('[PUT /api/users/:id] Error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// PATCH update user by id
+router.patch('/:id', requireManagement, async (req: any, res: Response) => {
+  try {
+    const parsed = AdminUpdateSchema.parse(req.body);
+
+    const user = await prisma.user.findFirst({
+      where: { id: req.params.id, organization_id: req.user.organization_id },
+      include: { role: true }
+    });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // Self-protection: SUPER_ADMIN cannot demote or mutate their own owner account
+    if (user.role?.name === 'SUPER_ADMIN' && user.id === req.user.user_id) {
+      if (parsed.role_id || parsed.role || parsed.is_active === false) {
+        return res.status(403).json({ message: 'Tenant owner account cannot perform self-destructive actions.' });
+      }
+    }
+
+    let updateData: any = {};
+    if (parsed.name !== undefined) updateData.name = parsed.name;
+    if (parsed.is_active !== undefined) updateData.is_active = parsed.is_active;
+
+    if (parsed.email && parsed.email !== user.email) {
+      await UserValidationService.checkGlobalEmailUnique(parsed.email, req.params.id);
+      updateData.email = parsed.email;
+    }
+
+    if (parsed.role_id) {
+      const roleDb = await prisma.role.findFirst({
+        where: {
+          id: parsed.role_id,
+          OR: [{ organization_id: req.user.organization_id }, { is_system: true }]
+        }
+      });
+      if (roleDb) updateData.role_id = roleDb.id;
+    } else if (parsed.role) {
+      const roleDb = await prisma.role.findFirst({
+        where: { name: parsed.role, OR: [{ organization_id: req.user.organization_id }, { is_system: true }] }
+      });
+      if (roleDb) updateData.role_id = roleDb.id;
+    }
+
+    if (parsed.roll_number !== undefined) {
+      updateData.roll_number = parsed.roll_number === '' ? null : parsed.roll_number;
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: req.params.id },
+      data: updateData,
+      include: { role: true }
+    });
+
+    if (updateData.role_id && updateData.role_id !== user.role_id) {
+      await NotificationService.sendNotification({
+        organization_id: req.user.organization_id,
+        event_type: 'USER_MANAGEMENT',
+        entity_type: 'USER',
+        entity_id: updated.id,
+        title: 'Role Updated',
+        message: `Your role has been updated to ${updated.role.name}.`,
+        context_data: { icon: 'shield', color: 'notification-blue' },
+        recipient_ids: [updated.id]
+      });
+    }
+
+    const { password_hash, ...userWithoutPassword } = updated;
+    res.json({ message: 'User updated', user: { ...userWithoutPassword, role: updated.role.name } });
+  } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        message: 'Validation failed',
+        errors: error.issues
+      });
+    }
+    if (error instanceof AppValidationError) {
+      return res.status(400).json({ message: error.message });
+    }
+    if (error.code === 'P2025' || error.name === 'PrismaClientKnownRequestError') {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    console.error('[PATCH /api/users/:id] Error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -553,76 +730,12 @@ router.delete('/:id', requireManagement, async (req: any, res: Response) => {
   }
 });
 
-// POST admin-triggered reset password link
+// POST admin-triggered reset password link (DEPRECATED for security compliance)
 router.post('/:id/reset-password', requireManagement, async (req: any, res: Response) => {
-  try {
-    const targetUser = await prisma.user.findFirst({
-      where: { id: req.params.id, organization_id: req.user.organization_id },
-      include: { role: true, organization: true }
-    });
-
-    if (!targetUser) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    // Role restriction check: Protect SYSTEM_ADMIN from being reset by standard tenant admins
-    const isSystemAdmin = AuthorizationService.hasIdentity(req.user.permissions || [], 'IS_SYSTEM_ADMIN');
-    if (targetUser.role?.name === 'SYSTEM_ADMIN' && !isSystemAdmin) {
-      return res.status(403).json({ message: 'Cannot reset password for SYSTEM_ADMIN' });
-    }
-
-    // Self-protection: SUPER_ADMIN cannot admin-reset their own password via user management
-    // (they should use the standard forgot-password flow instead)
-    if (targetUser.role?.name === 'SUPER_ADMIN' && targetUser.id === req.user.user_id) {
-      return res.status(403).json({ message: 'Tenant owner account cannot perform self-destructive actions.' });
-    }
-
-    const { randomBytes } = require('crypto');
-
-    const token = randomBytes(32).toString('hex');
-    const expires_at = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
-
-    // Existing token cleanup
-    await prisma.passwordReset.deleteMany({
-      where: { user_id: targetUser.id, used: false }
-    });
-
-    await prisma.passwordReset.create({
-      data: { user_id: targetUser.id, token, expires_at }
-    });
-
-    const frontendOrigin = req.body.frontendOrigin;
-    if (!frontendOrigin) {
-      return res.status(400).json({ message: 'frontendOrigin is required' });
-    }
-    const resetUrl = EmailLinkBuilder.buildPasswordResetUrl(targetUser.organization, token, frontendOrigin);
-
-    try {
-      await EmailService.sendAdminPasswordResetEmail(targetUser.name, targetUser.email, resetUrl);
-
-      await NotificationService.sendNotification({
-        organization_id: req.user.organization_id,
-        event_type: 'USER_MANAGEMENT',
-        entity_type: 'USER',
-        entity_id: targetUser.id,
-        title: `Password Reset Requested`,
-        message: `A password reset link has been sent to your email.`,
-        context_data: { icon: 'lock', color: 'notification-orange' },
-        recipient_ids: [targetUser.id]
-      });
-
-      res.json({ message: 'Password reset link sent to user email' });
-    } catch (emailError: any) {
-      console.error('[SMTP Error] Failed to send email:', emailError.message);
-      // Even if email fails, we might want to return 500 so the frontend knows it failed
-      return res.status(500).json({ message: 'Failed to dispatch email. Check SMTP configuration.' });
-    }
-
-  } catch (error: any) {
-    console.error('Password reset error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-})
+  return res.status(403).json({
+    message: 'Administrator-initiated password reset is not supported. Users must reset their own passwords via the Forgot Password flow.'
+  });
+});
 
 router.get('/me/subjects', async (req: any, res: Response) => {
   try {

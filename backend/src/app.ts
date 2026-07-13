@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import compression from 'compression';
 import organizationRoutes from './routes/organization.routes';
 import authRoutes from './routes/auth.routes';
 import userRoutes from './routes/user.routes';
@@ -44,8 +45,18 @@ app.use(cors({
   credentials: true,
 }));
 
-// Security Headers
-app.use(helmet());
+// Security Headers with HSTS conditional on env config
+const enableHttps = process.env.ENABLE_HTTPS === 'true';
+app.use(helmet({
+  hsts: enableHttps ? {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true
+  } : false
+}));
+
+// Response Compression
+app.use(compression());
 
 // // Rate Limiting
 // const limiter = rateLimit({

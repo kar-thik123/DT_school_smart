@@ -1,7 +1,7 @@
 import { BulkImportProcessor, ResolvedDataMap, ValidationResult, CommitResult } from '../bulk-import.types';
 import prisma from '../../../prisma';
 import bcrypt from 'bcrypt';
-import { v4 as uuidv4 } from 'uuid';
+import crypto from 'crypto';
 import { BulkImportSchema } from '../../user-validation.service';
 
 export class UserProcessor implements BulkImportProcessor {
@@ -177,7 +177,7 @@ export class UserProcessor implements BulkImportProcessor {
           const hashBatch = batch.slice(j, j + 50);
           await Promise.all(hashBatch.map(async (row) => {
             row.hashedPassword = await bcrypt.hash(row.password, 10);
-            row.generatedId = uuidv4();
+            row.generatedId = crypto.randomUUID();
           }));
         }
 
@@ -199,7 +199,7 @@ export class UserProcessor implements BulkImportProcessor {
           const studentProfilesData = batch
             .filter((row: any) => row.admission_number || row.mobile_number)
             .map((row: any) => ({
-              id: uuidv4(),
+              id: crypto.randomUUID(),
               user_id: row.generatedId,
               organization_id: this.organizationId,
               admission_number: row.admission_number,

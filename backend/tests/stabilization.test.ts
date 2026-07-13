@@ -157,6 +157,7 @@ describe('School SaaS Pre-Production Stabilization & QA Suite', () => {
         admin_email: 'tenant-admin-a@test.com',
         admin_password: passwordPlain,
         licensed_seats: 100,
+        initial_academic_year: '2026-2027',
       });
 
     // Read the correct field name returned by the provisioning route
@@ -197,6 +198,7 @@ describe('School SaaS Pre-Production Stabilization & QA Suite', () => {
         admin_email: 'tenant-admin-b@test.com',
         admin_password: passwordPlain,
         licensed_seats: 50,
+        initial_academic_year: '2026-2027',
       });
 
     tenantOrgIdB = provisionResB.body.organizationId

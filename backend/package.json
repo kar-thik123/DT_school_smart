@@ -16,8 +16,10 @@
     "seed": "ts-node prisma/master.seed.ts"
   },
   "dependencies": {
+    "@types/compression": "^1.8.1",
     "@types/multer": "^2.1.0",
     "bcrypt": "^6.0.0",
+    "compression": "^1.8.1",
     "cors": "^2.8.6",
     "csv-parse": "^6.2.1",
     "csv-stringify": "^6.7.0",
