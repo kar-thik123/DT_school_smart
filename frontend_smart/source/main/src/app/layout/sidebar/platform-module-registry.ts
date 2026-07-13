@@ -220,7 +220,7 @@ export const PLATFORM_MODULES: RouteInfo[] = [
     domain: 'TENANT'
   },
   {
-    path: '/teacher/students/student-attendance',
+    path: '/admin/students/student-attendance',
     title: 'Student Attendance',
     iconType: 'material-icons-outlined',
     icon: 'rule',

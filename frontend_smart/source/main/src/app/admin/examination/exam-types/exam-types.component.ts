@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule, NgForm, FormGroupDirective } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ExamTypesService, Examination } from './exam-types.service';
@@ -55,6 +55,8 @@ export class ExamTypesComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private academicContextService = inject(AcademicContextService);
 
+  private cdr = inject(ChangeDetectorRef);
+
   private destroy$ = new Subject<void>();
   examinations: Examination[] = [];
   isLoading = false;
@@ -93,11 +95,13 @@ export class ExamTypesComponent implements OnInit, OnDestroy {
         next: (data) => {
           this.examinations = data.data || data || [];
           this.isLoading = false;
+          this.cdr.detectChanges();
         },
         error: (err) => {
           console.error(err);
           this.showNotification('snackbar-danger', 'Failed to load examinations');
           this.isLoading = false;
+          this.cdr.detectChanges();
         }
       });
   }

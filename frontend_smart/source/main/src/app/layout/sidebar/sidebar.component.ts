@@ -204,6 +204,8 @@ export class SidebarComponent
         newItem.path = '/teacher/question-bank';
       } else if (newItem.path === '/admin/administration/completion-mgmt') {
         newItem.path = '/teacher/completion';
+      } else if (newItem.path === '/admin/students/student-attendance') {
+        newItem.path = '/teacher/students/student-attendance';
       }
 
       if (newItem.submenu && newItem.submenu.length > 0) {

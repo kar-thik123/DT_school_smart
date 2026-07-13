@@ -3,7 +3,7 @@ import { AllStudentsComponent } from './all-students/all-students.component';
 import { AddStudentComponent } from './add-student/add-student.component';
 import { EditStudentComponent } from './edit-student/edit-student.component';
 import { AboutStudentComponent } from './about-student/about-student.component';
-import { StudentAttendanceComponent } from './student-attendance/student-attendance.component';
+import { StudentAttendanceComponent } from '../../teacher/students/student-attendance/student-attendance.component';
 import { StudentPromotionComponent } from './student-promotion/student-promotion.component';
 import { StudentCertificatesComponent } from './student-certificates/student-certificates.component';
 import { StudentDisciplineComponent } from './student-discipline/student-discipline.component';
