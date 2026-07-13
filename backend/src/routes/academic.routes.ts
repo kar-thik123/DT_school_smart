@@ -22,9 +22,17 @@ const createCrudHandlers = (modelName: string, prismaModel: any) => {
   modelRouter.get('/', requirePermission('ACADEMIC_STRUCTURE', 'READ'), async (req: any, res: Response) => {
     try {
       const hasSortOrder = ['Section', 'Unit', 'Topic'].includes(modelName);
-      
+
       let filter: any = { organization_id: req.user.organization_id };
-      
+
+      // Fix: Respect query filters like grade_id for Sections
+      if (req.query.grade_id) {
+        filter.grade_id = String(req.query.grade_id);
+      }
+      if (req.query.academic_year_id) {
+        filter.academic_year_id = String(req.query.academic_year_id);
+      }
+
       const isGlobalAdmin = req.user.permissions?.includes('ACADEMIC_STRUCTURE:READ') || req.user.permissions?.includes('ACADEMIC_STRUCTURE:VIEW');
       if (!isGlobalAdmin && modelName === 'Section') {
         const visibilityFilter = await AssignmentVisibilityResolver.buildTeacherSectionWhereClause(req);
@@ -240,15 +248,17 @@ const gradeRouter = Router();
 gradeRouter.get('/', requirePermission('ACADEMIC_STRUCTURE', 'READ'), async (req: any, res: Response) => {
   try {
     const isGlobalAdmin = req.user.permissions?.includes('ACADEMIC_STRUCTURE:READ') || req.user.permissions?.includes('ACADEMIC_STRUCTURE:VIEW');
-    
+
     const headerYearId = req.headers['x-academic-year-id'] as string;
     const queryYearId = req.query.academic_year_id as string;
     let yearId = headerYearId || queryYearId;
+    
     if (!yearId || yearId === 'null' || yearId === 'undefined') {
       yearId = await getActiveAcademicYearId(req.user.organization_id);
     }
 
     let filter: any = { organization_id: req.user.organization_id, academic_year_id: yearId };
+    
     if (!isGlobalAdmin) {
       const visibilityFilter = await AssignmentVisibilityResolver.buildTeacherGradeWhereClause(req);
       if (visibilityFilter.id) filter.id = visibilityFilter.id;
@@ -259,17 +269,18 @@ gradeRouter.get('/', requirePermission('ACADEMIC_STRUCTURE', 'READ'), async (req
       include: { academic_year: true },
       orderBy: { sort_order: 'asc' }
     });
+
     res.json(data);
-  } catch (error) {
-    console.error('Grades fetch error:', error);
-    res.status(500).json({ message: 'Error fetching Grades' });
+  } catch (error: any) {
+    console.error('Error fetching Grades:', error);
+    res.status(500).json({ message: 'Error fetching Grades', error: error.message });
   }
 });
 
 gradeRouter.get('/assigned', async (req: any, res: Response) => {
   try {
     const isGlobalAdmin = req.user.permissions?.includes('ACADEMIC_STRUCTURE:READ') || req.user.permissions?.includes('ACADEMIC_STRUCTURE:VIEW');
-    
+
     let filter: any = { organization_id: req.user.organization_id };
     if (!isGlobalAdmin) {
       const visibilityFilter = await AssignmentVisibilityResolver.buildTeacherGradeWhereClause(req);
@@ -307,9 +318,9 @@ gradeRouter.post('/', requirePermission('ACADEMIC_STRUCTURE', 'CREATE'), async (
     });
 
     const data = await prisma.grade.create({
-      data: { 
-        name, 
-        academic_year_id: yearId, 
+      data: {
+        name,
+        academic_year_id: yearId,
         organization_id: req.user.organization_id,
         master_grade_id: masterGrade.id
       }
@@ -610,18 +621,24 @@ subjectRouter.post('/', requirePermission('ACADEMIC_STRUCTURE', 'CREATE'), async
     // Fetch grade name (needed for SubjectGroup naming convention)
     const gradeRecord = await prisma.grade.findUnique({ where: { id: finalGradeId }, select: { name: true, master_grade_id: true } });
 
-    const data = await prisma.subject.upsert({
+    const existingSubject = await prisma.subject.findUnique({
       where: {
         name_grade_id_organization_id: {
           name,
           grade_id: finalGradeId,
           organization_id: req.user.organization_id
         }
-      },
-      update: {},
-      create: { 
-        name, 
-        grade_id: finalGradeId, 
+      }
+    });
+
+    if (existingSubject) {
+      return res.status(409).json({ message: 'A subject with this name already exists in the selected grade.' });
+    }
+
+    const data = await prisma.subject.create({
+      data: {
+        name,
+        grade_id: finalGradeId,
         organization_id: req.user.organization_id,
         master_grade_id: gradeRecord?.master_grade_id || undefined
       }
@@ -747,14 +764,14 @@ router.post('/bulk/preview', requirePermission('ACADEMIC_STRUCTURE', 'CREATE'), 
     const existingGrades = await prisma.grade.findMany({ where: { organization_id: org_id }, select: { name: true } });
     const existingSections = await prisma.section.findMany({ where: { organization_id: org_id }, select: { name: true, grade: { select: { name: true } } } });
     const existingSubjects = await prisma.subject.findMany({ where: { organization_id: org_id }, select: { name: true, grade: { select: { name: true } } } });
-    const existingGroups = await prisma.subjectGroup.findMany({ 
-      where: { organization_id: org_id }, 
-      select: { 
-        name: true, 
-        grade: { select: { name: true } }, 
+    const existingGroups = await prisma.subjectGroup.findMany({
+      where: { organization_id: org_id },
+      select: {
+        name: true,
+        grade: { select: { name: true } },
         section: { select: { name: true } },
         subjects: { select: { subject: { select: { name: true } } } }
-      } 
+      }
     });
 
     const getGradeCompositeKey = (g: string) => String(g || '').replace(/^grade\s*/i, '').trim().toLowerCase();
@@ -810,7 +827,7 @@ router.post('/bulk/preview', requirePermission('ACADEMIC_STRUCTURE', 'CREATE'), 
 
       if (errors.length === 0) {
         match_status = 'VALID';
-        
+
         const compositeKey = [gradeNameClean.toLowerCase(), sectionName.toLowerCase(), subjectName.toLowerCase(), subjectType.toLowerCase(), resolvedGroupName.toLowerCase()].join('|');
         if (seenRows.has(compositeKey)) {
           match_status = 'DUPLICATE';
@@ -885,7 +902,7 @@ router.post('/bulk/discard', requirePermission('ACADEMIC_STRUCTURE', 'CREATE'), 
   try {
     const { session_id } = req.body;
     if (!session_id) return res.status(400).json({ message: 'Missing session_id' });
-    
+
     await (prisma as any).previewImportData.deleteMany({
       where: { session_id, organization_id: req.user.organization_id, created_by: req.user.user_id }
     });
@@ -906,8 +923,8 @@ router.post('/bulk/confirm', requirePermission('ACADEMIC_STRUCTURE', 'CREATE'), 
     if (modified_records && Array.isArray(modified_records) && modified_records.length > 0) {
       records = modified_records;
     } else {
-      const previews = await (prisma as any).previewImportData.findMany({ 
-        where: { session_id, organization_id: org_id, created_by: req.user.user_id } 
+      const previews = await (prisma as any).previewImportData.findMany({
+        where: { session_id, organization_id: org_id, created_by: req.user.user_id }
       });
       if (!previews || previews.length === 0) return res.status(404).json({ message: 'Session not found or empty' });
       records = previews.map((p: any) => p.raw_data);
@@ -942,14 +959,14 @@ router.post('/bulk/confirm', requirePermission('ACADEMIC_STRUCTURE', 'CREATE'), 
       for (const grp of existingGroups) groupCache.set(`${grp.grade_id}_${grp.section_id}_${grp.name.toLowerCase()}`, grp);
 
       const existingSgs = await tx.subjectGroupSubject.findMany({
-         where: { group: { organization_id: org_id } } 
+        where: { group: { organization_id: org_id } }
       });
       for (const sgs of existingSgs) sgsCache.add(`${sgs.group_id}_${sgs.subject_id}`);
 
       for (let i = 0; i < records.length; i++) {
         const row = records[i].raw_data || records[i];
         const rowNumber = records[i].row_number || (i + 2);
-        
+
         const gradeName = String(row.Grade || '').trim();
         const sectionName = String(row.Section || '').trim();
         const subjectName = String(row.Subject || '').trim();
@@ -957,8 +974,8 @@ router.post('/bulk/confirm', requirePermission('ACADEMIC_STRUCTURE', 'CREATE'), 
         const groupName = String(row['Group / Stream Name'] || '').trim();
 
         if (!gradeName) {
-           results.skipped++;
-           continue;
+          results.skipped++;
+          continue;
         }
 
         try {
@@ -1009,38 +1026,38 @@ router.post('/bulk/confirm', requirePermission('ACADEMIC_STRUCTURE', 'CREATE'), 
           }
 
           if (groupName && sectionResult && subjectResult) {
-             const groupLower = groupName.toLowerCase();
-             const groupKey = `${gradeResult.id}_${sectionResult.id}_${groupLower}`;
-             let groupResult = groupCache.get(groupKey);
-             if (!groupResult) {
-               groupResult = await tx.subjectGroup.create({ data: { name: groupName, grade_id: gradeResult.id, section_id: sectionResult.id, organization_id: org_id, master_grade_id: masterGradeResult.id } });
-               groupCache.set(groupKey, groupResult);
-             }
+            const groupLower = groupName.toLowerCase();
+            const groupKey = `${gradeResult.id}_${sectionResult.id}_${groupLower}`;
+            let groupResult = groupCache.get(groupKey);
+            if (!groupResult) {
+              groupResult = await tx.subjectGroup.create({ data: { name: groupName, grade_id: gradeResult.id, section_id: sectionResult.id, organization_id: org_id, master_grade_id: masterGradeResult.id } });
+              groupCache.set(groupKey, groupResult);
+            }
 
-             const sgsKey = `${groupResult.id}_${subjectResult.id}`;
-             if (!sgsCache.has(sgsKey)) {
-               await tx.subjectGroupSubject.create({ data: { group_id: groupResult.id, subject_id: subjectResult.id, subject_type: subjectType as any } });
-               sgsCache.add(sgsKey);
-             } else {
-               await tx.subjectGroupSubject.update({ where: { group_id_subject_id: { group_id: groupResult.id, subject_id: subjectResult.id } }, data: { subject_type: subjectType as any } });
-             }
+            const sgsKey = `${groupResult.id}_${subjectResult.id}`;
+            if (!sgsCache.has(sgsKey)) {
+              await tx.subjectGroupSubject.create({ data: { group_id: groupResult.id, subject_id: subjectResult.id, subject_type: subjectType as any } });
+              sgsCache.add(sgsKey);
+            } else {
+              await tx.subjectGroupSubject.update({ where: { group_id_subject_id: { group_id: groupResult.id, subject_id: subjectResult.id } }, data: { subject_type: subjectType as any } });
+            }
           } else if (!groupName && sectionResult && subjectResult) {
-             const defaultGroupName = `${gradeResult.name} - ${sectionResult.name} (Default)`;
-             const defaultGroupLower = defaultGroupName.toLowerCase();
-             const groupKey = `${gradeResult.id}_${sectionResult.id}_${defaultGroupLower}`;
-             let defaultGroup = groupCache.get(groupKey);
-             if (!defaultGroup) {
-               defaultGroup = await tx.subjectGroup.create({ data: { name: defaultGroupName, grade_id: gradeResult.id, section_id: sectionResult.id, organization_id: org_id, master_grade_id: masterGradeResult.id } });
-               groupCache.set(groupKey, defaultGroup);
-             }
-             
-             const sgsKey = `${defaultGroup.id}_${subjectResult.id}`;
-             if (!sgsCache.has(sgsKey)) {
-               await tx.subjectGroupSubject.create({ data: { group_id: defaultGroup.id, subject_id: subjectResult.id, subject_type: subjectType as any } });
-               sgsCache.add(sgsKey);
-             } else {
-               await tx.subjectGroupSubject.update({ where: { group_id_subject_id: { group_id: defaultGroup.id, subject_id: subjectResult.id } }, data: { subject_type: subjectType as any } });
-             }
+            const defaultGroupName = `${gradeResult.name} - ${sectionResult.name} (Default)`;
+            const defaultGroupLower = defaultGroupName.toLowerCase();
+            const groupKey = `${gradeResult.id}_${sectionResult.id}_${defaultGroupLower}`;
+            let defaultGroup = groupCache.get(groupKey);
+            if (!defaultGroup) {
+              defaultGroup = await tx.subjectGroup.create({ data: { name: defaultGroupName, grade_id: gradeResult.id, section_id: sectionResult.id, organization_id: org_id, master_grade_id: masterGradeResult.id } });
+              groupCache.set(groupKey, defaultGroup);
+            }
+
+            const sgsKey = `${defaultGroup.id}_${subjectResult.id}`;
+            if (!sgsCache.has(sgsKey)) {
+              await tx.subjectGroupSubject.create({ data: { group_id: defaultGroup.id, subject_id: subjectResult.id, subject_type: subjectType as any } });
+              sgsCache.add(sgsKey);
+            } else {
+              await tx.subjectGroupSubject.update({ where: { group_id_subject_id: { group_id: defaultGroup.id, subject_id: subjectResult.id } }, data: { subject_type: subjectType as any } });
+            }
           }
 
           results.created++;

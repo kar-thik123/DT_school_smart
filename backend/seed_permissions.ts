@@ -38,23 +38,26 @@ async function main() {
   }
 
   // 4. Map Default Permissions to SUPER_ADMIN (Tenant Control)
-  if (superAdminRole) {
+  const superAdminRoles = await prisma.role.findMany({ where: { name: 'SUPER_ADMIN' } });
+  if (superAdminRoles.length > 0) {
     const allDbPermissions = await prisma.permission.findMany();
     const tenantDbPermissions = allDbPermissions.filter(p =>
       PERMISSION_DOMAINS[p.module] === 'TENANT' &&
       !(p.module === 'IDENTITY' && p.action === 'IS_SYSTEM_ADMIN')
     );
 
-    // Clean existing mappings to avoid duplicates or stale perms
-    await prisma.rolePermission.deleteMany({ where: { role_id: superAdminRole.id } });
+    for (const superAdminRole of superAdminRoles) {
+      // Clean existing mappings to avoid duplicates or stale perms
+      await prisma.rolePermission.deleteMany({ where: { role_id: superAdminRole.id } });
 
-    await prisma.rolePermission.createMany({
-      data: tenantDbPermissions.map(p => ({
-        role_id: superAdminRole.id,
-        permission_id: p.id
-      }))
-    });
-    console.log(`Mapped ${tenantDbPermissions.length} tenant permissions to SUPER_ADMIN.`);
+      await prisma.rolePermission.createMany({
+        data: tenantDbPermissions.map(p => ({
+          role_id: superAdminRole.id,
+          permission_id: p.id
+        }))
+      });
+    }
+    console.log(`Mapped ${tenantDbPermissions.length} tenant permissions to ${superAdminRoles.length} SUPER_ADMIN roles.`);
   }
 
   // 5. Map subset to MANAGEMENT

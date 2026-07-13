@@ -326,13 +326,11 @@ export class SidebarComponent
     }
     if (path.includes('/student-attendance')) {
       return this.authService.hasPermission('ATTENDANCE', 'VIEW') ||
-        this.authService.hasPermission('ATTENDANCE_VIEW') ||
-        userRoleUpper === 'SUPER_ADMIN';
+        this.authService.hasPermission('ATTENDANCE_VIEW');
     }
     if (path.includes('/staff-attendance')) {
       return this.authService.hasPermission('STAFF_ATTENDANCE', 'VIEW') ||
-        this.authService.hasPermission('STAFF_ATTENDANCE_VIEW') ||
-        userRoleUpper === 'SUPER_ADMIN';
+        this.authService.hasPermission('STAFF_ATTENDANCE_VIEW');
     }
     if (path.includes('/skills-verify-assignment')) {
       return this.authService.hasPermission('SKILLS_VERIFY_ASSIGNMENT', 'VIEW') ||

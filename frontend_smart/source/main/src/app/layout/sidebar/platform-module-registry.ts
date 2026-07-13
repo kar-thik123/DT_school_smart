@@ -228,7 +228,7 @@ export const PLATFORM_MODULES: RouteInfo[] = [
     groupTitle: false,
     badge: '',
     badgeClass: '',
-    role: ['ATTENDANCE:VIEW', 'ATTENDANCE_VIEW', 'SUPER_ADMIN', 'ADMIN'],
+    role: ['ATTENDANCE:VIEW', 'ATTENDANCE_VIEW'],
     submenu: [],
     showInSidebar: true,
     domain: 'TENANT'
@@ -242,7 +242,7 @@ export const PLATFORM_MODULES: RouteInfo[] = [
     groupTitle: false,
     badge: '',
     badgeClass: '',
-    role: ['STAFF_ATTENDANCE:VIEW', 'STAFF_ATTENDANCE_VIEW', 'SUPER_ADMIN', 'ADMIN'],
+    role: ['STAFF_ATTENDANCE:VIEW', 'STAFF_ATTENDANCE_VIEW'],
     submenu: [],
     showInSidebar: true,
     domain: 'TENANT'

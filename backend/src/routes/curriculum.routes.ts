@@ -15,7 +15,7 @@ router.use(authMiddleware);
 const uuidSchema = z.string().uuid();
 
 const createUnitSchema = z.object({
-  name: z.string().min(1, 'Unit name is required').max(255),
+  name: z.string().trim().min(1, 'Unit name is required').max(255),
   grade_id: z.string().uuid('Invalid grade_id'),
   section_id: z.string().uuid('Invalid section_id').or(z.literal('ALL')),
   subject_id: z.string().uuid('Invalid subject_id'),
@@ -23,29 +23,29 @@ const createUnitSchema = z.object({
 });
 
 const updateUnitSchema = z.object({
-  name: z.string().min(1).max(255).optional(),
+  name: z.string().trim().min(1).max(255).optional(),
   order_index: z.number().int().min(0).optional(),
 });
 
 const createTopicSchema = z.object({
-  name: z.string().min(1, 'Topic name is required').max(255),
+  name: z.string().trim().min(1, 'Topic name is required').max(255),
   unit_id: z.string().uuid('Invalid unit_id'),
   order_index: z.number().int().min(0).optional(),
 });
 
 const updateTopicSchema = z.object({
-  name: z.string().min(1).max(255).optional(),
+  name: z.string().trim().min(1).max(255).optional(),
   order_index: z.number().int().min(0).optional(),
 });
 
 const createSubTopicSchema = z.object({
-  name: z.string().min(1, 'Sub topic name is required').max(255),
+  name: z.string().trim().min(1, 'Sub topic name is required').max(255),
   topic_id: z.string().uuid('Invalid topic_id'),
   order_index: z.number().int().min(0).optional(),
 });
 
 const updateSubTopicSchema = z.object({
-  name: z.string().min(1).max(255).optional(),
+  name: z.string().trim().min(1).max(255).optional(),
   order_index: z.number().int().min(0).optional(),
 });
 
@@ -149,10 +149,7 @@ router.get('/units', requirePermission('ACADEMIC_STRUCTURE', 'READ'), async (req
 
     if (req.query.section_id) {
       andConditions.push({
-        OR: [
-          { section_id: String(req.query.section_id) },
-          { section_id: null }
-        ]
+        section_id: String(req.query.section_id)
       });
     }
 
