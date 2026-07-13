@@ -13,12 +13,19 @@ export class AuthService {
   private storage = inject(LocalStorageService);
 
   user$ = new BehaviorSubject<any>({});
+  orgLogo$ = new BehaviorSubject<string>('');
+  schoolName$ = new BehaviorSubject<string>('');
 
   constructor() {
     const user = this.getUser();
     if (Object.keys(user).length > 0) {
       this.user$.next(user);
     }
+    const logo = this.getOrgLogo();
+    this.orgLogo$.next(logo);
+    const name = this.getSchoolName();
+    this.schoolName$.next(name);
+    this.bootstrapOrgLogo();
   }
 
   public get currentUserValue(): any {
@@ -31,9 +38,11 @@ export class AuthService {
         if (response && response.token) {
           // Permissions are in res.user.permissions per backend alignment
           const permissions = response.user.permissions || [];
+          const logoUrl = response.organization?.logo_url || '';
+          const schoolName = response.organization?.school_name || '';
           console.log('Logged User', response.user);
           console.log('Permissions', response.user.permissions);
-          this.setSession(response.token, response.user, permissions, rememberMe);
+          this.setSession(response.token, response.user, permissions, rememberMe, logoUrl, schoolName);
         }
       })
     );
@@ -48,25 +57,104 @@ export class AuthService {
     return this.http.post<any>(`${environment.apiUrl}/auth/reset-password`, { token, new_password });
   }
 
-  setSession(token: string, user: any, permissions: string[], rememberMe: boolean = false): void {
+  setSession(token: string, user: any, permissions: string[], rememberMe: boolean = false, logoUrl: string = '', schoolName: string = ''): void {
     if (rememberMe) {
       sessionStorage.removeItem('token');
       sessionStorage.removeItem('currentUser');
       sessionStorage.removeItem('permissions');
+      sessionStorage.removeItem('orgLogo');
+      sessionStorage.removeItem('schoolName');
 
       this.storage.set('token', token);
       this.storage.set('currentUser', user);
       this.storage.set('permissions', permissions);
+      this.storage.set('orgLogo', logoUrl);
+      this.storage.set('schoolName', schoolName);
     } else {
       this.storage.remove('token');
       this.storage.remove('currentUser');
       this.storage.remove('permissions');
+      this.storage.remove('orgLogo');
+      this.storage.remove('schoolName');
 
       sessionStorage.setItem('token', token);
       sessionStorage.setItem('currentUser', JSON.stringify(user));
       sessionStorage.setItem('permissions', JSON.stringify(permissions));
+      sessionStorage.setItem('orgLogo', logoUrl);
+      sessionStorage.setItem('schoolName', schoolName);
     }
     this.user$.next(user);
+    this.orgLogo$.next(logoUrl);
+    this.schoolName$.next(schoolName);
+  }
+
+  getOrgLogo(): string {
+    if (sessionStorage.getItem('token')) {
+      return sessionStorage.getItem('orgLogo') || '';
+    }
+    if (this.storage.has('token')) {
+      return (this.storage.get('orgLogo') as string) || '';
+    }
+    return '';
+  }
+
+  getSchoolName(): string {
+    if (sessionStorage.getItem('token')) {
+      return sessionStorage.getItem('schoolName') || '';
+    }
+    if (this.storage.has('token')) {
+      return (this.storage.get('schoolName') as string) || '';
+    }
+    return '';
+  }
+
+  isOrgLogoCached(): boolean {
+    if (sessionStorage.getItem('token')) {
+      return sessionStorage.getItem('orgLogo') !== null;
+    }
+    if (this.storage.has('token')) {
+      return this.storage.has('orgLogo');
+    }
+    return false;
+  }
+
+  bootstrapOrgLogo(): void {
+    if (this.isLoggedIn() && !this.isOrgLogoCached()) {
+      this.http.get<any>(`${environment.apiUrl}/organizations/me/profile`).subscribe({
+        next: (org) => {
+          const logoUrl = org?.logo_url || '';
+          const schoolName = org?.school_name || '';
+          this.updateOrgLogo(logoUrl);
+          this.updateSchoolName(schoolName);
+        },
+        error: (err) => {
+          console.error('Failed to bootstrap organization logo:', err);
+          // Cache as empty to prevent infinite bootstrap requests on transient failures
+          this.updateOrgLogo('');
+          this.updateSchoolName('');
+        }
+      });
+    }
+  }
+
+  updateOrgLogo(logoUrl: string): void {
+    if (sessionStorage.getItem('token')) {
+      sessionStorage.setItem('orgLogo', logoUrl);
+    }
+    if (this.storage.has('token')) {
+      this.storage.set('orgLogo', logoUrl);
+    }
+    this.orgLogo$.next(logoUrl);
+  }
+
+  updateSchoolName(schoolName: string): void {
+    if (sessionStorage.getItem('token')) {
+      sessionStorage.setItem('schoolName', schoolName);
+    }
+    if (this.storage.has('token')) {
+      this.storage.set('schoolName', schoolName);
+    }
+    this.schoolName$.next(schoolName);
   }
 
 
@@ -209,6 +297,8 @@ export class AuthService {
       this.storage.remove('token');
       this.storage.remove('currentUser');
       this.storage.remove('permissions');
+      this.storage.remove('orgLogo');
+      this.storage.remove('schoolName');
       this.storage.remove('roleNames');
       this.storage.remove('adminToken');
       this.storage.remove('adminUser');
@@ -219,12 +309,18 @@ export class AuthService {
       localStorage.removeItem('token');
       localStorage.removeItem('currentUser');
       localStorage.removeItem('permissions');
+      localStorage.removeItem('orgLogo');
+      localStorage.removeItem('schoolName');
 
       sessionStorage.removeItem('token');
       sessionStorage.removeItem('currentUser');
       sessionStorage.removeItem('permissions');
+      sessionStorage.removeItem('orgLogo');
+      sessionStorage.removeItem('schoolName');
 
       this.user$.next({});
+      this.orgLogo$.next('');
+      this.schoolName$.next('');
     };
 
     return this.http.post<any>(`${environment.apiUrl}/auth/logout`, {}).pipe(

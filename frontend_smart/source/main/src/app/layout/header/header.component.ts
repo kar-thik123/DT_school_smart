@@ -64,6 +64,8 @@ export class HeaderComponent
   isOpenSidebar?: boolean;
   docElement?: HTMLElement;
   isFullScreen = false;
+  logoImg = 'assets/images/logo.png';
+  schoolName = 'Smart';
 
   listLang = [
     { text: 'English', flag: 'assets/images/flags/us.svg', lang: 'en' },
@@ -79,6 +81,19 @@ export class HeaderComponent
     this.userName = currentUser?.name || 'User';
     this.userImg = './assets/images/user/' + (currentUser?.avatar || 'admin.jpg');
     this.fetchProfileImage();
+
+    this.subs.sink = this.authService.orgLogo$.subscribe((logo) => {
+      if (logo) {
+        const baseUrl = environment.apiUrl.replace('/api', '');
+        this.logoImg = `${baseUrl}${logo.startsWith('/') ? '' : '/'}${logo}`;
+      } else {
+        this.logoImg = 'assets/images/logo.png';
+      }
+    });
+
+    this.subs.sink = this.authService.schoolName$.subscribe((name) => {
+      this.schoolName = name || 'Smart';
+    });
 
     this.docElement = document.documentElement;
 

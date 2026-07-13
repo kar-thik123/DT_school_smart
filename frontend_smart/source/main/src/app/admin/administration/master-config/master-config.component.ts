@@ -12,7 +12,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatDividerModule } from '@angular/material/divider';
 import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.component';
-import { AcademicContextService } from '@core';
+import { AcademicContextService, AuthService } from '@core';
 import { MasterConfigService } from './master-config.service';
 import { OrganizationProfile, MasterEntity } from './master-config.model';
 import { environment } from '../../../../environments/environment';
@@ -43,6 +43,7 @@ export class MasterConfigComponent implements OnInit {
   private fb = inject(UntypedFormBuilder);
   private configService = inject(MasterConfigService);
   private academicContextService = inject(AcademicContextService);
+  private authService = inject(AuthService);
   private snackBar = inject(MatSnackBar);
 
   // Profile
@@ -136,7 +137,16 @@ export class MasterConfigComponent implements OnInit {
     
     this.isSaving = true;
     try {
-      await lastValueFrom(this.configService.updateBranding(this.organization.id, this.profileForm.value));
+      const brandingData = {
+        ...this.profileForm.value,
+        logo_url: this.organization.logo_url
+      };
+      await lastValueFrom(this.configService.updateBranding(this.organization.id, brandingData));
+      
+      // Propagate the new logo and school name immediately to the header layout
+      this.authService.updateOrgLogo(this.organization.logo_url || '');
+      this.authService.updateSchoolName(brandingData.school_name || '');
+      
       this.showNotification('success', 'Profile updated successfully');
     } catch (error: any) {
       this.showNotification('error', 'Failed to update profile');
