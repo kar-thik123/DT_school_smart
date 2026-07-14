@@ -1,3 +1,4 @@
+process.env.UV_THREADPOOL_SIZE = '128';
 import 'dotenv/config';
 
 if (!process.env.JWT_SECRET) {

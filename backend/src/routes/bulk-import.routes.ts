@@ -186,14 +186,20 @@ router.post('/:entityType/analyze', upload.single('file'), async (req: any, res:
 // Receives an array of pre-validated JSON objects from the UI (which extracted only the green rows)
 // and passes them to the database commit strategy.
 router.post('/:entityType/commit', async (req: any, res: Response) => {
+  const startTime = Date.now();
+  let orgId = '';
+  let userId = '';
+  let jobId = '';
+  const { entityType } = req.params;
+
   try {
-    const { entityType } = req.params;
     if (!verifyBulkImportPermission(entityType, req)) {
       return res.status(403).json({ message: `Forbidden: You do not have permission to import ${entityType}.` });
     }
-    const orgId = req.user.organization_id;
-    const userId = req.user.user_id;
-    let { validRows, conflictResolutions, jobId } = req.body;
+    orgId = req.user.organization_id;
+    userId = req.user.user_id;
+    let { validRows, conflictResolutions } = req.body;
+    jobId = req.body.jobId;
 
     if (entityType.toUpperCase() === 'USERS' && jobId) {
       const filePath = path.join(IMPORTS_DIR, `${jobId}.json`);
@@ -214,7 +220,7 @@ router.post('/:entityType/commit', async (req: any, res: Response) => {
       return res.status(400).json({ message: `Bulk import for entity type '${entityType}' is not supported.` });
     }
 
-    const result = await processor.commit(validRows, conflictResolutions);
+    const result = await processor.commit(validRows, conflictResolutions, jobId);
 
     await logAuditEvent({
       organization_id: orgId,
@@ -226,14 +232,60 @@ router.post('/:entityType/commit', async (req: any, res: Response) => {
       metadata: { entity_type: entityType, success_count: result.success_count, failure_count: result.failure_count }
     });
 
+    console.log(`[BULK IMPORT SUCCESS]`, JSON.stringify({
+      jobId: jobId || 'N/A',
+      organizationId: orgId,
+      academicYear: req.academic_year_id || 'N/A',
+      rowsImported: result.success_count,
+      rowsSkipped: result.failure_count,
+      executionTimeMs: Date.now() - startTime
+    }));
+
     return res.status(200).json({
       message: `Bulk import completed successfully for ${result.success_count} rows.`,
       result
     });
 
   } catch (error: any) {
-    console.error(`[Bulk-Import-Commit] Error:`, error);
-    return res.status(500).json({ message: 'Committing valid rows failed.', error: error.message });
+    const stack = error.stack || '';
+    const lines = stack.split('\n');
+    let file = 'Unknown';
+    let func = 'Unknown';
+    let lineNo = 'Unknown';
+
+    for (let idx = 1; idx < lines.length; idx++) {
+      const match = lines[idx].match(/at\s+(.+?)\s+\((.+?):(\d+):(\d+)\)/) || lines[idx].match(/at\s+(.+?):(\d+):(\d+)/);
+      if (match) {
+        const possiblePath = match[2] || match[1];
+        if (possiblePath.includes('backend/src') || possiblePath.includes('backend\\src') || possiblePath.includes('bulk-import.routes.ts') || possiblePath.includes('user.processor.ts')) {
+          func = match[2] ? match[1] : 'Anonymous';
+          file = possiblePath;
+          lineNo = match[2] ? match[3] : match[2];
+          break;
+        }
+      }
+    }
+
+    console.error(`[ROUTE INSTRUMENTATION] EXCEPTION DETECTED:`);
+    console.error(`  - Exception Type: ${error.name || error.constructor.name || 'Error'}`);
+    console.error(`  - Exception Message: ${error.message}`);
+    console.error(`  - Prisma Error Code: ${error.code || 'N/A'}`);
+    console.error(`  - File: ${file}`);
+    console.error(`  - Function: ${func}`);
+    console.error(`  - Line Number: ${lineNo}`);
+    console.error(`  - Full Stack Trace:\n${stack}`);
+
+    return res.status(error.statusCode || 500).json({
+      success: false,
+      message: error.message || 'Committing valid rows failed.',
+      code: error.code,
+      details: {
+        file,
+        line: lineNo,
+        function: func,
+        type: error.name || error.constructor.name || 'Error'
+      }
+    });
   }
 });
 
