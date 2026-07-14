@@ -1,0 +1,149 @@
+{
+  "timeline": [],
+  "findings": [
+    {
+      "id": "NO_STUDENT_ROLE",
+      "severity": "info",
+      "detail": "Student-capable role exists"
+    }
+  ],
+  "roleInventory": [
+    {
+      "id": "1eb187f9-c8fe-4d8b-8f28-2ab6cdfb518e",
+      "name": "SUPER_ADMIN",
+      "org": "0f928784-d039-436b-bc42-0e17fb33fd8c",
+      "is_system": true,
+      "isStudent": true,
+      "isTeacher": true,
+      "permCount": 56
+    },
+    {
+      "id": "de49238b-82ad-4e74-82e3-7278b0883556",
+      "name": "Teacher",
+      "org": "0f928784-d039-436b-bc42-0e17fb33fd8c",
+      "is_system": false,
+      "isStudent": false,
+      "isTeacher": true,
+      "permCount": 9
+    }
+  ],
+  "studentAnalyze": {
+    "status": 200,
+    "body": {
+      "jobId": "f03ce456-ba98-4270-9930-6fe29d984de7",
+      "totalRows": 1,
+      "validRowsCount": 0,
+      "invalidRowsCount": 1,
+      "preview": [
+        {
+          "status": "ERROR",
+          "errors": [
+            "Role 'STUDENT' not found."
+          ],
+          "data": {
+            "Name": "Forensic Stud2",
+            "Email": "forensic_stud2_1784048236796@example.com",
+            "Role": "STUDENT",
+            "Roll Number": "RS1784048236796",
+            "Admission Number": "ADMS1784048236796",
+            "Mobile Number": "9300036796",
+            "Password": "Password123"
+          }
+        }
+      ],
+      "invalidPreview": [
+        {
+          "status": "ERROR",
+          "errors": [
+            "Role 'STUDENT' not found."
+          ],
+          "data": {
+            "Name": "Forensic Stud2",
+            "Email": "forensic_stud2_1784048236796@example.com",
+            "Role": "STUDENT",
+            "Roll Number": "RS1784048236796",
+            "Admission Number": "ADMS1784048236796",
+            "Mobile Number": "9300036796",
+            "Password": "Password123"
+          }
+        }
+      ]
+    },
+    "ms": 6036
+  },
+  "studentCommit": {
+    "status": 400,
+    "body": {
+      "message": "No valid rows provided for commit."
+    },
+    "ms": 2369
+  },
+  "studentDb": null,
+  "bulk100Analyze": {
+    "status": 200,
+    "ms": 2981,
+    "valid": 100,
+    "invalid": 0,
+    "jobId": "2bff7e8f-f14f-42c7-a559-485b4691d1e9"
+  },
+  "bulk100Commit": {
+    "status": 200,
+    "ms": 11005,
+    "body": {
+      "message": "Bulk import completed successfully for 100 rows.",
+      "result": {
+        "success_count": 100,
+        "failure_count": 0,
+        "imported_count": 100,
+        "skipped_count": 0,
+        "skipped_reasons": []
+      }
+    }
+  },
+  "race": {
+    "c1": {
+      "status": 200,
+      "body": {
+        "message": "Bulk import completed successfully for 1 rows.",
+        "result": {
+          "success_count": 1,
+          "failure_count": 0,
+          "imported_count": 1,
+          "skipped_count": 0,
+          "skipped_reasons": []
+        }
+      }
+    },
+    "c2": {
+      "status": 400,
+      "body": {
+        "message": "Import session expired or invalid. Please analyze the file again."
+      }
+    }
+  },
+  "conclusion": {
+    "verdict": "NO_HTTP_500_REPRODUCED",
+    "note": "Student missing-role causes analyze ERROR / commit 400. Large 100-row teacher import did not return 500 in this run.",
+    "bulk100": {
+      "status": 200,
+      "ms": 11005,
+      "body": {
+        "message": "Bulk import completed successfully for 100 rows.",
+        "result": {
+          "success_count": 100,
+          "failure_count": 0,
+          "imported_count": 100,
+          "skipped_count": 0,
+          "skipped_reasons": []
+        }
+      }
+    },
+    "student": {
+      "status": 400,
+      "body": {
+        "message": "No valid rows provided for commit."
+      },
+      "ms": 2369
+    }
+  }
+}

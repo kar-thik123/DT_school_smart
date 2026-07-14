@@ -3,6 +3,8 @@ import prisma from '../../../prisma';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { UserImportValidationService } from '../user-import-validation.service';
+import { parseError } from '../error-parser';
+import { safeNormalize } from '../utils';
 
 export class UserProcessor implements BulkImportProcessor {
   private validationResultsMap = new Map<any, ValidationResult>();
@@ -95,12 +97,18 @@ export class UserProcessor implements BulkImportProcessor {
         console.log("STEP 6 Password hashing");
         for (let j = 0; j < batch.length; j += 50) {
           const hashBatch = batch.slice(j, j + 50);
-          await Promise.all(
-            hashBatch.map(async (row) => {
+          const hashPromises = hashBatch.map(async (row, idxInHashBatch) => {
+            try {
               row.hashedPassword = await bcrypt.hash(row.password, 10);
               row.generatedId = crypto.randomUUID();
-            })
-          );
+            } catch (hashErr: any) {
+              const enhancedErr: any = hashErr;
+              enhancedErr.failedRow = i + j + idxInHashBatch + 1;
+              enhancedErr.failedEmail = row.email;
+              throw enhancedErr;
+            }
+          });
+          await Promise.all(hashPromises);
         }
         console.log("STEP 6 SUCCESS");
       } catch (err: any) {
@@ -160,37 +168,136 @@ export class UserProcessor implements BulkImportProcessor {
             );
 
             // Re-resolve roles for each row in the batch using role_name
-            for (const row of batch) {
-              const roleNameKey = (row.role_name || row.role || '').trim().toUpperCase();
-              if (!roleNameKey) {
-                const err: any = new Error(`Role name is missing or empty in row. Please run Analyze again.`);
-                err.statusCode = 400;
-                throw err;
-              }
+            for (let rowIdx = 0; rowIdx < batch.length; rowIdx++) {
+              const row = batch[rowIdx];
+              const globalRowIdx = i + rowIdx + 1;
+              const roleNameKey = safeNormalize(row.role_name || row.role).toUpperCase();
+              try {
+                if (!roleNameKey) {
+                  const err: any = new Error(`Role name is missing or empty in row. Please run Analyze again.`);
+                  err.statusCode = 400;
+                  err.failedRow = globalRowIdx;
+                  err.failedEmail = row.email;
+                  err.failedField = 'role';
+                  throw err;
+                }
 
-              const resolvedRoleId = currentRolesMap.get(roleNameKey);
-              if (!resolvedRoleId) {
-                // Log the role not found result
-                console.log(`[ROLE RESOLUTION LOG] Job ID: ${jobId || 'N/A'}, Organization ID: ${this.organizationId}, Role Name: ${roleNameKey}, Cached Role ID: ${row.role_id || 'N/A'}, Resolved Role ID: N/A, Result: ROLE NOT FOUND`);
-                
-                const err: any = new Error(`Role '${roleNameKey}' no longer exists for the active organization. Please run Analyze again.`);
-                err.statusCode = 400;
-                throw err;
-              }
+                const resolvedRoleId = currentRolesMap.get(roleNameKey);
+                if (!resolvedRoleId) {
+                  // Log the role not found result
+                  console.log(`[ROLE RESOLUTION LOG] Job ID: ${jobId || 'N/A'}, Organization ID: ${this.organizationId}, Role Name: ${roleNameKey}, Cached Role ID: ${row.role_id || 'N/A'}, Resolved Role ID: N/A, Result: ROLE NOT FOUND`);
+                  
+                  const err: any = new Error(`Role '${roleNameKey}' no longer exists for the active organization. Please run Analyze again.`);
+                  err.statusCode = 400;
+                  err.failedRow = globalRowIdx;
+                  err.failedEmail = row.email;
+                  err.failedRole = roleNameKey;
+                  err.failedField = 'role';
+                  throw err;
+                }
 
-              const cachedRoleId = row.role_id;
-              let logResult = 'MATCH';
-              if (cachedRoleId !== resolvedRoleId) {
-                logResult = 'UPDATED';
-                // Update in-memory commit model (refresh cached UUID to latest DB state)
-                row.role_id = resolvedRoleId;
-              }
+                const cachedRoleId = row.role_id;
+                let logResult = 'MATCH';
+                if (cachedRoleId !== resolvedRoleId) {
+                  logResult = 'UPDATED';
+                  // Update in-memory commit model (refresh cached UUID to latest DB state)
+                  row.role_id = resolvedRoleId;
+                }
 
-              console.log(`[ROLE RESOLUTION LOG] Job ID: ${jobId || 'N/A'}, Organization ID: ${this.organizationId}, Role Name: ${roleNameKey}, Cached Role ID: ${cachedRoleId || 'N/A'}, Resolved Role ID: ${resolvedRoleId}, Result: ${logResult}`);
+                console.log(`[ROLE RESOLUTION LOG] Job ID: ${jobId || 'N/A'}, Organization ID: ${this.organizationId}, Role Name: ${roleNameKey}, Cached Role ID: ${cachedRoleId || 'N/A'}, Resolved Role ID: ${resolvedRoleId}, Result: ${logResult}`);
+              } catch (rowErr: any) {
+                if (!rowErr.failedRow) rowErr.failedRow = globalRowIdx;
+                if (!rowErr.failedEmail) rowErr.failedEmail = row.email;
+                throw rowErr;
+              }
             }
             console.log("STEP 9.1 SUCCESS");
           } catch (err: any) {
             console.log("STEP 9.1 FAILED");
+            throw err;
+          }
+
+          try {
+            console.log("STEP 9.2 Verify grade/section FKs");
+            // Optional FKs must be verified against live DB before createMany.
+            // Stale cache UUIDs otherwise surface as Prisma P2003 → HTTP 500.
+            const gradeIds = [
+              ...new Set(
+                batch
+                  .map((r: any) => safeNormalize(r.grade_id))
+                  .filter((id: string) => id !== '')
+              )
+            ];
+            const sectionIds = [
+              ...new Set(
+                batch
+                  .map((r: any) => safeNormalize(r.section_id))
+                  .filter((id: string) => id !== '')
+              )
+            ];
+
+            const [validGrades, validSections] = await Promise.all([
+              gradeIds.length
+                ? tx.grade.findMany({
+                    where: { id: { in: gradeIds }, organization_id: this.organizationId },
+                    select: { id: true }
+                  })
+                : Promise.resolve([]),
+              sectionIds.length
+                ? tx.section.findMany({
+                    where: { id: { in: sectionIds }, organization_id: this.organizationId },
+                    select: { id: true }
+                  })
+                : Promise.resolve([])
+            ]);
+
+            const validGradeSet = new Set(validGrades.map((g: any) => g.id));
+            const validSectionSet = new Set(validSections.map((s: any) => s.id));
+
+            for (let rowIdx = 0; rowIdx < batch.length; rowIdx++) {
+              const row = batch[rowIdx];
+              const globalRowIdx = i + rowIdx + 1;
+              try {
+                if (row.grade_id && !validGradeSet.has(row.grade_id)) {
+                  console.log(
+                    `[GRADE FK LOG] Job ID: ${jobId || 'N/A'}, Organization ID: ${this.organizationId}, Cached Grade ID: ${row.grade_id}, Result: NOT FOUND`
+                  );
+                  const err: any = new Error(
+                    `Grade reference is no longer valid for this organization. Please run Analyze again.`
+                  );
+                  err.statusCode = 400;
+                  err.failedRow = globalRowIdx;
+                  err.failedEmail = row.email;
+                  err.failedGrade = row.grade_id;
+                  err.failedField = 'grade_id';
+                  throw err;
+                }
+                if (row.section_id && !validSectionSet.has(row.section_id)) {
+                  console.log(
+                    `[SECTION FK LOG] Job ID: ${jobId || 'N/A'}, Organization ID: ${this.organizationId}, Cached Section ID: ${row.section_id}, Result: NOT FOUND`
+                  );
+                  const err: any = new Error(
+                    `Section reference is no longer valid for this organization. Please run Analyze again.`
+                  );
+                  err.statusCode = 400;
+                  err.failedRow = globalRowIdx;
+                  err.failedEmail = row.email;
+                  err.failedSection = row.section_id;
+                  err.failedField = 'section_id';
+                  throw err;
+                }
+                // Normalize empty strings → null so Prisma does not attempt invalid UUID inserts
+                if (!row.grade_id) row.grade_id = null;
+                if (!row.section_id) row.section_id = null;
+              } catch (rowErr: any) {
+                if (!rowErr.failedRow) rowErr.failedRow = globalRowIdx;
+                if (!rowErr.failedEmail) rowErr.failedEmail = row.email;
+                throw rowErr;
+              }
+            }
+            console.log("STEP 9.2 SUCCESS");
+          } catch (err: any) {
+            console.log("STEP 9.2 FAILED");
             throw err;
           }
 

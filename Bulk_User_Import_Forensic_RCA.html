@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bulk User Import — Forensic Root Cause Report</title>
+  <style>
+    :root {
+      --bg: #0b1220;
+      --panel: #121a2b;
+      --line: #243049;
+      --text: #e8eef9;
+      --muted: #8fa1bf;
+      --accent: #5b9dff;
+      --danger: #ff5c7a;
+      --ok: #2fd39a;
+      --warn: #f0b429;
+      --mono: Consolas, "Courier New", monospace;
+      --sans: "Segoe UI", Tahoma, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+    }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 40px 20px 80px; }
+    h1 { font-size: 28px; margin: 0 0 8px; letter-spacing: -0.02em; }
+    h2 {
+      font-size: 18px;
+      margin: 36px 0 14px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--line);
+      color: var(--accent);
+    }
+    h3 { font-size: 15px; margin: 20px 0 8px; color: var(--text); }
+    .sub { color: var(--muted); margin: 0 0 24px; }
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .badge-danger { background: rgba(255,92,122,.15); color: var(--danger); border: 1px solid rgba(255,92,122,.35); }
+    .badge-ok { background: rgba(47,211,154,.12); color: var(--ok); border: 1px solid rgba(47,211,154,.35); }
+    .badge-warn { background: rgba(240,180,41,.12); color: var(--warn); border: 1px solid rgba(240,180,41,.35); }
+    .hero {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 24px;
+      margin-bottom: 28px;
+    }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 18px;
+      margin-top: 16px;
+    }
+    @media (max-width: 800px) { .hero-grid { grid-template-columns: 1fr; } }
+    .callout {
+      border-left: 4px solid var(--danger);
+      background: rgba(255,92,122,.06);
+      padding: 14px 16px;
+      border-radius: 0 8px 8px 0;
+      margin: 14px 0;
+    }
+    .callout-ok {
+      border-left-color: var(--ok);
+      background: rgba(47,211,154,.06);
+    }
+    .meta { font-size: 13px; color: var(--muted); }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      font-size: 13px;
+    }
+    th, td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+    th { color: var(--muted); font-weight: 600; background: #0e1626; }
+    tr:last-child td { border-bottom: none; }
+    code, pre {
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+    code {
+      background: #0a101c;
+      padding: 1px 5px;
+      border-radius: 3px;
+      color: #9ec1ff;
+    }
+    pre {
+      background: #070d18;
+      border: 1px solid var(--line);
+      padding: 14px;
+      border-radius: 8px;
+      overflow-x: auto;
+      color: #b7c9e6;
+      white-space: pre-wrap;
+    }
+    .flow {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.7;
+    }
+    .fail { color: var(--danger); font-weight: 700; }
+    .pass { color: var(--ok); font-weight: 700; }
+    .muted { color: var(--muted); }
+    .kv { display: grid; grid-template-columns: 220px 1fr; gap: 8px 12px; font-size: 13px; }
+    .kv div:nth-child(odd) { color: var(--muted); }
+    .kv div:nth-child(even) { font-family: var(--mono); font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Bulk User Import — Forensic Incident Report</h1>
+    <p class="sub">
+      Runtime-proven RCA against live API <code>http://localhost:5000</code> · Org KMHSS
+      <code>0f928784-d039-436b-bc42-0e17fb33fd8c</code> · Actor <code>user2@example.com</code> · 2026-07-14
+    </p>
+
+    <div class="hero">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+        <span class="badge badge-danger">HTTP 500 Proven</span>
+        <span class="badge badge-ok">Fixed + Verified</span>
+        <span class="badge badge-warn">Previous RCAs Incomplete</span>
+      </div>
+      <h2 style="border:0;margin:16px 0 8px;padding:0;">FIRST ACTUAL ROOT CAUSE</h2>
+      <div class="callout">
+        <strong>Commit trusted stale/cached foreign keys and inserted them via <code>tx.user.createMany()</code> without live verification.</strong>
+        <br /><br />
+        The first exception observed on the <em>live HTTP process</em> (before restart) was:
+        <br />
+        <code>PrismaClientKnownRequestError P2003 — Foreign key constraint violated: users_role_id_fkey</code>
+        <br /><br />
+        That occurred because the running Node process was <strong>stale</strong>: the on-disk role re-resolution patch
+        (<code>STEP 9.1</code>) was loaded only by a separate in-process import, not by the live server.
+        Direct HTTP commits still used cached <code>role_id</code> and crashed at createMany.
+        <br /><br />
+        Independently, even with current source loaded, the <strong>remaining code defect</strong> that still produced HTTP 500 was:
+        <br />
+        <code>P2003 — users_grade_id_fkey</code> (same insert path; <code>grade_id</code>/<code>section_id</code> never re-validated).
+      </div>
+      <div class="hero-grid">
+        <div>
+          <div class="kv">
+            <div>Exact file</div><div>backend/src/services/bulk-import/processors/user.processor.ts</div>
+            <div>Exact function</div><div>UserProcessor.commit</div>
+            <div>Failing statement</div><div>await tx.user.createMany({ data: usersData, skipDuplicates: true })</div>
+            <div>First live HTTP failure</div><div>P2003 users_role_id_fkey (stale process missing STEP 9.1)</div>
+            <div>Residual source defect</div><div>P2003 users_grade_id_fkey (no STEP 9.2 before fix)</div>
+            <div>HTTP mapping</div><div>uncaught Prisma error → route catch → status 500</div>
+          </div>
+        </div>
+        <div>
+          <h3 style="margin-top:0;">Verdict</h3>
+          <p class="meta">
+            Previous RCAs addressing license, StudentProfile FK, thread pool, nodemon, and status mapping were
+            either already mitigated or not the exception still returned by the live process tonight.
+            The defect class that still caused 500 is <strong>unguarded FK inserts from analyze cache</strong>,
+            compounded by a <strong>non-reloaded backend process</strong>.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <h2>1. Complete execution sequence</h2>
+    <div class="flow">
+Frontend FormData CSV
+  → POST /api/bulk-import/users/analyze
+  → authMiddleware (JWT, permissions, academic year)
+  → verifyBulkImportPermission(USERS:IMPORT)
+  → csv-parse (bom:true after fix)
+  → UserProcessor.resolveRelations → UserImportValidationService.validateBatch(isCommit=false)
+  → write uploads/imports/{jobId}.json
+  → HTTP 200 { jobId, preview, counts }
+
+Frontend POST /api/bulk-import/users/commit { jobId }
+  → authMiddleware
+  → load + delete job cache
+  → UserProcessor.commit(validRows)
+      STEP 3  validateBatch(isCommit=true)
+      STEP 4–5 license / empty check
+      STEP 6  bcrypt hash (batches of 50)
+      STEP 7  prisma.$transaction
+      STEP 8  role.findMany
+      STEP 9  studentRoleIds
+      STEP 9.1 role_name → live role_id   <span class="pass">[required]</span>
+      STEP 9.2 grade/section FK verify  <span class="pass">[added]</span>
+      STEP 10 map usersData
+      STEP 11 user.createMany           <span class="fail">← FIRST CRASH SITE (P2003)</span>
+      STEP 12 user.findMany by email
+      STEP 13–14 studentProfile.createMany
+  → logAuditEvent (swallows errors)
+  → HTTP 200 or 4xx/5xx
+    </div>
+
+    <h2>2. Runtime timeline (evidence)</h2>
+    <table>
+      <thead>
+        <tr><th>Time (UTC)</th><th>Probe</th><th>Result</th><th>Evidence</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>~16:54</td>
+          <td>Natural teacher analyze+commit (live HTTP)</td>
+          <td class="pass">200 / 200</td>
+          <td>Happy path worked; role_id valid</td>
+        </tr>
+        <tr>
+          <td>~16:55</td>
+          <td>STUDENT CSV against KMHSS</td>
+          <td class="muted">Analyze ERROR / commit 400</td>
+          <td>No role named STUDENT (only Teacher + SUPER_ADMIN initially)</td>
+        </tr>
+        <tr>
+          <td>~16:56</td>
+          <td>100-row teacher commit</td>
+          <td class="pass">200 in 11005ms</td>
+          <td>Thread-pool / size alone did not 500 in this run</td>
+        </tr>
+        <tr>
+          <td>~17:00</td>
+          <td>HTTP commit with stale role_id UUID</td>
+          <td class="fail">HTTP 500 P2003 users_role_id_fkey</td>
+          <td><strong>FIRST proven live 500</strong> — STEP 9.1 not in running process</td>
+        </tr>
+        <tr>
+          <td>~17:00</td>
+          <td>HTTP commit with bad grade_id</td>
+          <td class="fail">HTTP 500 P2003 users_grade_id_fkey</td>
+          <td>Residual code defect independent of process staleness</td>
+        </tr>
+        <tr>
+          <td>~17:02</td>
+          <td>Direct in-process UserProcessor (fresh load)</td>
+          <td class="pass">stale role_id updated; ghost role → 400</td>
+          <td>Proved disk patch works; live process diverged</td>
+        </tr>
+        <tr>
+          <td>~17:05</td>
+          <td>Killed stale ts-node; started nodemon</td>
+          <td class="pass">Server listening :5000</td>
+          <td>Process now watches <code>src/**</code></td>
+        </tr>
+        <tr>
+          <td>~17:09</td>
+          <td>Post-fix suite (13 cases)</td>
+          <td class="pass">13/13 PASS</td>
+          <td>forensic-postfix-results.json</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>3. Database queries (commit hot path)</h2>
+    <table>
+      <thead>
+        <tr><th>Step</th><th>Model / Method</th><th>WHERE / notes</th><th>Purpose</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Validate</td><td>user.findMany / studentProfile.findMany / role.findMany / grade.findMany / section.findMany / organization.findUnique / user.count</td><td>org-scoped + email list</td><td>Duplicates, license, relations</td></tr>
+        <tr><td>8</td><td>role.findMany</td><td>organization_id = org OR (is_system AND organization_id null)</td><td>Live roles + permissions</td></tr>
+        <tr><td>9.2</td><td>grade.findMany / section.findMany</td><td>id IN cached ids AND organization_id = org</td><td>FK authenticity</td></tr>
+        <tr><td>11</td><td>user.createMany</td><td>batch payload</td><td>Insert users (crash site when FK bad)</td></tr>
+        <tr><td>12</td><td>user.findMany</td><td>organization_id + email IN batch</td><td>Resolve actual inserted ids</td></tr>
+        <tr><td>14</td><td>studentProfile.createMany</td><td>only for IS_STUDENT roles with admission/mobile</td><td>Profiles</td></tr>
+        <tr><td>Audit</td><td>auditLog.create</td><td>entity_type from route</td><td>Non-fatal if fails</td></tr>
+      </tbody>
+    </table>
+
+    <h2>4. API / middleware chain</h2>
+    <table>
+      <thead><tr><th>Layer</th><th>Behavior on failure</th></tr></thead>
+      <tbody>
+        <tr><td><code>authMiddleware</code></td><td>401 invalid token; attaches permissions + academic_year_id</td></tr>
+        <tr><td><code>verifyBulkImportPermission</code></td><td>403 without <code>USERS:IMPORT</code> (proven with Teacher JWT → 403)</td></tr>
+        <tr><td><code>multer</code> (analyze)</td><td>400 missing file / 400 parse</td></tr>
+        <tr><td>Analyze / Commit try/catch</td><td>Unhandled processor errors → <strong>500</strong> unless <code>error.statusCode</code> set</td></tr>
+      </tbody>
+    </table>
+
+    <h2>5. Exceptions in chronological order (proven)</h2>
+    <ol>
+      <li>
+        <strong>Live HTTP (stale process):</strong>
+        <code>PrismaClientKnownRequestError P2003 users_role_id_fkey</code>
+        while commit used cached role UUID <code>00000000-0000-0000-0000-000000000000</code>.
+      </li>
+      <li>
+        <strong>Live HTTP + in-process (current source before STEP 9.2):</strong>
+        <code>PrismaClientKnownRequestError P2003 users_grade_id_fkey</code>
+        with grade UUID <code>11111111-1111-1111-1111-111111111111</code>.
+      </li>
+      <li>
+        <strong>Live HTTP (stale process):</strong>
+        <code>PrismaClientValidationError Argument role_id is missing</code>
+        when cached <code>role_id: null</code> and STEP 9.1 not executing.
+      </li>
+    </ol>
+
+    <h2>6. Why previous RCAs were incorrect / incomplete</h2>
+    <table>
+      <thead><tr><th>Prior conclusion</th><th>Tonight’s runtime finding</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>License validation was the blocker</td>
+          <td>Happy-path and 100-row imports succeeded with license 1000 / active ~412. Not the active 500.</td>
+        </tr>
+        <tr>
+          <td>StudentProfile parent FK (generatedId) was root</td>
+          <td>Current code resolves parents via <code>user.findMany</code> by email. Student+profile import succeeded after STUDENT role existed.</td>
+        </tr>
+        <tr>
+          <td>Stale role_id “fixed”</td>
+          <td>Patch existed on disk and worked in-process, but <strong>live HTTP process never reloaded</strong>. Browser/API still hit old createMany behavior → 500.</td>
+        </tr>
+        <tr>
+          <td>Thread pool / proxy timeout</td>
+          <td>100-row commit returned HTTP 200 in ~11s on this network. Not reproduced as 500 tonight.</td>
+        </tr>
+        <tr>
+          <td>Nodemon restart on uploads</td>
+          <td><code>nodemon.json</code> already ignores uploads; previous process was plain ts-node without watch reload.</td>
+        </tr>
+        <tr>
+          <td>Final_Report.html claimed PASS</td>
+          <td>Did not exercise stale FK bomb cases against the live unreloaded process; overstated readiness.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>7. Exact statement &amp; runtime values</h2>
+    <pre>// user.processor.ts — crash site
+usersResult = await tx.user.createMany({
+  data: usersData,   // included role_id / grade_id from analyze cache
+  skipDuplicates: true
+});
+
+// Runtime values for FIRST live HTTP 500 (S5):
+role_id (cached)   = "00000000-0000-0000-0000-000000000000"  // does not exist
+role_name          = "TEACHER"                                 // valid; should re-resolve
+organization_id    = "0f928784-d039-436b-bc42-0e17fb33fd8c"
+process state      = stale ts-node without STEP 9.1 loaded
+HTTP               = 500
+Prisma             = P2003 users_role_id_fkey
+
+// Residual source defect (S7) even with STEP 9.1 loaded:
+grade_id (cached)  = "11111111-1111-1111-1111-111111111111"
+HTTP               = 500
+Prisma             = P2003 users_grade_id_fkey</pre>
+
+    <h2>8. Stack / response evidence (captured)</h2>
+    <pre>{
+  "success": false,
+  "message": "Foreign key constraint violated: `users_role_id_fkey (index)`",
+  "code": "P2003",
+  "details": {
+    "file": "D:\\DT_school_smart\\backend\\src\\services\\bulk-import\\processors\\user.processor.ts",
+    "line": "112",
+    "function": "async UserProcessor.commit",
+    "type": "PrismaClientKnownRequestError"
+  }
+}</pre>
+
+    <h2>9. Cache verification notes</h2>
+    <ul>
+      <li>Job cache path: <code>backend/uploads/imports/{jobId}.json</code></li>
+      <li>Analyze caches <code>role_id</code>, <code>role_name</code>, optional <code>grade_id</code>/<code>section_id</code></li>
+      <li>KMHSS live roles at probe start: <code>SUPER_ADMIN</code>, <code>Teacher</code> (matched CSV <code>TEACHER</code> via uppercase map)</li>
+      <li>No <code>STUDENT</code> role existed initially → analyze correctly marked Student rows invalid (not 500)</li>
+      <li>SUPER_ADMIN permission set includes <code>IDENTITY:IS_STUDENT</code>, so SUPER_ADMIN rows with mobile create StudentProfile (behavioral oddity, not the 500)</li>
+    </ul>
+
+    <h2>10. CSV / request verification</h2>
+    <table>
+      <thead><tr><th>Check</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td>JWT / org / user</td><td>Matched KMHSS SUPER_ADMIN; <code>USERS:IMPORT</code> present</td></tr>
+        <tr><td>Content-Type multipart analyze</td><td>OK</td></tr>
+        <tr><td>Commit body</td><td><code>{ jobId }</code> only (matches frontend)</td></tr>
+        <tr><td>BOM CSV</td><td>Previously broke <code>Name</code> header; fixed with <code>bom: true</code></td></tr>
+        <tr><td>Frontend headers <code>Email Address</code></td><td>Accepted by validation mapper</td></tr>
+        <tr><td>Angular proxy</td><td><code>proxy.conf.json</code> → localhost:5000, no custom timeout</td></tr>
+      </tbody>
+    </table>
+
+    <h2>11. Proposed / applied fix (smallest)</h2>
+    <div class="callout callout-ok">
+      <ol>
+        <li><strong>Ops:</strong> Restart backend under nodemon so STEP 9.1 role re-resolution is actually loaded.</li>
+        <li><strong>Code:</strong> Add <code>STEP 9.2</code> — before createMany, verify every non-null <code>grade_id</code>/<code>section_id</code> against live org-scoped rows; on miss throw Error with <code>statusCode = 400</code> (same pattern as roles). Normalize empty strings to null.</li>
+        <li><strong>Parser:</strong> Enable csv-parse <code>bom: true</code>.</li>
+        <li><strong>Analyze grade/section lookup:</strong> Case-insensitive name matching via org-wide fetch + uppercase map (prevents false “not found” that previously required brittle exact case).</li>
+      </ol>
+      No changes to RBAC rules, manual user CRUD flow, enrollment, teacher assignment, notifications, or audit write path semantics beyond existing call.
+    </div>
+
+    <h2>12. Regression results (post-fix)</h2>
+    <table>
+      <thead><tr><th>Case</th><th>Status</th><th>Detail</th></tr></thead>
+      <tbody>
+        <tr><td>Stale role_id commit</td><td class="pass">PASS</td><td>HTTP 200 (re-resolved)</td></tr>
+        <tr><td>Bad grade_id commit</td><td class="pass">PASS</td><td>HTTP 400 message (not 500)</td></tr>
+        <tr><td>Ghost role_name</td><td class="pass">PASS</td><td>HTTP 400</td></tr>
+        <tr><td>Null role_id + role_name</td><td class="pass">PASS</td><td>HTTP 200</td></tr>
+        <tr><td>Natural teacher import</td><td class="pass">PASS</td><td>Analyze+Commit 200</td></tr>
+        <tr><td>Student role import + profile</td><td class="pass">PASS</td><td>Profile created</td></tr>
+        <tr><td>BOM CSV</td><td class="pass">PASS</td><td>validRowsCount=1, commit 200</td></tr>
+        <tr><td>Mixed SUPER_ADMIN + TEACHER</td><td class="pass">PASS</td><td>success_count=2</td></tr>
+        <tr><td>Duplicate email</td><td class="pass">PASS</td><td>Blocked at analyze / commit 400</td></tr>
+        <tr><td>Manual create/edit/delete</td><td class="pass">PASS</td><td>Prisma CRUD OK</td></tr>
+        <tr><td>Direct processor commit</td><td class="pass">PASS</td><td>STEP 9.1 + 9.2 logged</td></tr>
+        <tr><td>RBAC teacher IMPORT</td><td class="pass">PASS</td><td>HTTP 403</td></tr>
+        <tr><td>Tenant isolation</td><td class="pass">PASS</td><td>User org = KMHSS</td></tr>
+      </tbody>
+    </table>
+    <p class="meta">Artifacts: <code>forensic-audit-evidence.json</code>, <code>forensic-audit-round2.json</code>, <code>forensic-audit-round3.json</code>, <code>forensic-postfix-results.json</code></p>
+
+    <h2>13. Production readiness</h2>
+    <div class="callout callout-ok">
+      <strong>Ready for deploy after process restart discipline is enforced.</strong>
+      Bulk User Import no longer returns HTTP 500 for the proven FK-cache failure modes; invalid FKs now return HTTP 400 with actionable messages.
+      Deploy checklist:
+      <ul>
+        <li>Ensure production process manager recycles workers on release (avoid stale in-memory TypeScript).</li>
+        <li>Keep <code>uploads/imports</code> out of watch/reload paths.</li>
+        <li>Confirm org has named roles expected by CSV templates (e.g. STUDENT) — missing names are validation errors, not 500s.</li>
+      </ul>
+    </div>
+
+    <h2>14. Screenshots / network / console</h2>
+    <p class="meta">
+      This investigation was executed via instrumented HTTP forensics against the live port-5000 process (equivalent to browser network tab).
+      Representative console evidence from the fixed processor:
+    </p>
+    <pre>STEP 9.1 Re-resolve roles
+[ROLE RESOLUTION LOG] ... Role Name: TEACHER ... Result: UPDATED
+STEP 9.1 SUCCESS
+STEP 9.2 Verify grade/section FKs
+STEP 9.2 SUCCESS
+STEP 11 Create users
+STEP 11 SUCCESS
+...
+PASS | FIX bad grade_id → HTTP 400 (not 500)
+PASS | FIX stale role_id → no HTTP 500
+SUMMARY 13 passed, 0 failed</pre>
+
+    <p class="meta" style="margin-top:40px;">
+      Report generated automatically from runtime forensic probes · Do not treat prior PASS HTML reports as authoritative without matching live-process evidence.
+    </p>
+  </div>
+</body>
+</html>

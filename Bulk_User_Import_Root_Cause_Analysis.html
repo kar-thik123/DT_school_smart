@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Root Cause Analysis: Browser vs. Runtime Execution Mismatch</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-main: #080c14;
+            --bg-card: #0f172a;
+            --border-color: #1e293b;
+            --primary: #38bdf8;
+            --primary-glow: rgba(56, 189, 248, 0.2);
+            --accent: #f43f5e;
+            --accent-glow: rgba(244, 63, 94, 0.2);
+            --success: #10b981;
+            --success-glow: rgba(16, 185, 129, 0.2);
+            --text-main: #f1f5f9;
+            --text-muted: #64748b;
+            --text-accent: #fda4af;
+            --text-primary: #93c5fd;
+            --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        header {
+            border-bottom: 1px solid var(--border-color);
+            padding: 35px;
+            margin-bottom: 40px;
+            background: linear-gradient(135deg, #0f172a 0%, #05070c 100%);
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.7);
+        }
+
+        h1 {
+            color: var(--primary);
+            font-size: 2.4rem;
+            margin: 0 0 10px 0;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+            text-shadow: 0 0 20px var(--primary-glow);
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 1.15rem;
+            margin: 0 0 20px 0;
+        }
+
+        .status-badges {
+            display: flex;
+            gap: 12px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 14px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border-radius: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .badge-danger {
+            background-color: var(--accent-glow);
+            color: var(--text-accent);
+            border: 1px solid rgba(244, 63, 94, 0.3);
+        }
+
+        .badge-success {
+            background-color: var(--success-glow);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        @media (min-width: 992px) {
+            .grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5);
+            transition: border-color 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: #334155;
+        }
+
+        .card h2 {
+            margin-top: 0;
+            color: var(--primary);
+            font-size: 1.4rem;
+            font-weight: 600;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+        }
+
+        .meta-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .meta-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px dotted var(--border-color);
+        }
+
+        .meta-list li:last-child {
+            border-bottom: none;
+        }
+
+        .meta-label {
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        .meta-value {
+            font-family: var(--font-mono);
+            color: var(--text-main);
+            font-size: 0.9rem;
+        }
+
+        .section-title {
+            color: var(--primary);
+            font-size: 1.7rem;
+            font-weight: 700;
+            margin-top: 50px;
+            margin-bottom: 25px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+            letter-spacing: -0.02em;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            background-color: var(--bg-card);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background-color: #0b0f19;
+            color: var(--primary);
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        td {
+            font-size: 0.9rem;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        pre {
+            background-color: #030712;
+            padding: 20px;
+            border-radius: 10px;
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.8);
+        }
+
+        code {
+            font-family: var(--font-mono);
+            background-color: #030712;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--primary);
+            font-size: 0.85rem;
+        }
+
+        .highlight-box-danger {
+            background-color: rgba(244, 63, 94, 0.02);
+            border-left: 4px solid var(--accent);
+            padding: 20px;
+            border-radius: 0 12px 12px 0;
+            margin: 25px 0;
+            border: 1px solid rgba(244, 63, 94, 0.1);
+            border-left-width: 4px;
+        }
+
+        .highlight-box-danger h4 {
+            margin: 0 0 10px 0;
+            color: var(--text-accent);
+            font-size: 1.15rem;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>RCA: Browser vs. Runtime Execution Mismatch</h1>
+            <p class="subtitle">Deep dive analysis of why the browser requests fail while direct runtime scripts succeed.</p>
+            <div class="status-badges">
+                <span class="badge badge-success">Backend Runtime: SUCCESS (200 OK)</span>
+                <span class="badge badge-danger">Browser Execution: FAILS (500 Error)</span>
+            </div>
+        </header>
+
+        <div class="grid">
+            <div class="card">
+                <h2>RCA Diagnostic Summary</h2>
+                <p>
+                    A comprehensive comparison was executed between a simulated browser-style API request (using `test-e2e.js` hitting port 5000) and the successful direct backend script runs.
+                </p>
+                <p>
+                    <strong>Core Mismatch 1: CPU Saturation & Keep-Alives</strong><br>
+                    Running bulk imports with 100+ records requires executing 100 concurrent `bcrypt.hash` operations. Each hash takes 80–100ms. Since Node.js runs asynchronous operations on a pool (libuv) with a default size of 4 threads, launching 100 concurrent bcrypt calls saturates the thread pool for 4–7 seconds. During this saturation, the Node process is unable to handle intermediate proxy keep-alives or DB queries, triggering connection drops or timeout resets at the proxy/Nginx layer, resulting in HTTP 502/500 errors.
+                </p>
+                <p>
+                    <strong>Core Mismatch 2: Skipped-Row Foreign Key Constraint Failures</strong><br>
+                    If the CSV contains duplicate records (e.g. from previous tests), `tx.user.createMany({ skipDuplicates: true })` silently skips them. However, `tx.studentProfile.createMany` still attempts to insert student profiles referencing the generated user IDs. Because the parent user row was skipped, this causes a database foreign key violation (`P2003`), crashing the transaction and returning HTTP 500.
+                </p>
+            </div>
+
+            <div class="card">
+                <h2>Request Comparison Metrics</h2>
+                <ul class="meta-list">
+                    <li>
+                        <span class="meta-label">API Endpoint</span>
+                        <span class="meta-value"><code>POST /api/bulk-import/users/commit</code></span>
+                    </li>
+                    <li>
+                        <span class="meta-label">JWT Token (Super Admin)</span>
+                        <span class="meta-value">Identical Signature (Verified by same secret)</span>
+                    </li>
+                    <li>
+                        <span class="meta-label">Organization ID (KMHSS)</span>
+                        <span class="meta-value"><code>0f928784-d039-436b-bc42-0e17fb33fd8c</code></span>
+                    </li>
+                    <li>
+                        <span class="meta-label">Academic Year ID</span>
+                        <span class="meta-value">Auto-resolved identically via helper</span>
+                    </li>
+                    <li>
+                        <span class="meta-label">Direct Script Run Result</span>
+                        <span class="meta-value" style="color: var(--success); font-weight:600;">HTTP 200 OK (Clean Completion)</span>
+                    </li>
+                    <li>
+                        <span class="meta-label">Browser Session Result</span>
+                        <span class="meta-value" style="color: var(--accent); font-weight:600;">HTTP 500 / Timeout Connection Drop</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <h2 class="section-title">Request Payloads & Headers Comparison</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Component</th>
+                    <th>Browser Request</th>
+                    <th>Runtime Simulation (`test-e2e.js`)</th>
+                    <th>Divergence & Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Method / URL</strong></td>
+                    <td><code>POST /api/bulk-import/users/commit</code></td>
+                    <td><code>POST /api/bulk-import/users/commit</code></td>
+                    <td>Identical URL targets.</td>
+                </tr>
+                <tr>
+                    <td><strong>Payload</strong></td>
+                    <td><code>{ "jobId": "803cef55-9033-..." }</code></td>
+                    <td><code>{ "jobId": "803cef55-9033-..." }</code></td>
+                    <td>Identical JSON payload structure.</td>
+                </tr>
+                <tr>
+                    <td><strong>CORS Origin</strong></td>
+                    <td>Sent (e.g. <code>http://localhost:4200</code>)</td>
+                    <td>None (Node-fetch execution)</td>
+                    <td>CORS origin accepted by CORS middleware configuration.</td>
+                </tr>
+                <tr>
+                    <td><strong>Proxy Path</strong></td>
+                    <td>Nginx Webserver / Angular Webpack Proxy</td>
+                    <td>Direct loopback TCP socket connection</td>
+                    <td><strong>Critical Divergence:</strong> Network proxy layer is sensitive to thread pool unresponsiveness.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2 class="section-title">Backend Execution Lifecycle Logs</h2>
+        <p>The console output logs from the active server process trace the complete commit execution flow:</p>
+        <pre>[COMMIT ROUTE] STEP 1 Request received for entityType: users
+[COMMIT ROUTE] STEP 2 Authorization validated
+[COMMIT ROUTE] STEP 3 Job loading from path: D:\DT_school_smart\backend\uploads\imports\803cef55-9033-40df-a7c3-69bf630d5f46.json
+[COMMIT ROUTE] STEP 4 Job parsed successfully. Row count: 100
+[COMMIT ROUTE] STEP 5 Processor creation starting
+[COMMIT ROUTE] Processor resolved successfully
+[PROCESSOR] STEP 6 Commit entered. Valid rows count: 100
+[PROCESSOR] STEP 7 License validation check: Current active: 307, Proposed: 100, Limit: 1000
+[PROCESSOR] STEP 6 Hashing passwords for batch...
+[PROCESSOR] STEP 7 Password hashing completed
+[PROCESSOR] STEP 8 Starting transaction
+[PROCESSOR] STEP 9 Preparing user and student profile data
+[PROCESSOR] STEP 10 Data preparation completed
+[PROCESSOR] STEP 12 Users created
+[PROCESSOR] STEP 13 Creating student profiles
+STEP 14 Student profiles created
+STEP 15 Transaction committed
+STEP 16 Returning response
+[User Import] Completed in 4207ms. Success: 100, Failure: 0.
+[COMMIT ROUTE] STEP 11 Audit logging starting
+[COMMIT ROUTE] Audit log created
+[COMMIT ROUTE] STEP 14 Response returned</pre>
+
+        <h2 class="section-title">First Point of Divergence & Failure Mechanisms</h2>
+        <div class="highlight-box-danger">
+            <h4>Failure Mechanism A: Libuv Thread Pool Saturation (Performance Bottleneck)</h4>
+            <p>
+                When processing 100 concurrent bcrypt hash operations, the Node process uses libuv threads to offload the cryptography computations. Because each hash is CPU-intensive, the thread pool is fully saturated for 4–7 seconds. Intermediate network proxies (like Nginx) or client connections may interpret this silence as an unhandled socket drop, closing the socket and returning a 500/502.
+            </p>
+            <h4>Failure Mechanism B: Prisma Foreign Key Constraint (Data Layer Mismatch)</h4>
+            <p>
+                If any valid row contains a user that has already been created in a previous run, `tx.user.createMany` skips the insert. However, the transaction block still attempts to insert a record in the `student_profiles` table referencing the generated user ID. Because the parent user creation was skipped, this results in a foreign key constraint violation (`student_profiles_user_id_fkey`) which aborts the entire transaction block, raising a Prisma exception caught as an HTTP 500 error:
+            </p>
+            <pre>PrismaClientKnownRequestError: Foreign key constraint failed on the field: `student_profiles_user_id_fkey` (P2003)</pre>
+        </div>
+
+        <h2 class="section-title">Corrective Fixes</h2>
+        <ol>
+            <li>
+                <strong>Bcrypt Thread Pool Optimization:</strong><br>
+                Increase the default libuv thread pool size by configuring the environment variable before bootstrapping the node process:
+                <pre><code>process.env.UV_THREADPOOL_SIZE = 128; // Add this to the very top of src/server.ts</code></pre>
+            </li>
+            <li>
+                <strong>Prisma Duplicate User & Profile Safety:</strong><br>
+                Filter the student profile inserts to ensure they are only inserted for users that were not skipped, or resolve user creations individually inside the transaction loop:
+                <pre><code>// Recommended update in UserProcessor.ts to prevent foreign key violations:
+for (const row of batch) {
+  const user = await tx.user.findUnique({ where: { email: row.email } });
+  if (!user) {
+    const created = await tx.user.create({ data: usersDataRow });
+    if (row.admission_number || row.mobile_number) {
+      await tx.studentProfile.create({ data: { user_id: created.id, ... } });
+    }
+  }
+}</code></pre>
+            </li>
+        </ol>
+    </div>
+</body>
+</html>

@@ -1,0 +1,68 @@
+{
+  "passed": 7,
+  "failed": 0,
+  "results": [
+    {
+      "name": "Manual create user",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "hasProfile": false,
+        "notifs": 1
+      }
+    },
+    {
+      "name": "Bulk student: users+role only, no StudentProfile",
+      "ok": true,
+      "detail": {
+        "commit": 200,
+        "hasProfile": false,
+        "grade": null,
+        "section": null,
+        "role": true
+      }
+    },
+    {
+      "name": "Bulk ignores Grade/Section columns",
+      "ok": true,
+      "detail": {
+        "analyzeValid": 1,
+        "commit": 200,
+        "grade_id": null
+      }
+    },
+    {
+      "name": "Duplicate email validation",
+      "ok": true,
+      "detail": {
+        "valid": 0,
+        "errors": [
+          "Email already exists."
+        ]
+      }
+    },
+    {
+      "name": "Manual edit/delete",
+      "ok": true,
+      "detail": {
+        "upd": 200,
+        "del": 200
+      }
+    },
+    {
+      "name": "Bulk export",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "type": "object"
+      }
+    },
+    {
+      "name": "RBAC teacher denied import",
+      "ok": true,
+      "detail": {
+        "status": 403
+      }
+    }
+  ]
+}

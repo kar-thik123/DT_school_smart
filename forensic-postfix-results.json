@@ -1,0 +1,121 @@
+{
+  "passed": 13,
+  "failed": 0,
+  "results": [
+    {
+      "name": "FIX stale role_id → no HTTP 500",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "message": "Bulk import completed successfully for 1 rows.",
+        "ms": 7663
+      }
+    },
+    {
+      "name": "FIX bad grade_id → HTTP 400 (not 500)",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "message": "Grade reference is no longer valid for this organization. Please run Analyze again.",
+        "ms": 3656
+      }
+    },
+    {
+      "name": "FIX ghost role_name → HTTP 400",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "message": "Role 'DOES_NOT_EXIST' no longer exists for the active organization. Please run Analyze again.",
+        "ms": 2564
+      }
+    },
+    {
+      "name": "FIX null role_id re-resolve → 200",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "message": "Bulk import completed successfully for 1 rows.",
+        "ms": 4558
+      }
+    },
+    {
+      "name": "REGRESSION natural teacher import",
+      "ok": true,
+      "detail": {
+        "analyze": 200,
+        "commit": 200,
+        "body": "Bulk import completed successfully for 1 rows."
+      }
+    },
+    {
+      "name": "REGRESSION student import + profile",
+      "ok": true,
+      "detail": {
+        "commit": 200,
+        "hasProfile": true
+      }
+    },
+    {
+      "name": "REGRESSION BOM CSV",
+      "ok": true,
+      "detail": {
+        "analyze": 200,
+        "valid": 1,
+        "commit": 200
+      }
+    },
+    {
+      "name": "REGRESSION mixed SUPER_ADMIN+TEACHER",
+      "ok": true,
+      "detail": {
+        "commit": 200,
+        "result": {
+          "success_count": 2,
+          "failure_count": 0,
+          "imported_count": 2,
+          "skipped_count": 0,
+          "skipped_reasons": []
+        }
+      }
+    },
+    {
+      "name": "REGRESSION duplicate email blocked",
+      "ok": true,
+      "detail": {
+        "valid": 0,
+        "commit": 400,
+        "preview": [
+          "Email already exists."
+        ]
+      }
+    },
+    {
+      "name": "REGRESSION manual create/edit/delete",
+      "ok": true,
+      "detail": {
+        "id": "f1972228-dd98-4a22-a321-ab17e3f0e2c6"
+      }
+    },
+    {
+      "name": "REGRESSION direct processor commit",
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "name": "REGRESSION RBAC teacher denied IMPORT",
+      "ok": true,
+      "detail": {
+        "status": 403,
+        "message": "Forbidden: You do not have permission to import users."
+      }
+    },
+    {
+      "name": "REGRESSION tenant isolation",
+      "ok": true,
+      "detail": {
+        "org": "0f928784-d039-436b-bc42-0e17fb33fd8c"
+      }
+    }
+  ],
+  "generatedAt": "2026-07-14T17:09:48.966Z"
+}

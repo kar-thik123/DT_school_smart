@@ -1,0 +1,369 @@
+{
+  "startedAt": "2026-07-14T17:38:56.076Z",
+  "api": "http://localhost:5000",
+  "cases": {
+    "manualTeacher": {
+      "http": {
+        "status": 201,
+        "ms": 13572,
+        "body": {
+          "message": "User created",
+          "user": {
+            "id": "c876cde4-22b3-465b-bb0b-ba085e1b5492",
+            "name": "Cmp Manual Teacher",
+            "email": "cmp_manual_t_1784050738288@example.com",
+            "role_id": "de49238b-82ad-4e74-82e3-7278b0883556"
+          }
+        }
+      },
+      "db": {
+        "id": "c876cde4-22b3-465b-bb0b-ba085e1b5492",
+        "role_id": "de49238b-82ad-4e74-82e3-7278b0883556",
+        "role_name": "Teacher",
+        "grade_id": null,
+        "section_id": null,
+        "roll_number": "CMT1784050738288",
+        "hasStudentProfile": false,
+        "studentProfile": null,
+        "hasUserProfile": false,
+        "userProfilePhone": null,
+        "notificationCount": 1,
+        "enrollmentCount": 0,
+        "teacherAssignmentCount": 0,
+        "audits": [
+          {
+            "action": "CREATE",
+            "entity_type": "USER",
+            "entity_id": "c876cde4-22b3-465b-bb0b-ba085e1b5492",
+            "ts": "2026-07-14T17:39:11.850Z"
+          },
+          {
+            "action": "IMPORT",
+            "entity_type": "USERS",
+            "entity_id": "BULK_IMPORT",
+            "ts": "2026-07-14T17:22:19.554Z"
+          },
+          {
+            "action": "IMPORT",
+            "entity_type": "USERS",
+            "entity_id": "BULK_IMPORT",
+            "ts": "2026-07-14T17:22:05.474Z"
+          }
+        ]
+      }
+    },
+    "bulkTeacher": {
+      "analyze": {
+        "status": 200,
+        "ms": 4733,
+        "body": {
+          "jobId": "c35e2cf1-1458-48fb-b693-3d81de0c766d",
+          "valid": 1,
+          "preview": {
+            "status": "VALID",
+            "data": {
+              "name": "Cmp Bulk Teacher",
+              "email": "cmp_bulk_t_1784050738288@example.com",
+              "password": "Password123",
+              "role_id": "de49238b-82ad-4e74-82e3-7278b0883556",
+              "role_name": "TEACHER",
+              "grade_id": null,
+              "section_id": null,
+              "roll_number": "CBT1784050738288",
+              "admission_number": null,
+              "mobile_number": null,
+              "is_active": true
+            }
+          }
+        }
+      },
+      "commit": {
+        "status": 200,
+        "ms": 8099,
+        "body": {
+          "message": "Bulk import completed successfully for 1 rows.",
+          "result": {
+            "success_count": 1,
+            "failure_count": 0,
+            "imported_count": 1,
+            "skipped_count": 0,
+            "skipped_reasons": []
+          }
+        }
+      },
+      "db": {
+        "id": "0f8ecfd4-5a26-4658-bad8-18af6a618c49",
+        "role_id": "de49238b-82ad-4e74-82e3-7278b0883556",
+        "role_name": "Teacher",
+        "grade_id": null,
+        "section_id": null,
+        "roll_number": "CBT1784050738288",
+        "hasStudentProfile": false,
+        "studentProfile": null,
+        "hasUserProfile": false,
+        "userProfilePhone": null,
+        "notificationCount": 0,
+        "enrollmentCount": 0,
+        "teacherAssignmentCount": 0,
+        "audits": [
+          {
+            "action": "IMPORT",
+            "entity_type": "USERS",
+            "entity_id": "BULK_IMPORT",
+            "ts": "2026-07-14T17:39:27.723Z"
+          },
+          {
+            "action": "IMPORT",
+            "entity_type": "USERS",
+            "entity_id": "BULK_IMPORT",
+            "ts": "2026-07-14T17:22:19.554Z"
+          },
+          {
+            "action": "IMPORT",
+            "entity_type": "USERS",
+            "entity_id": "BULK_IMPORT",
+            "ts": "2026-07-14T17:22:05.474Z"
+          }
+        ]
+      }
+    },
+    "manualStudent": {
+      "http": {
+        "status": 201,
+        "ms": 7844,
+        "body": {
+          "message": "User created",
+          "user": {
+            "id": "5b0bbb13-9414-443b-80c6-a95889531a5c",
+            "name": "Cmp Manual Student",
+            "email": "cmp_manual_s_1784050738288@example.com",
+            "role_id": "ff1fb5aa-c899-412d-8826-ef39864d8d4f"
+          }
+        }
+      },
+      "db": {
+        "id": "5b0bbb13-9414-443b-80c6-a95889531a5c",
+        "role_id": "ff1fb5aa-c899-412d-8826-ef39864d8d4f",
+        "role_name": "STUDENT",
+        "grade_id": null,
+        "section_id": null,
+        "roll_number": "CMS1784050738288",
+        "hasStudentProfile": true,
+        "studentProfile": {
+          "admission_number": "ADMM1784050738288",
+          "mobile_number": "9100038288"
+        },
+        "hasUserProfile": false,
+        "userProfilePhone": null,
+        "notificationCount": 1,
+        "enrollmentCount": 0,
+        "teacherAssignmentCount": 0,
+        "audits": [
+          {
+            "action": "CREATE",
+            "entity_type": "USER",
+            "entity_id": "5b0bbb13-9414-443b-80c6-a95889531a5c",
+            "ts": "2026-07-14T17:39:37.325Z"
+          },
+          {
+            "action": "IMPORT",
+            "entity_type": "USERS",
+            "entity_id": "BULK_IMPORT",
+            "ts": "2026-07-14T17:39:27.723Z"
+          },
+          {
+            "action": "IMPORT",
+            "entity_type": "USERS",
+            "entity_id": "BULK_IMPORT",
+            "ts": "2026-07-14T17:22:19.554Z"
+          }
+        ]
+      }
+    },
+    "bulkStudent": {
+      "analyze": {
+        "status": 0,
+        "ms": 1174
+      },
+      "commit": {
+        "status": 0,
+        "ms": 0,
+        "body": {
+          "error": "no jobId"
+        }
+      },
+      "db": null
+    },
+    "staleRoleIdBomb": {
+      "status": 0,
+      "body": {
+        "networkError": "fetch failed"
+      },
+      "ms": 6
+    },
+    "badGradeIdBomb": {
+      "status": 0,
+      "body": {
+        "networkError": "fetch failed"
+      },
+      "ms": 5
+    }
+  },
+  "divergences": [
+    {
+      "id": 1,
+      "step": "Auth middleware",
+      "manual": "authMiddleware + requirePermission(IDENTITY,IS_MANAGEMENT)",
+      "bulk": "authMiddleware + verifyBulkImportPermission(USERS:IMPORT)",
+      "same": false,
+      "intentional": true,
+      "violatesFlow": false,
+      "http500Link": "No — permission gate difference only"
+    },
+    {
+      "id": 2,
+      "step": "Request validation schema",
+      "manual": "CreateUserSchema (role_id UUID required)",
+      "bulk": "BulkImportSchema / validateBatch (role name string)",
+      "same": false,
+      "intentional": true,
+      "violatesFlow": false,
+      "http500Link": "No — input shape difference from create vs CSV"
+    },
+    {
+      "id": 3,
+      "step": "Role resolution",
+      "manual": "role.findFirst by role_id",
+      "bulk": "role.findMany then map by role_name; re-resolve on commit",
+      "same": false,
+      "intentional": true,
+      "violatesFlow": false,
+      "http500Link": "Partial — stale/missing role_name path can 500 if re-resolve not applied"
+    },
+    {
+      "id": 4,
+      "step": "License check",
+      "manual": "checkSeatAvailability(+1)",
+      "bulk": "validateBatch seats vs active+valid count",
+      "same": true,
+      "intentional": true,
+      "violatesFlow": false,
+      "http500Link": "No"
+    },
+    {
+      "id": 5,
+      "step": "Password hashing",
+      "manual": "bcrypt.hash cost 10",
+      "bulk": "bcrypt.hash cost 10 (batched)",
+      "same": true,
+      "intentional": true,
+      "violatesFlow": false,
+      "http500Link": "No"
+    },
+    {
+      "id": 6,
+      "step": "DB transaction",
+      "manual": "NO explicit $transaction",
+      "bulk": "YES prisma.$transaction wraps createMany + profiles",
+      "same": false,
+      "intentional": false,
+      "violatesFlow": true,
+      "http500Link": "Yes — timeout P2028 observed historically; extra work inside txn"
+    },
+    {
+      "id": 7,
+      "step": "User insert",
+      "manual": "user.create",
+      "bulk": "user.createMany(skipDuplicates)",
+      "same": false,
+      "intentional": true,
+      "violatesFlow": false,
+      "http500Link": "Expected difference (1 vs many)"
+    },
+    {
+      "id": 8,
+      "step": "StudentProfile",
+      "manual": "Teacher:false Student:true",
+      "bulk": "false",
+      "same": true,
+      "intentional": false,
+      "violatesFlow": false,
+      "http500Link": "Only if profile FK path fails (P2003)"
+    },
+    {
+      "id": 9,
+      "step": "UserProfile (common)",
+      "manual": "Manual teacher hasUserProfile=false",
+      "bulk": "Bulk teacher hasUserProfile=false",
+      "same": true,
+      "intentional": false,
+      "violatesFlow": true,
+      "http500Link": "No — neither creates UserProfile today"
+    },
+    {
+      "id": 10,
+      "step": "Notification",
+      "manual": "Manual teacher notifs=1",
+      "bulk": "Bulk teacher notifs=0",
+      "same": false,
+      "intentional": false,
+      "violatesFlow": true,
+      "http500Link": "No — missing notification does not throw 500"
+    },
+    {
+      "id": 11,
+      "step": "Audit",
+      "manual": "Manual actions=[\"CREATE\",\"IMPORT\",\"IMPORT\"]",
+      "bulk": "Bulk actions=[\"IMPORT\",\"IMPORT\",\"IMPORT\"]",
+      "same": false,
+      "intentional": true,
+      "violatesFlow": false,
+      "http500Link": "No — audit is try/caught or post-success"
+    },
+    {
+      "id": 12,
+      "step": "Grade/Section on user row",
+      "manual": "Manual grade=null section=null",
+      "bulk": "Bulk grade=null section=null",
+      "same": true,
+      "intentional": false,
+      "violatesFlow": true,
+      "http500Link": "Yes — invalid grade_id in cache → P2003 users_grade_id_fkey → HTTP 500"
+    }
+  ],
+  "firstBusinessLogicDivergence": {
+    "id": 6,
+    "step": "DB transaction",
+    "manual": "NO explicit $transaction",
+    "bulk": "YES prisma.$transaction wraps createMany + profiles",
+    "same": false,
+    "intentional": false,
+    "violatesFlow": true,
+    "http500Link": "Yes — timeout P2028 observed historically; extra work inside txn"
+  },
+  "http500Evidence": null,
+  "httpStatuses": {
+    "manualTeacher": 201,
+    "bulkTeacherCommit": 200,
+    "manualStudent": 201,
+    "bulkStudentCommit": 0,
+    "staleRoleBomb": 0,
+    "badGradeBomb": 0
+  },
+  "conclusion": {
+    "manualSucceeded": true,
+    "bulkHappyPathStatus": 200,
+    "bulkBehavesExactlyLikeManual": false,
+    "firstDivergence": {
+      "id": 6,
+      "step": "DB transaction",
+      "manual": "NO explicit $transaction",
+      "bulk": "YES prisma.$transaction wraps createMany + profiles",
+      "same": false,
+      "intentional": false,
+      "violatesFlow": true,
+      "http500Link": "Yes — timeout P2028 observed historically; extra work inside txn"
+    },
+    "http500": null
+  }
+}

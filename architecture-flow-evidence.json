@@ -1,0 +1,217 @@
+{
+  "manual": {
+    "request": {
+      "status": 201,
+      "body": {
+        "message": "User created",
+        "user": {
+          "id": "3029a825-9159-4394-81a5-5ccdc7832926",
+          "name": "Arch Manual",
+          "email": "arch_manual_1784049526870@example.com",
+          "role_id": "de49238b-82ad-4e74-82e3-7278b0883556"
+        }
+      }
+    },
+    "db": {
+      "user": {
+        "id": "3029a825-9159-4394-81a5-5ccdc7832926",
+        "role_id": "de49238b-82ad-4e74-82e3-7278b0883556",
+        "grade_id": null,
+        "section_id": null,
+        "roll_number": "RM1784049526870",
+        "hasStudentProfile": false,
+        "studentProfile": null,
+        "hasUserProfile": false,
+        "enrollmentCount": 0,
+        "teacherAssignmentCount": 0,
+        "notificationRecipientCount": 1
+      },
+      "recentAudits": [
+        {
+          "action": "CREATE",
+          "entity_type": "USER",
+          "entity_id": "3029a825-9159-4394-81a5-5ccdc7832926",
+          "ts": "2026-07-14T17:19:03.609Z"
+        },
+        {
+          "action": "IMPORT",
+          "entity_type": "USERS",
+          "entity_id": "BULK_IMPORT",
+          "ts": "2026-07-14T17:09:47.551Z"
+        },
+        {
+          "action": "IMPORT",
+          "entity_type": "USERS",
+          "entity_id": "BULK_IMPORT",
+          "ts": "2026-07-14T17:09:20.201Z"
+        },
+        {
+          "action": "IMPORT",
+          "entity_type": "USERS",
+          "entity_id": "BULK_IMPORT",
+          "ts": "2026-07-14T17:09:10.981Z"
+        },
+        {
+          "action": "IMPORT",
+          "entity_type": "USERS",
+          "entity_id": "BULK_IMPORT",
+          "ts": "2026-07-14T17:08:57.309Z"
+        }
+      ]
+    }
+  },
+  "bulkTeacher": {
+    "analyze": {
+      "status": 200,
+      "preview": {
+        "status": "VALID",
+        "data": {
+          "name": "Arch Bulk Teacher",
+          "email": "arch_bulk_t_1784049526870@example.com",
+          "password": "Password123",
+          "role_id": "de49238b-82ad-4e74-82e3-7278b0883556",
+          "role_name": "TEACHER",
+          "grade_id": null,
+          "section_id": null,
+          "roll_number": "RT1784049526870",
+          "admission_number": null,
+          "mobile_number": "9700026870",
+          "is_active": true
+        }
+      }
+    },
+    "commit": {
+      "status": 500,
+      "body": {
+        "success": false,
+        "message": "\nInvalid `tx.user.findMany()` invocation in\nD:\\DT_school_smart\\backend\\src\\services\\bulk-import\\processors\\user.processor.ts:302:44\n\n  299 let dbCreatedUsers;\n  300 try {\n  301   console.log(\"STEP 12 Resolve inserted users\");\n→ 302   dbCreatedUsers = await tx.user.findMany(\nTransaction API error: Transaction already closed: A query cannot be executed on an expired transaction. The timeout for this transaction was 5000 ms, however 5571 ms passed since the start of the transaction. Consider increasing the interactive transaction timeout or doing less work in the transaction.",
+        "code": "P2028",
+        "details": {
+          "file": "D:\\DT_school_smart\\backend\\src\\services\\bulk-import\\processors\\user.processor.ts",
+          "line": "113",
+          "function": "async UserProcessor.commit",
+          "type": "PrismaClientKnownRequestError"
+        }
+      }
+    },
+    "db": {
+      "user": null,
+      "recentAudits": []
+    }
+  },
+  "bulkStudent": {
+    "analyze": {
+      "status": 200,
+      "preview": {
+        "status": "VALID",
+        "data": {
+          "name": "Arch Bulk Student",
+          "email": "arch_bulk_s_1784049526870@example.com",
+          "password": "Password123",
+          "role_id": "ff1fb5aa-c899-412d-8826-ef39864d8d4f",
+          "role_name": "STUDENT",
+          "grade_id": null,
+          "section_id": null,
+          "roll_number": "RS1784049526870",
+          "admission_number": "ADMS1784049526870",
+          "mobile_number": "9800026870",
+          "is_active": true
+        }
+      }
+    },
+    "commit": {
+      "status": 200,
+      "body": {
+        "message": "Bulk import completed successfully for 1 rows.",
+        "result": {
+          "success_count": 1,
+          "failure_count": 0,
+          "imported_count": 1,
+          "skipped_count": 0,
+          "skipped_reasons": []
+        }
+      }
+    },
+    "db": {
+      "user": {
+        "id": "e4b52ae1-90b5-477e-9e50-0f00bf08d853",
+        "role_id": "ff1fb5aa-c899-412d-8826-ef39864d8d4f",
+        "grade_id": null,
+        "section_id": null,
+        "roll_number": "RS1784049526870",
+        "hasStudentProfile": true,
+        "studentProfile": {
+          "id": "1cf0e4d3-03cc-44df-8eca-835233a64fd6",
+          "user_id": "e4b52ae1-90b5-477e-9e50-0f00bf08d853",
+          "organization_id": "0f928784-d039-436b-bc42-0e17fb33fd8c",
+          "admission_number": "ADMS1784049526870",
+          "mobile_number": "9800026870",
+          "created_at": "2026-07-14T17:19:35.086Z",
+          "updated_at": "2026-07-14T17:19:35.086Z",
+          "academic_birth": null,
+          "date_of_birth": null
+        },
+        "hasUserProfile": false,
+        "enrollmentCount": 0,
+        "teacherAssignmentCount": 0,
+        "notificationRecipientCount": 0
+      },
+      "recentAudits": [
+        {
+          "action": "IMPORT",
+          "entity_type": "USERS",
+          "entity_id": "BULK_IMPORT",
+          "ts": "2026-07-14T17:19:36.437Z"
+        },
+        {
+          "action": "IMPORT",
+          "entity_type": "USERS",
+          "entity_id": "BULK_IMPORT",
+          "ts": "2026-07-14T17:09:47.551Z"
+        },
+        {
+          "action": "IMPORT",
+          "entity_type": "USERS",
+          "entity_id": "BULK_IMPORT",
+          "ts": "2026-07-14T17:09:20.201Z"
+        },
+        {
+          "action": "IMPORT",
+          "entity_type": "USERS",
+          "entity_id": "BULK_IMPORT",
+          "ts": "2026-07-14T17:09:10.981Z"
+        },
+        {
+          "action": "IMPORT",
+          "entity_type": "USERS",
+          "entity_id": "BULK_IMPORT",
+          "ts": "2026-07-14T17:08:57.309Z"
+        }
+      ]
+    }
+  },
+  "defects": [
+    "ARCHITECTURAL DEFECT: Bulk Import wrote student_profiles — belongs to Student Enrollment / Identity profile, not User Management Create+Role",
+    "Flow divergence: Manual sends notification; Bulk does not"
+  ],
+  "conclusion": {
+    "expectedUserManagement": [
+      "users (create + role_id)",
+      "audit_logs",
+      "notifications (if required by Manual)"
+    ],
+    "mustNotBelong": [
+      "student_profiles",
+      "teacher_assignments",
+      "student_enrollments",
+      "grades lookup",
+      "sections lookup",
+      "subjects",
+      "attendance",
+      "exam",
+      "curriculum"
+    ],
+    "bulkViolatesArchitecture": true,
+    "http500Relation": "P2003 HTTP 500s were triggered on FK paths (role_id/grade_id/student_profiles) that exist because Bulk (and Manual API) expand beyond Create User + Assign Role. Primary architecture defect enables the failure surface."
+  }
+}

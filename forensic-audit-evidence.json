@@ -1,0 +1,1353 @@
+{
+  "startedAt": "2026-07-14T16:54:47.076Z",
+  "timeline": [
+    {
+      "t": 1784048087080,
+      "iso": "2026-07-14T16:54:47.080Z",
+      "name": "PREFLIGHT: Verify org, user, roles, license, FK targets"
+    },
+    {
+      "t": 1784048094186,
+      "iso": "2026-07-14T16:54:54.186Z",
+      "name": "PREFLIGHT RESULT",
+      "data": {
+        "org": {
+          "id": "0f928784-d039-436b-bc42-0e17fb33fd8c",
+          "name": "KMHSS",
+          "login_limit": 1000,
+          "seats": 1000,
+          "licenseStatus": "ACTIVE"
+        },
+        "user": {
+          "id": "4adaff7f-b41d-4ef2-b185-75e8228d41e6",
+          "email": "user2@example.com",
+          "role": "SUPER_ADMIN",
+          "org": "0f928784-d039-436b-bc42-0e17fb33fd8c",
+          "is_active": true
+        },
+        "roles": [
+          {
+            "id": "1eb187f9-c8fe-4d8b-8f28-2ab6cdfb518e",
+            "name": "SUPER_ADMIN",
+            "organization_id": "0f928784-d039-436b-bc42-0e17fb33fd8c",
+            "is_system": true
+          },
+          {
+            "id": "de49238b-82ad-4e74-82e3-7278b0883556",
+            "name": "Teacher",
+            "organization_id": "0f928784-d039-436b-bc42-0e17fb33fd8c",
+            "is_system": false
+          }
+        ],
+        "activeCount": 412,
+        "academicYearId": "a853aa99-9882-4d46-9cce-0935460b46d9",
+        "hasUsersImportPermission": true,
+        "permissionsSample": [
+          "USERS:CREATE",
+          "USERS:EDIT",
+          "USERS:DELETE",
+          "USERS:IMPORT",
+          "USERS:EXPORT",
+          "USERS:VIEW"
+        ]
+      }
+    },
+    {
+      "t": 1784048094189,
+      "iso": "2026-07-14T16:54:54.189Z",
+      "name": "SCENARIO START: A_TEACHER_MINIMAL",
+      "data": {
+        "csvPreview": [
+          "Name,Email,Role,Roll Number,Admission Number,Mobile Number,Password",
+          "Forensic Teacher A,forensic_t_a_1784048094187@example.com,TEACHER,,,,Password123",
+          "Forensic Teacher B,forensic_t_b_1784048094187@example.com,TEACHER,,,,Password123",
+          ""
+        ]
+      }
+    },
+    {
+      "t": 1784048094206,
+      "iso": "2026-07-14T16:54:54.206Z",
+      "name": "CSV RAW BYTES",
+      "data": {
+        "length": 230,
+        "hasBOM": false,
+        "hexHead": "4e616d652c456d61696c2c526f6c652c526f6c6c204e756d6265722c41646d69",
+        "headers": "Name,Email,Role,Roll Number,Admission Number,Mobile Number,Password",
+        "lineEnding": "LF"
+      }
+    },
+    {
+      "t": 1784048094276,
+      "iso": "2026-07-14T16:54:54.276Z",
+      "name": "ANALYZE REQUEST OUTBOUND"
+    },
+    {
+      "t": 1784048100897,
+      "iso": "2026-07-14T16:55:00.897Z",
+      "name": "CACHE INSPECTED",
+      "data": {
+        "jobId": "4e7c68c7-439b-48b1-a347-5ae158481306",
+        "path": "D:\\DT_school_smart\\backend\\uploads\\imports\\4e7c68c7-439b-48b1-a347-5ae158481306.json",
+        "rowCount": 2,
+        "valid": 2,
+        "sampleValid": [
+          {
+            "status": "VALID",
+            "data": {
+              "name": "Forensic Teacher A",
+              "email": "forensic_t_a_1784048094187@example.com",
+              "password": "Password123",
+              "role_id": "de49238b-82ad-4e74-82e3-7278b0883556",
+              "role_name": "TEACHER",
+              "grade_id": null,
+              "section_id": null,
+              "roll_number": null,
+              "admission_number": null,
+              "mobile_number": null,
+              "is_active": true
+            }
+          },
+          {
+            "status": "VALID",
+            "data": {
+              "name": "Forensic Teacher B",
+              "email": "forensic_t_b_1784048094187@example.com",
+              "password": "Password123",
+              "role_id": "de49238b-82ad-4e74-82e3-7278b0883556",
+              "role_name": "TEACHER",
+              "grade_id": null,
+              "section_id": null,
+              "roll_number": null,
+              "admission_number": null,
+              "mobile_number": null,
+              "is_active": true
+            }
+          }
+        ],
+        "sampleInvalid": [],
+        "roleIds": [
+          "de49238b-82ad-4e74-82e3-7278b0883556"
+        ],
+        "roleNames": [
+          "TEACHER"
+        ]
+      }
+    },
+    {
+      "t": 1784048101528,
+      "iso": "2026-07-14T16:55:01.528Z",
+      "name": "CACHE vs LIVE ROLE IDS",
+      "data": {
+        "liveRoles": [
+          {
+            "id": "de49238b-82ad-4e74-82e3-7278b0883556",
+            "name": "Teacher",
+            "organization_id": "0f928784-d039-436b-bc42-0e17fb33fd8c"
+          }
+        ],
+        "missingRoleIds": []
+      }
+    },
+    {
+      "t": 1784048103426,
+      "iso": "2026-07-14T16:55:03.426Z",
+      "name": "PRE-COMMIT FK SUMMARY",
+      "data": {
+        "validRows": 2,
+        "fkFailures": 0
+      }
+    },
+    {
+      "t": 1784048103427,
+      "iso": "2026-07-14T16:55:03.427Z",
+      "name": "COMMIT REQUEST OUTBOUND",
+      "data": {
+        "jobId": "4e7c68c7-439b-48b1-a347-5ae158481306"
+      }
+    },
+    {
+      "t": 1784048111753,
+      "iso": "2026-07-14T16:55:11.753Z",
+      "name": "COMMIT SUCCESS",
+      "data": {
+        "message": "Bulk import completed successfully for 2 rows.",
+        "result": {
+          "success_count": 2,
+          "failure_count": 0,
+          "imported_count": 2,
+          "skipped_count": 0,
+          "skipped_reasons": []
+        }
+      }
+    },
+    {
+      "t": 1784048112460,
+      "iso": "2026-07-14T16:55:12.460Z",
+      "name": "POST DB VERIFY",
+      "data": {
+        "expected": 2,
+        "found": 2,
+        "created": [
+          {
+            "id": "df39e8a4-6d6a-4233-83fc-ac4a25f6dfba",
+            "email": "forensic_t_a_1784048094187@example.com",
+            "role_id": "de49238b-82ad-4e74-82e3-7278b0883556"
+          },
+          {
+            "id": "4fe5006f-e9f8-4154-896b-be2269711289",
+            "email": "forensic_t_b_1784048094187@example.com",
+            "role_id": "de49238b-82ad-4e74-82e3-7278b0883556"
+          }
+        ]
+      }
+    },
+    {
+      "t": 1784048112460,
+      "iso": "2026-07-14T16:55:12.460Z",
+      "name": "SCENARIO START: B_STUDENT_PROFILE",
+      "data": {
+        "csvPreview": [
+          "Name,Email,Role,Roll Number,Admission Number,Mobile Number,Password",
+          "Forensic Student A,forensic_s_a_1784048094187@example.com,STUDENT,R1784048094187A,ADM1784048094187A,9000094187,Password123",
+          ""
+        ]
+      }
+    },
+    {
+      "t": 1784048112462,
+      "iso": "2026-07-14T16:55:12.462Z",
+      "name": "CSV RAW BYTES",
+      "data": {
+        "length": 191,
+        "hasBOM": false,
+        "hexHead": "4e616d652c456d61696c2c526f6c652c526f6c6c204e756d6265722c41646d69",
+        "headers": "Name,Email,Role,Roll Number,Admission Number,Mobile Number,Password",
+        "lineEnding": "LF"
+      }
+    },
+    {
+      "t": 1784048112462,
+      "iso": "2026-07-14T16:55:12.462Z",
+      "name": "ANALYZE REQUEST OUTBOUND"
+    },
+    {
+      "t": 1784048115467,
+      "iso": "2026-07-14T16:55:15.467Z",
+      "name": "CACHE INSPECTED",
+      "data": {
+        "jobId": "4fa47adb-af38-4508-9058-d47dc234bb37",
+        "path": "D:\\DT_school_smart\\backend\\uploads\\imports\\4fa47adb-af38-4508-9058-d47dc234bb37.json",
+        "rowCount": 1,
+        "valid": 0,
+        "sampleValid": [],
+        "sampleInvalid": [
+          {
+            "status": "ERROR",
+            "errors": [
+              "Role 'STUDENT' not found."
+            ],
+            "data": {
+              "Name": "Forensic Student A",
+              "Email": "forensic_s_a_1784048094187@example.com",
+              "Role": "STUDENT",
+              "Roll Number": "R1784048094187A",
+              "Admission Number": "ADM1784048094187A",
+              "Mobile Number": "9000094187",
+              "Password": "Password123"
+            }
+          }
+        ],
+        "roleIds": [],
+        "roleNames": [
+          "STUDENT"
+        ]
+      }
+    },
+    {
+      "t": 1784048115812,
+      "iso": "2026-07-14T16:55:15.812Z",
+      "name": "CACHE vs LIVE ROLE IDS",
+      "data": {
+        "liveRoles": [],
+        "missingRoleIds": []
+      }
+    },
+    {
+      "t": 1784048115813,
+      "iso": "2026-07-14T16:55:15.813Z",
+      "name": "PRE-COMMIT FK SUMMARY",
+      "data": {
+        "validRows": 0,
+        "fkFailures": 0
+      }
+    },
+    {
+      "t": 1784048115813,
+      "iso": "2026-07-14T16:55:15.813Z",
+      "name": "COMMIT REQUEST OUTBOUND",
+      "data": {
+        "jobId": "4fa47adb-af38-4508-9058-d47dc234bb37"
+      }
+    },
+    {
+      "t": 1784048120041,
+      "iso": "2026-07-14T16:55:20.041Z",
+      "name": "COMMIT CLIENT ERROR",
+      "data": {
+        "message": "No valid rows provided for commit."
+      }
+    },
+    {
+      "t": 1784048120042,
+      "iso": "2026-07-14T16:55:20.042Z",
+      "name": "POST DB VERIFY",
+      "data": {
+        "expected": 0,
+        "found": 0,
+        "created": []
+      }
+    },
+    {
+      "t": 1784048120042,
+      "iso": "2026-07-14T16:55:20.042Z",
+      "name": "SCENARIO START: C_MIXED_ROLES",
+      "data": {
+        "csvPreview": [
+          "Name,Email,Role,Roll Number,Admission Number,Mobile Number,Password",
+          "Forensic Mix T,forensic_m_t_1784048094187@example.com,TEACHER,,,,Password123",
+          "Forensic Mix S,forensic_m_s_1784048094187@example.com,STUDENT,R1784048094187M,ADM1784048094187M,9100094187,Password123",
+          "Forensic Mix A,forensic_m_a_1784048094187@example.com,SUPER_ADMIN,,,,Password123",
+          ""
+        ]
+      }
+    },
+    {
+      "t": 1784048120043,
+      "iso": "2026-07-14T16:55:20.043Z",
+      "name": "CSV RAW BYTES",
+      "data": {
+        "length": 345,
+        "hasBOM": false,
+        "hexHead": "4e616d652c456d61696c2c526f6c652c526f6c6c204e756d6265722c41646d69",
+        "headers": "Name,Email,Role,Roll Number,Admission Number,Mobile Number,Password",
+        "lineEnding": "LF"
+      }
+    },
+    {
+      "t": 1784048120044,
+      "iso": "2026-07-14T16:55:20.044Z",
+      "name": "ANALYZE REQUEST OUTBOUND"
+    },
+    {
+      "t": 1784048123533,
+      "iso": "2026-07-14T16:55:23.533Z",
+      "name": "CACHE INSPECTED",
+      "data": {
+        "jobId": "11395dea-9095-44af-9958-f8b993b332f1",
+        "path": "D:\\DT_school_smart\\backend\\uploads\\imports\\11395dea-9095-44af-9958-f8b993b332f1.json",
+        "rowCount": 3,
+        "valid": 2,
+        "sampleValid": [
+          {
+            "status": "VALID",
+            "data": {
+              "name": "Forensic Mix T",
+              "email": "forensic_m_t_1784048094187@example.com",
+              "password": "Password123",
+              "role_id": "de49238b-82ad-4e74-82e3-7278b0883556",
+              "role_name": "TEACHER",
+              "grade_id": null,
+              "section_id": null,
+              "roll_number": null,
+              "admission_number": null,
+              "mobile_number": null,
+              "is_active": true
+            }
+          },
+          {
+            "status": "VALID",
+            "data": {
+              "name": "Forensic Mix A",
+              "email": "forensic_m_a_1784048094187@example.com",
+              "password": "Password123",
+              "role_id": "1eb187f9-c8fe-4d8b-8f28-2ab6cdfb518e",
+              "role_name": "SUPER_ADMIN",
+              "grade_id": null,
+              "section_id": null,
+              "roll_number": null,
+              "admission_number": null,
+              "mobile_number": null,
+              "is_active": true
+            }
+          }
+        ],
+        "sampleInvalid": [
+          {
+            "status": "ERROR",
+            "errors": [
+              "Role 'STUDENT' not found."
+            ],
+            "data": {
+              "Name": "Forensic Mix S",
+              "Email": "forensic_m_s_1784048094187@example.com",
+              "Role": "STUDENT",
+              "Roll Number": "R1784048094187M",
+              "Admission Number": "ADM1784048094187M",
+              "Mobile Number": "9100094187",
+              "Password": "Password123"
+            }
+          }
+        ],
+        "roleIds": [
+          "de49238b-82ad-4e74-82e3-7278b0883556",
+          "1eb187f9-c8fe-4d8b-8f28-2ab6cdfb518e"
+        ],
+        "roleNames": [
+          "TEACHER",
+          "STUDENT",
+          "SUPER_ADMIN"
+        ]
+      }
+    },
+    {
+      "t": 1784048123888,
+      "iso": "2026-07-14T16:55:23.888Z",
+      "name": "CACHE vs LIVE ROLE IDS",
+      "data": {
+        "liveRoles": [
+          {
+            "id": "1eb187f9-c8fe-4d8b-8f28-2ab6cdfb518e",
+            "name": "SUPER_ADMIN",
+            "organization_id": "0f928784-d039-436b-bc42-0e17fb33fd8c"
+          },
+          {
+            "id": "de49238b-82ad-4e74-82e3-7278b0883556",
+            "name": "Teacher",
+            "organization_id": "0f928784-d039-436b-bc42-0e17fb33fd8c"
+          }
+        ],
+        "missingRoleIds": []
+      }
+    },
+    {
+      "t": 1784048124622,
+      "iso": "2026-07-14T16:55:24.622Z",
+      "name": "PRE-COMMIT FK SUMMARY",
+      "data": {
+        "validRows": 2,
+        "fkFailures": 0
+      }
+    },
+    {
+      "t": 1784048124623,
+      "iso": "2026-07-14T16:55:24.623Z",
+      "name": "COMMIT REQUEST OUTBOUND",
+      "data": {
+        "jobId": "11395dea-9095-44af-9958-f8b993b332f1"
+      }
+    },
+    {
+      "t": 1784048134492,
+      "iso": "2026-07-14T16:55:34.492Z",
+      "name": "COMMIT SUCCESS",
+      "data": {
+        "message": "Bulk import completed successfully for 2 rows.",
+        "result": {
+          "success_count": 2,
+          "failure_count": 0,
+          "imported_count": 2,
+          "skipped_count": 0,
+          "skipped_reasons": []
+        }
+      }
+    },
+    {
+      "t": 1784048135392,
+      "iso": "2026-07-14T16:55:35.392Z",
+      "name": "POST DB VERIFY",
+      "data": {
+        "expected": 2,
+        "found": 2,
+        "created": [
+          {
+            "id": "62a650ca-37d6-43ee-bd54-6aa0b7fef993",
+            "email": "forensic_m_t_1784048094187@example.com",
+            "role_id": "de49238b-82ad-4e74-82e3-7278b0883556"
+          },
+          {
+            "id": "13fc544b-723f-4913-a949-3be3f279544f",
+            "email": "forensic_m_a_1784048094187@example.com",
+            "role_id": "1eb187f9-c8fe-4d8b-8f28-2ab6cdfb518e"
+          }
+        ]
+      }
+    },
+    {
+      "t": 1784048135393,
+      "iso": "2026-07-14T16:55:35.393Z",
+      "name": "SCENARIO START: D_FRONTEND_HEADERS",
+      "data": {
+        "csvPreview": [
+          "Name,Email Address,Mobile Number,Role,Roll Number,Password",
+          "Forensic FE User,forensic_fe_1784048094187@example.com,9200094187,TEACHER,,Password123",
+          ""
+        ]
+      }
+    },
+    {
+      "t": 1784048135397,
+      "iso": "2026-07-14T16:55:35.397Z",
+      "name": "CSV RAW BYTES",
+      "data": {
+        "length": 146,
+        "hasBOM": false,
+        "hexHead": "4e616d652c456d61696c20416464726573732c4d6f62696c65204e756d626572",
+        "headers": "Name,Email Address,Mobile Number,Role,Roll Number,Password",
+        "lineEnding": "LF"
+      }
+    },
+    {
+      "t": 1784048135398,
+      "iso": "2026-07-14T16:55:35.398Z",
+      "name": "ANALYZE REQUEST OUTBOUND"
+    },
+    {
+      "t": 1784048140055,
+      "iso": "2026-07-14T16:55:40.055Z",
+      "name": "CACHE INSPECTED",
+      "data": {
+        "jobId": "7f9e833b-5dd8-4e57-aca9-a2fd91ef45d6",
+        "path": "D:\\DT_school_smart\\backend\\uploads\\imports\\7f9e833b-5dd8-4e57-aca9-a2fd91ef45d6.json",
+        "rowCount": 1,
+        "valid": 1,
+        "sampleValid": [
+          {
+            "status": "VALID",
+            "data": {
+              "name": "Forensic FE User",
+              "email": "forensic_fe_1784048094187@example.com",
+              "password": "Password123",
+              "role_id": "de49238b-82ad-4e74-82e3-7278b0883556",
+              "role_name": "TEACHER",
+              "grade_id": null,
+              "section_id": null,
+              "roll_number": null,
+              "admission_number": null,
+              "mobile_number": "9200094187",
+              "is_active": true
+            }
+          }
+        ],
+        "sampleInvalid": [],
+        "roleIds": [
+          "de49238b-82ad-4e74-82e3-7278b0883556"
+        ],
+        "roleNames": [
+          "TEACHER"
+        ]
+      }
+    },
+    {
+      "t": 1784048140248,
+      "iso": "2026-07-14T16:55:40.248Z",
+      "name": "CACHE vs LIVE ROLE IDS",
+      "data": {
+        "liveRoles": [
+          {
+            "id": "de49238b-82ad-4e74-82e3-7278b0883556",
+            "name": "Teacher",
+            "organization_id": "0f928784-d039-436b-bc42-0e17fb33fd8c"
+          }
+        ],
+        "missingRoleIds": []
+      }
+    },
+    {
+      "t": 1784048140624,
+      "iso": "2026-07-14T16:55:40.624Z",
+      "name": "PRE-COMMIT FK SUMMARY",
+      "data": {
+        "validRows": 1,
+        "fkFailures": 0
+      }
+    },
+    {
+      "t": 1784048140624,
+      "iso": "2026-07-14T16:55:40.624Z",
+      "name": "COMMIT REQUEST OUTBOUND",
+      "data": {
+        "jobId": "7f9e833b-5dd8-4e57-aca9-a2fd91ef45d6"
+      }
+    },
+    {
+      "t": 1784048147148,
+      "iso": "2026-07-14T16:55:47.148Z",
+      "name": "COMMIT SUCCESS",
+      "data": {
+        "message": "Bulk import completed successfully for 1 rows.",
+        "result": {
+          "success_count": 1,
+          "failure_count": 0,
+          "imported_count": 1,
+          "skipped_count": 0,
+          "skipped_reasons": []
+        }
+      }
+    },
+    {
+      "t": 1784048148007,
+      "iso": "2026-07-14T16:55:48.007Z",
+      "name": "POST DB VERIFY",
+      "data": {
+        "expected": 1,
+        "found": 1,
+        "created": [
+          {
+            "id": "6783afea-24ab-4ea3-b70e-4e96145128b3",
+            "email": "forensic_fe_1784048094187@example.com",
+            "role_id": "de49238b-82ad-4e74-82e3-7278b0883556"
+          }
+        ]
+      }
+    },
+    {
+      "t": 1784048149055,
+      "iso": "2026-07-14T16:55:49.055Z",
+      "name": "SCENARIO START: E_DUPLICATE_EMAIL_REIMPORT",
+      "data": {
+        "csvPreview": [
+          "Name,Email,Role,Roll Number,Admission Number,Mobile Number,Password",
+          "Dup Teacher,forensic_t_a_1784048094187@example.com,TEACHER,,,,Password123",
+          ""
+        ]
+      }
+    },
+    {
+      "t": 1784048149058,
+      "iso": "2026-07-14T16:55:49.058Z",
+      "name": "CSV RAW BYTES",
+      "data": {
+        "length": 142,
+        "hasBOM": false,
+        "hexHead": "4e616d652c456d61696c2c526f6c652c526f6c6c204e756d6265722c41646d69",
+        "headers": "Name,Email,Role,Roll Number,Admission Number,Mobile Number,Password",
+        "lineEnding": "LF"
+      }
+    },
+    {
+      "t": 1784048149058,
+      "iso": "2026-07-14T16:55:49.058Z",
+      "name": "ANALYZE REQUEST OUTBOUND"
+    },
+    {
+      "t": 1784048152704,
+      "iso": "2026-07-14T16:55:52.704Z",
+      "name": "CACHE INSPECTED",
+      "data": {
+        "jobId": "3c0c7669-c378-416e-b370-350bbccabda2",
+        "path": "D:\\DT_school_smart\\backend\\uploads\\imports\\3c0c7669-c378-416e-b370-350bbccabda2.json",
+        "rowCount": 1,
+        "valid": 0,
+        "sampleValid": [],
+        "sampleInvalid": [
+          {
+            "status": "ERROR",
+            "errors": [
+              "Email already exists."
+            ],
+            "data": {
+              "Name": "Dup Teacher",
+              "Email": "forensic_t_a_1784048094187@example.com",
+              "Role": "TEACHER",
+              "Roll Number": "",
+              "Admission Number": "",
+              "Mobile Number": "",
+              "Password": "Password123"
+            }
+          }
+        ],
+        "roleIds": [],
+        "roleNames": [
+          "TEACHER"
+        ]
+      }
+    },
+    {
+      "t": 1784048153451,
+      "iso": "2026-07-14T16:55:53.451Z",
+      "name": "CACHE vs LIVE ROLE IDS",
+      "data": {
+        "liveRoles": [],
+        "missingRoleIds": []
+      }
+    },
+    {
+      "t": 1784048153451,
+      "iso": "2026-07-14T16:55:53.451Z",
+      "name": "PRE-COMMIT FK SUMMARY",
+      "data": {
+        "validRows": 0,
+        "fkFailures": 0
+      }
+    },
+    {
+      "t": 1784048153452,
+      "iso": "2026-07-14T16:55:53.452Z",
+      "name": "COMMIT REQUEST OUTBOUND",
+      "data": {
+        "jobId": "3c0c7669-c378-416e-b370-350bbccabda2"
+      }
+    },
+    {
+      "t": 1784048155785,
+      "iso": "2026-07-14T16:55:55.785Z",
+      "name": "COMMIT CLIENT ERROR",
+      "data": {
+        "message": "No valid rows provided for commit."
+      }
+    },
+    {
+      "t": 1784048155786,
+      "iso": "2026-07-14T16:55:55.786Z",
+      "name": "POST DB VERIFY",
+      "data": {
+        "expected": 0,
+        "found": 0,
+        "created": []
+      }
+    }
+  ],
+  "queries": [],
+  "exceptions": [
+    {
+      "phase": "COMMIT_4XX",
+      "status": 400,
+      "body": {
+        "message": "No valid rows provided for commit."
+      }
+    },
+    {
+      "phase": "COMMIT_4XX",
+      "status": 400,
+      "body": {
+        "message": "No valid rows provided for commit."
+      }
+    }
+  ],
+  "http": [
+    {
+      "method": "POST",
+      "urlPath": "/api/bulk-import/users/analyze",
+      "status": 200,
+      "ms": 6584,
+      "body": {
+        "jobId": "4e7c68c7-439b-48b1-a347-5ae158481306",
+        "totalRows": 2,
+        "validRowsCount": 2,
+        "invalidRowsCount": 0,
+        "preview": [
+          {
+            "status": "VALID",
+            "data": {
+              "name": "Forensic Teacher A",
+              "email": "forensic_t_a_1784048094187@example.com",
+              "password": "Password123",
+              "role_id": "de49238b-82ad-4e74-82e3-7278b0883556",
+              "role_name": "TEACHER",
+              "grade_id": null,
+              "section_id": null,
+              "roll_number": null,
+              "admission_number": null,
+              "mobile_number": null,
+              "is_active": true
+            }
+          },
+          {
+            "status": "VALID",
+            "data": {
+              "name": "Forensic Teacher B",
+              "email": "forensic_t_b_1784048094187@example.com",
+              "password": "Password123",
+              "role_id": "de49238b-82ad-4e74-82e3-7278b0883556",
+              "role_name": "TEACHER",
+              "grade_id": null,
+              "section_id": null,
+              "roll_number": null,
+              "admission_number": null,
+              "mobile_number": null,
+              "is_active": true
+            }
+          }
+        ],
+        "invalidPreview": []
+      },
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "connection": "keep-alive",
+        "content-length": "766",
+        "content-security-policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+        "content-type": "application/json; charset=utf-8",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "date": "Tue, 14 Jul 2026 16:55:00 GMT",
+        "etag": "W/\"2fe-xI+q6hrQQg9XqpFJg8DxhrXHLHw\"",
+        "keep-alive": "timeout=5",
+        "origin-agent-cluster": "?1",
+        "referrer-policy": "no-referrer",
+        "vary": "Origin, Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-dns-prefetch-control": "off",
+        "x-download-options": "noopen",
+        "x-frame-options": "SAMEORIGIN",
+        "x-permitted-cross-domain-policies": "none",
+        "x-xss-protection": "0"
+      }
+    },
+    {
+      "method": "POST",
+      "urlPath": "/api/bulk-import/users/commit",
+      "status": 200,
+      "ms": 8326,
+      "body": {
+        "message": "Bulk import completed successfully for 2 rows.",
+        "result": {
+          "success_count": 2,
+          "failure_count": 0,
+          "imported_count": 2,
+          "skipped_count": 0,
+          "skipped_reasons": []
+        }
+      },
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "connection": "keep-alive",
+        "content-length": "165",
+        "content-security-policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+        "content-type": "application/json; charset=utf-8",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "date": "Tue, 14 Jul 2026 16:55:11 GMT",
+        "etag": "W/\"a5-mDguJIsndrA6CqjXo0e00FrvOys\"",
+        "keep-alive": "timeout=5",
+        "origin-agent-cluster": "?1",
+        "referrer-policy": "no-referrer",
+        "vary": "Origin, Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-dns-prefetch-control": "off",
+        "x-download-options": "noopen",
+        "x-frame-options": "SAMEORIGIN",
+        "x-permitted-cross-domain-policies": "none",
+        "x-xss-protection": "0"
+      }
+    },
+    {
+      "method": "POST",
+      "urlPath": "/api/bulk-import/users/analyze",
+      "status": 200,
+      "ms": 2979,
+      "body": {
+        "jobId": "4fa47adb-af38-4508-9058-d47dc234bb37",
+        "totalRows": 1,
+        "validRowsCount": 0,
+        "invalidRowsCount": 1,
+        "preview": [
+          {
+            "status": "ERROR",
+            "errors": [
+              "Role 'STUDENT' not found."
+            ],
+            "data": {
+              "Name": "Forensic Student A",
+              "Email": "forensic_s_a_1784048094187@example.com",
+              "Role": "STUDENT",
+              "Roll Number": "R1784048094187A",
+              "Admission Number": "ADM1784048094187A",
+              "Mobile Number": "9000094187",
+              "Password": "Password123"
+            }
+          }
+        ],
+        "invalidPreview": [
+          {
+            "status": "ERROR",
+            "errors": [
+              "Role 'STUDENT' not found."
+            ],
+            "data": {
+              "Name": "Forensic Student A",
+              "Email": "forensic_s_a_1784048094187@example.com",
+              "Role": "STUDENT",
+              "Roll Number": "R1784048094187A",
+              "Admission Number": "ADM1784048094187A",
+              "Mobile Number": "9000094187",
+              "Password": "Password123"
+            }
+          }
+        ]
+      },
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "connection": "keep-alive",
+        "content-length": "705",
+        "content-security-policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+        "content-type": "application/json; charset=utf-8",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "date": "Tue, 14 Jul 2026 16:55:15 GMT",
+        "etag": "W/\"2c1-czInuOoMogpxNjOAK/eyeSxwlso\"",
+        "keep-alive": "timeout=5",
+        "origin-agent-cluster": "?1",
+        "referrer-policy": "no-referrer",
+        "vary": "Origin, Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-dns-prefetch-control": "off",
+        "x-download-options": "noopen",
+        "x-frame-options": "SAMEORIGIN",
+        "x-permitted-cross-domain-policies": "none",
+        "x-xss-protection": "0"
+      }
+    },
+    {
+      "method": "POST",
+      "urlPath": "/api/bulk-import/users/commit",
+      "status": 400,
+      "ms": 4228,
+      "body": {
+        "message": "No valid rows provided for commit."
+      },
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "connection": "keep-alive",
+        "content-length": "48",
+        "content-security-policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+        "content-type": "application/json; charset=utf-8",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "date": "Tue, 14 Jul 2026 16:55:20 GMT",
+        "etag": "W/\"30-bI4cvIWDX+7rQAAt376eb+b11uc\"",
+        "keep-alive": "timeout=5",
+        "origin-agent-cluster": "?1",
+        "referrer-policy": "no-referrer",
+        "vary": "Origin, Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-dns-prefetch-control": "off",
+        "x-download-options": "noopen",
+        "x-frame-options": "SAMEORIGIN",
+        "x-permitted-cross-domain-policies": "none",
+        "x-xss-protection": "0"
+      }
+    },
+    {
+      "method": "POST",
+      "urlPath": "/api/bulk-import/users/analyze",
+      "status": 200,
+      "ms": 3461,
+      "body": {
+        "jobId": "11395dea-9095-44af-9958-f8b993b332f1",
+        "totalRows": 3,
+        "validRowsCount": 2,
+        "invalidRowsCount": 1,
+        "preview": [
+          {
+            "status": "VALID",
+            "data": {
+              "name": "Forensic Mix T",
+              "email": "forensic_m_t_1784048094187@example.com",
+              "password": "Password123",
+              "role_id": "de49238b-82ad-4e74-82e3-7278b0883556",
+              "role_name": "TEACHER",
+              "grade_id": null,
+              "section_id": null,
+              "roll_number": null,
+              "admission_number": null,
+              "mobile_number": null,
+              "is_active": true
+            }
+          },
+          {
+            "status": "ERROR",
+            "errors": [
+              "Role 'STUDENT' not found."
+            ],
+            "data": {
+              "Name": "Forensic Mix S",
+              "Email": "forensic_m_s_1784048094187@example.com",
+              "Role": "STUDENT",
+              "Roll Number": "R1784048094187M",
+              "Admission Number": "ADM1784048094187M",
+              "Mobile Number": "9100094187",
+              "Password": "Password123"
+            }
+          },
+          {
+            "status": "VALID",
+            "data": {
+              "name": "Forensic Mix A",
+              "email": "forensic_m_a_1784048094187@example.com",
+              "password": "Password123",
+              "role_id": "1eb187f9-c8fe-4d8b-8f28-2ab6cdfb518e",
+              "role_name": "SUPER_ADMIN",
+              "grade_id": null,
+              "section_id": null,
+              "roll_number": null,
+              "admission_number": null,
+              "mobile_number": null,
+              "is_active": true
+            }
+          }
+        ],
+        "invalidPreview": [
+          {
+            "status": "ERROR",
+            "errors": [
+              "Role 'STUDENT' not found."
+            ],
+            "data": {
+              "Name": "Forensic Mix S",
+              "Email": "forensic_m_s_1784048094187@example.com",
+              "Role": "STUDENT",
+              "Roll Number": "R1784048094187M",
+              "Admission Number": "ADM1784048094187M",
+              "Mobile Number": "9100094187",
+              "Password": "Password123"
+            }
+          }
+        ]
+      },
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "connection": "keep-alive",
+        "content-encoding": "gzip",
+        "content-security-policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+        "content-type": "application/json; charset=utf-8",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "date": "Tue, 14 Jul 2026 16:55:23 GMT",
+        "etag": "W/\"52d-t6nnNhO9JmSWCl02zBQ3edu6LKw\"",
+        "keep-alive": "timeout=5",
+        "origin-agent-cluster": "?1",
+        "referrer-policy": "no-referrer",
+        "transfer-encoding": "chunked",
+        "vary": "Origin, Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-dns-prefetch-control": "off",
+        "x-download-options": "noopen",
+        "x-frame-options": "SAMEORIGIN",
+        "x-permitted-cross-domain-policies": "none",
+        "x-xss-protection": "0"
+      }
+    },
+    {
+      "method": "POST",
+      "urlPath": "/api/bulk-import/users/commit",
+      "status": 200,
+      "ms": 9868,
+      "body": {
+        "message": "Bulk import completed successfully for 2 rows.",
+        "result": {
+          "success_count": 2,
+          "failure_count": 0,
+          "imported_count": 2,
+          "skipped_count": 0,
+          "skipped_reasons": []
+        }
+      },
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "connection": "keep-alive",
+        "content-length": "165",
+        "content-security-policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+        "content-type": "application/json; charset=utf-8",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "date": "Tue, 14 Jul 2026 16:55:34 GMT",
+        "etag": "W/\"a5-mDguJIsndrA6CqjXo0e00FrvOys\"",
+        "keep-alive": "timeout=5",
+        "origin-agent-cluster": "?1",
+        "referrer-policy": "no-referrer",
+        "vary": "Origin, Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-dns-prefetch-control": "off",
+        "x-download-options": "noopen",
+        "x-frame-options": "SAMEORIGIN",
+        "x-permitted-cross-domain-policies": "none",
+        "x-xss-protection": "0"
+      }
+    },
+    {
+      "method": "POST",
+      "urlPath": "/api/bulk-import/users/analyze",
+      "status": 200,
+      "ms": 4624,
+      "body": {
+        "jobId": "7f9e833b-5dd8-4e57-aca9-a2fd91ef45d6",
+        "totalRows": 1,
+        "validRowsCount": 1,
+        "invalidRowsCount": 0,
+        "preview": [
+          {
+            "status": "VALID",
+            "data": {
+              "name": "Forensic FE User",
+              "email": "forensic_fe_1784048094187@example.com",
+              "password": "Password123",
+              "role_id": "de49238b-82ad-4e74-82e3-7278b0883556",
+              "role_name": "TEACHER",
+              "grade_id": null,
+              "section_id": null,
+              "roll_number": null,
+              "admission_number": null,
+              "mobile_number": "9200094187",
+              "is_active": true
+            }
+          }
+        ],
+        "invalidPreview": []
+      },
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "connection": "keep-alive",
+        "content-length": "455",
+        "content-security-policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+        "content-type": "application/json; charset=utf-8",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "date": "Tue, 14 Jul 2026 16:55:40 GMT",
+        "etag": "W/\"1c7-Q1siaOelmWs2eRd3lpWu3Y+QhYw\"",
+        "keep-alive": "timeout=5",
+        "origin-agent-cluster": "?1",
+        "referrer-policy": "no-referrer",
+        "vary": "Origin, Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-dns-prefetch-control": "off",
+        "x-download-options": "noopen",
+        "x-frame-options": "SAMEORIGIN",
+        "x-permitted-cross-domain-policies": "none",
+        "x-xss-protection": "0"
+      }
+    },
+    {
+      "method": "POST",
+      "urlPath": "/api/bulk-import/users/commit",
+      "status": 200,
+      "ms": 6522,
+      "body": {
+        "message": "Bulk import completed successfully for 1 rows.",
+        "result": {
+          "success_count": 1,
+          "failure_count": 0,
+          "imported_count": 1,
+          "skipped_count": 0,
+          "skipped_reasons": []
+        }
+      },
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "connection": "keep-alive",
+        "content-length": "165",
+        "content-security-policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+        "content-type": "application/json; charset=utf-8",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "date": "Tue, 14 Jul 2026 16:55:47 GMT",
+        "etag": "W/\"a5-RSJ7jJBPRs6yoFVKM3lcVkD25IY\"",
+        "keep-alive": "timeout=5",
+        "origin-agent-cluster": "?1",
+        "referrer-policy": "no-referrer",
+        "vary": "Origin, Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-dns-prefetch-control": "off",
+        "x-download-options": "noopen",
+        "x-frame-options": "SAMEORIGIN",
+        "x-permitted-cross-domain-policies": "none",
+        "x-xss-protection": "0"
+      }
+    },
+    {
+      "method": "POST",
+      "urlPath": "/api/bulk-import/users/analyze",
+      "status": 200,
+      "ms": 3607,
+      "body": {
+        "jobId": "3c0c7669-c378-416e-b370-350bbccabda2",
+        "totalRows": 1,
+        "validRowsCount": 0,
+        "invalidRowsCount": 1,
+        "preview": [
+          {
+            "status": "ERROR",
+            "errors": [
+              "Email already exists."
+            ],
+            "data": {
+              "Name": "Dup Teacher",
+              "Email": "forensic_t_a_1784048094187@example.com",
+              "Role": "TEACHER",
+              "Roll Number": "",
+              "Admission Number": "",
+              "Mobile Number": "",
+              "Password": "Password123"
+            }
+          }
+        ],
+        "invalidPreview": [
+          {
+            "status": "ERROR",
+            "errors": [
+              "Email already exists."
+            ],
+            "data": {
+              "Name": "Dup Teacher",
+              "Email": "forensic_t_a_1784048094187@example.com",
+              "Role": "TEACHER",
+              "Roll Number": "",
+              "Admission Number": "",
+              "Mobile Number": "",
+              "Password": "Password123"
+            }
+          }
+        ]
+      },
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "connection": "keep-alive",
+        "content-length": "599",
+        "content-security-policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+        "content-type": "application/json; charset=utf-8",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "date": "Tue, 14 Jul 2026 16:55:52 GMT",
+        "etag": "W/\"257-9+pGhmw7geAPTk6HGOtiWvUoAYQ\"",
+        "keep-alive": "timeout=5",
+        "origin-agent-cluster": "?1",
+        "referrer-policy": "no-referrer",
+        "vary": "Origin, Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-dns-prefetch-control": "off",
+        "x-download-options": "noopen",
+        "x-frame-options": "SAMEORIGIN",
+        "x-permitted-cross-domain-policies": "none",
+        "x-xss-protection": "0"
+      }
+    },
+    {
+      "method": "POST",
+      "urlPath": "/api/bulk-import/users/commit",
+      "status": 400,
+      "ms": 2331,
+      "body": {
+        "message": "No valid rows provided for commit."
+      },
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "connection": "keep-alive",
+        "content-length": "48",
+        "content-security-policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+        "content-type": "application/json; charset=utf-8",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "date": "Tue, 14 Jul 2026 16:55:55 GMT",
+        "etag": "W/\"30-bI4cvIWDX+7rQAAt376eb+b11uc\"",
+        "keep-alive": "timeout=5",
+        "origin-agent-cluster": "?1",
+        "referrer-policy": "no-referrer",
+        "vary": "Origin, Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-dns-prefetch-control": "off",
+        "x-download-options": "noopen",
+        "x-frame-options": "SAMEORIGIN",
+        "x-permitted-cross-domain-policies": "none",
+        "x-xss-protection": "0"
+      }
+    }
+  ],
+  "cache": {
+    "jobId": "3c0c7669-c378-416e-b370-350bbccabda2",
+    "path": "D:\\DT_school_smart\\backend\\uploads\\imports\\3c0c7669-c378-416e-b370-350bbccabda2.json",
+    "rowCount": 1,
+    "valid": 0,
+    "sampleValid": [],
+    "sampleInvalid": [
+      {
+        "status": "ERROR",
+        "errors": [
+          "Email already exists."
+        ],
+        "data": {
+          "Name": "Dup Teacher",
+          "Email": "forensic_t_a_1784048094187@example.com",
+          "Role": "TEACHER",
+          "Roll Number": "",
+          "Admission Number": "",
+          "Mobile Number": "",
+          "Password": "Password123"
+        }
+      }
+    ],
+    "roleIds": [],
+    "roleNames": [
+      "TEACHER"
+    ]
+  },
+  "dbPreflight": {
+    "org": {
+      "id": "0f928784-d039-436b-bc42-0e17fb33fd8c",
+      "name": "KMHSS",
+      "login_limit": 1000,
+      "seats": 1000,
+      "licenseStatus": "ACTIVE"
+    },
+    "user": {
+      "id": "4adaff7f-b41d-4ef2-b185-75e8228d41e6",
+      "email": "user2@example.com",
+      "role": "SUPER_ADMIN",
+      "org": "0f928784-d039-436b-bc42-0e17fb33fd8c",
+      "is_active": true
+    },
+    "roles": [
+      {
+        "id": "1eb187f9-c8fe-4d8b-8f28-2ab6cdfb518e",
+        "name": "SUPER_ADMIN",
+        "organization_id": "0f928784-d039-436b-bc42-0e17fb33fd8c",
+        "is_system": true
+      },
+      {
+        "id": "de49238b-82ad-4e74-82e3-7278b0883556",
+        "name": "Teacher",
+        "organization_id": "0f928784-d039-436b-bc42-0e17fb33fd8c",
+        "is_system": false
+      }
+    ],
+    "activeCount": 412,
+    "academicYearId": "a853aa99-9882-4d46-9cce-0935460b46d9",
+    "hasUsersImportPermission": true,
+    "permissionsSample": [
+      "USERS:CREATE",
+      "USERS:EDIT",
+      "USERS:DELETE",
+      "USERS:IMPORT",
+      "USERS:EXPORT",
+      "USERS:VIEW"
+    ]
+  },
+  "firstFailure": {
+    "phase": "COMMIT_4XX",
+    "status": 400,
+    "body": {
+      "message": "No valid rows provided for commit."
+    }
+  },
+  "conclusion": {
+    "verdict": "FAILURE_PROVEN",
+    "firstFailure": {
+      "phase": "COMMIT_4XX",
+      "status": 400,
+      "body": {
+        "message": "No valid rows provided for commit."
+      }
+    },
+    "totalExceptions": 2
+  },
+  "endedAt": "2026-07-14T16:55:55.786Z"
+}

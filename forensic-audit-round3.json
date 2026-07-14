@@ -1,0 +1,275 @@
+{
+  "scenarios": [
+    {
+      "name": "S1_STUDENT",
+      "analyze": {
+        "status": 200,
+        "body": {
+          "jobId": "5dbceeac-66c4-4c2f-a2af-6dc4c5097b72",
+          "totalRows": 1,
+          "validRowsCount": 1,
+          "invalidRowsCount": 0,
+          "preview": [
+            {
+              "status": "VALID",
+              "data": {
+                "name": "Stud Force",
+                "email": "forensic_force_s_1784048354784@example.com",
+                "password": "Password123",
+                "role_id": "ff1fb5aa-c899-412d-8826-ef39864d8d4f",
+                "role_name": "STUDENT",
+                "grade_id": null,
+                "section_id": null,
+                "roll_number": "RF1784048354784",
+                "admission_number": "ADMF1784048354784",
+                "mobile_number": "9400054784",
+                "is_active": true
+              }
+            }
+          ],
+          "invalidPreview": []
+        },
+        "ms": 4193
+      },
+      "commit": {
+        "status": 200,
+        "body": {
+          "message": "Bulk import completed successfully for 1 rows.",
+          "result": {
+            "success_count": 1,
+            "failure_count": 0,
+            "imported_count": 1,
+            "skipped_count": 0,
+            "skipped_reasons": []
+          }
+        },
+        "ms": 7310
+      },
+      "cache": [
+        {
+          "status": "VALID",
+          "data": {
+            "name": "Stud Force",
+            "email": "forensic_force_s_1784048354784@example.com",
+            "password": "Password123",
+            "role_id": "ff1fb5aa-c899-412d-8826-ef39864d8d4f",
+            "role_name": "STUDENT",
+            "grade_id": null,
+            "section_id": null,
+            "roll_number": "RF1784048354784",
+            "admission_number": "ADMF1784048354784",
+            "mobile_number": "9400054784",
+            "is_active": true
+          }
+        }
+      ],
+      "analyzeStatus": 200,
+      "commitStatus": 200,
+      "db": {
+        "id": "808dfb74-91c7-4889-b2b1-d89b8b207094",
+        "name": "Stud Force",
+        "email": "forensic_force_s_1784048354784@example.com",
+        "password_hash": "$2b$10$jIz6I6SGHnS1BUDaZetbx.Hk3Rg9WBqk4f3E3b4GV24k5ekeX.IBe",
+        "role_id": "ff1fb5aa-c899-412d-8826-ef39864d8d4f",
+        "organization_id": "0f928784-d039-436b-bc42-0e17fb33fd8c",
+        "grade_id": null,
+        "section_id": null,
+        "is_active": true,
+        "failed_login_attempts": 0,
+        "locked_until": null,
+        "created_at": "2026-07-14T16:59:30.377Z",
+        "updated_at": "2026-07-14T16:59:30.377Z",
+        "roll_number": "RF1784048354784",
+        "student_profile": {
+          "id": "de83215d-10c3-47f9-9db1-ffdf31015c1f",
+          "user_id": "808dfb74-91c7-4889-b2b1-d89b8b207094",
+          "organization_id": "0f928784-d039-436b-bc42-0e17fb33fd8c",
+          "admission_number": "ADMF1784048354784",
+          "mobile_number": "9400054784",
+          "created_at": "2026-07-14T16:59:31.741Z",
+          "updated_at": "2026-07-14T16:59:31.741Z",
+          "academic_birth": null,
+          "date_of_birth": null
+        }
+      }
+    },
+    {
+      "name": "S2_SUPER_ADMIN_MOBILE",
+      "analyzeStatus": 200,
+      "commitStatus": 200,
+      "body": {
+        "message": "Bulk import completed successfully for 1 rows.",
+        "result": {
+          "success_count": 1,
+          "failure_count": 0,
+          "imported_count": 1,
+          "skipped_count": 0,
+          "skipped_reasons": []
+        }
+      },
+      "cacheSample": {
+        "status": "VALID",
+        "data": {
+          "name": "Admin Mobile",
+          "email": "forensic_admin_m_1784048354784@example.com",
+          "password": "Password123",
+          "role_id": "1eb187f9-c8fe-4d8b-8f28-2ab6cdfb518e",
+          "role_name": "SUPER_ADMIN",
+          "grade_id": null,
+          "section_id": null,
+          "roll_number": null,
+          "admission_number": null,
+          "mobile_number": "9500054784",
+          "is_active": true
+        }
+      },
+      "db": {
+        "id": "a28b6c40-15f1-4f8b-a702-1da0c9d964d6",
+        "name": "Admin Mobile",
+        "email": "forensic_admin_m_1784048354784@example.com",
+        "password_hash": "$2b$10$kAN74Ez5BgaVakI3xZCOc.DbOsgojmdhsdhCkX9nKQlu2EeGdR3BW",
+        "role_id": "1eb187f9-c8fe-4d8b-8f28-2ab6cdfb518e",
+        "organization_id": "0f928784-d039-436b-bc42-0e17fb33fd8c",
+        "grade_id": null,
+        "section_id": null,
+        "is_active": true,
+        "failed_login_attempts": 0,
+        "locked_until": null,
+        "created_at": "2026-07-14T16:59:47.461Z",
+        "updated_at": "2026-07-14T16:59:47.461Z",
+        "roll_number": null,
+        "student_profile": {
+          "id": "78955e05-2b4f-4dae-8f43-78c7600ac0e7",
+          "user_id": "a28b6c40-15f1-4f8b-a702-1da0c9d964d6",
+          "organization_id": "0f928784-d039-436b-bc42-0e17fb33fd8c",
+          "admission_number": null,
+          "mobile_number": "9500054784",
+          "created_at": "2026-07-14T16:59:48.824Z",
+          "updated_at": "2026-07-14T16:59:48.824Z",
+          "academic_birth": null,
+          "date_of_birth": null
+        }
+      }
+    },
+    {
+      "name": "S4_BOM",
+      "analyzeStatus": 200,
+      "commitStatus": 400,
+      "cache": [
+        {
+          "status": "ERROR",
+          "errors": [
+            "Name is required"
+          ],
+          "data": {
+            "﻿Name": "BOM User",
+            "Email": "forensic_bom_1784048354784@example.com",
+            "Role": "TEACHER",
+            "Roll Number": "",
+            "Admission Number": "",
+            "Mobile Number": "",
+            "Password": "Password123"
+          }
+        }
+      ],
+      "body": {
+        "message": "No valid rows provided for commit."
+      }
+    },
+    {
+      "name": "S5_STALE_ROLE_ID",
+      "commitStatus": 500,
+      "body": {
+        "success": false,
+        "message": "\nInvalid `prisma.user.createMany()` invocation:\n\n\nForeign key constraint violated: `users_role_id_fkey (index)`",
+        "code": "P2003",
+        "details": {
+          "file": "D:\\DT_school_smart\\backend\\src\\services\\bulk-import\\processors\\user.processor.ts",
+          "line": "112",
+          "function": "async UserProcessor.commit",
+          "type": "PrismaClientKnownRequestError"
+        }
+      }
+    },
+    {
+      "name": "S6_GHOST_ROLE_NAME",
+      "commitStatus": 200,
+      "body": {
+        "message": "Bulk import completed successfully for 1 rows.",
+        "result": {
+          "success_count": 1,
+          "failure_count": 0,
+          "imported_count": 1,
+          "skipped_count": 0,
+          "skipped_reasons": []
+        }
+      }
+    },
+    {
+      "name": "S7_BAD_GRADE_FK",
+      "commitStatus": 500,
+      "body": {
+        "success": false,
+        "message": "\nInvalid `prisma.user.createMany()` invocation:\n\n\nForeign key constraint violated: `users_grade_id_fkey (index)`",
+        "code": "P2003",
+        "details": {
+          "file": "D:\\DT_school_smart\\backend\\src\\services\\bulk-import\\processors\\user.processor.ts",
+          "line": "112",
+          "function": "async UserProcessor.commit",
+          "type": "PrismaClientKnownRequestError"
+        }
+      }
+    },
+    {
+      "name": "S8_NULL_ROLE_ID",
+      "commitStatus": 500,
+      "body": {
+        "success": false,
+        "message": "\nInvalid `prisma.user.createMany()` invocation:\n\n{\n  data: [\n    {\n      id: \"2555235c-97e3-4afe-ab3f-793cee5aa48e\",\n      organization_id: \"0f928784-d039-436b-bc42-0e17fb33fd8c\",\n      name: \"Null Role Id\",\n      email: \"forensic_nullrole_1784048354784@example.com\",\n      password_hash: \"$2b$10$Ak3vXW0dPBBR3OfXwhgQcOgJHUxQSurFAnoAwaG648yXqaLDmaZUi\",\n      role_id: null,\n      roll_number: null,\n      grade_id: null,\n      section_id: null,\n      is_active: true\n    }\n  ],\n  skipDuplicates: true\n}\n\nArgument `role_id` is missing.",
+        "details": {
+          "file": "D:\\DT_school_smart\\backend\\src\\services\\bulk-import\\processors\\user.processor.ts",
+          "line": "112",
+          "function": "async UserProcessor.commit",
+          "type": "PrismaClientValidationError"
+        }
+      }
+    }
+  ],
+  "firstFailure": {
+    "name": "S5",
+    "status": 500,
+    "body": {
+      "success": false,
+      "message": "\nInvalid `prisma.user.createMany()` invocation:\n\n\nForeign key constraint violated: `users_role_id_fkey (index)`",
+      "code": "P2003",
+      "details": {
+        "file": "D:\\DT_school_smart\\backend\\src\\services\\bulk-import\\processors\\user.processor.ts",
+        "line": "112",
+        "function": "async UserProcessor.commit",
+        "type": "PrismaClientKnownRequestError"
+      }
+    },
+    "ms": 6699
+  },
+  "grade": null,
+  "section": null,
+  "conclusion": {
+    "verdict": "HTTP_500_PROVEN",
+    "firstFailure": {
+      "name": "S5",
+      "status": 500,
+      "body": {
+        "success": false,
+        "message": "\nInvalid `prisma.user.createMany()` invocation:\n\n\nForeign key constraint violated: `users_role_id_fkey (index)`",
+        "code": "P2003",
+        "details": {
+          "file": "D:\\DT_school_smart\\backend\\src\\services\\bulk-import\\processors\\user.processor.ts",
+          "line": "112",
+          "function": "async UserProcessor.commit",
+          "type": "PrismaClientKnownRequestError"
+        }
+      },
+      "ms": 6699
+    }
+  }
+}

@@ -8,6 +8,8 @@ import { authMiddleware } from '../middlewares/auth.middleware';
 import { logAuditEvent } from '../services/audit.service';
 import fs from 'fs';
 import path from 'path';
+import { parseError, ParsedError } from '../services/bulk-import/error-parser';
+import { safeNormalize } from '../services/bulk-import/utils';
 
 const router = Router();
 const IMPORTS_DIR = path.join(__dirname, '../../uploads/imports');
@@ -97,7 +99,7 @@ router.post('/:entityType/analyze', upload.single('file'), async (req: any, res:
     try {
       if (file.originalname.toLowerCase().endsWith('.csv')) {
         rawRows = await new Promise<any[]>((resolve, reject) => {
-          parse(file.buffer, { columns: true, skip_empty_lines: true, trim: true }, (err, records) => {
+          parse(file.buffer, { columns: true, skip_empty_lines: true, trim: true, bom: true }, (err, records) => {
             if (err) reject(err);
             else resolve(records);
           });
@@ -111,7 +113,7 @@ router.post('/:entityType/analyze', upload.single('file'), async (req: any, res:
         rawRows = rawRows.map(row => {
           const trimmedRow: any = {};
           for (const [key, value] of Object.entries(row)) {
-            trimmedRow[key.trim()] = typeof value === 'string' ? value.trim() : value;
+            trimmedRow[safeNormalize(key)] = value;
           }
           return trimmedRow;
         });
@@ -175,8 +177,12 @@ router.post('/:entityType/analyze', upload.single('file'), async (req: any, res:
     });
 
   } catch (error: any) {
-    console.error(`[Bulk-Import-Analyze] Error:`, error);
-    return res.status(500).json({ message: 'Analyzing CSV failed.', error: error.message });
+    const parsed: ParsedError = parseError(error, {
+      failedOrganization: req.user?.organization_id,
+      httpStatus: 500,
+    });
+    console.error(`[Bulk-Import-Analyze] Error:`, parsed);
+    return res.status(parsed.httpStatus).json(parsed);
   }
 });
 
@@ -247,45 +253,12 @@ router.post('/:entityType/commit', async (req: any, res: Response) => {
     });
 
   } catch (error: any) {
-    const stack = error.stack || '';
-    const lines = stack.split('\n');
-    let file = 'Unknown';
-    let func = 'Unknown';
-    let lineNo = 'Unknown';
-
-    for (let idx = 1; idx < lines.length; idx++) {
-      const match = lines[idx].match(/at\s+(.+?)\s+\((.+?):(\d+):(\d+)\)/) || lines[idx].match(/at\s+(.+?):(\d+):(\d+)/);
-      if (match) {
-        const possiblePath = match[2] || match[1];
-        if (possiblePath.includes('backend/src') || possiblePath.includes('backend\\src') || possiblePath.includes('bulk-import.routes.ts') || possiblePath.includes('user.processor.ts')) {
-          func = match[2] ? match[1] : 'Anonymous';
-          file = possiblePath;
-          lineNo = match[2] ? match[3] : match[2];
-          break;
-        }
-      }
-    }
-
-    console.error(`[ROUTE INSTRUMENTATION] EXCEPTION DETECTED:`);
-    console.error(`  - Exception Type: ${error.name || error.constructor.name || 'Error'}`);
-    console.error(`  - Exception Message: ${error.message}`);
-    console.error(`  - Prisma Error Code: ${error.code || 'N/A'}`);
-    console.error(`  - File: ${file}`);
-    console.error(`  - Function: ${func}`);
-    console.error(`  - Line Number: ${lineNo}`);
-    console.error(`  - Full Stack Trace:\n${stack}`);
-
-    return res.status(error.statusCode || 500).json({
-      success: false,
-      message: error.message || 'Committing valid rows failed.',
-      code: error.code,
-      details: {
-        file,
-        line: lineNo,
-        function: func,
-        type: error.name || error.constructor.name || 'Error'
-      }
+    const parsed: ParsedError = parseError(error, {
+      failedOrganization: req.user?.organization_id,
+      httpStatus: error.statusCode ? Number(error.statusCode) : 500,
     });
+    console.error(`[Bulk-Import-Commit] Error:`, parsed);
+    return res.status(parsed.httpStatus).json(parsed);
   }
 });
 

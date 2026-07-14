@@ -1,5 +1,6 @@
 import prisma from '../../prisma';
 import { BulkImportSchema } from '../user-validation.service';
+import { safeNormalize } from './utils';
 
 export interface ValidationErrorDetails {
   row: number;
@@ -45,25 +46,25 @@ export class UserImportValidationService {
     const sectionNames = new Set<string>();
 
     rows.forEach((row) => {
-      const email = (row['Email Address'] || row['Email'] || row.email || '').trim().toLowerCase();
+      const email = safeNormalize(row['Email Address'] || row['Email'] || row.email).toLowerCase();
       if (email) emails.add(email);
 
-      const admission = (row['Admission Number'] || row.admission_number || '').trim();
+      const admission = safeNormalize(row['Admission Number'] || row.admission_number);
       if (admission) admissionNumbers.add(admission);
 
-      const mobile = (row['Mobile Number'] || row.mobile_number || '').trim();
+      const mobile = safeNormalize(row['Mobile Number'] || row.mobile_number);
       if (mobile) mobileNumbers.add(mobile);
 
-      const roll = (row['Roll Number'] || row.roll_number || '').trim();
+      const roll = safeNormalize(row['Roll Number'] || row.roll_number);
       if (roll) rollNumbers.add(roll);
 
-      const role = (row['Role'] || row.role || '').trim();
+      const role = safeNormalize(row['Role'] || row.role);
       if (role) roleNames.add(role.toUpperCase());
 
-      const grade = (row['Grade'] || row.grade || '').trim();
+      const grade = safeNormalize(row['Grade'] || row.grade);
       if (grade) gradeNames.add(grade.toUpperCase());
 
-      const section = (row['Section'] || row.section || '').trim();
+      const section = safeNormalize(row['Section'] || row.section);
       if (section) sectionNames.add(section.toUpperCase());
     });
 
@@ -112,16 +113,20 @@ export class UserImportValidationService {
         },
         select: { id: true, name: true }
       }),
-      // Grades
-      prisma.grade.findMany({
-        where: { organization_id: organizationId, name: { in: Array.from(gradeNames) } },
-        select: { id: true, name: true }
-      }),
-      // Sections
-      prisma.section.findMany({
-        where: { organization_id: organizationId, name: { in: Array.from(sectionNames) } },
-        select: { id: true, name: true }
-      }),
+      // Grades (load org grades when any grade names present; match case-insensitively via map)
+      gradeNames.size > 0
+        ? prisma.grade.findMany({
+            where: { organization_id: organizationId },
+            select: { id: true, name: true }
+          })
+        : Promise.resolve([]),
+      // Sections (same case-insensitive strategy)
+      sectionNames.size > 0
+        ? prisma.section.findMany({
+            where: { organization_id: organizationId },
+            select: { id: true, name: true }
+          })
+        : Promise.resolve([]),
       // Organization License
       prisma.organization.findUnique({
         where: { id: organizationId },
@@ -169,26 +174,26 @@ export class UserImportValidationService {
 
       if (isCommit) {
         // Direct assignment from already resolved payload during commit phase
-        name = (row.name || '').trim();
-        email = (row.email || '').trim().toLowerCase();
-        rollNumber = (row.roll_number || '').trim();
-        admissionNumber = (row.admission_number || '').trim();
-        mobileNumber = (row.mobile_number || '').trim();
-        password = (row.password || '').trim();
-        roleId = (row.role_id || '').trim();
-        roleName = (row.role_name || row.role || '').trim();
-        gradeId = (row.grade_id || '').trim();
-        sectionId = (row.section_id || '').trim();
+        name = safeNormalize(row.name);
+        email = safeNormalize(row.email).toLowerCase();
+        rollNumber = safeNormalize(row.roll_number);
+        admissionNumber = safeNormalize(row.admission_number);
+        mobileNumber = safeNormalize(row.mobile_number);
+        password = safeNormalize(row.password);
+        roleId = safeNormalize(row.role_id);
+        roleName = safeNormalize(row.role_name || row.role);
+        gradeId = safeNormalize(row.grade_id);
+        sectionId = safeNormalize(row.section_id);
       } else {
         // Normalize row keys for Zod during analyze phase
         const mappedData = {
-          name: (row['Name'] || row.name || '').trim(),
-          email: (row['Email Address'] || row['Email'] || row.email || '').trim(),
-          role: (row['Role'] || row.role || '').trim(),
-          roll_number: (row['Roll Number'] || row.roll_number || '').trim(),
-          admission_number: (row['Admission Number'] || row.admission_number || '').trim(),
-          mobile_number: (row['Mobile Number'] || row.mobile_number || '').trim(),
-          password: (row['Password'] || row.password || '').trim()
+          name: safeNormalize(row['Name'] || row.name),
+          email: safeNormalize(row['Email Address'] || row['Email'] || row.email),
+          role: safeNormalize(row['Role'] || row.role),
+          roll_number: safeNormalize(row['Roll Number'] || row.roll_number),
+          admission_number: safeNormalize(row['Admission Number'] || row.admission_number),
+          mobile_number: safeNormalize(row['Mobile Number'] || row.mobile_number),
+          password: safeNormalize(row['Password'] || row.password)
         };
 
         const parseResult = BulkImportSchema.safeParse(mappedData);
@@ -281,14 +286,14 @@ export class UserImportValidationService {
 
       // Relationship Validations (Only for Analyze phase)
       if (!isCommit) {
-        roleId = roleName ? rolesMap[roleName.trim().toUpperCase()] : '';
+        roleId = roleName ? rolesMap[roleName.toUpperCase()] : '';
         if (roleName && !roleId) {
           const reason = `Role '${roleName}' not found.`;
           errors.push({ row: rowNum, field: 'role', value: roleName, reason });
           rowErrors.push(reason);
         }
 
-        const gradeName = (row['Grade'] || row.grade || '').trim();
+        const gradeName = safeNormalize(row['Grade'] || row.grade);
         gradeId = gradeName ? gradesMap[gradeName.toUpperCase()] : '';
         if (gradeName && !gradeId) {
           const reason = `Grade '${gradeName}' not found.`;
@@ -296,7 +301,7 @@ export class UserImportValidationService {
           rowErrors.push(reason);
         }
 
-        const sectionName = (row['Section'] || row.section || '').trim();
+        const sectionName = safeNormalize(row['Section'] || row.section);
         sectionId = sectionName ? sectionsMap[sectionName.toUpperCase()] : '';
         if (sectionName && !sectionId) {
           const reason = `Section '${sectionName}' not found.`;
