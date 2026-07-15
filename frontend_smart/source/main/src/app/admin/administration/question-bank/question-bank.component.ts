@@ -1,5 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 import * as XLSX from 'xlsx';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormGroupDirective, FormArray } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -599,16 +600,27 @@ export class QuestionBankComponent implements OnInit {
     }
   }
 
+  private http = inject(HttpClient);
+
   downloadTemplate(): void {
     const fileUrl = 'assets/Global_questionBank_template/Question_Bank_Template.xlsx';
 
-    const a = document.createElement('a');
-    a.href = fileUrl;
-    a.download = 'Question_Bank_Template.xlsx';
-
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    this.http.get(fileUrl, { responseType: 'blob' }).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'Question_Bank_Template.xlsx';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      },
+      error: (err) => {
+        console.error('Error downloading template', err);
+        this.snackBar.open('Failed to download template', 'Close', { duration: 3000 });
+      }
+    });
   }
 
   exportExcel(): void {
