@@ -220,12 +220,14 @@ $themes: (
   overflow: hidden;
 
   .hierarchy-scroll-area {
-    max-height: 400px;
-    overflow-y: auto;
+    max-height: 50vh;
+    overflow-y: auto !important;
     padding: 12px;
+    scrollbar-width: thin;
+    scrollbar-color: #a1a1aa transparent;
 
     &::-webkit-scrollbar {
-      width: 6px;
+      width: 8px;
     }
 
     &::-webkit-scrollbar-track {
@@ -233,7 +235,7 @@ $themes: (
     }
 
     &::-webkit-scrollbar-thumb {
-      background-color: #d1d5db;
+      background-color: #a1a1aa;
       border-radius: 10px;
     }
   }

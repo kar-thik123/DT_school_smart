@@ -33,7 +33,10 @@ const createCrudHandlers = (modelName: string, prismaModel: any) => {
         filter.academic_year_id = String(req.query.academic_year_id);
       }
 
-      const isGlobalAdmin = req.user.permissions?.includes('ACADEMIC_STRUCTURE:READ') || req.user.permissions?.includes('ACADEMIC_STRUCTURE:VIEW');
+      const isGlobalAdmin = req.user.permissions?.includes('ACADEMIC_STRUCTURE:READ') || 
+                            req.user.permissions?.includes('ACADEMIC_STRUCTURE_READ') ||
+                            req.user.permissions?.includes('ACADEMIC_STRUCTURE:VIEW') ||
+                            req.user.permissions?.includes('ACADEMIC_STRUCTURE_VIEW');
       if (!isGlobalAdmin && modelName === 'Section') {
         const visibilityFilter = await AssignmentVisibilityResolver.buildTeacherSectionWhereClause(req);
         if (visibilityFilter.id) filter.id = visibilityFilter.id;
@@ -247,7 +250,7 @@ const gradeRouter = Router();
 
 gradeRouter.get('/', requirePermission('ACADEMIC_STRUCTURE', 'READ'), async (req: any, res: Response) => {
   try {
-    const isGlobalAdmin = req.user.permissions?.includes('ACADEMIC_STRUCTURE:READ') || req.user.permissions?.includes('ACADEMIC_STRUCTURE:VIEW');
+    const isGlobalAdmin = req.user.permissions?.includes('ACADEMIC_STRUCTURE:READ') || req.user.permissions?.includes('ACADEMIC_STRUCTURE:VIEW') || req.user.permissions?.includes('ACADEMIC_STRUCTURE_READ') || req.user.permissions?.includes('ACADEMIC_STRUCTURE_VIEW');
 
     const headerYearId = req.headers['x-academic-year-id'] as string;
     const queryYearId = req.query.academic_year_id as string;
@@ -279,7 +282,7 @@ gradeRouter.get('/', requirePermission('ACADEMIC_STRUCTURE', 'READ'), async (req
 
 gradeRouter.get('/assigned', async (req: any, res: Response) => {
   try {
-    const isGlobalAdmin = req.user.permissions?.includes('ACADEMIC_STRUCTURE:READ') || req.user.permissions?.includes('ACADEMIC_STRUCTURE:VIEW');
+    const isGlobalAdmin = req.user.permissions?.includes('ACADEMIC_STRUCTURE:READ') || req.user.permissions?.includes('ACADEMIC_STRUCTURE:VIEW') || req.user.permissions?.includes('ACADEMIC_STRUCTURE_READ') || req.user.permissions?.includes('ACADEMIC_STRUCTURE_VIEW');
 
     let filter: any = { organization_id: req.user.organization_id };
     if (!isGlobalAdmin) {
@@ -563,7 +566,7 @@ subjectRouter.get('/', requirePermission('ACADEMIC_STRUCTURE', 'READ'), async (r
       filter.grade_id = String(req.query.grade_id);
     }
 
-    const isGlobalAdmin = req.user.permissions?.includes('ACADEMIC_STRUCTURE:READ') || req.user.permissions?.includes('ACADEMIC_STRUCTURE:VIEW');
+    const isGlobalAdmin = req.user.permissions?.includes('ACADEMIC_STRUCTURE:READ') || req.user.permissions?.includes('ACADEMIC_STRUCTURE:VIEW') || req.user.permissions?.includes('ACADEMIC_STRUCTURE_READ') || req.user.permissions?.includes('ACADEMIC_STRUCTURE_VIEW');
     if (!isGlobalAdmin) {
       const visibilityFilter = await AssignmentVisibilityResolver.buildTeacherSubjectWhereClause(req);
       if (visibilityFilter.OR) {

@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, of } from 'rxjs';
 import { environment } from 'environments/environment';
-import { tap, filter } from 'rxjs/operators';
+import { tap, filter, catchError } from 'rxjs/operators';
 import { AuthService } from './auth.service';
 
 @Injectable({
@@ -46,6 +46,12 @@ export class AcademicContextService {
       tap(year => {
         console.log('[AcademicContextService] Loaded active academic year:', year);
         this.activeYearSubject.next(year);
+      }),
+      catchError(err => {
+        console.error('[AcademicContextService] Failed to load active year:', err);
+        // Emit an empty object so subscribers don't hang indefinitely
+        this.activeYearSubject.next({ id: '' });
+        return of({ id: '' });
       })
     );
   }
