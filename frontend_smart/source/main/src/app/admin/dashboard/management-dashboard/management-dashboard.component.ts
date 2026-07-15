@@ -15,6 +15,7 @@ import { TeacherLeaderboardComponent } from './widgets/teacher-leaderboard/teach
 import { StudentRiskComponent } from './widgets/student-risk/student-risk.component';
 import { RecentActivityComponent } from './widgets/recent-activity/recent-activity.component';
 import { ExaminationSummaryComponent } from './widgets/examination-summary/examination-summary.component';
+import { AcademicContextService } from '@core/service/academic-context.service';
 
 @Component({
   selector: 'app-management-dashboard',
@@ -35,11 +36,20 @@ import { ExaminationSummaryComponent } from './widgets/examination-summary/exami
 })
 export class ManagementDashboardComponent implements OnInit {
   private dashboardService = inject(ManagementDashboardService);
+  private academicContextService = inject(AcademicContextService);
   
   academicYears: AcademicYear[] = [];
   selectedYearId: string | null = null;
+  academicYearName: string = '';
 
   ngOnInit(): void {
+    this.academicContextService.activeYear$.subscribe((year: any) => {
+      if (year) {
+        this.academicYearName = year.academic_year || year.name;
+        this.selectedYearId = year.id;
+        this.onYearSelected(year);
+      }
+    });
     this.loadAcademicYears();
   }
 
@@ -47,18 +57,21 @@ export class ManagementDashboardComponent implements OnInit {
     this.dashboardService.getAcademicYears().subscribe({
       next: (years) => {
         this.academicYears = years;
-        // Auto-select active year or first available
-        const defaultYear = years.find(y => y.is_active) || years[0];
-        if (defaultYear) {
-          this.selectedYearId = defaultYear.id;
-          this.onYearSelected(defaultYear);
+        // Auto-select active year or first available if not set
+        if (!this.selectedYearId && years.length > 0) {
+          const defaultYear = years.find(y => y.is_active) || years[0];
+          if (defaultYear) {
+            this.selectedYearId = defaultYear.id;
+            this.academicYearName = defaultYear.name || (defaultYear as any).academic_year;
+            this.onYearSelected(defaultYear);
+          }
         }
       },
       error: () => console.error('Failed to load academic years')
     });
   }
 
-  onYearSelected(year: AcademicYear) {
+  onYearSelected(year: any) {
     this.selectedYearId = year.id;
     // Context is updated centrally. Widgets listen to this.
     this.dashboardService.setDashboardAcademicYear(year);

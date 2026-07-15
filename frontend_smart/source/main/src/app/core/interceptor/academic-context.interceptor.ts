@@ -11,6 +11,11 @@ export class AcademicContextInterceptor implements HttpInterceptor {
     // Lazily resolve service to break circular injection dependency with HttpClient
     const academicContextService = this.injector.get(AcademicContextService);
     const activeYear = academicContextService.currentHistoricalYear || academicContextService.currentActiveYear;
+    if (request.headers.has('x-ignore-historical')) {
+      request = request.clone({ headers: request.headers.delete('x-ignore-historical') });
+      return next.handle(request);
+    }
+
     const isHistoricalRoute = request.url.includes('/analytics') || 
                               request.url.includes('/reports') || 
                               request.url.includes('/academic/grades') ||

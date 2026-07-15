@@ -80,8 +80,8 @@ export class CompletionMgmtComponent implements OnInit {
 
     this.initialGradeId = this.route.snapshot.queryParamMap.get('grade_id');
 
-    // Subscribe to centralized Academic Context (match dashboard context)
-    this.academicContextService.historicalYear$.subscribe((year: any) => {
+    // Subscribe to centralized Academic Context (use active year as this is a standalone page)
+    this.academicContextService.activeYear$.subscribe((year: any) => {
       this.academicYearId = year?.id || '';
       if (this.academicYearId) {
         this.loadSettings();
