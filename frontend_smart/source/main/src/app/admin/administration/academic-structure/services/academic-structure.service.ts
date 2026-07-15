@@ -54,7 +54,7 @@ export class AcademicStructureService {
 
   // --- Grades ---
   getGrades(): Observable<IGrade[]> {
-    return this.http.get<IGrade[]>(`${this.API_URL}/grades`);
+    return this.http.get<IGrade[]>(`${this.API_URL}/grades`, { headers: { 'x-ignore-historical': 'true' } });
   }
 
   createGrade(name: string): Observable<any> {
