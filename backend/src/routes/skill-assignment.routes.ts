@@ -12,7 +12,8 @@ const assignmentSchema = z.object({
   verifier_ids: z.array(z.string().uuid()),
   skill_types: z.array(z.string().min(1)),
   grade_ids: z.array(z.string().uuid()).optional(),
-  section_ids: z.array(z.string().uuid()).optional()
+  section_ids: z.array(z.string().uuid()).optional(),
+  academic_year_id: z.string().uuid()
 });
 
 // Middleware to check permissions
@@ -38,6 +39,7 @@ router.post('/', async (req: any, res: Response) => {
     const assignment = await prisma.skillVerificationAssignment.create({
       data: {
         organization_id: req.user.organization_id,
+        academic_year_id: parsed.academic_year_id,
         verifier_ids: parsed.verifier_ids,
         skill_types: parsed.skill_types,
         grade_ids: parsed.grade_ids || [],
@@ -61,15 +63,23 @@ router.post('/', async (req: any, res: Response) => {
 // Get all assignments
 router.get('/', async (req: any, res: Response) => {
   try {
+    const academic_year_id = req.query.academic_year_id as string;
+    
+    // Build query where clause
+    const whereClause: any = { organization_id: req.user.organization_id };
+    if (academic_year_id) {
+      whereClause.academic_year_id = academic_year_id;
+    }
+
     const assignments = await prisma.skillVerificationAssignment.findMany({
-      where: { organization_id: req.user.organization_id },
+      where: whereClause,
       orderBy: { created_at: 'desc' }
     });
 
     const enrichedAssignments = await Promise.all(assignments.map(async (a: any) => {
       const verifiers = await prisma.user.findMany({
         where: { id: { in: a.verifier_ids } },
-        select: { id: true, name: true, email: true, role: { select: { name: true } } }
+        select: { id: true, name: true, email: true, role_id: true, role: { select: { name: true } } }
       });
       const grades = await prisma.grade.findMany({
         where: { id: { in: a.grade_ids } },

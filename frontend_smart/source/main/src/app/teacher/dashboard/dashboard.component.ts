@@ -167,10 +167,10 @@ export class DashboardComponent implements OnInit {
           });
         }
         if (a.grade && !gradeMap.has(a.grade.id)) {
-           gradeMap.set(a.grade.id, { id: a.grade.id, name: a.grade.name });
+          gradeMap.set(a.grade.id, { id: a.grade.id, name: a.grade.name });
         }
         if (!sectionMap.has(a.section.id)) {
-           sectionMap.set(a.section.id, { id: a.section.id, name: a.section.name, grade_id: a.grade?.id });
+          sectionMap.set(a.section.id, { id: a.section.id, name: a.section.name, grade_id: a.grade?.id });
         }
       }
     });
@@ -182,9 +182,9 @@ export class DashboardComponent implements OnInit {
       const classTeacherAssignment = this.assignments.find(a => a.assignment_type === 'CLASS_TEACHER');
       let defaultClass = this.uniqueClasses[0];
       if (classTeacherAssignment) {
-         defaultClass = this.uniqueClasses.find(c => c.id === classTeacherAssignment.section_id) || this.uniqueClasses[0];
+        defaultClass = this.uniqueClasses.find(c => c.id === classTeacherAssignment.section_id) || this.uniqueClasses[0];
       }
-      
+
       this.selectedClassId = defaultClass.id;
       this.selectedGradeId = defaultClass.gradeId || null;
       this.selectedGradeName = this.grades.find(g => g.id === this.selectedGradeId)?.name || '';
@@ -206,9 +206,9 @@ export class DashboardComponent implements OnInit {
   onClassChange() {
     const selectedClass = this.uniqueClasses.find(c => c.id === this.selectedClassId);
     if (selectedClass) {
-       this.selectedClassName = selectedClass.name.split(' - ')[1] || selectedClass.name;
+      this.selectedClassName = selectedClass.name.split(' - ')[1] || selectedClass.name;
     } else {
-       this.selectedClassName = 'Select Class';
+      this.selectedClassName = 'Select Class';
     }
 
     const assignmentsForClass = this.assignments.filter(a => a.section_id === this.selectedClassId);
@@ -219,13 +219,13 @@ export class DashboardComponent implements OnInit {
       }
     });
     this.availableSubjects = Array.from(subMap.values());
-    
+
     if (this.availableSubjects.length > 0) {
       const subjectAssignment = assignmentsForClass.find(a => a.assignment_type === 'SUBJECT_TEACHER' && a.subject_id);
       if (subjectAssignment && this.availableSubjects.find(s => s.id === subjectAssignment.subject_id)) {
-         this.selectedSubjectId = subjectAssignment.subject_id;
+        this.selectedSubjectId = subjectAssignment.subject_id;
       } else {
-         this.selectedSubjectId = this.availableSubjects[0].id;
+        this.selectedSubjectId = this.availableSubjects[0].id;
       }
     } else {
       this.selectedSubjectId = '';
@@ -241,12 +241,12 @@ export class DashboardComponent implements OnInit {
   }
 
   updateSelectedAssignment() {
-    this.selectedAssignment = this.assignments.find(a => 
-      a.section_id === this.selectedClassId && 
+    this.selectedAssignment = this.assignments.find(a =>
+      a.section_id === this.selectedClassId &&
       (!this.selectedSubjectId || a.subject_id === this.selectedSubjectId || a.assignment_type === 'CLASS_TEACHER')
     );
     if (!this.selectedAssignment && this.assignments.length > 0) {
-        this.selectedAssignment = this.assignments[0];
+      this.selectedAssignment = this.assignments[0];
     }
 
     // Update the hero banner with class info

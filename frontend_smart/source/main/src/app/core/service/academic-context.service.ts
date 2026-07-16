@@ -11,10 +11,10 @@ import { AuthService } from './auth.service';
 export class AcademicContextService {
   private http = inject(HttpClient);
   private authService = inject(AuthService);
-  
+
   // Shared state observable for the active academic year
   private activeYearSubject = new BehaviorSubject<any>(null);
-  
+
   // Expose observable, ignoring initial null to prevent subscription errors before load
   activeYear$ = this.activeYearSubject.asObservable().pipe(
     filter(y => y !== null)

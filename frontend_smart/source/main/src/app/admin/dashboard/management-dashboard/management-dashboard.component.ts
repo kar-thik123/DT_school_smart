@@ -37,7 +37,7 @@ import { AcademicContextService } from '@core/service/academic-context.service';
 export class ManagementDashboardComponent implements OnInit {
   private dashboardService = inject(ManagementDashboardService);
   private academicContextService = inject(AcademicContextService);
-  
+
   academicYears: AcademicYear[] = [];
   selectedYearId: string | null = null;
   academicYearName: string = '';
