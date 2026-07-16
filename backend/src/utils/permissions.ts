@@ -58,7 +58,9 @@ export const PERMISSIONS_REGISTRY = {
     "description": "Teacher Subject and Class assignments",
     "actions": [
       "VIEW",
-      "ASSIGN"
+      "CREATE",
+      "EDIT",
+      "DELETE"
     ]
   },
   "STUDENT_ENROLLMENT": {

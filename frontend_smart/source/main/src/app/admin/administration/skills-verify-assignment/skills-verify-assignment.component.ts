@@ -125,7 +125,7 @@ export class SkillsVerifyAssignmentComponent implements OnInit {
       if (gradeIds && gradeIds.length > 0) {
         this.filteredSections = this.sections.filter(s => gradeIds.includes(s.grade_id));
       } else {
-        this.filteredSections = [];
+        this.filteredSections = [...this.sections];
       }
       
       if (!this.isPatching) {
@@ -215,7 +215,12 @@ export class SkillsVerifyAssignmentComponent implements OnInit {
 
   loadSections() {
     this.http.get<any[]>(`${environment.apiUrl}/academic/sections`).subscribe({
-      next: (data) => this.sections = data,
+      next: (data) => {
+        this.sections = data;
+        if (!this.assignForm.get('grade_id')?.value?.length) {
+          this.filteredSections = [...data];
+        }
+      },
       error: (err) => console.error(err)
     });
   }

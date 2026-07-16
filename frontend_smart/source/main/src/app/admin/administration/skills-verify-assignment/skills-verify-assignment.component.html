@@ -25,6 +25,9 @@
                     {{r.name}}
                   </mat-option>
                 </mat-select>
+                <mat-error *ngIf="assignForm.get('role_id')?.hasError('required')">
+                  Role is required
+                </mat-error>
               </mat-form-field>
 
               <mat-form-field appearance="outline" class="w-100 mb-3">
@@ -43,6 +46,9 @@
                     {{u.name}} ({{u.email}})
                   </mat-option>
                 </mat-select>
+                <mat-error *ngIf="assignForm.get('verifier_id')?.hasError('required')">
+                  At least one verifier is required
+                </mat-error>
               </mat-form-field>
 
               <mat-form-field appearance="outline" class="w-100 mb-3">
@@ -61,6 +67,9 @@
                     {{t}}
                   </mat-option>
                 </mat-select>
+                <mat-error *ngIf="assignForm.get('skill_type')?.hasError('required')">
+                  At least one skill type is required
+                </mat-error>
               </mat-form-field>
 
               <mat-form-field appearance="outline" class="w-100 mb-3">
@@ -81,7 +90,7 @@
                 </mat-select>
               </mat-form-field>
 
-              <mat-form-field appearance="outline" class="w-100 mb-3" *ngIf="assignForm.get('grade_id')?.value?.length">
+              <mat-form-field appearance="outline" class="w-100 mb-3">
                 <mat-label>Section (Optional)</mat-label>
                 <mat-select formControlName="section_id" multiple>
                   <div style="display: flex; align-items: center; height: 48px; padding: 0 16px; border-bottom: 1px solid rgba(0,0,0,0.08);" (click)="$event.stopPropagation()">

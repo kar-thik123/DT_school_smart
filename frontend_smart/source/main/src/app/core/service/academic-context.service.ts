@@ -61,6 +61,8 @@ export class AcademicContextService {
    */
   clearContext(): void {
     this.activeYearSubject.next(null);
+    localStorage.removeItem('historical_academic_year');
+    this.historicalYearSubject.next(null);
   }
 
   /**
@@ -71,13 +73,27 @@ export class AcademicContextService {
   }
 
   // --- Historical Dashboard Context ---
-  private historicalYearSubject = new BehaviorSubject<any>(null);
+  private historicalYearSubject = new BehaviorSubject<any>(this.getStoredHistoricalYear());
+
+  private getStoredHistoricalYear(): any {
+    try {
+      const stored = localStorage.getItem('historical_academic_year');
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  }
 
   historicalYear$ = this.historicalYearSubject.asObservable().pipe(
     filter(y => y !== null)
   );
 
   setHistoricalYear(year: any): void {
+    if (year) {
+      localStorage.setItem('historical_academic_year', JSON.stringify(year));
+    } else {
+      localStorage.removeItem('historical_academic_year');
+    }
     this.historicalYearSubject.next(year);
   }
 

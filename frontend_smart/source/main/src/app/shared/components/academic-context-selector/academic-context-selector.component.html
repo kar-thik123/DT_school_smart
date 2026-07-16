@@ -38,7 +38,7 @@
               <mat-icon class="grade-chevron"
                 [@iconRotate]="expandedGrade === grade.id ? 'expanded' : 'collapsed'">chevron_right</mat-icon>
             </div>
-            <span class="grade-name flex-grow-1" (click)="selectNode(grade, null, null, null, null, null, null, $event)">{{ grade.name }}</span>
+            <span class="grade-name flex-grow-1" (click)="toggleGrade(grade.id, $event)">{{ grade.name }}</span>
           </div>
 
           <!-- Sections Wrapper (Collapsible) -->

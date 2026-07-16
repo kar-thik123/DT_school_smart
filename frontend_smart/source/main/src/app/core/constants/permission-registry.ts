@@ -58,7 +58,9 @@ export const PERMISSIONS_REGISTRY = {
     "description": "Teacher Subject and Class assignments",
     "actions": [
       "VIEW",
-      "ASSIGN"
+      "CREATE",
+      "EDIT",
+      "DELETE"
     ]
   },
   "STUDENT_ENROLLMENT": {
@@ -94,13 +96,6 @@ export const PERMISSIONS_REGISTRY = {
   },
   "EXAMINATION": {
     "description": "Examination and marks module",
-    "actions": [
-      "VIEW",
-      "MANAGE"
-    ]
-  },
-  "STUDENT_EXAM_RESULT": {
-    "description": "Student Exam Results entry and management",
     "actions": [
       "VIEW",
       "MANAGE"

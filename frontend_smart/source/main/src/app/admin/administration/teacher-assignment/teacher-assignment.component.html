@@ -166,11 +166,11 @@
                       <h4 class="mb-1">School-wide Assignments</h4>
                       <p class="text-muted mb-0">Overview of all teacher assignments across the organization.</p>
                     </div>
-                    <mat-form-field appearance="outline" class="mb-0" style="width: 300px;">
-                      <mat-label>Search assignments...</mat-label>
-                      <input matInput (keyup)="applyFilter($event)" placeholder="Ex. Tamil">
-                      <mat-icon matSuffix>search</mat-icon>
-                    </mat-form-field>
+                      <mat-form-field appearance="outline" class="mb-0" style="width: 300px;">
+                        <mat-label>Search assignments...</mat-label>
+                        <input matInput [formControl]="searchControl" placeholder="Search by teacher, grade, or subject">
+                        <mat-icon matSuffix>search</mat-icon>
+                      </mat-form-field>
                   </div>
 
                   <div class="table-responsive" style="position: relative; min-height: 200px;">

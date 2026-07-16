@@ -1,7 +1,8 @@
 import { GlobalLoaderComponent } from '@shared/components/global-loader/global-loader.component';
 import { Component, OnInit, inject, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormControl } from '@angular/forms';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
@@ -25,9 +26,10 @@ import { AcademicContextSelectorComponent, IAcademicContextSelection } from '@sh
 @Component({
   selector: 'app-teacher-assignment',
   standalone: true,
-  imports: [GlobalLoaderComponent, 
+  imports: [GlobalLoaderComponent,
     CommonModule,
     FormsModule,
+    ReactiveFormsModule,
     MatCardModule,
     MatFormFieldModule,
     MatSelectModule,
@@ -60,8 +62,8 @@ export class TeacherAssignmentComponent implements OnInit {
   activeAcademicYear: any;
   grades: IGrade[] = [];
   sections: ISection[] = [];
-  teachers: {id: string, name: string, email: string}[] = [];
-  
+  teachers: { id: string, name: string, email: string }[] = [];
+
   selectedGradeId: string | null = null;
   selectedSectionId: string | null = null;
   selectedGradeName: string = '';
@@ -79,7 +81,8 @@ export class TeacherAssignmentComponent implements OnInit {
   isSaving = false;
   isSearching = false;
   searchTimeout: any;
-  canManageAssignments = false;
+  canManageAssignments: boolean = false;
+  searchControl = new FormControl('');
 
   allAssignments: any[] = [];
   dataSource = new MatTableDataSource<any>([]);
@@ -105,9 +108,9 @@ export class TeacherAssignmentComponent implements OnInit {
     ];
 
     this.canManageAssignments = this.authService.hasPermission('TEACHER_ASSIGNMENT', 'CREATE') ||
-                                this.authService.hasPermission('TEACHER_ASSIGNMENT_CREATE') ||
-                                this.authService.hasPermission('TEACHER_ASSIGNMENT', 'DELETE') ||
-                                this.authService.hasPermission('TEACHER_ASSIGNMENT_DELETE');
+      this.authService.hasPermission('TEACHER_ASSIGNMENT_CREATE') ||
+      this.authService.hasPermission('TEACHER_ASSIGNMENT', 'DELETE') ||
+      this.authService.hasPermission('TEACHER_ASSIGNMENT_DELETE');
 
     this.academicContextService.activeYear$.subscribe((year: any) => {
       this.activeAcademicYear = year;
@@ -115,12 +118,27 @@ export class TeacherAssignmentComponent implements OnInit {
     });
 
     this.loadInitialData();
+
+    this.searchControl.valueChanges.pipe(
+      debounceTime(1000),
+      distinctUntilChanged()
+    ).subscribe(value => {
+      this.isSearching = true;
+      this.dataSource.filter = (value || '').trim().toLowerCase();
+      if (this.dataSource.paginator) {
+        this.dataSource.paginator.firstPage();
+      }
+      // Small timeout to allow UI loader to render, then remove loader
+      setTimeout(() => {
+        this.isSearching = false;
+      }, 100);
+    });
   }
 
   loadInitialData() {
     this.academicService.getGrades().subscribe((grades) => this.grades = grades);
     this.academicService.getSections().subscribe((sections) => this.sections = sections);
-    
+
     this.assignmentService.getInstructionalStaff().subscribe((teachers) => {
       this.teachers = teachers;
     });
@@ -164,7 +182,7 @@ export class TeacherAssignmentComponent implements OnInit {
   refreshAssignments() {
     this.assignmentService.getAllAssignments().subscribe((assignments) => {
       this.allAssignments = assignments;
-      
+
       const currentFilter = this.dataSource?.filter || '';
       this.dataSource = new MatTableDataSource(assignments);
       if (this._paginator) {
@@ -172,10 +190,10 @@ export class TeacherAssignmentComponent implements OnInit {
       }
       this.dataSource.filterPredicate = (data: any, filter: string) => {
         const searchStr = (
-          (data.teacher?.name || '') + 
-          (data.assignment_type || '') + 
-          (data.grade?.name || '') + 
-          (data.section?.name || '') + 
+          (data.teacher?.name || '') +
+          (data.assignment_type || '') +
+          (data.grade?.name || '') +
+          (data.section?.name || '') +
           (data.subject?.name || '')
         ).toLowerCase();
         return searchStr.includes(filter);
@@ -183,9 +201,14 @@ export class TeacherAssignmentComponent implements OnInit {
       this.dataSource.filter = currentFilter;
 
       if (this.selectedGradeId && this.selectedSectionId) {
-        const sectionAssignments = assignments.filter(a => 
+        const sectionAssignments = assignments.filter(a =>
           a.section_id === this.selectedSectionId
         );
+
+        // Reset previous state
+        this.currentClassTeacherId = null;
+        this.currentClassTeacherAssignment = null;
+        this.subjectTeacherMap = {};
 
         // Class Teacher
         const classTeacher = sectionAssignments.find(a => a.assignment_type === AssignmentType.CLASS_TEACHER);
@@ -205,22 +228,7 @@ export class TeacherAssignmentComponent implements OnInit {
     });
   }
 
-  applyFilter(event: Event) {
-    this.isSearching = true;
-    const filterValue = (event.target as HTMLInputElement).value;
-    
-    if (this.searchTimeout) {
-      clearTimeout(this.searchTimeout);
-    }
 
-    this.searchTimeout = setTimeout(() => {
-      this.dataSource.filter = filterValue.trim().toLowerCase();
-      if (this.dataSource.paginator) {
-        this.dataSource.paginator.firstPage();
-      }
-      this.isSearching = false;
-    }, 400);
-  }
 
   loadSubjectsForSection() {
     this.isLoadingSubjects = true;
@@ -234,15 +242,15 @@ export class TeacherAssignmentComponent implements OnInit {
             if (this.selectedGroupId && g.id !== this.selectedGroupId) return;
 
             g.subjects.forEach(sub => {
-               if(!this.sectionSubjects.find(s => s.subject.id === sub.id)) {
-                 this.sectionSubjects.push({
-                   subject: { id: sub.id, name: sub.name },
-                   is_elective: sub.subject_type === 'ELECTIVE'
-                 });
-               }
+              if (!this.sectionSubjects.find(s => s.subject.id === sub.id)) {
+                this.sectionSubjects.push({
+                  subject: { id: sub.id, name: sub.name },
+                  is_elective: sub.subject_type === 'ELECTIVE'
+                });
+              }
             });
           });
-          
+
           this.sectionSubjects.forEach(s => {
             if (this.subjectTeacherMap[s.subject.id] === undefined) {
               this.subjectTeacherMap[s.subject.id] = null;
@@ -292,7 +300,7 @@ export class TeacherAssignmentComponent implements OnInit {
       section_id: this.selectedSectionId
     };
 
-    const req = this.currentClassTeacherAssignment 
+    const req = this.currentClassTeacherAssignment
       ? this.assignmentService.updateAssignment(this.currentClassTeacherAssignment.id, payload)
       : this.assignmentService.createAssignment(payload);
 
@@ -314,7 +322,7 @@ export class TeacherAssignmentComponent implements OnInit {
 
     const newAssignments: any[] = [];
     const loadedSubjectIds = this.sectionSubjects.map(s => s.subject.id);
-    
+
     // Build array of intended assignments
     for (const [subjectId, teacherId] of Object.entries(this.subjectTeacherMap)) {
       if (teacherId && loadedSubjectIds.includes(subjectId)) {
@@ -333,11 +341,18 @@ export class TeacherAssignmentComponent implements OnInit {
     // First delete existing subject assignments for the LOADED subjects
     const assignmentsToDelete = this.existingSubjectAssignments.filter(a => loadedSubjectIds.includes(a.subject_id!));
 
-    const deletePromises = assignmentsToDelete.map(a => 
-      this.assignmentService.deleteAssignment(a.id).toPromise().catch(() => null)
-    );
+    // const deletePromises = assignmentsToDelete.map(a =>
+    //   this.assignmentService.deleteAssignment(a.id).toPromise().catch(() => null)
+    // );
+    // Execute deletes sequentially to prevent multiple parallel requests failing with 403 and triggering multiple snackbars
+    const executeDeletes = async () => {
+      for (const a of assignmentsToDelete) {
+        await this.assignmentService.deleteAssignment(a.id).toPromise();
+      }
+    };
 
-    Promise.all(deletePromises).then(() => {
+    // Promise.all(deletePromises).then(() => {
+    executeDeletes().then(() => {
       if (newAssignments.length === 0) {
         this.showNotification('success', 'Subject Teachers mapped successfully');
         this.refreshAssignments(); // reload

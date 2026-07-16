@@ -43,8 +43,14 @@ export class ManagementDashboardComponent implements OnInit {
   academicYearName: string = '';
 
   ngOnInit(): void {
+    const savedYear = this.academicContextService.currentHistoricalYear;
+    if (savedYear) {
+      this.academicYearName = savedYear.academic_year || savedYear.name;
+      this.selectedYearId = savedYear.id;
+    }
+
     this.academicContextService.activeYear$.subscribe((year: any) => {
-      if (year) {
+      if (year && !this.selectedYearId) {
         this.academicYearName = year.academic_year || year.name;
         this.selectedYearId = year.id;
         this.onYearSelected(year);
