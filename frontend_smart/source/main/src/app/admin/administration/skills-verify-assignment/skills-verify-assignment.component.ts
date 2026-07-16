@@ -13,8 +13,11 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatMenuModule } from '@angular/material/menu';
 import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.component';
 import { GlobalLoaderComponent } from '@shared/components/global-loader/global-loader.component';
+import { AcademicContextService } from '@core';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-skills-verify-assignment',
@@ -24,7 +27,7 @@ import { GlobalLoaderComponent } from '@shared/components/global-loader/global-l
     MatFormFieldModule, MatInputModule, MatSelectModule,
     MatButtonModule, MatIconModule, MatTableModule,
     MatTooltipModule, BreadcrumbComponent, MatCheckboxModule,
-    GlobalLoaderComponent
+    MatMenuModule, GlobalLoaderComponent
   ],
   templateUrl: './skills-verify-assignment.component.html',
   styleUrls: ['./skills-verify-assignment.component.scss']
@@ -40,6 +43,7 @@ export class SkillsVerifyAssignmentComponent implements OnInit {
 
   assignments: any[] = [];
   isLoadingAssignments: boolean = false;
+  isPatching: boolean = false;
   users: any[] = [];
   filteredUsers: any[] = [];
   grades: any[] = [];
@@ -50,13 +54,16 @@ export class SkillsVerifyAssignmentComponent implements OnInit {
   skillTypes = ['Academic Skills', 'Extra Curricular Skills'];
 
   assignForm: FormGroup;
-  displayedColumns = ['verifier', 'skill_type', 'grade', 'section', 'actions'];
+  displayedColumns: string[] = ['verifier', 'skill_type', 'grade', 'section', 'actions'];
+
   editingId: string | null = null;
+  academicYearId: string = '';
 
   constructor(
     private http: HttpClient,
     private fb: FormBuilder,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private academicContextService: AcademicContextService
   ) {
     this.assignForm = this.fb.group({
       role_id: ['', Validators.required],
@@ -68,9 +75,37 @@ export class SkillsVerifyAssignmentComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadAssignments();
-    this.loadUsers();
+    // Attempt to get from service first
+    const currentYear = this.academicContextService.currentActiveYear;
+    if (currentYear && currentYear.id) {
+      this.academicYearId = currentYear.id;
+      this.loadAssignments();
+    } else {
+      // Fallback: direct HTTP call if service hasn't initialized properly
+      this.http.get<any>(`${environment.apiUrl}/academic/active-year`).subscribe({
+        next: (year) => {
+          this.academicYearId = year?.id || '';
+          if (this.academicYearId) {
+            this.loadAssignments();
+          }
+        },
+        error: (err) => {
+          console.error('Failed to load active year in component:', err);
+          this.showError('Warning: No active academic year found. Cannot load assignments.');
+        }
+      });
+    }
+
+    this.academicContextService.activeYear$.subscribe((year: any) => {
+      // If we already loaded it, don't overwrite if it's empty
+      if (year && year.id) {
+        this.academicYearId = year.id;
+        this.loadAssignments();
+      }
+    });
+
     this.loadRoles();
+    this.loadUsers();
     this.loadGrades();
     this.loadSections();
 
@@ -78,33 +113,24 @@ export class SkillsVerifyAssignmentComponent implements OnInit {
       if (roleId) {
         this.filteredUsers = this.users.filter(u => u.role_id === roleId);
       } else {
-        // If there is no active role explicitly selected (like when opening an edit dialog for a previous assignment), 
-        // fall back to showing ONLY the assigned users so they are not dropped from the view, without listing ALL users.
-        const currentSelectedIds = this.assignForm.get('verifier_id')?.value || [];
-        this.filteredUsers = this.users.filter(u => currentSelectedIds.includes(u.id));
+        this.filteredUsers = [];
       }
 
-      const currentVerifiers = this.assignForm.get('verifier_id')?.value || [];
-      const validVerifiers = currentVerifiers.filter((vid: string) =>
-        vid === 'selectAll' || this.filteredUsers.some(u => u.id === vid)
-      );
-
-      // We only want to patch and discard invalid assigned users if a role was specifically interacted with right now. 
-      // If roleId is empty, avoid indiscriminant patching that wipes everything.
-      if (roleId && currentVerifiers.length !== validVerifiers.length) {
-        this.assignForm.patchValue({ verifier_id: validVerifiers }, { emitEvent: false });
+      if (!this.isPatching) {
+        this.assignForm.patchValue({ verifier_id: [] }, { emitEvent: false });
       }
     });
 
     this.assignForm.get('grade_id')?.valueChanges.subscribe((gradeIds: string[] | null) => {
       if (gradeIds && gradeIds.length > 0) {
-        // If 'null' (All Grades) is selected along with others, we might want to handle it, 
-        // but typically gradeIds is just an array of selected values.
         this.filteredSections = this.sections.filter(s => gradeIds.includes(s.grade_id));
       } else {
         this.filteredSections = [];
       }
-      this.assignForm.patchValue({ section_id: [] });
+      
+      if (!this.isPatching) {
+        this.assignForm.patchValue({ section_id: [] }, { emitEvent: false });
+      }
     });
   }
 
@@ -119,31 +145,29 @@ export class SkillsVerifyAssignmentComponent implements OnInit {
     return grade ? grade.name : 'Unknown Grade';
   }
 
+  isAllSelected(controlName: string, allValues: any[]): boolean {
+    const selected = this.assignForm.get(controlName)?.value || [];
+    return allValues.length > 0 && selected.length === allValues.length;
+  }
+
+  isIndeterminate(controlName: string, allValues: any[]): boolean {
+    const selected = this.assignForm.get(controlName)?.value || [];
+    return selected.length > 0 && selected.length < allValues.length;
+  }
+
   toggleAllNative(controlName: string, allValues: any[], isSelected: boolean) {
     if (isSelected) {
-      this.assignForm.get(controlName)?.patchValue([...allValues, 'selectAll']);
+      this.assignForm.get(controlName)?.patchValue([...allValues]);
     } else {
       this.assignForm.get(controlName)?.patchValue([]);
     }
   }
 
-  toggleOneNative(controlName: string, allValues: any[]) {
-    const selected = this.assignForm.get(controlName)?.value || [];
-    const indexOfSelectAll = selected.indexOf('selectAll');
-
-    if (indexOfSelectAll > -1 && selected.length - 1 < allValues.length) {
-      // It was selected, but now one item was unselected
-      const filtered = selected.filter((v: any) => v !== 'selectAll');
-      this.assignForm.get(controlName)?.patchValue(filtered);
-    } else if (indexOfSelectAll === -1 && selected.length === allValues.length) {
-      // All items are selected, add selectAll back to display the checked state
-      this.assignForm.get(controlName)?.patchValue([...allValues, 'selectAll']);
-    }
-  }
-
   loadAssignments() {
+    if (!this.academicYearId) return;
+    
     this.isLoadingAssignments = true;
-    this.http.get<any[]>(`${environment.apiUrl}/skill-assignment`).subscribe({
+    this.http.get<any[]>(`${environment.apiUrl}/skill-assignment?academic_year_id=${this.academicYearId}`).subscribe({
       next: (data) => {
         this.assignments = data;
         this.isLoadingAssignments = false;
@@ -174,13 +198,9 @@ export class SkillsVerifyAssignmentComponent implements OnInit {
   loadRoles() {
     this.http.get<any[]>(`${environment.apiUrl}/roles`).subscribe({
       next: (data) => {
-        // filter roles that have any SKILLS_VERIFY_ASSIGNMENT permission
-        this.filteredRoles = data.filter(role =>
-          role.permissions?.some((rp: any) =>
-            rp.permission.module === 'SKILLS_VERIFY_ASSIGNMENT' &&
-            ['ASSIGN', 'DELETE', 'VIEW'].includes(rp.permission.action)
-          )
-        );
+        // Previously filtered roles by SKILLS_VERIFY_ASSIGNMENT which excluded many valid verifier roles.
+        // We now allow selecting from all available roles.
+        this.filteredRoles = data;
       },
       error: (err) => console.error(err)
     });
@@ -201,13 +221,21 @@ export class SkillsVerifyAssignmentComponent implements OnInit {
   }
 
   onSubmit() {
-    if (this.assignForm.invalid) return;
+    if (this.assignForm.invalid) {
+      this.assignForm.markAllAsTouched();
+      return;
+    }
 
-    const val = { ...this.assignForm.value };
-    val.verifier_ids = (val.verifier_id || []).filter((v: any) => v !== 'selectAll');
-    val.skill_types = (val.skill_type || []).filter((v: any) => v !== 'selectAll');
-    val.grade_ids = (val.grade_id || []).filter((v: any) => v !== 'selectAll');
-    val.section_ids = (val.section_id || []).filter((v: any) => v !== 'selectAll');
+    if (!this.academicYearId) {
+      this.showError('Active Academic Year is not set. Please ensure an active academic year is configured.');
+      return;
+    }
+
+    const val = { ...this.assignForm.value, academic_year_id: this.academicYearId };
+    val.verifier_ids = val.verifier_id || [];
+    val.skill_types = val.skill_type || [];
+    val.grade_ids = val.grade_id || [];
+    val.section_ids = val.section_id || [];
 
     delete val.verifier_id;
     delete val.skill_type;
@@ -221,7 +249,10 @@ export class SkillsVerifyAssignmentComponent implements OnInit {
           this.loadAssignments();
           this.cancelEdit();
         },
-        error: (err) => this.showError(err.error?.error || 'Failed to update assignment')
+        error: (err) => {
+          const errMsg = typeof err.error?.error === 'object' ? JSON.stringify(err.error.error) : (err.error?.error || 'Failed to update assignment');
+          this.showError(errMsg);
+        }
       });
     } else {
       this.http.post(`${environment.apiUrl}/skill-assignment`, val).subscribe({
@@ -230,20 +261,79 @@ export class SkillsVerifyAssignmentComponent implements OnInit {
           this.loadAssignments();
           this.assignForm.reset();
         },
-        error: (err) => this.showError(err.error?.error || 'Failed to create assignment')
+        error: (err) => {
+          const errMsg = typeof err.error?.error === 'object' ? JSON.stringify(err.error.error) : (err.error?.error || 'Failed to create assignment');
+          this.showError(errMsg);
+        }
       });
     }
   }
 
   editAssignment(assignment: any) {
     this.editingId = assignment.id;
-    this.assignForm.patchValue({
-      role_id: assignment.role_id || '',
-      verifier_id: assignment.verifier_ids || [],
-      skill_type: assignment.skill_types || [],
-      grade_id: assignment.grade_ids || [],
-      section_id: assignment.section_ids || []
+    
+    // Infer the role_id from the verifiers array from the backend response or local users list
+    let inferredRoleId = '';
+    if (assignment.verifiers && assignment.verifiers.length > 0 && assignment.verifiers[0].role_id) {
+      inferredRoleId = assignment.verifiers[0].role_id;
+    } else if (assignment.verifier_ids && assignment.verifier_ids.length > 0) {
+      const firstVerifier = this.users.find(u => u.id === assignment.verifier_ids[0]);
+      if (firstVerifier && firstVerifier.role_id) {
+        inferredRoleId = firstVerifier.role_id;
+      }
+    }
+
+    // Ultimate fallback: if we STILL don't have a role_id, but we know the role name from the verifiers object
+    if (!inferredRoleId && assignment.verifiers && assignment.verifiers.length > 0 && assignment.verifiers[0].role?.name) {
+      const matchedRole = this.filteredRoles.find(r => r.name === assignment.verifiers[0].role.name);
+      if (matchedRole) {
+        inferredRoleId = matchedRole.id;
+      }
+    }
+
+    const finalRoleId = assignment.role_id || inferredRoleId || '';
+
+    // If the inferred role is somehow missing from the loaded roles list (e.g. API filter), 
+    // dynamically add it so the dropdown can successfully select and display it.
+    if (finalRoleId && !this.filteredRoles.some(r => r.id === finalRoleId)) {
+      const verifierUser = this.users.find(u => u.role_id === finalRoleId);
+      this.filteredRoles = [...this.filteredRoles, { 
+        id: finalRoleId, 
+        name: verifierUser ? verifierUser.role : 'Assigned Role' 
+      }];
+    }
+
+    // Fix the race condition: Manually prepare filteredUsers BEFORE patching the form.
+    if (finalRoleId) {
+      this.filteredUsers = this.users.filter(u => u.role_id === finalRoleId);
+    } else if (assignment.verifiers && assignment.verifiers.length > 0) {
+      this.filteredUsers = assignment.verifiers;
+    }
+
+    // Manually prepare filteredSections
+    if (assignment.grade_ids && assignment.grade_ids.length > 0) {
+      this.filteredSections = this.sections.filter(s => assignment.grade_ids.includes(s.grade_id));
+    } else {
+      this.filteredSections = [];
+    }
+
+    // Set flag to prevent valueChanges from clearing fields
+    this.isPatching = true;
+
+    // Patch the values in a setTimeout to allow Angular's change detection to 
+    // fully render the new filteredUsers into the DOM as <mat-option>s before selection.
+    setTimeout(() => {
+      this.assignForm.patchValue({
+        role_id: finalRoleId,
+        verifier_id: assignment.verifier_ids || [],
+        skill_type: assignment.skill_types || [],
+        grade_id: assignment.grade_ids || [],
+        section_id: assignment.section_ids || []
+      }, { emitEvent: true }); // ensure valueChanges run to maintain consistency
+      
+      this.isPatching = false;
     });
+
     // Scroll to top or just let them see the form
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -253,8 +343,18 @@ export class SkillsVerifyAssignmentComponent implements OnInit {
     this.assignForm.reset();
   }
 
-  deleteAssignment(id: string) {
-    if (!confirm('Are you sure you want to remove this assignment?')) return;
+  async deleteAssignment(id: string) {
+    const result = await Swal.fire({
+      title: 'Delete Assignment?',
+      text: 'Are you sure you want to remove this assignment?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, delete it!'
+    });
+
+    if (!result.isConfirmed) return;
 
     this.http.delete(`${environment.apiUrl}/skill-assignment/${id}`).subscribe({
       next: () => {

@@ -30,12 +30,16 @@
               <mat-form-field appearance="outline" class="w-100 mb-3">
                 <mat-label>Verifier</mat-label>
                 <mat-select formControlName="verifier_id" required multiple>
-                  <mat-option #allVerifierSelected [value]="'selectAll'"
-                    (click)="toggleAllNative('verifier_id', getIds(filteredUsers), allVerifierSelected.selected)">
-                    Select All
-                  </mat-option>
-                  <mat-option *ngFor="let u of filteredUsers" [value]="u.id"
-                    (click)="toggleOneNative('verifier_id', getIds(filteredUsers))">
+                  <div style="display: flex; align-items: center; height: 48px; padding: 0 16px; border-bottom: 1px solid rgba(0,0,0,0.08);" (click)="$event.stopPropagation()">
+                    <mat-checkbox 
+                      style="margin-left: -8px; width: 100%;"
+                      [checked]="isAllSelected('verifier_id', getIds(filteredUsers))"
+                      [indeterminate]="isIndeterminate('verifier_id', getIds(filteredUsers))"
+                      (change)="toggleAllNative('verifier_id', getIds(filteredUsers), $event.checked)">
+                      Select All
+                    </mat-checkbox>
+                  </div>
+                  <mat-option *ngFor="let u of filteredUsers" [value]="u.id">
                     {{u.name}} ({{u.email}})
                   </mat-option>
                 </mat-select>
@@ -44,12 +48,16 @@
               <mat-form-field appearance="outline" class="w-100 mb-3">
                 <mat-label>Skill Type</mat-label>
                 <mat-select formControlName="skill_type" required multiple>
-                  <mat-option #allSkillSelected [value]="'selectAll'"
-                    (click)="toggleAllNative('skill_type', skillTypes, allSkillSelected.selected)">
-                    Select All
-                  </mat-option>
-                  <mat-option *ngFor="let t of skillTypes" [value]="t"
-                    (click)="toggleOneNative('skill_type', skillTypes)">
+                  <div style="display: flex; align-items: center; height: 48px; padding: 0 16px; border-bottom: 1px solid rgba(0,0,0,0.08);" (click)="$event.stopPropagation()">
+                    <mat-checkbox 
+                      style="margin-left: -8px; width: 100%;"
+                      [checked]="isAllSelected('skill_type', skillTypes)"
+                      [indeterminate]="isIndeterminate('skill_type', skillTypes)"
+                      (change)="toggleAllNative('skill_type', skillTypes, $event.checked)">
+                      Select All
+                    </mat-checkbox>
+                  </div>
+                  <mat-option *ngFor="let t of skillTypes" [value]="t">
                     {{t}}
                   </mat-option>
                 </mat-select>
@@ -58,12 +66,16 @@
               <mat-form-field appearance="outline" class="w-100 mb-3">
                 <mat-label>Grade (Optional)</mat-label>
                 <mat-select formControlName="grade_id" multiple>
-                  <mat-option #allGradeSelected [value]="'selectAll'"
-                    (click)="toggleAllNative('grade_id', getIds(grades), allGradeSelected.selected)">
-                    Select All
-                  </mat-option>
-                  <mat-option *ngFor="let g of grades" [value]="g.id"
-                    (click)="toggleOneNative('grade_id', getIds(grades))">
+                  <div style="display: flex; align-items: center; height: 48px; padding: 0 16px; border-bottom: 1px solid rgba(0,0,0,0.08);" (click)="$event.stopPropagation()">
+                    <mat-checkbox 
+                      style="margin-left: -8px; width: 100%;"
+                      [checked]="isAllSelected('grade_id', getIds(grades))"
+                      [indeterminate]="isIndeterminate('grade_id', getIds(grades))"
+                      (change)="toggleAllNative('grade_id', getIds(grades), $event.checked)">
+                      Select All
+                    </mat-checkbox>
+                  </div>
+                  <mat-option *ngFor="let g of grades" [value]="g.id">
                     {{g.name}}
                   </mat-option>
                 </mat-select>
@@ -72,12 +84,16 @@
               <mat-form-field appearance="outline" class="w-100 mb-3" *ngIf="assignForm.get('grade_id')?.value?.length">
                 <mat-label>Section (Optional)</mat-label>
                 <mat-select formControlName="section_id" multiple>
-                  <mat-option #allSectionSelected [value]="'selectAll'"
-                    (click)="toggleAllNative('section_id', getIds(filteredSections), allSectionSelected.selected)">
-                    Select All
-                  </mat-option>
-                  <mat-option *ngFor="let s of filteredSections" [value]="s.id"
-                    (click)="toggleOneNative('section_id', getIds(filteredSections))">
+                  <div style="display: flex; align-items: center; height: 48px; padding: 0 16px; border-bottom: 1px solid rgba(0,0,0,0.08);" (click)="$event.stopPropagation()">
+                    <mat-checkbox 
+                      style="margin-left: -8px; width: 100%;"
+                      [checked]="isAllSelected('section_id', getIds(filteredSections))"
+                      [indeterminate]="isIndeterminate('section_id', getIds(filteredSections))"
+                      (change)="toggleAllNative('section_id', getIds(filteredSections), $event.checked)">
+                      Select All
+                    </mat-checkbox>
+                  </div>
+                  <mat-option *ngFor="let s of filteredSections" [value]="s.id">
                     {{getGradeName(s.grade_id)}} - {{s.name}}
                   </mat-option>
                 </mat-select>
@@ -105,7 +121,8 @@
           <mat-card-content>
             <div class="table-responsive" style="position: relative; min-height: 200px;">
               @if (isLoadingAssignments) {
-              <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; align-items: center; background: rgba(255,255,255,0.7); z-index: 10;">
+              <div
+                style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; align-items: center; background: rgba(255,255,255,0.7); z-index: 10;">
                 <app-global-loader [inline]="true"></app-global-loader>
               </div>
               }
@@ -143,14 +160,19 @@
                 <ng-container matColumnDef="actions">
                   <th mat-header-cell *matHeaderCellDef> Actions </th>
                   <td mat-cell *matCellDef="let element">
-                    <button mat-icon-button color="primary" (click)="editAssignment(element)"
-                      matTooltip="Edit Assignment">
-                      <mat-icon>edit</mat-icon>
+                    <button mat-icon-button [matMenuTriggerFor]="menu">
+                      <mat-icon>more_vert</mat-icon>
                     </button>
-                    <button mat-icon-button color="warn" (click)="deleteAssignment(element.id)"
-                      matTooltip="Remove Assignment">
-                      <mat-icon>delete</mat-icon>
-                    </button>
+                    <mat-menu #menu="matMenu">
+                      <button mat-menu-item (click)="editAssignment(element)">
+                        <mat-icon>edit</mat-icon>
+                        <span>Edit</span>
+                      </button>
+                      <button mat-menu-item (click)="deleteAssignment(element.id)" style="color: #f44336;">
+                        <mat-icon style="color: #f44336;">delete</mat-icon>
+                        <span>Delete</span>
+                      </button>
+                    </mat-menu>
                   </td>
                 </ng-container>
 
