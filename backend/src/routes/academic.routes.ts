@@ -555,6 +555,53 @@ router.put('/sections/:id', requirePermission('ACADEMIC_STRUCTURE', 'EDIT'), asy
   }
 });
 
+// Custom override for Section GET to enforce strict active, organization, and academic year filters (F-04)
+router.get('/sections', requirePermission('ACADEMIC_STRUCTURE', 'READ'), async (req: any, res: Response) => {
+  try {
+    let yearId = req.query.academic_year_id as string;
+    if (!yearId || yearId === 'null' || yearId === 'undefined') {
+      yearId = await getActiveAcademicYearId(req.user.organization_id);
+    }
+
+    let filter: any = { 
+      organization_id: req.user.organization_id,
+      is_active: true,
+      grade: {
+        is_active: true,
+        academic_year_id: yearId
+      }
+    };
+
+    if (req.query.grade_id) {
+      filter.grade_id = String(req.query.grade_id);
+    }
+
+    const isGlobalAdmin = req.user.permissions?.includes('ACADEMIC_STRUCTURE:READ') || 
+                          req.user.permissions?.includes('ACADEMIC_STRUCTURE_READ') ||
+                          req.user.permissions?.includes('ACADEMIC_STRUCTURE:VIEW') ||
+                          req.user.permissions?.includes('ACADEMIC_STRUCTURE_VIEW');
+    
+    if (!isGlobalAdmin) {
+      const visibilityFilter = await AssignmentVisibilityResolver.buildTeacherSectionWhereClause(req);
+      if (visibilityFilter.id) filter.id = visibilityFilter.id;
+    }
+
+    // Since Section doesn't have deleted_at natively, is_active serves as the soft-delete/active flag
+    const data = await prisma.section.findMany({
+      where: filter,
+      include: {
+        grade: true
+      },
+      orderBy: { sort_order: 'asc' }
+    });
+
+    res.json(data);
+  } catch (error: any) {
+    console.error('Error fetching Sections:', error);
+    res.status(500).json({ message: 'Error fetching Sections', error: error.message });
+  }
+});
+
 router.use('/sections', createCrudHandlers('Section', prisma.section));
 // ── Subjects: custom handler — auto-resolves grade_id if a section_id is sent ──────────────────
 const subjectRouter = Router();

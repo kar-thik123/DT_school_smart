@@ -11,11 +11,16 @@ export class StudentMappingProcessor implements BulkImportProcessor {
   };
   private fileUniqueSet: Set<string> = new Set();
   
+  private normalizeString(val: any): string {
+    if (typeof val !== 'string') return '';
+    return val.replace(/\s+/g, ' ').trim().toLowerCase();
+  }
+  
   constructor(private organizationId: string, private userId: string, private academicYearId: string) {}
 
   async resolveRelations(rows: any[]): Promise<ResolvedDataMap> {
     // Pre-normalize incoming row keys
-    const emails = Array.from(new Set(rows.map((r: any) => r.student_email?.trim().toLowerCase()).filter(Boolean)));
+    const emails = Array.from(new Set(rows.map((r: any) => this.normalizeString(r.student_email)).filter(Boolean)));
     
     // Fetch all structural records for this org to allow case-insensitive memory mapping
     const [users, grades, sections, groups] = await Promise.all([
@@ -38,12 +43,12 @@ export class StudentMappingProcessor implements BulkImportProcessor {
     ]);
 
     // Fast mapping indices using forced lowercase for absolute forgiveness
-    this.resolved.users = Object.fromEntries(users.map((u: any) => [u.email.toLowerCase(), u]));
-    this.resolved.grades = Object.fromEntries(grades.map((g: any) => [g.name.trim().toLowerCase(), g]));
+    this.resolved.users = Object.fromEntries(users.map((u: any) => [this.normalizeString(u.email), u]));
+    this.resolved.grades = Object.fromEntries(grades.map((g: any) => [this.normalizeString(g.name), g]));
     
     // Composite mapping for names that might overlap across trees
-    this.resolved.sections = Object.fromEntries(sections.map((s: any) => [`${s.grade_id}_${s.name.trim().toLowerCase()}`, s]));
-    this.resolved.groups = Object.fromEntries(groups.map((g: any) => [`${g.section_id}_${g.name.trim().toLowerCase()}`, g]));
+    this.resolved.sections = Object.fromEntries(sections.map((s: any) => [`${s.grade_id}_${this.normalizeString(s.name)}`, s]));
+    this.resolved.groups = Object.fromEntries(groups.map((g: any) => [`${g.section_id}_${this.normalizeString(g.name)}`, g]));
     
     // Query existing mappings for resolved students to handle conflicts
     const studentIds = users.map((u: any) => u.id);
@@ -73,10 +78,10 @@ export class StudentMappingProcessor implements BulkImportProcessor {
     const rawSection = row.section_name;
     const rawGroup = row.group_name;
 
-    const email = rawEmail?.trim().toLowerCase();
-    const gradeName = rawGrade?.trim().toLowerCase();
-    const sectionName = rawSection?.trim().toLowerCase();
-    const groupName = rawGroup?.trim().toLowerCase();
+    const email = this.normalizeString(rawEmail);
+    const gradeName = this.normalizeString(rawGrade);
+    const sectionName = this.normalizeString(rawSection);
+    const groupName = this.normalizeString(rawGroup);
 
     const errors: string[] = [];
     if (!email) errors.push("Missing student_email");

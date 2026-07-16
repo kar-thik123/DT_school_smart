@@ -31,8 +31,10 @@
                 <button mat-stroked-button color="primary" class="me-2" *appHasPermission="'STUDENT_ENROLLMENT:IMPORT'" (click)="openImportDialog()">
                   <mat-icon>upload</mat-icon> Import
                 </button>
-                <button mat-stroked-button color="primary" *appHasPermission="'STUDENT_ENROLLMENT:EXPORT'" (click)="exportEnrollments()">
-                  <mat-icon>download</mat-icon> Export
+                <button mat-stroked-button color="primary" *appHasPermission="'STUDENT_ENROLLMENT:EXPORT'" (click)="exportEnrollments()" [disabled]="isExporting">
+                  <mat-icon *ngIf="!isExporting">download</mat-icon>
+                  <mat-spinner diameter="18" *ngIf="isExporting" class="d-inline-block align-middle me-2"></mat-spinner>
+                  <span class="align-middle">Export</span>
                 </button>
               </div>
             </div>
@@ -117,6 +119,12 @@
                           </div>
                       </div>
                     </div>
+                    
+                    <mat-paginator [length]="enrollmentsTotal"
+                                   [pageSize]="enrollmentsLimit"
+                                   [pageSizeOptions]="[10, 20, 50, 100]"
+                                   (page)="onEnrollmentsPageChange($event)">
+                    </mat-paginator>
                   </div>
                 </div>
               </mat-tab>
@@ -149,8 +157,8 @@
                         <h6 class="m-0">Select Unenrolled Students</h6>
                         <mat-form-field appearance="outline" style="width: 250px;">
                           <mat-label>Search</mat-label>
-                          <input matInput [(ngModel)]="bulkSearchQuery" (keyup.enter)="onBulkSearch()" placeholder="Name, Email, Adm No...">
-                          <mat-icon matSuffix (click)="onBulkSearch()" style="cursor: pointer;">search</mat-icon>
+                          <input matInput [(ngModel)]="bulkSearchQuery" (ngModelChange)="onBulkSearch()" placeholder="Name, Email, Adm No...">
+                          <mat-icon matSuffix>search</mat-icon>
                         </mat-form-field>
                       </div>
                       <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
@@ -189,6 +197,12 @@
                           </tbody>
                         </table>
                       </div>
+                      
+                      <mat-paginator [length]="unenrolledTotal"
+                                     [pageSize]="unenrolledLimit"
+                                     [pageSizeOptions]="[10, 20, 50, 100]"
+                                     (page)="onUnenrolledPageChange($event)">
+                      </mat-paginator>
                     </div>
                   </div>
                 </div>

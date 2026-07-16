@@ -46,25 +46,41 @@ router.get('/', requirePermission('ACADEMIC_STRUCTURE', 'READ'), async (req: any
       }
     }
 
-    const enrollments = await prisma.studentEnrollment.findMany({
-      where: filter,
-      include: {
-        student: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            roll_number: true,
-            student_profile: true
-          }
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const skip = (page - 1) * limit;
+
+    const [total_count, enrollments] = await prisma.$transaction([
+      prisma.studentEnrollment.count({ where: filter }),
+      prisma.studentEnrollment.findMany({
+        where: filter,
+        include: {
+          student: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              roll_number: true,
+              student_profile: true
+            }
+          },
+          academic_year: true,
+          grade: true,
+          section: true,
+          subject_group: true
         },
-        academic_year: true,
-        grade: true,
-        section: true,
-        subject_group: true
-      }
+        skip,
+        take: limit,
+        orderBy: { created_at: 'desc' }
+      })
+    ]);
+    
+    res.json({
+      data: enrollments,
+      total_count,
+      current_page: page,
+      last_page: Math.ceil(total_count / limit)
     });
-    res.json(enrollments);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -85,49 +101,64 @@ router.get('/unenrolled', requirePermission('ACADEMIC_STRUCTURE', 'READ'), async
       ]
     } : {};
 
-    // Find all active students matching the search — exclude teachers and admins
-    const students = await prisma.user.findMany({
-      where: {
-        organization_id: req.user.organization_id,
-        is_active: true,
-        role: {
-          permissions: {
-            some: { permission: { module: 'IDENTITY', action: 'IS_STUDENT' } }
-          },
-          AND: [
-            {
-              permissions: {
-                none: { permission: { module: 'IDENTITY', action: 'IS_TEACHER' } }
-              }
-            },
-            {
-              permissions: {
-                none: { permission: { module: 'IDENTITY', action: 'IS_MANAGEMENT' } }
-              }
-            }
-          ]
-        },
-        ...searchFilter
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        roll_number: true,
-        student_profile: true
-      }
-    });
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const skip = (page - 1) * limit;
 
-    // Find enrolled student IDs for this year
+    // Find enrolled student IDs for this year to exclude them at DB level
     const enrollments = await prisma.studentEnrollment.findMany({
       where: { organization_id: req.user.organization_id, academic_year_id: String(academic_year_id) },
       select: { student_id: true }
     });
-    const enrolledIds = new Set(enrollments.map((e: any) => e.student_id));
+    const enrolledIds = enrollments.map((e: any) => e.student_id);
 
-    // Filter unenrolled
-    const unenrolled = students.filter((s: any) => !enrolledIds.has(s.id));
-    res.json(unenrolled);
+    const baseWhere = {
+      organization_id: req.user.organization_id,
+      is_active: true,
+      id: { notIn: enrolledIds },
+      role: {
+        permissions: {
+          some: { permission: { module: 'IDENTITY', action: 'IS_STUDENT' } }
+        },
+        AND: [
+          {
+            permissions: {
+              none: { permission: { module: 'IDENTITY', action: 'IS_TEACHER' } }
+            }
+          },
+          {
+            permissions: {
+              none: { permission: { module: 'IDENTITY', action: 'IS_MANAGEMENT' } }
+            }
+          }
+        ]
+      },
+      ...searchFilter
+    };
+
+    const [total_count, students] = await prisma.$transaction([
+      prisma.user.count({ where: baseWhere }),
+      prisma.user.findMany({
+        where: baseWhere,
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          roll_number: true,
+          student_profile: true
+        },
+        skip,
+        take: limit,
+        orderBy: { name: 'asc' }
+      })
+    ]);
+
+    res.json({
+      data: students,
+      total_count,
+      current_page: page,
+      last_page: Math.ceil(total_count / limit)
+    });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -350,20 +381,47 @@ router.post('/:id/transfer', requirePermission('ACADEMIC_STRUCTURE', 'EDIT'), as
       return res.status(404).json({ message: 'Enrollment not found' });
     }
 
-    // Group validation
-    const groupValidation = await StudentEnrollmentService.validateGroupAssignment(orgId, to_grade_id, to_section_id, to_subject_group_id);
-    if (!groupValidation.allowed) {
-      return res.status(400).json({ message: groupValidation.message });
+    if (existing.status === EnrollmentStatus.WITHDRAWN) {
+      return res.status(400).json({ message: 'Cannot transfer a withdrawn student' });
     }
 
-    if (to_section_id && to_section_id !== existing.section_id) {
+    if (existing.grade_id === to_grade_id && existing.section_id === to_section_id && existing.subject_group_id === to_subject_group_id) {
+      return res.status(400).json({ message: 'Cannot transfer to the same section and curriculum' });
+    }
+
+    // Check if target entities exist and are active
+    const targetGrade = await prisma.grade.findUnique({ where: { id: to_grade_id } });
+    if (!targetGrade || !targetGrade.is_active || targetGrade.organization_id !== orgId) {
+      return res.status(400).json({ message: 'Target grade is invalid or inactive' });
+    }
+
+    if (to_section_id) {
        const section = await prisma.section.findUnique({ where: { id: to_section_id } });
-       if (section && section.capacity) {
+       if (!section || !section.is_active || section.organization_id !== orgId) {
+         return res.status(400).json({ message: 'Target section is invalid or inactive' });
+       }
+       if (section.grade_id !== to_grade_id) {
+         return res.status(400).json({ message: 'Section does not belong to the target grade' });
+       }
+       if (to_section_id !== existing.section_id && section.capacity) {
          const currentCount = await prisma.studentEnrollment.count({
            where: { section_id: to_section_id, organization_id: orgId, status: EnrollmentStatus.ACTIVE }
          });
          if (currentCount + 1 > section.capacity) return res.status(400).json({ message: 'Section capacity exceeded' });
        }
+    }
+
+    if (to_subject_group_id) {
+       const group = await prisma.subjectGroup.findUnique({ where: { id: to_subject_group_id } });
+       if (!group || !group.is_active || group.organization_id !== orgId) {
+         return res.status(400).json({ message: 'Target group is invalid or inactive' });
+       }
+    }
+
+    // Group validation (uses existing logic)
+    const groupValidation = await StudentEnrollmentService.validateGroupAssignment(orgId, to_grade_id, to_section_id, to_subject_group_id);
+    if (!groupValidation.allowed) {
+      return res.status(400).json({ message: groupValidation.message });
     }
 
     await prisma.$transaction(async (tx: any) => {

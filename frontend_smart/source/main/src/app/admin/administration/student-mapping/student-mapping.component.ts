@@ -37,6 +37,10 @@ export class SimpleTestDialogComponent {}
 import { TransferStudentDialogComponent } from './dialogs/transfer-student-dialog.component';
 import { WithdrawStudentDialogComponent } from './dialogs/withdraw-student-dialog.component';
 
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+
 @Component({
   selector: 'app-student-mapping',
   standalone: true,
@@ -55,6 +59,7 @@ import { WithdrawStudentDialogComponent } from './dialogs/withdraw-student-dialo
     MatMenuModule,
     MatDialogModule,
     MatDividerModule,
+    MatPaginatorModule,
     BreadcrumbComponent,
     AcademicContextSelectorComponent,
     HasPermissionDirective
@@ -96,14 +101,30 @@ export class StudentMappingComponent implements OnInit {
   enrollments: any[] = [];
   _groupedEnrollments: any[] = [];
   isLoading = false;
+  enrollmentsTotal = 0;
+  enrollmentsPage = 1;
+  enrollmentsLimit = 20;
 
   // Tab 2: Bulk
   unenrolledStudents: any[] = [];
   selectedBulkStudentIds: string[] = [];
   bulkSearchQuery: string = '';
   isBulkSaving = false;
+  unenrolledTotal = 0;
+  unenrolledPage = 1;
+  unenrolledLimit = 20;
+  isExporting = false;
+  private searchSubject = new Subject<string>();
 
   ngOnInit() {
+    this.searchSubject.pipe(
+      debounceTime(300),
+      distinctUntilChanged()
+    ).subscribe(query => {
+      this.unenrolledPage = 1;
+      this.loadUnenrolledStudents();
+    });
+
     // Subscribe to centralized Academic Context
     this.academicContextService.activeYear$.subscribe((year: any) => {
       if (year) {
@@ -146,13 +167,17 @@ export class StudentMappingComponent implements OnInit {
   loadEnrollments() {
     if (!this.activeAcademicYear) return;
     this.isLoading = true;
-    const params: any = {};
+    const params: any = {
+      page: this.enrollmentsPage,
+      limit: this.enrollmentsLimit
+    };
     if (this.globalGradeId) params.grade_id = this.globalGradeId;
     if (this.globalSectionId) params.section_id = this.globalSectionId;
 
     this.enrollmentService.getEnrollments(params).subscribe({
-      next: (data) => {
-        this.enrollments = data;
+      next: (res: any) => {
+        this.enrollments = res.data || res; // fallback if backend hasn't updated yet
+        this.enrollmentsTotal = res.total_count || this.enrollments.length;
         this.groupEnrollments();
         this.isLoading = false;
       },
@@ -197,12 +222,30 @@ export class StudentMappingComponent implements OnInit {
 
   loadUnenrolledStudents() {
     if (!this.activeAcademicYear) return;
-    this.enrollmentService.getUnenrolledStudents(this.bulkSearchQuery).subscribe((data) => {
-      this.unenrolledStudents = data;
+    const params = {
+      search: this.bulkSearchQuery,
+      page: this.unenrolledPage,
+      limit: this.unenrolledLimit
+    };
+    this.enrollmentService.getUnenrolledStudents(params).subscribe((res: any) => {
+      this.unenrolledStudents = res.data || res;
+      this.unenrolledTotal = res.total_count || this.unenrolledStudents.length;
     });
   }
 
   onBulkSearch() {
+    this.searchSubject.next(this.bulkSearchQuery);
+  }
+
+  onEnrollmentsPageChange(event: PageEvent) {
+    this.enrollmentsPage = event.pageIndex + 1;
+    this.enrollmentsLimit = event.pageSize;
+    this.loadEnrollments();
+  }
+
+  onUnenrolledPageChange(event: PageEvent) {
+    this.unenrolledPage = event.pageIndex + 1;
+    this.unenrolledLimit = event.pageSize;
     this.loadUnenrolledStudents();
   }
 
@@ -389,8 +432,9 @@ export class StudentMappingComponent implements OnInit {
   }
 
   exportEnrollments() {
+    this.isExporting = true;
     this.enrollmentService.exportEnrollments().subscribe({
-      next: (blob) => {
+      next: (blob: any) => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -399,8 +443,11 @@ export class StudentMappingComponent implements OnInit {
         a.click();
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
+        this.isExporting = false;
+        this.showNotification('success', 'Export completed successfully');
       },
-      error: (err) => {
+      error: (err: any) => {
+        this.isExporting = false;
         this.showNotification('error', 'Failed to export enrollments');
       }
     });

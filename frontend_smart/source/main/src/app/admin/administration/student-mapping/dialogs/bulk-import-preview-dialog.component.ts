@@ -29,6 +29,14 @@ import { MatTableModule } from '@angular/material/table';
           <div><strong class="text-success">Valid:</strong> {{ validRows.length }}</div>
           <div><strong class="text-danger">Invalid:</strong> {{ invalidRows.length }}</div>
         </div>
+        
+        <div *ngIf="invalidRows.length > 0" class="alert alert-warning d-flex align-items-center mb-3">
+          <mat-icon class="me-2">warning</mat-icon>
+          <div>
+            <strong>{{ invalidRows.length }} rows have validation errors.</strong> 
+            They will be skipped during import. Please fix these errors in your source file or proceed with the valid rows only.
+          </div>
+        </div>
 
         <div class="table-responsive" style="max-height: 60vh; overflow-y: auto; overflow-x: auto;">
           <table class="table table-sm table-bordered" style="table-layout: auto; white-space: nowrap;">

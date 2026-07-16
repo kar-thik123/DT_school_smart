@@ -16,40 +16,45 @@ export class StudentEnrollmentProcessor implements BulkImportProcessor {
   };
   private fileUniqueSet: Set<string> = new Set();
   private sectionAddedCount: Record<string, number> = {};
-  
-  constructor(private organizationId: string, private userId: string, private academicYearId: string) {}
+
+  private normalizeString(val: any): string {
+    if (typeof val !== 'string') return '';
+    return val.replace(/\s+/g, ' ').trim().toLowerCase();
+  }
+
+  constructor(private organizationId: string, private userId: string, private academicYearId: string) { }
 
   async resolveRelations(rows: any[]): Promise<ResolvedDataMap> {
-    const emails = Array.from(new Set(rows.map((r: any) => r.student_email?.trim().toLowerCase()).filter(Boolean)));
-    
+    const emails = Array.from(new Set(rows.map((r: any) => this.normalizeString(r.student_email)).filter(Boolean)));
+
     const [users, academicYears, grades, sections, groups] = await Promise.all([
-      prisma.user.findMany({ 
-        where: { 
-          organization_id: this.organizationId, 
-          email: { in: emails }, 
-          role: { permissions: { some: { permission: { module: 'IDENTITY', action: 'IS_STUDENT' } } } } 
-        } 
+      prisma.user.findMany({
+        where: {
+          organization_id: this.organizationId,
+          email: { in: emails },
+          role: { permissions: { some: { permission: { module: 'IDENTITY', action: 'IS_STUDENT' } } } }
+        }
       }),
-      prisma.academicYear.findMany({ 
-        where: { organization_id: this.organizationId } 
+      prisma.academicYear.findMany({
+        where: { organization_id: this.organizationId }
       }),
-      prisma.grade.findMany({ 
-        where: { organization_id: this.organizationId } 
+      prisma.grade.findMany({
+        where: { organization_id: this.organizationId }
       }),
-      prisma.section.findMany({ 
-        where: { organization_id: this.organizationId } 
+      prisma.section.findMany({
+        where: { organization_id: this.organizationId }
       }),
-      prisma.subjectGroup.findMany({ 
-        where: { organization_id: this.organizationId } 
+      prisma.subjectGroup.findMany({
+        where: { organization_id: this.organizationId }
       }),
     ]);
 
-    this.resolved.users = Object.fromEntries(users.map((u: any) => [u.email.toLowerCase(), u]));
-    this.resolved.academic_years = Object.fromEntries(academicYears.map((ay: any) => [ay.name.trim().toLowerCase(), ay]));
-    this.resolved.grades = Object.fromEntries(grades.map((g: any) => [g.name.trim().toLowerCase(), g]));
-    this.resolved.sections = Object.fromEntries(sections.map((s: any) => [`${s.grade_id}_${s.name.trim().toLowerCase()}`, s]));
-    this.resolved.subject_groups = Object.fromEntries(groups.map((g: any) => [`${g.section_id}_${g.name.trim().toLowerCase()}`, g]));
-    
+    this.resolved.users = Object.fromEntries(users.map((u: any) => [this.normalizeString(u.email), u]));
+    this.resolved.academic_years = Object.fromEntries(academicYears.map((ay: any) => [this.normalizeString(ay.name), ay]));
+    this.resolved.grades = Object.fromEntries(grades.map((g: any) => [this.normalizeString(g.name), g]));
+    this.resolved.sections = Object.fromEntries(sections.map((s: any) => [`${s.grade_id}_${this.normalizeString(s.name)}`, s]));
+    this.resolved.subject_groups = Object.fromEntries(groups.map((g: any) => [`${g.section_id}_${this.normalizeString(g.name)}`, g]));
+
     // For capacity validation in analyze phase
     const sectionIds = sections.map((s: any) => s.id);
     const counts = await prisma.studentEnrollment.groupBy({
@@ -75,10 +80,10 @@ export class StudentEnrollmentProcessor implements BulkImportProcessor {
   }
 
   async validateRow(row: any): Promise<ValidationResult> {
-    const email = row.student_email?.trim().toLowerCase();
-    const gradeName = row.grade_name?.trim().toLowerCase();
-    const sectionName = row.section_name?.trim().toLowerCase();
-    const groupName = row.group_name?.trim().toLowerCase();
+    const email = this.normalizeString(row.student_email);
+    const gradeName = this.normalizeString(row.grade_name);
+    const sectionName = this.normalizeString(row.section_name);
+    const groupName = this.normalizeString(row.group_name);
 
     const errors: string[] = [];
     if (!email) errors.push("Missing student_email");
@@ -88,7 +93,7 @@ export class StudentEnrollmentProcessor implements BulkImportProcessor {
     if (email) {
       const uniqueKey = `${email}_${this.academicYearId}`;
       if (this.fileUniqueSet.has(uniqueKey)) {
-          errors.push(`Duplicate mapping: Student is mapped multiple times in this file.`);
+        errors.push(`Duplicate mapping: Student is mapped multiple times in this file.`);
       }
       this.fileUniqueSet.add(uniqueKey);
     }
@@ -105,16 +110,16 @@ export class StudentEnrollmentProcessor implements BulkImportProcessor {
 
     let section: any;
     if (grade && sectionName) {
-       section = this.resolved.sections[`${grade.id}_${sectionName}`];
-       if (!section) errors.push(`Section '${row.section_name}' does not exist under Grade '${row.grade_name}'.`);
+      section = this.resolved.sections[`${grade.id}_${sectionName}`];
+      if (!section) errors.push(`Section '${row.section_name}' does not exist under Grade '${row.grade_name}'.`);
     }
 
     let group: any;
     if (section && groupName) {
-       group = this.resolved.subject_groups[`${section.id}_${groupName}`];
-       if (!group) errors.push(`Subject Group '${row.group_name}' does not exist under Section '${row.section_name}'.`);
+      group = this.resolved.subject_groups[`${section.id}_${groupName}`];
+      if (!group) errors.push(`Subject Group '${row.group_name}' does not exist under Section '${row.section_name}'.`);
     } else if (!section && groupName) {
-       errors.push(`Cannot assign Subject Group without a valid Section.`);
+      errors.push(`Cannot assign Subject Group without a valid Section.`);
     }
 
     // Advanced Validations (Group & Capacity) early in Analyze phase
@@ -141,7 +146,7 @@ export class StudentEnrollmentProcessor implements BulkImportProcessor {
     if (section && user) {
       const existingEnrollment = this.resolved.existing_enrollments[user.id];
       const isAlreadyInSection = existingEnrollment && existingEnrollment.section_id === section.id;
-      
+
       if (!isAlreadyInSection) {
         const cap = this.resolved.section_capacities[section.id];
         if (cap) {
@@ -158,8 +163,8 @@ export class StudentEnrollmentProcessor implements BulkImportProcessor {
 
     if (errors.length > 0) return { status: 'ERROR', errors, data: row };
 
-    return { 
-      status: 'VALID', 
+    return {
+      status: 'VALID',
       data: {
         ...row,
         resolved_student_id: user.id,
