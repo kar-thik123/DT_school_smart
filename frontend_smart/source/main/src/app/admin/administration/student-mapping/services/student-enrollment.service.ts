@@ -11,16 +11,12 @@ export class StudentEnrollmentService {
 
   constructor(private http: HttpClient) {}
 
-  getEnrollments(params: any): Observable<any[]> {
-    return this.http.get<any[]>(this.apiUrl, { params });
+  getEnrollments(params: any): Observable<any> {
+    return this.http.get<any>(this.apiUrl, { params });
   }
 
-  getUnenrolledStudents(search?: string): Observable<any[]> {
-    let params: any = {};
-    if (search) {
-      params.search = search;
-    }
-    return this.http.get<any[]>(`${this.apiUrl}/unenrolled`, { params });
+  getUnenrolledStudents(params?: any): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/unenrolled`, { params });
   }
 
   mapStudent(payload: any): Observable<any> {
