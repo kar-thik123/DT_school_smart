@@ -17,6 +17,11 @@ class StudentMappingProcessor {
         mappings: []
     };
     fileUniqueSet = new Set();
+    normalizeString(val) {
+        if (typeof val !== 'string')
+            return '';
+        return val.replace(/\s+/g, ' ').trim().toLowerCase();
+    }
     constructor(organizationId, userId, academicYearId) {
         this.organizationId = organizationId;
         this.userId = userId;
@@ -24,7 +29,7 @@ class StudentMappingProcessor {
     }
     async resolveRelations(rows) {
         // Pre-normalize incoming row keys
-        const emails = Array.from(new Set(rows.map((r) => r.student_email?.trim().toLowerCase()).filter(Boolean)));
+        const emails = Array.from(new Set(rows.map((r) => this.normalizeString(r.student_email)).filter(Boolean)));
         // Fetch all structural records for this org to allow case-insensitive memory mapping
         const [users, grades, sections, groups] = await Promise.all([
             prisma_1.default.user.findMany({
@@ -45,11 +50,11 @@ class StudentMappingProcessor {
             }),
         ]);
         // Fast mapping indices using forced lowercase for absolute forgiveness
-        this.resolved.users = Object.fromEntries(users.map((u) => [u.email.toLowerCase(), u]));
-        this.resolved.grades = Object.fromEntries(grades.map((g) => [g.name.trim().toLowerCase(), g]));
+        this.resolved.users = Object.fromEntries(users.map((u) => [this.normalizeString(u.email), u]));
+        this.resolved.grades = Object.fromEntries(grades.map((g) => [this.normalizeString(g.name), g]));
         // Composite mapping for names that might overlap across trees
-        this.resolved.sections = Object.fromEntries(sections.map((s) => [`${s.grade_id}_${s.name.trim().toLowerCase()}`, s]));
-        this.resolved.groups = Object.fromEntries(groups.map((g) => [`${g.section_id}_${g.name.trim().toLowerCase()}`, g]));
+        this.resolved.sections = Object.fromEntries(sections.map((s) => [`${s.grade_id}_${this.normalizeString(s.name)}`, s]));
+        this.resolved.groups = Object.fromEntries(groups.map((g) => [`${g.section_id}_${this.normalizeString(g.name)}`, g]));
         // Query existing mappings for resolved students to handle conflicts
         const studentIds = users.map((u) => u.id);
         if (studentIds.length > 0) {
@@ -76,10 +81,10 @@ class StudentMappingProcessor {
         const rawGrade = row.grade_name;
         const rawSection = row.section_name;
         const rawGroup = row.group_name;
-        const email = rawEmail?.trim().toLowerCase();
-        const gradeName = rawGrade?.trim().toLowerCase();
-        const sectionName = rawSection?.trim().toLowerCase();
-        const groupName = rawGroup?.trim().toLowerCase();
+        const email = this.normalizeString(rawEmail);
+        const gradeName = this.normalizeString(rawGrade);
+        const sectionName = this.normalizeString(rawSection);
+        const groupName = this.normalizeString(rawGroup);
         const errors = [];
         if (!email)
             errors.push("Missing student_email");

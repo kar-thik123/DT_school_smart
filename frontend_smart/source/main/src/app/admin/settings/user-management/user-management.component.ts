@@ -282,6 +282,24 @@ export class UserManagementComponent implements OnInit, OnDestroy {
     });
   }
 
+  handleResetPassword(row: IUser) {
+    if (this.isSuperAdminSelf(row)) {
+      this.showNotification('snackbar-danger', 'Cannot reset tenant owner password this way.', 'bottom', 'center');
+      return;
+    }
+    // Note: To be fully secure, this might require a confirmation dialog. For minimal fix, we call directly.
+    this.userManagementService.resetPassword(row.id).subscribe({
+      next: (res) => {
+        // Show temporary password. In a real app we might open a dedicated dialog for better UX.
+        // A snackbar with long duration will suffice for minimal fix.
+        this.showNotification('snackbar-success', `Password reset. Temporary password: ${res.temporary_password}`, 'bottom', 'center');
+      },
+      error: (err) => {
+        this.showNotification('snackbar-danger', err.message || 'Failed to reset password', 'bottom', 'center');
+      }
+    });
+  }
+
   showNotification(colorName: string, text: string, placementFrom: MatSnackBarVerticalPosition, placementAlign: MatSnackBarHorizontalPosition) {
     this.snackBar.open(text, '', { duration: 6000, verticalPosition: placementFrom, horizontalPosition: placementAlign, panelClass: colorName });
   }

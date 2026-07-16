@@ -29,77 +29,19 @@ async function validateTeacherScope(req: any, grade_id: string, section_id?: str
 
 const router = Router();
 
-router.get('/debug-get', async (req: any, res) => {
-  try {
-    const filter = {
-      organization_id: "81b84e56-276e-4f6a-8e4e-bf1d90afd5b6",
-      academic_year_id: "a7adc173-2314-41c8-b2be-329236e2410b",
-      examination_id: req.query.examination_id || "9c8fb0d5-c79f-4367-8e73-cd321e7de669",
-      grade_id: req.query.grade_id || "17677aee-c00a-4e59-b6be-eac0258a863f"
-    };
-
-    console.log('[DEBUG-GET] filter:', filter);
-
-    const results = await prisma.studentExamResult.findMany({
-      where: filter,
-      include: {
-        examination: true,
-        student: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            roll_number: true,
-            student_profile: true
-          }
-        },
-        grade_rel: true,
-        section: true,
-        subject_results: {
-          include: {
-            subject: true
-          }
-        },
-        creator: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
-        },
-        modifier: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
-        }
-      },
-      orderBy: {
-        created_at: 'desc'
-      }
-    });
-
-    res.json(results);
-  } catch (error: any) {
-    console.error('[DEBUG-GET] error', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
 router.use(authMiddleware);
 
 const studentExamSubjectResultSchema = z.object({
   subject_id: z.string().uuid(),
-  max_marks: z.number().min(0),
-  obtained_marks: z.number().min(0),
-  pass_marks: z.number().min(0).optional().nullable(),
+  max_marks: z.number().nonnegative("Max marks cannot be negative").finite("Max marks must be a valid number"),
+  obtained_marks: z.number().nonnegative("Obtained marks cannot be negative").finite("Obtained marks must be a valid number"),
+  pass_marks: z.number().nonnegative().finite().optional().nullable(),
   is_absent: z.boolean().optional(),
   status: z.enum(['PASS', 'FAIL', 'WITHHELD']).optional().nullable(),
   grade: z.string().optional().nullable(),
   remarks: z.string().optional().nullable()
 }).refine(data => data.obtained_marks <= data.max_marks, {
-  message: "Obtained marks cannot be greater than maximum(100) marks",
+  message: "Obtained marks cannot exceed maximum marks",
   path: ["obtained_marks"]
 });
 

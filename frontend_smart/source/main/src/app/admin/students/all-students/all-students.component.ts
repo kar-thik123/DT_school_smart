@@ -226,6 +226,10 @@ export class AllStudentsComponent implements OnInit, OnDestroy {
     );
   }
 
+  handleResetPassword(row: any) {
+    // Stub for reset password
+  }
+
   showNotification(
     colorName: string,
     text: string,

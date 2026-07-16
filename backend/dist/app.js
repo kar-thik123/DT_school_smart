@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
-const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
+const compression_1 = __importDefault(require("compression"));
 const organization_routes_1 = __importDefault(require("./routes/organization.routes"));
 const auth_routes_1 = __importDefault(require("./routes/auth.routes"));
 const user_routes_1 = __importDefault(require("./routes/user.routes"));
@@ -32,6 +32,7 @@ const staff_attendance_routes_1 = __importDefault(require("./routes/staff-attend
 const examination_routes_1 = __importDefault(require("./routes/examination.routes"));
 const student_exam_result_routes_1 = __importDefault(require("./routes/student-exam-result.routes"));
 const teacher_dashboard_routes_1 = __importDefault(require("./routes/teacher-dashboard.routes"));
+const audit_middleware_1 = require("./middlewares/audit.middleware");
 const app = (0, express_1.default)();
 // Trust proxy to securely resolve frontend base URLs (protocol/host) behind reverse proxies.
 app.set('trust proxy', 1);
@@ -44,20 +45,30 @@ app.use((0, cors_1.default)({
     ],
     credentials: true,
 }));
-// Security Headers
-app.use((0, helmet_1.default)());
-// Rate Limiting
-const limiter = (0, express_rate_limit_1.default)({
-    // windowMs: 15 * 60 * 1000, // 15 minutes
-    // max: 100, // limit each IP to 100 requests per windowMs
-    windowMs: 5 * 1000, // 5 seconds for development testing
-    max: 1000,
-    message: 'Too many requests from this IP, please try again later.'
-});
-app.use('/api', limiter);
+// Security Headers with HSTS conditional on env config
+const enableHttps = process.env.ENABLE_HTTPS === 'true';
+app.use((0, helmet_1.default)({
+    hsts: enableHttps ? {
+        maxAge: 31536000,
+        includeSubDomains: true,
+        preload: true
+    } : false
+}));
+// Response Compression
+app.use((0, compression_1.default)());
+// // Rate Limiting
+// const limiter = rateLimit({
+//   // windowMs: 15 * 60 * 1000, // 15 minutes
+//   // max: 100, // limit each IP to 100 requests per windowMs
+//   windowMs: 5 * 1000, // 5 seconds for development testing
+//   max: 1000,
+//   message: 'Too many requests from this IP, please try again later.'
+// });
+// app.use('/api', limiter);
 app.use(express_1.default.json({ limit: '2mb' }));
 app.use(express_1.default.urlencoded({ limit: '2mb', extended: true }));
 app.use('/api/uploads', express_1.default.static('uploads'));
+app.use('/api', audit_middleware_1.auditMiddleware);
 app.use('/api/organizations', organization_routes_1.default);
 app.use('/api/auth', auth_routes_1.default);
 app.use('/api/users', user_routes_1.default);

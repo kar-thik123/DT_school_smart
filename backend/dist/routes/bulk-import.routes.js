@@ -38,7 +38,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const multer_1 = __importDefault(require("multer"));
-const uuid_1 = require("uuid");
+const crypto_1 = __importDefault(require("crypto"));
 const xlsx = __importStar(require("xlsx"));
 const csv_parse_1 = require("csv-parse");
 const bulk_import_registry_1 = require("../services/bulk-import/bulk-import.registry");
@@ -46,6 +46,8 @@ const auth_middleware_1 = require("../middlewares/auth.middleware");
 const audit_service_1 = require("../services/audit.service");
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
+const error_parser_1 = require("../services/bulk-import/error-parser");
+const utils_1 = require("../services/bulk-import/utils");
 const router = (0, express_1.Router)();
 const IMPORTS_DIR = path_1.default.join(__dirname, '../../uploads/imports');
 if (!fs_1.default.existsSync(IMPORTS_DIR)) {
@@ -114,7 +116,7 @@ router.post('/:entityType/analyze', upload.single('file'), async (req, res) => {
         try {
             if (file.originalname.toLowerCase().endsWith('.csv')) {
                 rawRows = await new Promise((resolve, reject) => {
-                    (0, csv_parse_1.parse)(file.buffer, { columns: true, skip_empty_lines: true, trim: true }, (err, records) => {
+                    (0, csv_parse_1.parse)(file.buffer, { columns: true, skip_empty_lines: true, trim: true, bom: true }, (err, records) => {
                         if (err)
                             reject(err);
                         else
@@ -130,7 +132,7 @@ router.post('/:entityType/analyze', upload.single('file'), async (req, res) => {
                 rawRows = rawRows.map(row => {
                     const trimmedRow = {};
                     for (const [key, value] of Object.entries(row)) {
-                        trimmedRow[key.trim()] = typeof value === 'string' ? value.trim() : value;
+                        trimmedRow[(0, utils_1.safeNormalize)(key)] = value;
                     }
                     return trimmedRow;
                 });
@@ -159,7 +161,7 @@ router.post('/:entityType/analyze', upload.single('file'), async (req, res) => {
         const validationPromises = rawRows.map(row => processor.validateRow(row));
         const processedRows = await Promise.all(validationPromises);
         if (entityType.toUpperCase() === 'USERS') {
-            const jobId = (0, uuid_1.v4)();
+            const jobId = crypto_1.default.randomUUID();
             fs_1.default.writeFileSync(path_1.default.join(IMPORTS_DIR, `${jobId}.json`), JSON.stringify(processedRows));
             // Clean up old jobs after 1 hour
             setTimeout(() => {
@@ -184,8 +186,12 @@ router.post('/:entityType/analyze', upload.single('file'), async (req, res) => {
         });
     }
     catch (error) {
-        console.error(`[Bulk-Import-Analyze] Error:`, error);
-        return res.status(500).json({ message: 'Analyzing CSV failed.', error: error.message });
+        const parsed = (0, error_parser_1.parseError)(error, {
+            failedOrganization: req.user?.organization_id,
+            httpStatus: 500,
+        });
+        console.error(`[Bulk-Import-Analyze] Error:`, parsed);
+        return res.status(parsed.httpStatus).json(parsed);
     }
 });
 // ==========================================
@@ -194,14 +200,19 @@ router.post('/:entityType/analyze', upload.single('file'), async (req, res) => {
 // Receives an array of pre-validated JSON objects from the UI (which extracted only the green rows)
 // and passes them to the database commit strategy.
 router.post('/:entityType/commit', async (req, res) => {
+    const startTime = Date.now();
+    let orgId = '';
+    let userId = '';
+    let jobId = '';
+    const { entityType } = req.params;
     try {
-        const { entityType } = req.params;
         if (!verifyBulkImportPermission(entityType, req)) {
             return res.status(403).json({ message: `Forbidden: You do not have permission to import ${entityType}.` });
         }
-        const orgId = req.user.organization_id;
-        const userId = req.user.user_id;
-        let { validRows, conflictResolutions, jobId } = req.body;
+        orgId = req.user.organization_id;
+        userId = req.user.user_id;
+        let { validRows, conflictResolutions } = req.body;
+        jobId = req.body.jobId;
         if (entityType.toUpperCase() === 'USERS' && jobId) {
             const filePath = path_1.default.join(IMPORTS_DIR, `${jobId}.json`);
             if (!fs_1.default.existsSync(filePath)) {
@@ -223,7 +234,7 @@ router.post('/:entityType/commit', async (req, res) => {
         if (!processor) {
             return res.status(400).json({ message: `Bulk import for entity type '${entityType}' is not supported.` });
         }
-        const result = await processor.commit(validRows, conflictResolutions);
+        const result = await processor.commit(validRows, conflictResolutions, jobId);
         await (0, audit_service_1.logAuditEvent)({
             organization_id: orgId,
             user_id: userId,
@@ -233,14 +244,26 @@ router.post('/:entityType/commit', async (req, res) => {
             entity_id: 'BULK_IMPORT',
             metadata: { entity_type: entityType, success_count: result.success_count, failure_count: result.failure_count }
         });
+        console.log(`[BULK IMPORT SUCCESS]`, JSON.stringify({
+            jobId: jobId || 'N/A',
+            organizationId: orgId,
+            academicYear: req.academic_year_id || 'N/A',
+            rowsImported: result.success_count,
+            rowsSkipped: result.failure_count,
+            executionTimeMs: Date.now() - startTime
+        }));
         return res.status(200).json({
             message: `Bulk import completed successfully for ${result.success_count} rows.`,
             result
         });
     }
     catch (error) {
-        console.error(`[Bulk-Import-Commit] Error:`, error);
-        return res.status(500).json({ message: 'Committing valid rows failed.', error: error.message });
+        const parsed = (0, error_parser_1.parseError)(error, {
+            failedOrganization: req.user?.organization_id,
+            httpStatus: error.statusCode ? Number(error.statusCode) : 500,
+        });
+        console.error(`[Bulk-Import-Commit] Error:`, parsed);
+        return res.status(parsed.httpStatus).json(parsed);
     }
 });
 exports.default = router;

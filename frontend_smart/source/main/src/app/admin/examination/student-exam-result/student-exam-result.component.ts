@@ -15,6 +15,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatPaginatorModule } from '@angular/material/paginator';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.component';
 import { AuthService } from '@core';
 import { HierarchyDropdownComponent } from '../../administration/units-list/components/hierarchy-dropdown/hierarchy-dropdown.component';
@@ -52,6 +53,7 @@ import { HierarchyDropdownComponent } from '../../administration/units-list/comp
     MatSelectModule,
     MatSlideToggleModule,
     MatPaginatorModule,
+    MatTooltipModule,
     BreadcrumbComponent,
     HierarchyDropdownComponent
   ],
@@ -393,7 +395,7 @@ export class StudentExamResultComponent implements OnInit, OnDestroy {
           }
         }
         subjectControls[sub.id] = this.fb.group({
-          obtained: [ob_marks],
+          obtained: [ob_marks, [Validators.min(0), Validators.max(max_marks), Validators.pattern(/^[0-9]+(\.[0-9]{1,2})?$/)]],
           max: [max_marks]
         });
       });
@@ -449,8 +451,8 @@ export class StudentExamResultComponent implements OnInit, OnDestroy {
       }
     });
 
-    if (isInvalid) {
-      this.showNotification('snackbar-danger', 'Please enter marks between 0 and 100');
+    if (this.marksForm.invalid || isInvalid) {
+      this.showNotification('snackbar-danger', 'Please enter valid marks between 0 and the subject maximum, without negative numbers.');
       return;
     }
 

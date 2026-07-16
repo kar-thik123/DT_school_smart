@@ -141,10 +141,15 @@ export class MasterConfigComponent implements OnInit {
         ...this.profileForm.value,
         logo_url: this.organization.logo_url
       };
-      await lastValueFrom(this.configService.updateBranding(this.organization.id, brandingData));
+      const res = await lastValueFrom(this.configService.updateBranding(this.organization.id, brandingData));
+      
+      if (res && res.organization) {
+        this.organization = res.organization;
+        this.initProfileForm(this.organization);
+      }
       
       // Propagate the new logo and school name immediately to the header layout
-      this.authService.updateOrgLogo(this.organization.logo_url || '');
+      this.authService.updateOrgLogo(this.organization?.logo_url || '');
       this.authService.updateSchoolName(brandingData.school_name || '');
       
       this.showNotification('success', 'Profile updated successfully');

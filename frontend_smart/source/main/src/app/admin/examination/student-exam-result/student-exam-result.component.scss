@@ -171,11 +171,53 @@
       border-bottom: 1px solid #efefef !important;
       padding: 12px 10px;
       vertical-align: middle;
+      background-color: inherit;
     }
     
     tr:hover {
       background-color: rgba(18, 25, 41, 0.04) !important;
       cursor: pointer;
+    }
+  }
+
+  /* Sticky Column Styles */
+  .sticky-col {
+    position: sticky;
+    z-index: 2;
+    background-color: #ffffff;
+  }
+  
+  .sticky-col-1 {
+    left: 0;
+  }
+  
+  .sticky-col-2 {
+    left: 60px; /* Width of S.No */
+  }
+  
+  .sticky-col-3 {
+    left: 260px; /* Width of S.No + Student Name */
+  }
+  
+  thead .sticky-col {
+    z-index: 3; /* Keep header above sticky columns */
+  }
+}
+
+:host-context(.dark) {
+  .marks-entry-table {
+    .sticky-col {
+      background-color: #1a202e;
+    }
+    thead th {
+      background-color: #1a202e;
+      border-bottom-color: #404755 !important;
+    }
+    tbody td {
+      border-bottom-color: #404755 !important;
+    }
+    tbody tr:hover {
+      background-color: rgba(255, 255, 255, 0.05) !important;
     }
   }
 }

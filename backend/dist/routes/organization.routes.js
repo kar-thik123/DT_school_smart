@@ -678,7 +678,7 @@ router.get('/', auth_middleware_1.authMiddleware, (0, auth_middleware_1.requireP
 // PATCH - allow school admin to update their own org branding
 router.patch('/:id/branding', auth_middleware_1.authMiddleware, async (req, res) => {
     try {
-        const { school_name, logo_url, contact_email, contact_phone, address } = req.body;
+        const { school_name, logo_url, contact_email, contact_phone, address, school_type } = req.body;
         // Only allow SUPER_ADMIN of the org or SYSTEM_ADMIN
         const userPermissions = req.user.permissions || [];
         const isSelf = authorization_service_1.AuthorizationService.hasIdentity(userPermissions, 'IS_SUPER_ADMIN') && req.user.organization_id === req.params.id;
@@ -692,7 +692,7 @@ router.patch('/:id/branding', auth_middleware_1.authMiddleware, async (req, res)
             return res.status(404).json({ message: 'Organization not found' });
         const updated = await prisma_1.default.organization.update({
             where: { id: req.params.id },
-            data: { school_name, logo_url, contact_email, contact_phone, address }
+            data: { school_name, logo_url, contact_email, contact_phone, address, school_type }
         });
         if (logo_url !== undefined && logo_url !== currentOrg.logo_url) {
             deleteLogoFileSafely(currentOrg.logo_url);

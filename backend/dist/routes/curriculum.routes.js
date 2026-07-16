@@ -16,32 +16,32 @@ router.use(auth_middleware_1.authMiddleware);
 // ─── Zod Schemas ────────────────────────────────────────────────────────────
 const uuidSchema = zod_1.z.string().uuid();
 const createUnitSchema = zod_1.z.object({
-    name: zod_1.z.string().min(1, 'Unit name is required').max(255),
+    name: zod_1.z.string().trim().min(1, 'Unit name is required').max(255),
     grade_id: zod_1.z.string().uuid('Invalid grade_id'),
     section_id: zod_1.z.string().uuid('Invalid section_id').or(zod_1.z.literal('ALL')),
     subject_id: zod_1.z.string().uuid('Invalid subject_id'),
     order_index: zod_1.z.number().int().min(0).optional(),
 });
 const updateUnitSchema = zod_1.z.object({
-    name: zod_1.z.string().min(1).max(255).optional(),
+    name: zod_1.z.string().trim().min(1).max(255).optional(),
     order_index: zod_1.z.number().int().min(0).optional(),
 });
 const createTopicSchema = zod_1.z.object({
-    name: zod_1.z.string().min(1, 'Topic name is required').max(255),
+    name: zod_1.z.string().trim().min(1, 'Topic name is required').max(255),
     unit_id: zod_1.z.string().uuid('Invalid unit_id'),
     order_index: zod_1.z.number().int().min(0).optional(),
 });
 const updateTopicSchema = zod_1.z.object({
-    name: zod_1.z.string().min(1).max(255).optional(),
+    name: zod_1.z.string().trim().min(1).max(255).optional(),
     order_index: zod_1.z.number().int().min(0).optional(),
 });
 const createSubTopicSchema = zod_1.z.object({
-    name: zod_1.z.string().min(1, 'Sub topic name is required').max(255),
+    name: zod_1.z.string().trim().min(1, 'Sub topic name is required').max(255),
     topic_id: zod_1.z.string().uuid('Invalid topic_id'),
     order_index: zod_1.z.number().int().min(0).optional(),
 });
 const updateSubTopicSchema = zod_1.z.object({
-    name: zod_1.z.string().min(1).max(255).optional(),
+    name: zod_1.z.string().trim().min(1).max(255).optional(),
     order_index: zod_1.z.number().int().min(0).optional(),
 });
 // ─── Shared helpers ─────────────────────────────────────────────────────────
@@ -134,10 +134,7 @@ router.get('/units', (0, auth_middleware_1.requirePermission)('ACADEMIC_STRUCTUR
             where.subject_id = String(req.query.subject_id);
         if (req.query.section_id) {
             andConditions.push({
-                OR: [
-                    { section_id: String(req.query.section_id) },
-                    { section_id: null }
-                ]
+                section_id: String(req.query.section_id)
             });
         }
         if (search) {

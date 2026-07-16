@@ -110,6 +110,7 @@ export class MasterTableComponent implements OnInit, AfterViewInit {
   @Input() showExport: boolean = true;
   @Input() showContextMenu: boolean = true;
   @Input() showBulkDelete: boolean = true;
+  @Input() showResetPassword: boolean = false;
   @Input() exportFileName: string = 'export';
   @Input() enableRowClick: boolean = true;
   @Input() disableRowClickToEdit: boolean = false;
@@ -123,6 +124,7 @@ export class MasterTableComponent implements OnInit, AfterViewInit {
   @Output() details = new EventEmitter<any>();
   @Output() refresh = new EventEmitter<void>();
   @Output() bulkDelete = new EventEmitter<any[]>();
+  @Output() resetPassword = new EventEmitter<any>();
   @Output() rowClick = new EventEmitter<any>();
   @Output() statusClick = new EventEmitter<{ row: any; column: ColumnDefinition; event: MouseEvent }>();
   @Output() checkboxChange = new EventEmitter<{ row: any; column: ColumnDefinition; event: any }>();
@@ -186,6 +188,10 @@ export class MasterTableComponent implements OnInit, AfterViewInit {
 
   onDelete(row: any) {
     this.delete.emit(row);
+  }
+
+  onResetPassword(row: any) {
+    this.resetPassword.emit(row);
   }
 
   onDetails(row: any) {

@@ -23,13 +23,18 @@ class StudentEnrollmentProcessor {
     };
     fileUniqueSet = new Set();
     sectionAddedCount = {};
+    normalizeString(val) {
+        if (typeof val !== 'string')
+            return '';
+        return val.replace(/\s+/g, ' ').trim().toLowerCase();
+    }
     constructor(organizationId, userId, academicYearId) {
         this.organizationId = organizationId;
         this.userId = userId;
         this.academicYearId = academicYearId;
     }
     async resolveRelations(rows) {
-        const emails = Array.from(new Set(rows.map((r) => r.student_email?.trim().toLowerCase()).filter(Boolean)));
+        const emails = Array.from(new Set(rows.map((r) => this.normalizeString(r.student_email)).filter(Boolean)));
         const [users, academicYears, grades, sections, groups] = await Promise.all([
             prisma_1.default.user.findMany({
                 where: {
@@ -51,11 +56,11 @@ class StudentEnrollmentProcessor {
                 where: { organization_id: this.organizationId }
             }),
         ]);
-        this.resolved.users = Object.fromEntries(users.map((u) => [u.email.toLowerCase(), u]));
-        this.resolved.academic_years = Object.fromEntries(academicYears.map((ay) => [ay.name.trim().toLowerCase(), ay]));
-        this.resolved.grades = Object.fromEntries(grades.map((g) => [g.name.trim().toLowerCase(), g]));
-        this.resolved.sections = Object.fromEntries(sections.map((s) => [`${s.grade_id}_${s.name.trim().toLowerCase()}`, s]));
-        this.resolved.subject_groups = Object.fromEntries(groups.map((g) => [`${g.section_id}_${g.name.trim().toLowerCase()}`, g]));
+        this.resolved.users = Object.fromEntries(users.map((u) => [this.normalizeString(u.email), u]));
+        this.resolved.academic_years = Object.fromEntries(academicYears.map((ay) => [this.normalizeString(ay.name), ay]));
+        this.resolved.grades = Object.fromEntries(grades.map((g) => [this.normalizeString(g.name), g]));
+        this.resolved.sections = Object.fromEntries(sections.map((s) => [`${s.grade_id}_${this.normalizeString(s.name)}`, s]));
+        this.resolved.subject_groups = Object.fromEntries(groups.map((g) => [`${g.section_id}_${this.normalizeString(g.name)}`, g]));
         // For capacity validation in analyze phase
         const sectionIds = sections.map((s) => s.id);
         const counts = await prisma_1.default.studentEnrollment.groupBy({
@@ -77,10 +82,10 @@ class StudentEnrollmentProcessor {
         return this.resolved;
     }
     async validateRow(row) {
-        const email = row.student_email?.trim().toLowerCase();
-        const gradeName = row.grade_name?.trim().toLowerCase();
-        const sectionName = row.section_name?.trim().toLowerCase();
-        const groupName = row.group_name?.trim().toLowerCase();
+        const email = this.normalizeString(row.student_email);
+        const gradeName = this.normalizeString(row.grade_name);
+        const sectionName = this.normalizeString(row.section_name);
+        const groupName = this.normalizeString(row.group_name);
         const errors = [];
         if (!email)
             errors.push("Missing student_email");

@@ -730,11 +730,55 @@ router.delete('/:id', requireManagement, async (req: any, res: Response) => {
   }
 });
 
-// POST admin-triggered reset password link (DEPRECATED for security compliance)
+// POST admin-triggered reset password
 router.post('/:id/reset-password', requireManagement, async (req: any, res: Response) => {
-  return res.status(403).json({
-    message: 'Administrator-initiated password reset is not supported. Users must reset their own passwords via the Forgot Password flow.'
-  });
+  try {
+    const user = await prisma.user.findFirst({
+      where: { id: req.params.id, organization_id: req.user.organization_id },
+      include: { role: true }
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Do not allow resetting SUPER_ADMIN password this way
+    if (user.role?.name === 'SUPER_ADMIN') {
+      return res.status(403).json({ message: 'Cannot reset SUPER_ADMIN password via this endpoint.' });
+    }
+
+    // Generate a secure random 12-character password
+    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+    let tempPassword = "";
+    for (let i = 0; i < 12; i++) {
+      tempPassword += charset.charAt(Math.floor(Math.random() * charset.length));
+    }
+
+    const password_hash = await bcrypt.hash(tempPassword, 10);
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { password_hash }
+    });
+
+    await logAuditEvent({
+      organization_id: req.user.organization_id,
+      user_id: req.user.user_id,
+      user_name: req.user.name,
+      action_type: 'UPDATE' as any,
+      entity_type: 'USER' as any,
+      entity_id: user.id,
+      metadata: { action: 'ADMIN_PASSWORD_RESET', target_user: user.email }
+    });
+
+    res.json({
+      message: 'Password reset successfully',
+      temporary_password: tempPassword
+    });
+  } catch (error) {
+    console.error('Admin reset password error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
 router.get('/me/subjects', async (req: any, res: Response) => {

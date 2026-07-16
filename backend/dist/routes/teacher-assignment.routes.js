@@ -25,7 +25,7 @@ router.get('/me', async (req, res) => {
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
     try {
-        const yearId = await academic_context_resolver_1.AcademicContextResolver.resolveAcademicYearId(req);
+        const yearId = await academic_context_resolver_1.AcademicContextResolver.resolveHistoricalAcademicYearId(req);
         const assignments = await prisma_1.default.teacherAssignment.findMany({
             where: {
                 organization_id: req.user.organization_id,
@@ -51,7 +51,7 @@ router.get('/', (0, auth_middleware_1.requirePermission)('TEACHER_ASSIGNMENT', '
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
     try {
-        const yearId = await academic_context_resolver_1.AcademicContextResolver.resolveAcademicYearId(req);
+        const yearId = await academic_context_resolver_1.AcademicContextResolver.resolveHistoricalAcademicYearId(req);
         const assignments = await prisma_1.default.teacherAssignment.findMany({
             where: {
                 organization_id: req.user.organization_id,
@@ -97,6 +97,7 @@ const batchAssignmentSchema = zod_1.z.object({
 // Create assignment(s)
 router.post('/', (0, auth_middleware_1.requirePermission)('TEACHER_ASSIGNMENT', 'CREATE'), async (req, res) => {
     try {
+        const yearId = await academic_context_resolver_1.AcademicContextResolver.resolveHistoricalAcademicYearId(req);
         const isBatch = Array.isArray(req.body.assignments);
         if (isBatch) {
             const parsed = batchAssignmentSchema.parse(req.body);
@@ -108,7 +109,7 @@ router.post('/', (0, auth_middleware_1.requirePermission)('TEACHER_ASSIGNMENT', 
                     ...a,
                     subject_id: a.assignment_type === 'CLASS_TEACHER' ? null : a.subject_id,
                     teacher_id: parsed.teacher_id,
-                    academic_year_id: req.academic_year_id,
+                    academic_year_id: yearId,
                     organization_id: req.user.organization_id
                 };
             });
@@ -180,14 +181,14 @@ router.post('/', (0, auth_middleware_1.requirePermission)('TEACHER_ASSIGNMENT', 
             }
             if (parsed.assignment_type === 'CLASS_TEACHER' && parsed.section_id) {
                 const existing = await prisma_1.default.teacherAssignment.findFirst({
-                    where: { organization_id: req.user.organization_id, academic_year_id: req.academic_year_id, section_id: parsed.section_id, assignment_type: 'CLASS_TEACHER' }
+                    where: { organization_id: req.user.organization_id, academic_year_id: yearId, section_id: parsed.section_id, assignment_type: 'CLASS_TEACHER' }
                 });
                 if (existing && existing.teacher_id !== parsed.teacher_id)
                     return res.status(400).json({ message: `Section already has a Class Teacher assigned for this academic year` });
             }
             if (parsed.assignment_type === 'SUBJECT_TEACHER' && parsed.section_id && parsed.subject_id) {
                 const existing = await prisma_1.default.teacherAssignment.findFirst({
-                    where: { organization_id: req.user.organization_id, academic_year_id: req.academic_year_id, section_id: parsed.section_id, subject_id: parsed.subject_id, assignment_type: 'SUBJECT_TEACHER' }
+                    where: { organization_id: req.user.organization_id, academic_year_id: yearId, section_id: parsed.section_id, subject_id: parsed.subject_id, assignment_type: 'SUBJECT_TEACHER' }
                 });
                 if (existing && existing.teacher_id !== parsed.teacher_id)
                     return res.status(400).json({ message: `This subject is already assigned to a teacher in this section for this academic year` });
@@ -200,7 +201,7 @@ router.post('/', (0, auth_middleware_1.requirePermission)('TEACHER_ASSIGNMENT', 
                     grade_id: parsed.grade_id,
                     section_id: parsed.section_id || null,
                     subject_id: parsed.subject_id || null,
-                    academic_year_id: req.academic_year_id,
+                    academic_year_id: yearId,
                     organization_id: req.user.organization_id
                 }
             });
@@ -210,7 +211,7 @@ router.post('/', (0, auth_middleware_1.requirePermission)('TEACHER_ASSIGNMENT', 
             const assignment = await prisma_1.default.teacherAssignment.create({
                 data: {
                     ...parsed,
-                    academic_year_id: req.academic_year_id,
+                    academic_year_id: yearId,
                     organization_id: req.user.organization_id
                 }
             });
@@ -254,6 +255,7 @@ router.post('/', (0, auth_middleware_1.requirePermission)('TEACHER_ASSIGNMENT', 
 // Edit assignment
 router.put('/:id', (0, auth_middleware_1.requirePermission)('TEACHER_ASSIGNMENT', 'EDIT'), async (req, res) => {
     try {
+        const yearId = await academic_context_resolver_1.AcademicContextResolver.resolveHistoricalAcademicYearId(req);
         const existing = await prisma_1.default.teacherAssignment.findFirst({
             where: { id: req.params.id, organization_id: req.user.organization_id }
         });
@@ -269,14 +271,14 @@ router.put('/:id', (0, auth_middleware_1.requirePermission)('TEACHER_ASSIGNMENT'
         }
         if (parsed.assignment_type === 'CLASS_TEACHER' && parsed.section_id) {
             const exist = await prisma_1.default.teacherAssignment.findFirst({
-                where: { organization_id: req.user.organization_id, academic_year_id: req.academic_year_id, section_id: parsed.section_id, assignment_type: 'CLASS_TEACHER', id: { not: req.params.id } }
+                where: { organization_id: req.user.organization_id, academic_year_id: yearId, section_id: parsed.section_id, assignment_type: 'CLASS_TEACHER', id: { not: req.params.id } }
             });
             if (exist && exist.teacher_id !== parsed.teacher_id)
                 return res.status(400).json({ message: `Section already has a Class Teacher assigned` });
         }
         if (parsed.assignment_type === 'SUBJECT_TEACHER' && parsed.section_id && parsed.subject_id) {
             const exist = await prisma_1.default.teacherAssignment.findFirst({
-                where: { organization_id: req.user.organization_id, academic_year_id: req.academic_year_id, section_id: parsed.section_id, subject_id: parsed.subject_id, assignment_type: 'SUBJECT_TEACHER', id: { not: req.params.id } }
+                where: { organization_id: req.user.organization_id, academic_year_id: yearId, section_id: parsed.section_id, subject_id: parsed.subject_id, assignment_type: 'SUBJECT_TEACHER', id: { not: req.params.id } }
             });
             if (exist && exist.teacher_id !== parsed.teacher_id)
                 return res.status(400).json({ message: `This subject is already assigned to a teacher in this section` });
@@ -289,7 +291,7 @@ router.put('/:id', (0, auth_middleware_1.requirePermission)('TEACHER_ASSIGNMENT'
                 grade_id: parsed.grade_id,
                 section_id: parsed.section_id || null,
                 subject_id: parsed.subject_id || null,
-                academic_year_id: req.academic_year_id,
+                academic_year_id: yearId,
                 organization_id: req.user.organization_id,
                 id: { not: req.params.id }
             }
@@ -301,7 +303,7 @@ router.put('/:id', (0, auth_middleware_1.requirePermission)('TEACHER_ASSIGNMENT'
             where: { id: req.params.id },
             data: {
                 ...parsed,
-                academic_year_id: req.academic_year_id
+                academic_year_id: yearId
             }
         });
         await (0, audit_service_1.logAuditEvent)({

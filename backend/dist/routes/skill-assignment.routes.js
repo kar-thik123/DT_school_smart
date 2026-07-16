@@ -14,7 +14,8 @@ const assignmentSchema = zod_1.z.object({
     verifier_ids: zod_1.z.array(zod_1.z.string().uuid()),
     skill_types: zod_1.z.array(zod_1.z.string().min(1)),
     grade_ids: zod_1.z.array(zod_1.z.string().uuid()).optional(),
-    section_ids: zod_1.z.array(zod_1.z.string().uuid()).optional()
+    section_ids: zod_1.z.array(zod_1.z.string().uuid()).optional(),
+    academic_year_id: zod_1.z.string().uuid()
 });
 // Middleware to check permissions
 router.use((req, res, next) => {
@@ -37,6 +38,7 @@ router.post('/', async (req, res) => {
         const assignment = await prisma_1.default.skillVerificationAssignment.create({
             data: {
                 organization_id: req.user.organization_id,
+                academic_year_id: parsed.academic_year_id,
                 verifier_ids: parsed.verifier_ids,
                 skill_types: parsed.skill_types,
                 grade_ids: parsed.grade_ids || [],
@@ -59,14 +61,20 @@ router.post('/', async (req, res) => {
 // Get all assignments
 router.get('/', async (req, res) => {
     try {
+        const academic_year_id = req.query.academic_year_id;
+        // Build query where clause
+        const whereClause = { organization_id: req.user.organization_id };
+        if (academic_year_id) {
+            whereClause.academic_year_id = academic_year_id;
+        }
         const assignments = await prisma_1.default.skillVerificationAssignment.findMany({
-            where: { organization_id: req.user.organization_id },
+            where: whereClause,
             orderBy: { created_at: 'desc' }
         });
         const enrichedAssignments = await Promise.all(assignments.map(async (a) => {
             const verifiers = await prisma_1.default.user.findMany({
                 where: { id: { in: a.verifier_ids } },
-                select: { id: true, name: true, email: true, role: { select: { name: true } } }
+                select: { id: true, name: true, email: true, role_id: true, role: { select: { name: true } } }
             });
             const grades = await prisma_1.default.grade.findMany({
                 where: { id: { in: a.grade_ids } },

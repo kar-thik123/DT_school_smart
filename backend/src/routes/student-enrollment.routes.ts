@@ -21,9 +21,9 @@ router.get('/', requirePermission('ACADEMIC_STRUCTURE', 'READ'), async (req: any
       organization_id: req.user.organization_id,
       academic_year_id: yearId
     };
-    if (grade_id) filter.grade_id = String(grade_id);
-    if (section_id) filter.section_id = String(section_id);
-    if (subject_group_id) {
+    if (grade_id && grade_id !== 'null' && grade_id !== 'undefined') filter.grade_id = String(grade_id);
+    if (section_id && section_id !== 'null' && section_id !== 'undefined') filter.section_id = String(section_id);
+    if (subject_group_id && subject_group_id !== 'null' && subject_group_id !== 'undefined') {
       filter.OR = [
         { subject_group_id: String(subject_group_id) },
         { subject_group_id: null }

@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.server = exports.io = void 0;
+process.env.UV_THREADPOOL_SIZE = '128';
 require("dotenv/config");
 if (!process.env.JWT_SECRET) {
     console.error('❌ FATAL ERROR: JWT_SECRET is not defined in the environment.');

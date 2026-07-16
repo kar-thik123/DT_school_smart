@@ -24,7 +24,17 @@ const createCrudHandlers = (modelName, prismaModel) => {
         try {
             const hasSortOrder = ['Section', 'Unit', 'Topic'].includes(modelName);
             let filter = { organization_id: req.user.organization_id };
-            const isGlobalAdmin = req.user.permissions?.includes('ACADEMIC_STRUCTURE:READ') || req.user.permissions?.includes('ACADEMIC_STRUCTURE:VIEW');
+            // Fix: Respect query filters like grade_id for Sections
+            if (req.query.grade_id) {
+                filter.grade_id = String(req.query.grade_id);
+            }
+            if (req.query.academic_year_id) {
+                filter.academic_year_id = String(req.query.academic_year_id);
+            }
+            const isGlobalAdmin = req.user.permissions?.includes('ACADEMIC_STRUCTURE:READ') ||
+                req.user.permissions?.includes('ACADEMIC_STRUCTURE_READ') ||
+                req.user.permissions?.includes('ACADEMIC_STRUCTURE:VIEW') ||
+                req.user.permissions?.includes('ACADEMIC_STRUCTURE_VIEW');
             if (!isGlobalAdmin && modelName === 'Section') {
                 const visibilityFilter = await assignment_visibility_resolver_1.AssignmentVisibilityResolver.buildTeacherSectionWhereClause(req);
                 if (visibilityFilter.id)
@@ -216,7 +226,7 @@ router.put('/reorder/:model', (0, auth_middleware_1.requirePermission)('ACADEMIC
 const gradeRouter = (0, express_1.Router)();
 gradeRouter.get('/', (0, auth_middleware_1.requirePermission)('ACADEMIC_STRUCTURE', 'READ'), async (req, res) => {
     try {
-        const isGlobalAdmin = req.user.permissions?.includes('ACADEMIC_STRUCTURE:READ') || req.user.permissions?.includes('ACADEMIC_STRUCTURE:VIEW');
+        const isGlobalAdmin = req.user.permissions?.includes('ACADEMIC_STRUCTURE:READ') || req.user.permissions?.includes('ACADEMIC_STRUCTURE:VIEW') || req.user.permissions?.includes('ACADEMIC_STRUCTURE_READ') || req.user.permissions?.includes('ACADEMIC_STRUCTURE_VIEW');
         const headerYearId = req.headers['x-academic-year-id'];
         const queryYearId = req.query.academic_year_id;
         let yearId = headerYearId || queryYearId;
@@ -237,13 +247,13 @@ gradeRouter.get('/', (0, auth_middleware_1.requirePermission)('ACADEMIC_STRUCTUR
         res.json(data);
     }
     catch (error) {
-        console.error('Grades fetch error:', error);
-        res.status(500).json({ message: 'Error fetching Grades' });
+        console.error('Error fetching Grades:', error);
+        res.status(500).json({ message: 'Error fetching Grades', error: error.message });
     }
 });
 gradeRouter.get('/assigned', async (req, res) => {
     try {
-        const isGlobalAdmin = req.user.permissions?.includes('ACADEMIC_STRUCTURE:READ') || req.user.permissions?.includes('ACADEMIC_STRUCTURE:VIEW');
+        const isGlobalAdmin = req.user.permissions?.includes('ACADEMIC_STRUCTURE:READ') || req.user.permissions?.includes('ACADEMIC_STRUCTURE:VIEW') || req.user.permissions?.includes('ACADEMIC_STRUCTURE_READ') || req.user.permissions?.includes('ACADEMIC_STRUCTURE_VIEW');
         let filter = { organization_id: req.user.organization_id };
         if (!isGlobalAdmin) {
             const visibilityFilter = await assignment_visibility_resolver_1.AssignmentVisibilityResolver.buildTeacherGradeWhereClause(req);
@@ -506,6 +516,48 @@ router.put('/sections/:id', (0, auth_middleware_1.requirePermission)('ACADEMIC_S
         res.status(500).json({ message: 'Server error' });
     }
 });
+// Custom override for Section GET to enforce strict active, organization, and academic year filters (F-04)
+router.get('/sections', (0, auth_middleware_1.requirePermission)('ACADEMIC_STRUCTURE', 'READ'), async (req, res) => {
+    try {
+        let yearId = req.query.academic_year_id;
+        if (!yearId || yearId === 'null' || yearId === 'undefined') {
+            yearId = await (0, academic_helper_1.getActiveAcademicYearId)(req.user.organization_id);
+        }
+        let filter = {
+            organization_id: req.user.organization_id,
+            is_active: true,
+            grade: {
+                is_active: true,
+                academic_year_id: yearId
+            }
+        };
+        if (req.query.grade_id) {
+            filter.grade_id = String(req.query.grade_id);
+        }
+        const isGlobalAdmin = req.user.permissions?.includes('ACADEMIC_STRUCTURE:READ') ||
+            req.user.permissions?.includes('ACADEMIC_STRUCTURE_READ') ||
+            req.user.permissions?.includes('ACADEMIC_STRUCTURE:VIEW') ||
+            req.user.permissions?.includes('ACADEMIC_STRUCTURE_VIEW');
+        if (!isGlobalAdmin) {
+            const visibilityFilter = await assignment_visibility_resolver_1.AssignmentVisibilityResolver.buildTeacherSectionWhereClause(req);
+            if (visibilityFilter.id)
+                filter.id = visibilityFilter.id;
+        }
+        // Since Section doesn't have deleted_at natively, is_active serves as the soft-delete/active flag
+        const data = await prisma_1.default.section.findMany({
+            where: filter,
+            include: {
+                grade: true
+            },
+            orderBy: { sort_order: 'asc' }
+        });
+        res.json(data);
+    }
+    catch (error) {
+        console.error('Error fetching Sections:', error);
+        res.status(500).json({ message: 'Error fetching Sections', error: error.message });
+    }
+});
 router.use('/sections', createCrudHandlers('Section', prisma_1.default.section));
 // ── Subjects: custom handler — auto-resolves grade_id if a section_id is sent ──────────────────
 const subjectRouter = (0, express_1.Router)();
@@ -515,7 +567,7 @@ subjectRouter.get('/', (0, auth_middleware_1.requirePermission)('ACADEMIC_STRUCT
         if (req.query.grade_id) {
             filter.grade_id = String(req.query.grade_id);
         }
-        const isGlobalAdmin = req.user.permissions?.includes('ACADEMIC_STRUCTURE:READ') || req.user.permissions?.includes('ACADEMIC_STRUCTURE:VIEW');
+        const isGlobalAdmin = req.user.permissions?.includes('ACADEMIC_STRUCTURE:READ') || req.user.permissions?.includes('ACADEMIC_STRUCTURE:VIEW') || req.user.permissions?.includes('ACADEMIC_STRUCTURE_READ') || req.user.permissions?.includes('ACADEMIC_STRUCTURE_VIEW');
         if (!isGlobalAdmin) {
             const visibilityFilter = await assignment_visibility_resolver_1.AssignmentVisibilityResolver.buildTeacherSubjectWhereClause(req);
             if (visibilityFilter.OR) {
@@ -565,16 +617,20 @@ subjectRouter.post('/', (0, auth_middleware_1.requirePermission)('ACADEMIC_STRUC
         }
         // Fetch grade name (needed for SubjectGroup naming convention)
         const gradeRecord = await prisma_1.default.grade.findUnique({ where: { id: finalGradeId }, select: { name: true, master_grade_id: true } });
-        const data = await prisma_1.default.subject.upsert({
+        const existingSubject = await prisma_1.default.subject.findUnique({
             where: {
                 name_grade_id_organization_id: {
                     name,
                     grade_id: finalGradeId,
                     organization_id: req.user.organization_id
                 }
-            },
-            update: {},
-            create: {
+            }
+        });
+        if (existingSubject) {
+            return res.status(409).json({ message: 'A subject with this name already exists in the selected grade.' });
+        }
+        const data = await prisma_1.default.subject.create({
+            data: {
                 name,
                 grade_id: finalGradeId,
                 organization_id: req.user.organization_id,

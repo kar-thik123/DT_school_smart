@@ -184,6 +184,19 @@ router.post('/login', loginLimiter, async (req: any, res: Response) => {
       permissions.push('IDENTITY:IS_SKILL_VERIFIER');
     }
 
+    // Feature Toggles: inject synthetic permissions for disabled modules
+    const moduleConfigs = await prisma.moduleConfig.findMany({
+      where: { organization_id: user.organization_id, module_name: { in: ['completion', 'mcq'] } }
+    });
+    moduleConfigs.forEach((c: any) => {
+      if (c.module_name === 'completion') {
+        if (c.config_data && (c.config_data as any).enable_module === false) permissions.push('FEATURE_TOGGLE:DISABLE_COMPLETION');
+      }
+      if (c.module_name === 'mcq') {
+        if (c.config_data && (c.config_data as any).enable_module === false) permissions.push('FEATURE_TOGGLE:DISABLE_MCQ');
+      }
+    });
+
     const token = jwt.sign(
       {
         user_id: user.id,
@@ -267,6 +280,19 @@ router.get('/me', authMiddleware, async (req: any, res: Response) => {
     if (verificationAssignments.length > 0) {
       permissions.push('IDENTITY:IS_SKILL_VERIFIER');
     }
+
+    // Feature Toggles: inject synthetic permissions for disabled modules
+    const moduleConfigs = await prisma.moduleConfig.findMany({
+      where: { organization_id: user.organization_id, module_name: { in: ['completion', 'mcq'] } }
+    });
+    moduleConfigs.forEach((c: any) => {
+      if (c.module_name === 'completion') {
+        if (c.config_data && (c.config_data as any).enable_module === false) permissions.push('FEATURE_TOGGLE:DISABLE_COMPLETION');
+      }
+      if (c.module_name === 'mcq') {
+        if (c.config_data && (c.config_data as any).enable_module === false) permissions.push('FEATURE_TOGGLE:DISABLE_MCQ');
+      }
+    });
 
     res.json({
       user_id: user.id,

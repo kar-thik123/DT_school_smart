@@ -381,8 +381,14 @@
               }
               @if (showDelete) {
               <button mat-icon-button color="accent" (click)="$event.stopPropagation()" (click)="onDelete(row)"
-                class="tbl-action-btn">
+                class="tbl-action-btn" matTooltip="Delete">
                 <app-feather-icons [icon]="'trash-2'" [class]="'tbl-fav-delete'"></app-feather-icons>
+              </button>
+              }
+              @if (showResetPassword) {
+              <button mat-icon-button color="primary" (click)="$event.stopPropagation()" (click)="onResetPassword(row)"
+                class="tbl-action-btn" matTooltip="Reset Password">
+                <app-feather-icons [icon]="'key'" [class]="'tbl-fav-edit'"></app-feather-icons>
               </button>
               }
             </mat-cell>
@@ -428,6 +434,12 @@
           <button mat-menu-item (click)="onRefresh()">
             <mat-icon>refresh</mat-icon>
             <span>Refresh Record</span>
+          </button>
+          }
+          @if (showResetPassword) {
+          <button mat-menu-item (click)="onResetPassword(item)">
+            <mat-icon>vpn_key</mat-icon>
+            <span>Reset Password</span>
           </button>
           }
           <button mat-menu-item disabled>

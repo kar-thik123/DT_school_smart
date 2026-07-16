@@ -59,6 +59,12 @@ export class UserManagementService {
     );
   }
 
+  resetPassword(id: string): Observable<any> {
+    return this.httpClient.post(`${this.baseUrl}/${id}/reset-password`, {}).pipe(
+      catchError(this.handleError)
+    );
+  }
+
   analyzeBulkImport(file: File): Observable<any> {
     const formData = new FormData();
     formData.append('file', file);

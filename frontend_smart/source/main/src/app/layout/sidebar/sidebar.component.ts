@@ -319,6 +319,9 @@ export class SidebarComponent
         this.authService.hasPermission('QUESTION_BANK_VIEW');
     }
     if (path.includes('/completion') || path.includes('/completion-mgmt')) {
+      if (this.authService.hasPermission('FEATURE_TOGGLE', 'DISABLE_COMPLETION') || this.authService.hasPermission('FEATURE_TOGGLE_DISABLE_COMPLETION')) {
+        return false;
+      }
       return this.authService.hasPermission('COMPLETION_TRACKING', 'VIEW') ||
         this.authService.hasPermission('COMPLETION_TRACKING_VIEW') ||
         this.authService.hasPermission('COMPLETION', 'VIEW') ||
@@ -391,6 +394,9 @@ export class SidebarComponent
         this.authService.hasPermission('PRACTICE_VIEW_OWN');
     }
     if (path.includes('/mcq')) {
+      if (this.authService.hasPermission('FEATURE_TOGGLE', 'DISABLE_MCQ') || this.authService.hasPermission('FEATURE_TOGGLE_DISABLE_MCQ')) {
+        return false;
+      }
       return this.authService.hasPermission('MCQ', 'VIEW') ||
         this.authService.hasPermission('MCQ_VIEW');
     }

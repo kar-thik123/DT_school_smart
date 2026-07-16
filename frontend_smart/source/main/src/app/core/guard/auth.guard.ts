@@ -129,7 +129,19 @@ export class AuthGuard {
       }
     }
 
-    // 7. Allow or deny access
+    // 7. Enforce Feature Toggles for disabled modules
+    if (url.includes('/completion') || url.includes('/completion-mgmt')) {
+      if (this.authService.hasPermission('FEATURE_TOGGLE', 'DISABLE_COMPLETION') || this.authService.hasPermission('FEATURE_TOGGLE_DISABLE_COMPLETION')) {
+        return handleDenial();
+      }
+    }
+    if (url.includes('/mcq')) {
+      if (this.authService.hasPermission('FEATURE_TOGGLE', 'DISABLE_MCQ') || this.authService.hasPermission('FEATURE_TOGGLE_DISABLE_MCQ')) {
+        return handleDenial();
+      }
+    }
+
+    // 8. Allow or deny access
     return true;
   }
 }
