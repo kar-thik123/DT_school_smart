@@ -41,18 +41,24 @@ app.use(cors({
   origin: [
     'http://localhost:4200',
     'http://144.91.71.246'
-  ],
-  credentials: true,
+  ]
 }));
 
-// Security Headers with HSTS conditional on env config
-const enableHttps = process.env.ENABLE_HTTPS === 'true';
 app.use(helmet({
-  hsts: enableHttps ? {
+  hsts: {
     maxAge: 31536000,
     includeSubDomains: true,
     preload: true
-  } : false
+  },
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      frameAncestors: ["'none'"],
+      upgradeInsecureRequests: [],
+    }
+  },
+  xContentTypeOptions: true
 }));
 
 // Response Compression

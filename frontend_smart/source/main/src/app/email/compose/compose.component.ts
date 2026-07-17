@@ -111,9 +111,20 @@ export class ComposeComponent implements OnInit, OnDestroy {
 
   onFilesSelected(event: any) {
     const files = event.target.files;
+    const allowedMimes = [
+      'image/jpeg', 'image/png', 'image/gif', 
+      'application/pdf', 
+      'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 
+      'text/plain', 
+      'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    ];
     if (files && files.length > 0) {
       for (let i = 0; i < files.length; i++) {
-        this.selectedFiles.push(files[i]);
+        if (allowedMimes.includes(files[i].type)) {
+          this.selectedFiles.push(files[i]);
+        } else {
+          this.snackBar.open(`File type not allowed: ${files[i].name}`, 'Close', { duration: 3000 });
+        }
       }
     }
   }
@@ -166,7 +177,8 @@ export class ComposeComponent implements OnInit, OnDestroy {
       error: (err) => {
         this.isUploading = false;
         console.error(`Error ${status === 'DRAFT' ? 'saving draft' : 'sending mail'}:`, err);
-        this.snackBar.open(`Failed to ${status === 'DRAFT' ? 'save draft' : 'send email'}. Please try again.`, 'Close', { duration: 3000, panelClass: 'bg-red' });
+        const errorMsg = err.error?.message || `Failed to ${status === 'DRAFT' ? 'save draft' : 'send email'}. Please try again.`;
+        this.snackBar.open(errorMsg, 'Close', { duration: 3000, panelClass: 'bg-red' });
       }
     });
   }

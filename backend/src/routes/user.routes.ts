@@ -801,9 +801,13 @@ router.get('/me/subjects', async (req: any, res: Response) => {
           organization_id: organizationId,
           is_active: true
         },
-        select: { id: true, name: true }
+        select: { id: true, name: true },
+        distinct: ['name']
       });
       return res.json(subjects);
+    } else if (req.user.role === 'Student' || req.user.role === 'STUDENT' || (req.user.permissions && req.user.permissions.includes('IDENTITY:IS_STUDENT'))) {
+      // User is a student but has no enrollments; they should not see all org subjects
+      return res.json([]);
     } else {
       // User is not a student (e.g., teacher, admin), fetch all active subjects in org
       const subjects = await prisma.subject.findMany({
@@ -811,7 +815,8 @@ router.get('/me/subjects', async (req: any, res: Response) => {
           organization_id: organizationId,
           is_active: true
         },
-        select: { id: true, name: true }
+        select: { id: true, name: true },
+        distinct: ['name']
       });
       return res.json(subjects);
     }
@@ -896,6 +901,10 @@ router.put('/profile/:id', upload.single('profile_image'), async (req: any, res:
 
     let profile_image = undefined;
     if (req.file) {
+      if (!req.file.mimetype.startsWith('image/')) {
+        return res.status(400).json({ message: 'Invalid file type. Only images are allowed.' });
+      }
+
       const outputDir = path.join(process.cwd(), 'uploads', 'profile');
       const processed = await processImage(req.file.buffer, req.file.originalname, {
         outputDirectory: outputDir,

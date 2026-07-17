@@ -132,20 +132,23 @@
                   </div>
                   <div class="compose-editor m-t-20">
                     <div id="summernote"></div>
-                    <div class="m-b-10">
-                      <input type="file" class="default" multiple (change)="onFilesSelected($event)">
+                    <div class="m-b-20 mt-3">
+                      <input type="file" #fileInput style="display: none;" multiple accept="image/jpeg,image/png,image/gif,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" (change)="onFilesSelected($event)">
+                      <button type="button" mat-stroked-button color="primary" (click)="fileInput.click()">
+                        <mat-icon class="me-2">attach_file</mat-icon> Attach Files
+                      </button>
                     </div>
                     @if (selectedFiles.length > 0) {
-                      <div class="attachments-preview">
+                      <div class="attachments-preview mb-3">
                         <ul class="list-group">
                           @for (file of selectedFiles; track file.name; let i = $index) {
                             <li class="list-group-item d-flex justify-content-between align-items-center">
                               <span>
-                                <i class="material-icons text-muted" style="vertical-align: middle; font-size: 18px;">insert_drive_file</i>
+                                <i class="material-icons text-muted me-2" style="vertical-align: middle; font-size: 18px;">insert_drive_file</i>
                                 {{ file.name }}
-                                <span class="text-muted" style="font-size: 12px; margin-left: 5px;">({{ formatBytes(file.size) }})</span>
+                                <span class="text-muted ms-2" style="font-size: 12px;">({{ formatBytes(file.size) }})</span>
                               </span>
-                              <button mat-icon-button color="warn" (click)="removeFile(i)" title="Remove attachment" [disabled]="isUploading">
+                              <button type="button" mat-icon-button color="warn" (click)="removeFile(i)" title="Remove attachment" [disabled]="isUploading">
                                 <mat-icon style="font-size: 18px;">close</mat-icon>
                               </button>
                             </li>
@@ -154,12 +157,17 @@
                       </div>
                     }
                   </div>
-                  <div class="m-l-25 m-b-20">
-                    <button type="submit" mat-flat-button color="primary" class="msr-2" [disabled]="isUploading">
+                  
+                  <div class="d-flex align-items-center gap-3 mt-4 mb-3">
+                    <button type="submit" mat-flat-button color="primary" [disabled]="isUploading">
+                      <mat-icon class="me-2">send</mat-icon>
                       {{ isUploading ? 'Sending...' : 'Send' }}
                     </button>
 
-                    <button type="button" mat-flat-button color="warn" (click)="discard()" [disabled]="isUploading">Discard</button>
+                    <button type="button" mat-stroked-button color="warn" (click)="discard()" [disabled]="isUploading">
+                      <mat-icon class="me-2">delete_outline</mat-icon>
+                      Discard
+                    </button>
                   </div>
                 </form>
               </div>

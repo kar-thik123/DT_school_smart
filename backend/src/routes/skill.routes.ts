@@ -34,6 +34,13 @@ router.post('/', upload.array('images', 3), async (req: any, res: Response) => {
       return res.status(400).json({ error: `Maximum ${maxImages} images allowed for ${skill_type}.` });
     }
 
+    if (files && files.length > 0) {
+      const invalidFiles = files.filter(f => !f.mimetype.startsWith('image/'));
+      if (invalidFiles.length > 0) {
+        return res.status(400).json({ error: 'Invalid file type. Only images are allowed.' });
+      }
+    }
+
     const imageUrls: string[] = [];
     if (files && files.length > 0) {
       for (const file of files) {
@@ -259,6 +266,13 @@ router.put('/:id', upload.array('images', 3), async (req: any, res: Response) =>
     const files = req.files as Express.Multer.File[];
     if (files && files.length > maxImages) {
       return res.status(400).json({ error: `Maximum ${maxImages} images allowed for ${skill_type}.` });
+    }
+
+    if (files && files.length > 0) {
+      const invalidFiles = files.filter(f => !f.mimetype.startsWith('image/'));
+      if (invalidFiles.length > 0) {
+        return res.status(400).json({ error: 'Invalid file type. Only images are allowed.' });
+      }
     }
 
     let updatedImages = existingSkill.images;

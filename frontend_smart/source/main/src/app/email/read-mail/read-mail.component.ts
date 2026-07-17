@@ -26,7 +26,7 @@ export class ReadMailComponent implements OnInit {
 
   mail: Mail | null = null;
   folder: string = 'inbox';
-  serverUrl = environment.apiUrl.replace('/api', '');
+  serverUrl = environment.apiUrl;
 
   currentUserId: string;
 

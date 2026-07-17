@@ -19,6 +19,8 @@ const PORT = process.env.PORT || 5000;
 // Create HTTP server from Express app
 const server = http.createServer(app);
 
+import { NotificationService } from './services/notification.service';
+
 // Attach Socket.io
 const io = new SocketIOServer(server, {
   cors: {
@@ -27,6 +29,9 @@ const io = new SocketIOServer(server, {
     credentials: true
   }
 });
+
+// Pass the io instance to global so any module can reliably dispatch realtime events
+(global as any).io = io;
 
 // Socket.io authentication middleware
 io.use(async (socket, next) => {

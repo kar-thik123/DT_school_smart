@@ -58,6 +58,137 @@
     <div class="row" *ngIf="selectedGradeId && !isLoading">
       <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12">
         <mat-tab-group animationDuration="0ms" color="primary" [(selectedIndex)]="activeTabIndex">
+          <mat-tab>
+            <ng-template mat-tab-label>
+              <mat-icon class="me-2">list</mat-icon>
+              Questions
+            </ng-template>
+            <div class="p-4">
+              <mat-card class="card-container">
+                <!-- <div class="card-header p-3">
+                  <h3 class="mb-0">Questions List</h3>
+                </div> -->
+                <div>
+                  <!-- No Questions State -->
+                  <div *ngIf="filteredQuestions.length === 0" class="text-center p-5 mt-3 d-flex flex-column align-items-center justify-content-center" style="background-color: #fafafa; border: 2px dashed #eaeaea; border-radius: 12px;">
+                    <mat-icon style="font-size: 54px; width: 54px; height: 54px; color: #ccc;" class="mb-3">help_outline</mat-icon>
+                    <h4 style="font-weight: 600; color: #666;" class="mb-1">No Questions Found</h4>
+                    <p class="text-muted small mb-3" style="max-width: 320px;">There are no questions added for the selected section and subject yet. Use the import tools or add single questions to get started.</p>
+                  </div>
+
+                  <!-- Questions List -->
+                  <div class="question-list">
+                    <div *ngFor="let element of paginatedQuestions" class="question-card-modern p-4">
+                      <div class="d-flex justify-content-between">
+
+                        <!-- Main Content -->
+                        <div class="w-100 pe-3">
+
+                          <!-- Question Text -->
+                          <div class="fw-semibold mb-3 q-text-dark d-flex align-items-start">
+                            <mat-icon *ngIf="element.is_important" class="text-warning me-3 mt-1"
+                              style="font-size: 20px; width: 20px; height: 20px;">star</mat-icon>
+                            <span style="font-size: 16px;">{{ element.question_text }}</span>
+                          </div>
+
+                          <hr class="q-separator my-3">
+
+                          <!-- MCQ Options Display -->
+                          <div class="row g-3 mb-3 ps-2"
+                            *ngIf="element.type === 'MCQ_SINGLE' || element.type === 'MCQ_MULTI'">
+                            <div class="col-md-6" *ngFor="let opt of element.answer_config?.options; let idx = index">
+                              <div class="d-flex align-items-center">
+                                <!-- Option Letter Badge -->
+                                <span class="q-badge-red flex-shrink-0"
+                                  [ngClass]="{'bg-success text-white border-success': element.type === 'MCQ_SINGLE' ? element.answer_config?.correct_answer === idx : element.answer_config?.correct_answers?.includes(idx)}">
+                                  {{ getOptionLetter(idx) }}
+                                </span>
+                                <!-- Option Text -->
+                                <span class="q-text-option"
+                                  [ngClass]="{'text-success fw-bold': element.type === 'MCQ_SINGLE' ? element.answer_config?.correct_answer === idx : element.answer_config?.correct_answers?.includes(idx)}">
+                                  {{ opt }}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <!-- True / False Display -->
+                          <div class="mb-3 ps-2" *ngIf="element.type === 'TRUE_FALSE'">
+                            <div class="d-flex align-items-center">
+                              <span class="q-badge-red q-badge-red-long flex-shrink-0 bg-success text-white border-success">
+                                Answer
+                              </span>
+                              <span class="q-text-option text-success fw-bold">{{
+                                element.answer_config?.correct_answer ? 'True' : 'False' }}</span>
+                            </div>
+                          </div>
+
+                          <!-- Long Answer Display -->
+                          <div class="mb-3 ps-2" *ngIf="element.type === 'LONG_ANSWER' && element.answer">
+                            <div class="d-flex align-items-start">
+                              <span class="q-badge-red q-badge-red-long mt-1 flex-shrink-0 bg-success text-white border-success">
+                                Solution
+                              </span>
+                              <span class="q-text-option mt-1 text-success fw-bold" style="white-space: pre-wrap;">{{ element.answer
+                                }}</span>
+                            </div>
+                          </div>
+
+                          <!-- Bottom Meta Row -->
+                          <div class="d-flex flex-wrap align-items-center text-muted mt-4" style="font-size: 13px;">
+                            <!-- Difficulty -->
+                            <span class="q-badge-grey">
+                              {{ (element.difficulty | titlecase) || 'Easy' }}
+                            </span>
+
+                            <!-- Marks -->
+                            <span class="me-4 fw-medium text-dark">{{ element.marks || 1 }}M</span>
+
+                            <!-- Created By -->
+                            <span class="me-5">Created by: {{ element.creator?.name || 'User name' }}</span>
+
+                            <!-- Topic Path -->
+                            <span class="text-truncate" style="max-width: 500px;"
+                              [title]="getContextHierarchy(element)">Topic Path: {{ getContextHierarchy(element)
+                              }}</span>
+                          </div>
+
+                        </div>
+
+                        <!-- Action Menu -->
+                        <div class="flex-shrink-0 ms-3 d-flex align-items-center" *ngIf="capabilities.canEdit || capabilities.canDelete">
+                          <button mat-icon-button [matMenuTriggerFor]="menu" class="q-menu-btn"
+                            style="transform: scale(1.2);">
+                            <mat-icon class="q-text-dark">more_vert</mat-icon>
+                          </button>
+                          <mat-menu #menu="matMenu">
+                            <button mat-menu-item (click)="editQuestion(element)" *ngIf="capabilities.canEdit">
+                              <mat-icon>edit</mat-icon>
+                              <span>Edit</span>
+                            </button>
+                            <button mat-menu-item class="text-danger" (click)="deleteQuestion(element)" *ngIf="capabilities.canDelete">
+                              <mat-icon class="text-danger">delete</mat-icon>
+                              <span>Delete</span>
+                            </button>
+                          </mat-menu>
+                        </div>
+
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <mat-paginator *ngIf="filteredQuestions.length > 0"
+                                 class="bg-transparent mt-2"
+                                 [length]="filteredQuestions.length"
+                                 [pageSize]="pageSize"
+                                 [pageSizeOptions]="[10, 25, 50, 100]"
+                                 (page)="onPageChange($event)"
+                                 showFirstLastButtons>
+                  </mat-paginator>
+                </div>
+              </mat-card>
+            </div>
+          </mat-tab>
           <mat-tab *ngIf="capabilities.canCreate">
             <ng-template mat-tab-label>
               <mat-icon class="me-2">add_circle</mat-icon> {{ editingQuestionId ? 'Edit Question' : 'Create Question' }}
@@ -221,137 +352,6 @@
                       </div>
                     </div>
                   </form>
-                </div>
-              </mat-card>
-            </div>
-          </mat-tab>
-          <mat-tab>
-            <ng-template mat-tab-label>
-              <mat-icon class="me-2">list</mat-icon>
-              Questions
-            </ng-template>
-            <div class="p-4">
-              <mat-card class="card-container">
-                <!-- <div class="card-header p-3">
-                  <h3 class="mb-0">Questions List</h3>
-                </div> -->
-                <div>
-                  <!-- No Questions State -->
-                  <div *ngIf="filteredQuestions.length === 0" class="text-center p-5 mt-3 d-flex flex-column align-items-center justify-content-center" style="background-color: #fafafa; border: 2px dashed #eaeaea; border-radius: 12px;">
-                    <mat-icon style="font-size: 54px; width: 54px; height: 54px; color: #ccc;" class="mb-3">help_outline</mat-icon>
-                    <h4 style="font-weight: 600; color: #666;" class="mb-1">No Questions Found</h4>
-                    <p class="text-muted small mb-3" style="max-width: 320px;">There are no questions added for the selected section and subject yet. Use the import tools or add single questions to get started.</p>
-                  </div>
-
-                  <!-- Questions List -->
-                  <div class="question-list">
-                    <div *ngFor="let element of paginatedQuestions" class="question-card-modern p-4">
-                      <div class="d-flex justify-content-between">
-
-                        <!-- Main Content -->
-                        <div class="w-100 pe-3">
-
-                          <!-- Question Text -->
-                          <div class="fw-semibold mb-3 q-text-dark d-flex align-items-start">
-                            <mat-icon *ngIf="element.is_important" class="text-warning me-3 mt-1"
-                              style="font-size: 20px; width: 20px; height: 20px;">star</mat-icon>
-                            <span style="font-size: 16px;">{{ element.question_text }}</span>
-                          </div>
-
-                          <hr class="q-separator my-3">
-
-                          <!-- MCQ Options Display -->
-                          <div class="row g-3 mb-3 ps-2"
-                            *ngIf="element.type === 'MCQ_SINGLE' || element.type === 'MCQ_MULTI'">
-                            <div class="col-md-6" *ngFor="let opt of element.answer_config?.options; let idx = index">
-                              <div class="d-flex align-items-center">
-                                <!-- Option Letter Badge -->
-                                <span class="q-badge-red flex-shrink-0"
-                                  [ngClass]="{'bg-success text-white border-success': element.type === 'MCQ_SINGLE' ? element.answer_config?.correct_answer === idx : element.answer_config?.correct_answers?.includes(idx)}">
-                                  {{ getOptionLetter(idx) }}
-                                </span>
-                                <!-- Option Text -->
-                                <span class="q-text-option"
-                                  [ngClass]="{'text-success fw-bold': element.type === 'MCQ_SINGLE' ? element.answer_config?.correct_answer === idx : element.answer_config?.correct_answers?.includes(idx)}">
-                                  {{ opt }}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-
-                          <!-- True / False Display -->
-                          <div class="mb-3 ps-2" *ngIf="element.type === 'TRUE_FALSE'">
-                            <div class="d-flex align-items-center">
-                              <span class="q-badge-red q-badge-red-long flex-shrink-0 bg-success text-white border-success">
-                                Answer
-                              </span>
-                              <span class="q-text-option text-success fw-bold">{{
-                                element.answer_config?.correct_answer ? 'True' : 'False' }}</span>
-                            </div>
-                          </div>
-
-                          <!-- Long Answer Display -->
-                          <div class="mb-3 ps-2" *ngIf="element.type === 'LONG_ANSWER' && element.answer">
-                            <div class="d-flex align-items-start">
-                              <span class="q-badge-red q-badge-red-long mt-1 flex-shrink-0 bg-success text-white border-success">
-                                Solution
-                              </span>
-                              <span class="q-text-option mt-1 text-success fw-bold" style="white-space: pre-wrap;">{{ element.answer
-                                }}</span>
-                            </div>
-                          </div>
-
-                          <!-- Bottom Meta Row -->
-                          <div class="d-flex flex-wrap align-items-center text-muted mt-4" style="font-size: 13px;">
-                            <!-- Difficulty -->
-                            <span class="q-badge-grey">
-                              {{ (element.difficulty | titlecase) || 'Easy' }}
-                            </span>
-
-                            <!-- Marks -->
-                            <span class="me-4 fw-medium text-dark">{{ element.marks || 1 }}M</span>
-
-                            <!-- Created By -->
-                            <span class="me-5">Created by: {{ element.creator?.name || 'User name' }}</span>
-
-                            <!-- Topic Path -->
-                            <span class="text-truncate" style="max-width: 500px;"
-                              [title]="getContextHierarchy(element)">Topic Path: {{ getContextHierarchy(element)
-                              }}</span>
-                          </div>
-
-                        </div>
-
-                        <!-- Action Menu -->
-                        <div class="flex-shrink-0 ms-3 d-flex align-items-center" *ngIf="capabilities.canEdit || capabilities.canDelete">
-                          <button mat-icon-button [matMenuTriggerFor]="menu" class="q-menu-btn"
-                            style="transform: scale(1.2);">
-                            <mat-icon class="q-text-dark">more_vert</mat-icon>
-                          </button>
-                          <mat-menu #menu="matMenu">
-                            <button mat-menu-item (click)="editQuestion(element)" *ngIf="capabilities.canEdit">
-                              <mat-icon>edit</mat-icon>
-                              <span>Edit</span>
-                            </button>
-                            <button mat-menu-item class="text-danger" (click)="deleteQuestion(element)" *ngIf="capabilities.canDelete">
-                              <mat-icon class="text-danger">delete</mat-icon>
-                              <span>Delete</span>
-                            </button>
-                          </mat-menu>
-                        </div>
-
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <mat-paginator *ngIf="filteredQuestions.length > 0"
-                                 class="bg-transparent mt-2"
-                                 [length]="filteredQuestions.length"
-                                 [pageSize]="pageSize"
-                                 [pageSizeOptions]="[10, 25, 50, 100]"
-                                 (page)="onPageChange($event)"
-                                 showFirstLastButtons>
-                  </mat-paginator>
                 </div>
               </mat-card>
             </div>
