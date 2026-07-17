@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { OrganizationService } from '../organization.service';
 import { AuthService } from '@core/service/auth.service';
@@ -43,6 +43,7 @@ export class ListComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private router = inject(Router);
   private snackBar = inject(MatSnackBar);
+  private cdr = inject(ChangeDetectorRef);
 
   organizations: any[] = [];
   displayedColumns: string[] = ['logo', 'name', 'domain', 'superAdmin', 'users', 'status', 'actions'];
@@ -79,6 +80,7 @@ export class ListComponent implements OnInit, OnDestroy {
       next: (res: any) => {
         this.organizations = res.data || [];
         this.totalItems = res.meta?.total || 0;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('[ORG LIST ERROR]', err);

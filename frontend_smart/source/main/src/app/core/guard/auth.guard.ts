@@ -80,17 +80,17 @@ export class AuthGuard {
 
     // Enforce matching sub-namespaces within Tenant namespace
     if (url.startsWith('/admin/')) {
-      if (!['ADMIN', 'SUPER_ADMIN', 'MANAGEMENT'].includes(sessionRole)) {
+      if (!this.authService.hasAdminNamespaceAccess()) {
         return handleDenial();
       }
     }
     if (url.startsWith('/teacher/')) {
-      if (sessionRole !== 'TEACHER') {
+      if (!this.authService.hasTeacherNamespaceAccess()) {
         return handleDenial();
       }
     }
     if (url.startsWith('/student/')) {
-      if (sessionRole !== 'STUDENT') {
+      if (!this.authService.hasStudentNamespaceAccess()) {
         return handleDenial();
       }
     }

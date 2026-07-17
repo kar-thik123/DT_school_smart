@@ -93,7 +93,7 @@ export class NotificationService implements OnDestroy {
 
   /** Connect to Socket.io server for real-time notifications */
   connectSocket(): void {
-    if (this.socket) return;
+    if (this.socket || !(environment as any).enableRealtimeNotifications) return;
 
     let token = this.storage.get('token') as string;
     if (!token) {

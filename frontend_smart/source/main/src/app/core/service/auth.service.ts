@@ -26,6 +26,7 @@ export class AuthService {
     const name = this.getSchoolName();
     this.schoolName$.next(name);
     this.bootstrapOrgLogo();
+    this.syncPermissions();
   }
 
   public get currentUserValue(): any {
@@ -145,6 +146,27 @@ export class AuthService {
       this.storage.set('orgLogo', logoUrl);
     }
     this.orgLogo$.next(logoUrl);
+  }
+
+  syncPermissions(): void {
+    if (this.isLoggedIn()) {
+      this.http.get<any>(`${environment.apiUrl}/auth/me`).subscribe({
+        next: (res) => {
+          if (res && res.permissions) {
+            const currentUser = this.getUser();
+            this.setSession(
+              this.getToken()!,
+              currentUser,
+              res.permissions,
+              this.storage.has('token'),
+              this.getOrgLogo(),
+              this.getSchoolName()
+            );
+          }
+        },
+        error: (err) => console.error('Failed to sync permissions:', err)
+      });
+    }
   }
 
   updateSchoolName(schoolName: string): void {
@@ -340,6 +362,11 @@ export class AuthService {
     if (this.hasPermission('IDENTITY', 'IS_SKILL_VERIFIER')) return '/admin/administration/skills-verify';
     if (this.hasPermission('IDENTITY', 'IS_PARENT')) return '/parent/dashboard';
     if (this.hasPermission('IDENTITY', 'IS_STUDENT')) return '/student/dashboard';
+
+    if (this.hasAdminNamespaceAccess()) return '/admin/dashboard/management-dashboard';
+    if (this.hasTeacherNamespaceAccess()) return '/teacher/dashboard';
+    if (this.hasStudentNamespaceAccess()) return '/student/dashboard';
+
     return '/authentication/signin';
   }
 }
