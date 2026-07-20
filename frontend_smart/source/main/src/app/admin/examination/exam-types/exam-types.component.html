@@ -97,8 +97,10 @@
 
                   @if (isLoading) {
                   <tr>
-                    <td [attr.colspan]="canManage ? 6 : 5" class="text-center p-5">
-                      <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+                    <td [attr.colspan]="canManage ? 6 : 5" class="p-5">
+                      <div class="d-flex justify-content-center align-items-center w-100">
+                        <app-global-loader [inline]="true"></app-global-loader>
+                      </div>
                     </td>
                   </tr>
                   }

@@ -64,6 +64,7 @@ export class SetupComponent implements OnInit, OnDestroy, AfterViewInit {
   editOrgDetails: any = null;
   
   logoPreview: string | null = null;
+  profilePreview: string | null = null;
   serverUrl = environment.apiUrl.replace('/api', '');
   today = new Date();
   academicYears: string[] = [];
@@ -153,10 +154,14 @@ export class SetupComponent implements OnInit, OnDestroy, AfterViewInit {
           contact_email: org.contact_email,
           contact_phone: org.contact_phone,
           address: org.address,
-          logo_url: org.logo_url
+          logo_url: org.logo_url,
+          profile_url: org.profile_url
         });
         if (org.logo_url) {
           this.logoPreview = org.logo_url;
+        }
+        if (org.profile_url) {
+          this.profilePreview = org.profile_url;
         }
 
         this.domainForm.patchValue({
@@ -255,7 +260,8 @@ export class SetupComponent implements OnInit, OnDestroy, AfterViewInit {
         contact_email: ['', [Validators.required, Validators.email]],
         contact_phone: ['', [Validators.pattern('^[0-9]+$'), Validators.minLength(10), Validators.maxLength(15)]],
         address: [''],
-        logo_url: ['']
+        logo_url: [''],
+        profile_url: ['']
       }),
       domain: this.fb.group({
         deployment_model: ['Platform Domain', Validators.required],
@@ -337,6 +343,20 @@ export class SetupComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
+  onProfileSelected(event: any) {
+    const file = event.target.files[0];
+    if (file) {
+      this.orgService.uploadSchoolProfile(file).subscribe({
+        next: (res) => {
+          this.orgForm.patchValue({ profile_url: res.profileUrl });
+          this.profilePreview = res.profileUrl;
+          this.snackBar.open('Profile uploaded successfully', 'Close', { duration: 2000 });
+        },
+        error: () => this.snackBar.open('Profile upload failed', 'Close', { duration: 3000 })
+      });
+    }
+  }
+
   checkReadiness() {
     if (this.isValidating || this.isEditMode) return;
     
@@ -396,6 +416,7 @@ export class SetupComponent implements OnInit, OnDestroy, AfterViewInit {
         school_name: payload.school_name,
         contact_email: payload.contact_email,
         logo_url: payload.logo_url,
+        profile_url: payload.profile_url,
         subdomain: payload.subdomain,
         domain_type: payload.domain_type,
         login_limit: rawValue.license.licensed_seats,
@@ -452,6 +473,7 @@ export class SetupComponent implements OnInit, OnDestroy, AfterViewInit {
     this.setupFormSubscription();
     this.currentStep = 1;
     this.logoPreview = null;
+    this.profilePreview = null;
     if (this.stepper) {
       this.stepper.selectedIndex = 0;
     }

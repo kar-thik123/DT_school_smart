@@ -469,9 +469,11 @@
       }
       <!-- context menu end -->
 
-      @if (!isLoading) {
-      <div class="no-results" [style.display]="dataSource.data.length === 0 ? '' : 'none'">
-        No results
+      @if (!isLoading && dataSource.data.length === 0) {
+      <div class="text-center p-5 text-muted" style="background-color: #fafafa; border-bottom: 1px solid #eee;">
+        <mat-icon style="font-size: 40px; width: 40px; height: 40px; color: #ccc;" class="mb-2">{{ emptyStateIcon }}</mat-icon>
+        <div style="font-weight: 500; font-size: 14px; color: #666;">{{ emptyStateTitle }}</div>
+        <div style="font-size: 12px; color: #999;" class="mt-1">{{ emptyStateSubTitle }}</div>
       </div>
       }
       <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; border-top: 1px solid #e0e0e0; background-color: #f9f9f9;">

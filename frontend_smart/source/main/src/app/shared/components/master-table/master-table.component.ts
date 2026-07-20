@@ -116,6 +116,9 @@ export class MasterTableComponent implements OnInit, AfterViewInit {
   @Input() disableRowClickToEdit: boolean = false;
   @Input() pageSize: number = 10;
   @Input() pageSizeOptions: number[] = [5, 10, 25, 100];
+  @Input() emptyStateTitle: string = 'No results found';
+  @Input() emptyStateSubTitle: string = 'There are no records to display.';
+  @Input() emptyStateIcon: string = 'folder_open';
 
   // Outputs
   @Output() add = new EventEmitter<void>();

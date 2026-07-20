@@ -25,8 +25,12 @@ export class AuthService {
     this.orgLogo$.next(logo);
     const name = this.getSchoolName();
     this.schoolName$.next(name);
-    this.bootstrapOrgLogo();
-    this.syncPermissions();
+    
+    // Defer HTTP calls to avoid NG0200 Circular Dependency
+    setTimeout(() => {
+      this.bootstrapOrgLogo();
+      this.syncPermissions();
+    });
   }
 
   public get currentUserValue(): any {

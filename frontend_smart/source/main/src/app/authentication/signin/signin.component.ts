@@ -45,6 +45,12 @@ export class SigninComponent
   rememberMe = false;
   selectedRole = 'admin';
   showDeviceVerification = false;
+  currentYear: number;
+
+  constructor() {
+    super();
+    this.currentYear = new Date().getFullYear();
+  }
 
   ngOnInit() {
     this.authForm = this.formBuilder.group({

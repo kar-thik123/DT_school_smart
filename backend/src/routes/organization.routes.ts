@@ -24,7 +24,7 @@ const storage = multer.diskStorage({
   }
 });
 
-const upload = multer({ 
+const upload = multer({
   storage,
   limits: { fileSize: 2 * 1024 * 1024 }, // 2MB limit
   fileFilter: (req, file, cb) => {
@@ -40,6 +40,9 @@ const upload = multer({
 const fs = require('fs');
 if (!fs.existsSync('uploads/logos/')) {
   fs.mkdirSync('uploads/logos/', { recursive: true });
+}
+if (!fs.existsSync('uploads/profiles/')) {
+  fs.mkdirSync('uploads/profiles/', { recursive: true });
 }
 
 const deleteLogoFileSafely = async (logoUrl: string | null | undefined) => {
@@ -71,7 +74,7 @@ router.post(
     const userPermissions = req.user.permissions || [];
     const isSuperAdmin = AuthorizationService.hasIdentity(userPermissions, 'IS_SUPER_ADMIN');
     const isSystemAdmin = AuthorizationService.hasIdentity(userPermissions, 'IS_SYSTEM_ADMIN');
-    
+
     if (!isSuperAdmin && !isSystemAdmin) {
       return res.status(403).json({ message: 'Forbidden: Logo upload is restricted to administrators' });
     }
@@ -82,6 +85,48 @@ router.post(
     if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
     const logoUrl = `/api/uploads/logos/${req.file.filename}`;
     res.json({ logoUrl });
+  }
+);
+
+// Configure Multer for Profile Uploads
+const profileStorage = multer.diskStorage({
+  destination: 'uploads/profiles/',
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    cb(null, 'profile-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const uploadProfile = multer({
+  storage: profileStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only images are allowed'));
+    }
+  }
+});
+
+router.post(
+  '/upload-school-profile',
+  authMiddleware,
+  (req: any, res: Response, next) => {
+    const userPermissions = req.user.permissions || [];
+    const isSuperAdmin = AuthorizationService.hasIdentity(userPermissions, 'IS_SUPER_ADMIN');
+    const isSystemAdmin = AuthorizationService.hasIdentity(userPermissions, 'IS_SYSTEM_ADMIN');
+
+    if (!isSuperAdmin && !isSystemAdmin) {
+      return res.status(403).json({ message: 'Forbidden: Profile upload is restricted to administrators' });
+    }
+    next();
+  },
+  uploadProfile.single('profile'),
+  (req: any, res: Response) => {
+    if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
+    const profileUrl = `/api/uploads/profiles/${req.file.filename}`;
+    res.json({ profileUrl });
   }
 );
 
@@ -221,6 +266,7 @@ router.patch('/:id/settings', authMiddleware, requirePermission('IDENTITY', 'IS_
       school_name,
       contact_email,
       logo_url,
+      profile_url,
       subdomain,
       domain_type,
       login_limit,
@@ -251,6 +297,7 @@ router.patch('/:id/settings', authMiddleware, requirePermission('IDENTITY', 'IS_
           school_name: school_name !== undefined ? school_name : undefined,
           contact_email: contact_email !== undefined ? contact_email : undefined,
           logo_url: logo_url !== undefined ? logo_url : undefined,
+          profile_url: profile_url !== undefined ? profile_url : undefined,
           subdomain: subdomain !== undefined ? subdomain : undefined,
           domain_type: domain_type !== undefined ? domain_type : undefined,
           login_limit: login_limit !== undefined ? Number(login_limit) : undefined,
@@ -376,6 +423,7 @@ const orgSchema = z.object({
   contact_phone: z.string().nullish(),
   address: z.string().nullish(),
   logo_url: z.string().nullish().or(z.literal('')),
+  profile_url: z.string().nullish().or(z.literal('')),
   // Domain
   domain_type: z.enum(['Platform Domain', 'Subdomain', 'Custom Domain']).default('Platform Domain'),
   subdomain: z.string().nullish().or(z.literal('')),
@@ -411,19 +459,19 @@ function cleanInput(data: any): any {
 }
 
 router.post('/', async (req: any, res: Response) => {
-    try {
-      console.log('--- BACKEND AUDIT LOGGING ---');
-      console.log('req.body.logo_url:', req.body.logo_url);
-      console.log('[ORG CREATE RAW BODY]', req.body);
-  
-      // Clean strings before schema parse and db insertion
-      const cleanedBody = cleanInput(req.body);
-      const parsed = orgSchema.parse(cleanedBody);
-      console.log('[DEBUG] Schema parsed successfully:', parsed);
-      console.log('parsed.logo_url:', parsed.logo_url);
-      
-      const dbPayloadLogoUrl = parsed.logo_url || null;
-      console.log('Prisma create() data.logo_url:', dbPayloadLogoUrl);
+  try {
+    console.log('--- BACKEND AUDIT LOGGING ---');
+    console.log('req.body.logo_url:', req.body.logo_url);
+    console.log('[ORG CREATE RAW BODY]', req.body);
+
+    // Clean strings before schema parse and db insertion
+    const cleanedBody = cleanInput(req.body);
+    const parsed = orgSchema.parse(cleanedBody);
+    console.log('[DEBUG] Schema parsed successfully:', parsed);
+    console.log('parsed.logo_url:', parsed.logo_url);
+
+    const dbPayloadLogoUrl = parsed.logo_url || null;
+    console.log('Prisma create() data.logo_url:', dbPayloadLogoUrl);
 
     // Auto-generate subdomain if empty
     let subdomain = parsed.subdomain;
@@ -432,11 +480,11 @@ router.post('/', async (req: any, res: Response) => {
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)/g, '');
-      
+
       if (!baseSubdomain) {
         baseSubdomain = 'school-' + Math.floor(Math.random() * 1000);
       }
-      
+
       subdomain = baseSubdomain;
       let count = 1;
       while (true) {
@@ -486,6 +534,7 @@ router.post('/', async (req: any, res: Response) => {
           contact_phone: parsed.contact_phone || null,
           address: parsed.address || null,
           logo_url: parsed.logo_url || null,
+          profile_url: parsed.profile_url || null,
           domain_type: parsed.domain_type || 'Platform Domain',
           subdomain: subdomain || null,
           custom_domain: parsed.custom_domain || null,
@@ -547,10 +596,10 @@ router.post('/', async (req: any, res: Response) => {
             }
           });
         }
-        
+
         const allSystemPermissions = await tx.permission.findMany();
-        const tenantDbPermissions = allSystemPermissions.filter((p: any) => 
-          PERMISSION_DOMAINS[p.module] === 'TENANT' && 
+        const tenantDbPermissions = allSystemPermissions.filter((p: any) =>
+          PERMISSION_DOMAINS[p.module] === 'TENANT' &&
           !(p.module === 'IDENTITY' && p.action === 'IS_SYSTEM_ADMIN')
         );
         const rolePermissionsData = tenantDbPermissions.map((p: any) => ({
@@ -580,7 +629,7 @@ router.post('/', async (req: any, res: Response) => {
         });
         console.log(`[TX STEP 2.4] Super admin user created: id=${adminUser.id}, email=${adminUser.email}, role=${superAdminRole.id}`);
       }
-      
+
       // STEP 3: Create Initial Academic Year
       const initialAcademicYear = await tx.academicYear.create({
         data: {
@@ -616,7 +665,7 @@ router.post('/', async (req: any, res: Response) => {
           const frontendOrigin = req.headers.origin || `${req.protocol}://${req.get('host')}`;
           const baseUrl = FrontendUrlResolver.resolve(result.org, frontendOrigin);
           const loginUrl = `${baseUrl}/#/authentication/signin`;
-          
+
           await EmailService.sendOrganizationProvisionedEmail(
             parsed.contact_email || result.adminUser?.email || '',
             result.adminUser?.email || null,
@@ -678,7 +727,7 @@ router.get('/', authMiddleware, requirePermission('IDENTITY', 'IS_SYSTEM_ADMIN')
     const allowedSortFields = ['school_name', 'subdomain', 'status', 'created_at', 'users_count', 'super_admin'];
     const field = allowedSortFields.includes(sortBy as string) ? (sortBy as string) : 'created_at';
     const order = sortOrder === 'asc' ? 'asc' : 'desc';
-    
+
     let orderBy: any;
     if (field === 'users_count') {
       orderBy = {
@@ -797,7 +846,7 @@ router.delete('/:id', authMiddleware, requirePermission('IDENTITY', 'IS_SYSTEM_A
     if (!currentOrg) return res.status(404).json({ message: 'Organization not found' });
 
     await prisma.organization.delete({ where: { id: req.params.id } });
-    
+
     deleteLogoFileSafely(currentOrg.logo_url);
 
     res.json({ message: 'Organization deleted successfully' });

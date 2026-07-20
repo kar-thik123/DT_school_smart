@@ -57,16 +57,27 @@
 
                     <div formGroupName="organization">
                       <div class="row">
-                        <div class="col-md-3 text-center mb-3">
-                          <div class="logo-preview-box mb-2 border rounded p-2 bg-light">
-                             <img [src]="logoPreview || 'assets/images/logo.png'" class="img-fluid" style="max-height: 100px;">
+                        <div class="col-md-4 text-center mb-3 d-flex justify-content-around gap-2">
+                          <div>
+                            <div class="logo-preview-box mb-2 border rounded p-2 bg-light">
+                               <img [src]="logoPreview || 'assets/images/logo.png'" class="img-fluid" style="max-height: 100px;">
+                            </div>
+                             <input type="file" #logoInput hidden (change)="onLogoSelected($event)" accept="image/*">
+                             <button mat-stroked-button type="button" color="primary" size="small" (click)="logoInput.click(); $event.preventDefault()">
+                               <mat-icon>upload</mat-icon> Logo
+                             </button>
                           </div>
-                           <input type="file" #logoInput hidden (change)="onLogoSelected($event)" accept="image/*">
-                           <button mat-stroked-button type="button" color="primary" size="small" (click)="logoInput.click(); $event.preventDefault()">
-                             <mat-icon>upload</mat-icon> Logo
-                           </button>
+                          <div>
+                            <div class="logo-preview-box mb-2 border rounded p-2 bg-light">
+                               <img [src]="profilePreview || 'assets/images/logo.png'" class="img-fluid" style="max-height: 100px;">
+                            </div>
+                             <input type="file" #profileInput hidden (change)="onProfileSelected($event)" accept="image/*">
+                             <button mat-stroked-button type="button" color="primary" size="small" (click)="profileInput.click(); $event.preventDefault()">
+                               <mat-icon>upload</mat-icon> Profile
+                             </button>
+                          </div>
                         </div>
-                        <div class="col-md-9">
+                        <div class="col-md-8">
                            <mat-form-field class="w-100 mb-3" appearance="outline">
                              <mat-label>School Name</mat-label>
                              <input matInput formControlName="school_name" placeholder="e.g. International Heights Academy" required (blur)="checkReadiness()">

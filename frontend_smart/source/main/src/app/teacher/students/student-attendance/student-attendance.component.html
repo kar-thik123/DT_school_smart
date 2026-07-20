@@ -64,6 +64,7 @@
     <!-- Daily View -->
     <app-master-table *ngIf="selectedPeriod === 'DAY'" [title]="'Student Attendance'"
       [columnDefinitions]="columnDefinitions" [dataSource]="dataSource" [isLoading]="isLoading"
+      emptyStateTitle="No Students Found" emptyStateSubTitle="There are no students enrolled in this class." emptyStateIcon="person_off"
       (refresh)="handleRefresh()" [showAdd]="false" [showDelete]="false" [disableRowClickToEdit]="true"
       (edit)="handleEdit($event)" (checkboxChange)="handleCheckboxChange($event)"
       (headerCheckboxChange)="handleHeaderCheckboxChange($event)">

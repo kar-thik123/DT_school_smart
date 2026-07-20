@@ -16,6 +16,7 @@ model Organization {
   contact_phone               String?
   address                     String?
   logo_url                    String?
+  profile_url                 String?                       @db.VarChar(255)
   domain_type                 String                        @default("subdomain")
   subdomain                   String?                       @unique
   custom_domain               String?                       @unique

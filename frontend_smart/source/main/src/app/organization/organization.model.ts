@@ -7,6 +7,7 @@ export interface Organization {
   contact_phone?: string;
   address?: string;
   logo_url?: string;
+  profile_url?: string;
   domain_type: 'subdomain' | 'custom' | 'on_premise';
   subdomain?: string;
   custom_domain?: string;

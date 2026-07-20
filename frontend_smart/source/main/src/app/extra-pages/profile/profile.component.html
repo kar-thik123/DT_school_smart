@@ -458,7 +458,7 @@
 
                       <div class="skill-image-preview-row" *ngIf="skillImagePreviews.length > 0">
                         <div class="preview-box" *ngFor="let preview of skillImagePreviews; let i = index">
-                          <img [src]="preview" alt="Skill Preview" class="shadow-sm">
+                          <img [src]="preview" alt="Skill Preview" class="shadow-sm" (click)="viewImage(preview)" style="cursor: pointer;">
                           <button mat-mini-fab color="warn" class="remove-preview-btn" (click)="removeSkillImage(i)">
                             <mat-icon>close</mat-icon>
                           </button>
@@ -476,7 +476,7 @@
                           <div class="skill-images-section">
                             <div class="skill-images-flex" *ngIf="skill.images && skill.images.length > 0">
                               <div class="img-wrapper" *ngFor="let img of skill.images">
-                                <img [src]="getSkillImageUrl(img)" alt="Proof">
+                                <img [src]="getSkillImageUrl(img)" alt="Proof" (click)="viewImage(getSkillImageUrl(img))" style="cursor: pointer;">
                               </div>
                             </div>
                             <div class="no-images-placeholder" *ngIf="!skill.images || skill.images.length === 0">

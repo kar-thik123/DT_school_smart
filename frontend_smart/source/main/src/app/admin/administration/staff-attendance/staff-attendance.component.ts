@@ -26,6 +26,8 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { trigger, state, style, transition, animate } from '@angular/animations';
 
+import { GlobalLoaderComponent } from '@shared/components/global-loader/global-loader.component';
+
 @Component({
   selector: 'app-staff-attendance',
   templateUrl: './staff-attendance.component.html',
@@ -62,7 +64,8 @@ import { trigger, state, style, transition, animate } from '@angular/animations'
     MatMenuModule,
     MatProgressSpinnerModule,
     MatDatepickerModule,
-    MatNativeDateModule
+    MatNativeDateModule,
+    GlobalLoaderComponent
   ],
   providers: [DatePipe]
 })

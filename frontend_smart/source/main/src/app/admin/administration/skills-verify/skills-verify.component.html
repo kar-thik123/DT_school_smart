@@ -111,8 +111,8 @@
                 <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
               </table>
 
-              <div *ngIf="isLoading" class="text-center p-4">
-                Loading students...
+              <div *ngIf="isLoading" class="d-flex justify-content-center align-items-center p-4">
+                <app-global-loader [inline]="true"></app-global-loader>
               </div>
 
               <div *ngIf="!isLoading && students.length === 0" class="text-center p-4 text-muted">

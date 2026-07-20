@@ -18,6 +18,7 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { StudentSkillsDialogComponent } from './skills-verify-dialog/student-skills-dialog.component';
 import { SkillsActionDialogComponent, SkillsActionDialogData } from './skills-action-dialog/skills-action-dialog.component';
+import { GlobalLoaderComponent } from '@shared/components/global-loader/global-loader.component';
 
 @Component({
   selector: 'app-skills-verify',
@@ -37,7 +38,8 @@ import { SkillsActionDialogComponent, SkillsActionDialogData } from './skills-ac
     MatCheckboxModule,
     BreadcrumbComponent,
     MatDialogModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    GlobalLoaderComponent
   ]
 })
 export class SkillsVerifyComponent implements OnInit {

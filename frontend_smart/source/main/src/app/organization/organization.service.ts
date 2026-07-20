@@ -28,6 +28,12 @@ export class OrganizationService {
     return this.http.post<{ logoUrl: string }>(`${this.apiUrl}/upload-logo`, formData);
   }
 
+  uploadSchoolProfile(file: File): Observable<{ profileUrl: string }> {
+    const formData = new FormData();
+    formData.append('profile', file);
+    return this.http.post<{ profileUrl: string }>(`${this.apiUrl}/upload-school-profile`, formData);
+  }
+
   getOrganizations(page: number = 1, limit: number = 10, search: string = '', sortBy: string = 'created_at', sortOrder: string = 'desc'): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}?page=${page}&limit=${limit}&search=${search}&sortBy=${sortBy}&sortOrder=${sortOrder}`);
   }

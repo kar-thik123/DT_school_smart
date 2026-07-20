@@ -23,6 +23,7 @@ import { AcademicContextService } from '@core/service/academic-context.service';
 
 import { MatMenuModule } from '@angular/material/menu';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { GlobalLoaderComponent } from '@shared/components/global-loader/global-loader.component';
 
 @Component({
   selector: 'app-exam-types',
@@ -44,7 +45,8 @@ import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
     MatProgressBarModule,
     MatMenuModule,
     MatPaginatorModule,
-    BreadcrumbComponent
+    BreadcrumbComponent,
+    GlobalLoaderComponent
   ],
 })
 export class ExamTypesComponent implements OnInit, OnDestroy {

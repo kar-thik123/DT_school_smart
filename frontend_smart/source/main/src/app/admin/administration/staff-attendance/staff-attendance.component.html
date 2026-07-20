@@ -57,6 +57,7 @@
     <!-- Daily View -->
     <app-master-table *ngIf="selectedPeriod === 'DAY'" [title]="'Staff Attendance'"
       [columnDefinitions]="columnDefinitions" [dataSource]="dataSource" [isLoading]="isLoading"
+      emptyStateTitle="No Staff Found" emptyStateSubTitle="There are no staff assigned." emptyStateIcon="person_off"
       (refresh)="handleRefresh()" [showAdd]="false" [showDelete]="false" [showEdit]="isClassTeacher" [disableRowClickToEdit]="true"
       (edit)="handleEdit($event)" (checkboxChange)="handleCheckboxChange($event)"
       (headerCheckboxChange)="handleHeaderCheckboxChange($event)">
@@ -112,14 +113,7 @@
 
         <div *ngIf="isLoading"
           style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; align-items: center; background: rgba(255,255,255,0.7); z-index: 10;">
-          <div class="bouncing-loader-wrapper" style="transform: scale(0.4);">
-            <div class="bouncing-loader-circle"></div>
-            <div class="bouncing-loader-circle"></div>
-            <div class="bouncing-loader-circle"></div>
-            <div class="bouncing-loader-shadow"></div>
-            <div class="bouncing-loader-shadow"></div>
-            <div class="bouncing-loader-shadow"></div>
-          </div>
+          <app-global-loader [inline]="true"></app-global-loader>
         </div>
 
         <div class="attendance-sheet">

@@ -153,7 +153,7 @@ router.post('/', requirePermission('QUESTION_BANK', 'CREATE'), async (req: any, 
       entity_id: question.id,
       title: 'Question Added',
       message: `A new question has been successfully added to the bank.`,
-      context_data: { icon: 'plus-circle', color: 'notification-green' },
+      context_data: { icon: 'add_circle_outline', color: 'notification-green' },
       recipient_ids: [req.user.user_id]
     });
 

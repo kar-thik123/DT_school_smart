@@ -26,7 +26,9 @@ export class AcademicContextService {
         const isPlatformAdmin = this.authService.hasPermission('IDENTITY', 'IS_SYSTEM_ADMIN');
         if (!isPlatformAdmin) {
           console.log('[AcademicContextService] User session active. Loading active year context.');
-          this.loadActiveYear().subscribe();
+          setTimeout(() => {
+            this.loadActiveYear().subscribe();
+          });
         } else {
           console.log('[AcademicContextService] Platform admin session active. Bypassing academic context.');
         }

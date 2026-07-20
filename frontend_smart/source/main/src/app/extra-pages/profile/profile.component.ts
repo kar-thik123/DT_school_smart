@@ -11,6 +11,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.component';
 import { GlobalLoaderComponent } from '@shared/components/global-loader/global-loader.component';
 import { HttpClient } from '@angular/common/http';
@@ -20,6 +21,7 @@ import { environment } from '../../../environments/environment';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import Swal from 'sweetalert2';
+import { SkillsActionDialogComponent, SkillsActionDialogData } from '../../admin/administration/skills-verify/skills-action-dialog/skills-action-dialog.component';
 
 @Component({
   selector: 'app-profile',
@@ -39,6 +41,7 @@ import Swal from 'sweetalert2';
     MatDatepickerModule,
     MatNativeDateModule,
     MatSnackBarModule,
+    MatDialogModule,
     CommonModule,
     FormsModule
   ]
@@ -83,6 +86,8 @@ export class ProfileComponent implements OnInit {
   private authService = inject(AuthService);
   private snackBar = inject(MatSnackBar);
   private imageCompressionService = inject(ImageCompressionService);
+
+  private dialog = inject(MatDialog);
 
   constructor() { }
 
@@ -574,6 +579,18 @@ export class ProfileComponent implements OnInit {
       verticalPosition: placementFrom,
       horizontalPosition: placementAlign,
       panelClass: colorName,
+    });
+  }
+
+  viewImage(imageUrl: string): void {
+    this.dialog.open(SkillsActionDialogComponent, {
+      data: { type: 'image', imageUrl: imageUrl } as SkillsActionDialogData,
+      panelClass: 'image-preview-dialog',
+      backdropClass: 'image-preview-backdrop',
+      width: 'auto',
+      height: 'auto',
+      maxWidth: '95vw',
+      maxHeight: '95vh'
     });
   }
 }
