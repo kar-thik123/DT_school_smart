@@ -43,8 +43,8 @@
         <div class="col-xl-10 col-lg-12">
           <div class="card shadow-sm">
             <div class="card-body p-0">
-              <!-- [linear]="false" allows users to skip and jump between steps -->
-              <mat-horizontal-stepper [linear]="false" #stepper class="provisioning-stepper">
+              <!-- [linear]="true" enforces users cannot skip and jump between steps without completing current step -->
+              <mat-horizontal-stepper [linear]="true" #stepper class="provisioning-stepper">
                 
                 <!-- Step 1: Organization Profile -->
                 <mat-step [stepControl]="orgForm">
@@ -94,6 +94,9 @@
                               <mat-form-field class="w-100" appearance="outline">
                                 <mat-label>Phone</mat-label>
                                 <input matInput formControlName="contact_phone" placeholder="+1 (555) 000-0000" autocomplete="off">
+                                <mat-error *ngIf="orgForm.get('contact_phone')?.hasError('pattern') || orgForm.get('contact_phone')?.hasError('minlength')">
+                                  Enter a valid numeric phone number (10-15 digits)
+                                </mat-error>
                               </mat-form-field>
                             </div>
                           </div>
@@ -103,7 +106,7 @@
 
                     <div class="stepper-actions mt-5 d-flex justify-content-end gap-3">
                       <button mat-stroked-button type="button" (click)="saveDraft()">SAVE DRAFT</button>
-                      <button mat-flat-button type="button" color="primary" matStepperNext (click)="stepper.next()">NEXT: CONNECTIVITY</button>
+                      <button mat-flat-button type="button" color="primary" matStepperNext>NEXT: CONNECTIVITY</button>
                     </div>
                   </div>
                 </mat-step>
@@ -224,13 +227,18 @@
                         <div class="col-md-6">
                           <mat-form-field class="w-100 mb-3" appearance="outline">
                             <mat-label>Renewal Date (Optional)</mat-label>
-                            <input matInput type="date" formControlName="renewal_date">
+                            <input matInput [matDatepicker]="renewalPicker" formControlName="renewal_date" [min]="today">
+                            <mat-datepicker-toggle matSuffix [for]="renewalPicker"></mat-datepicker-toggle>
+                            <mat-datepicker #renewalPicker></mat-datepicker>
                           </mat-form-field>
                         </div>
                         <div class="col-md-6">
                           <mat-form-field class="w-100 mb-3" appearance="outline">
                             <mat-label>Grace Period (Days)</mat-label>
-                            <input matInput type="number" formControlName="grace_period_days">
+                            <input matInput type="number" formControlName="grace_period_days" min="0">
+                            <mat-error *ngIf="licenseForm.get('grace_period_days')?.hasError('min') || licenseForm.get('grace_period_days')?.hasError('pattern')">
+                              Invalid value.
+                            </mat-error>
                           </mat-form-field>
                         </div>
                         <div class="col-12 mt-2">
@@ -287,7 +295,9 @@
                         <div class="col-md-6">
                           <mat-form-field class="w-100" appearance="outline">
                             <mat-label>Initial Academic Year</mat-label>
-                            <input matInput formControlName="initial_academic_year" placeholder="e.g. 2026-2027" required>
+                            <mat-select formControlName="initial_academic_year" required>
+                              <mat-option *ngFor="let year of academicYears" [value]="year">{{ year }}</mat-option>
+                            </mat-select>
                             <mat-hint>The foundational academic year for this organization.</mat-hint>
                           </mat-form-field>
                         </div>

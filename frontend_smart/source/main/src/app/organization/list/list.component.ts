@@ -46,7 +46,7 @@ export class ListComponent implements OnInit, OnDestroy {
   private cdr = inject(ChangeDetectorRef);
 
   organizations: any[] = [];
-  displayedColumns: string[] = ['logo', 'name', 'domain', 'superAdmin', 'users', 'status', 'actions'];
+  displayedColumns: string[] = ['sno', 'logo', 'name', 'domain', 'superAdmin', 'users', 'status', 'actions'];
   loadingRows: Set<string> = new Set();
   serverUrl = environment.apiUrl.replace('/api', '');
   
@@ -112,6 +112,20 @@ export class ListComponent implements OnInit, OnDestroy {
     this.pageIndex = event.pageIndex;
     this.pageSize = event.pageSize;
     this.loadOrganizations();
+  }
+
+  getLogoUrl(logoUrl: string | null): string {
+    if (!logoUrl) return 'assets/images/logo.png';
+    if (logoUrl.startsWith('http')) return logoUrl;
+    
+    // ensure no double slashes
+    const baseUrl = this.serverUrl.endsWith('/') ? this.serverUrl.slice(0, -1) : this.serverUrl;
+    const path = logoUrl.startsWith('/') ? logoUrl : `/${logoUrl}`;
+    return `${baseUrl}${path}`;
+  }
+
+  handleImageError(event: any) {
+    event.target.src = 'assets/images/logo.png';
   }
 
 

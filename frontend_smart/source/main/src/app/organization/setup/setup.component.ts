@@ -1,9 +1,9 @@
-import { Component, OnInit, OnDestroy, AfterViewInit, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit, inject, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { OrganizationService } from '../organization.service';
 import { ProvisioningPayload, ReadinessStatus } from '../organization.model';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -12,7 +12,9 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatStepperModule } from '@angular/material/stepper';
+import { MatStepperModule, MatStepper } from '@angular/material/stepper';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
 import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.component';
 import { environment } from '../../../environments/environment';
 import { GlobalLoaderService } from '../../core/service/global-loader.service';
@@ -34,6 +36,9 @@ import { Subscription } from 'rxjs';
     MatSnackBarModule,
     MatProgressSpinnerModule,
     MatStepperModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
+    RouterModule,
     BreadcrumbComponent
   ],
   templateUrl: './setup.component.html',
@@ -47,6 +52,8 @@ export class SetupComponent implements OnInit, OnDestroy, AfterViewInit {
   private router = inject(Router);
   private loaderService = inject(GlobalLoaderService);
 
+  @ViewChild('stepper') stepper!: MatStepper;
+
   provisioningForm!: FormGroup;
   currentStep = 1;
   isSubmitting = false;
@@ -58,6 +65,8 @@ export class SetupComponent implements OnInit, OnDestroy, AfterViewInit {
   
   logoPreview: string | null = null;
   serverUrl = environment.apiUrl.replace('/api', '');
+  today = new Date();
+  academicYears: string[] = [];
 
   // Readiness state
   readiness: ReadinessStatus = {
@@ -76,6 +85,7 @@ export class SetupComponent implements OnInit, OnDestroy, AfterViewInit {
     this.isEditMode = !!this.editOrgId;
 
     this.initForm();
+    this.generateAcademicYears();
     this.logFormState('1. Immediately after initForm()');
     
     if (this.isEditMode) {
@@ -125,7 +135,7 @@ export class SetupComponent implements OnInit, OnDestroy, AfterViewInit {
     this.formSub = this.provisioningForm.valueChanges.subscribe((val) => {
       console.log('--- [DEBUG-FORM] 7. After valueChanges event ---', val);
       if (!this.isEditMode) {
-        this.saveDraft();
+        // Debounce or save selectively if needed
       }
       this.checkReadiness();
     });
@@ -187,8 +197,14 @@ export class SetupComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   saveDraft() {
-    if (this.isProvisioned) return;
-    localStorage.setItem('provisioning_draft', JSON.stringify(this.provisioningForm.value));
+    if (this.isProvisioned || this.isEditMode) return;
+    const draft = {
+      form: this.provisioningForm.value,
+      step: this.stepper ? this.stepper.selectedIndex : 0,
+      timestamp: new Date().toISOString()
+    };
+    localStorage.setItem('provisioning_draft', JSON.stringify(draft));
+    this.snackBar.open('Draft saved successfully', 'Close', { duration: 2000 });
   }
 
   clearDraft() {
@@ -196,9 +212,37 @@ export class SetupComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   loadDraft() {
-    const draft = localStorage.getItem('provisioning_draft');
-    if (draft) {
-      this.provisioningForm.patchValue(JSON.parse(draft));
+    const draftStr = localStorage.getItem('provisioning_draft');
+    if (draftStr) {
+      try {
+        const draft = JSON.parse(draftStr);
+        if (draft.form) {
+          this.provisioningForm.patchValue(draft.form);
+        } else {
+          this.provisioningForm.patchValue(draft);
+        }
+        
+        if (draft.step !== undefined) {
+          setTimeout(() => {
+            if (this.stepper) {
+              this.stepper.selectedIndex = draft.step;
+            }
+          });
+        }
+      } catch (e) {
+        console.error('Failed to parse draft', e);
+      }
+    }
+  }
+
+  private generateAcademicYears() {
+    const currentYear = this.today.getFullYear();
+    const startYear = this.today.getMonth() >= 5 ? currentYear : currentYear - 1; // Assuming June start
+    for (let i = 0; i < 5; i++) {
+      this.academicYears.push(`${startYear + i}-${startYear + i + 1}`);
+    }
+    if (!this.adminForm.get('initial_academic_year')?.value) {
+      this.adminForm.get('initial_academic_year')?.setValue(this.academicYears[0]);
     }
   }
 
@@ -209,7 +253,7 @@ export class SetupComponent implements OnInit, OnDestroy, AfterViewInit {
         school_type: ['K-12'],
         medium: ['English'],
         contact_email: ['', [Validators.required, Validators.email]],
-        contact_phone: [''],
+        contact_phone: ['', [Validators.pattern('^[0-9]+$'), Validators.minLength(10), Validators.maxLength(15)]],
         address: [''],
         logo_url: ['']
       }),
@@ -231,7 +275,7 @@ export class SetupComponent implements OnInit, OnDestroy, AfterViewInit {
       license: this.fb.group({
         licensed_seats: [100, [Validators.required, Validators.min(1)]],
         renewal_date: [null],
-        grace_period_days: [7],
+        grace_period_days: [7, [Validators.required, Validators.min(0), Validators.pattern('^[0-9]*$')]],
         warning_threshold: [80],
         internal_notes: ['']
       })
@@ -404,8 +448,12 @@ export class SetupComponent implements OnInit, OnDestroy, AfterViewInit {
     this.isProvisioned = false;
     this.clearDraft(); // Clear draft on reset — prevents stale data on next session
     this.initForm();
+    this.generateAcademicYears();
     this.setupFormSubscription();
     this.currentStep = 1;
     this.logoPreview = null;
+    if (this.stepper) {
+      this.stepper.selectedIndex = 0;
+    }
   }
 }
