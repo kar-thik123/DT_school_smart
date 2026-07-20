@@ -517,7 +517,7 @@ export class QuestionBankComponent implements OnInit {
 
   editQuestion(question: IQuestion) {
     this.editingQuestionId = question.id;
-    this.activeTabIndex = 0; // Switch to Create Question tab
+    this.activeTabIndex = 1; // Switch to Create/Edit Question tab
     // Set the values. Because of cascading subscriptions, we need to carefully patch.
     this.questionForm.patchValue({
       subject_id: question.subject_id,
@@ -574,6 +574,7 @@ export class QuestionBankComponent implements OnInit {
 
   cancelEdit(formDirective: FormGroupDirective | null) {
     this.editingQuestionId = null;
+    this.activeTabIndex = 0; // Switch back to Questions tab
     this.options.clear();
 
     // Remember current context selections before clearing

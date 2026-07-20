@@ -10,6 +10,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.component';
 import { GlobalLoaderComponent } from '@shared/components/global-loader/global-loader.component';
 import { HttpClient } from '@angular/common/http';
@@ -37,6 +38,7 @@ import Swal from 'sweetalert2';
     MatMenuModule,
     MatDatepickerModule,
     MatNativeDateModule,
+    MatSnackBarModule,
     CommonModule,
     FormsModule
   ]
@@ -63,7 +65,7 @@ export class ProfileComponent implements OnInit {
     // 'Soft Skills',
     // 'Leadership Skills'
   ];
-  selectedSkill: string = '';
+  selectedSkill: string = 'Academic Skills';
   customSkill: string = '';
   academicYears: any[] = [];
   selectedAcademicYear: string = '';
@@ -191,6 +193,11 @@ export class ProfileComponent implements OnInit {
       return;
     }
 
+    if (!skillType) {
+      this.showNotification('snackbar-danger', 'Please select a skill type.', 'bottom', 'center');
+      return;
+    }
+
     const isDuplicate = this.skills.some(s =>
       s.skill_type === skillType &&
       s.skill_name.toLowerCase() === skillName.toLowerCase() &&
@@ -242,7 +249,9 @@ export class ProfileComponent implements OnInit {
         error: (err) => {
           this.isSavingSkill = false;
           console.error('Failed to update skill:', err);
-          this.showNotification('snackbar-danger', err.error?.error || 'Failed to update skill', 'bottom', 'center');
+          let errMsg = err.error?.message || err.error?.error || 'Failed to update skill';
+          if (typeof errMsg !== 'string') errMsg = JSON.stringify(errMsg);
+          this.showNotification('snackbar-danger', errMsg, 'bottom', 'center');
         }
       });
     } else {
@@ -251,7 +260,7 @@ export class ProfileComponent implements OnInit {
         next: (newSkill) => {
           this.isSavingSkill = false;
           this.skills.unshift(newSkill);
-          this.selectedSkill = '';
+          this.selectedSkill = 'Academic Skills';
           this.customSkill = '';
           this.clearSkillImages();
           this.showNotification('snackbar-success', 'Skill added successfully!', 'bottom', 'center');
@@ -259,7 +268,9 @@ export class ProfileComponent implements OnInit {
         error: (err) => {
           this.isSavingSkill = false;
           console.error('Failed to add skill:', err);
-          this.showNotification('snackbar-danger', err.error?.error || 'Failed to add skill', 'bottom', 'center');
+          let errMsg = err.error?.message || err.error?.error || 'Failed to add skill';
+          if (typeof errMsg !== 'string') errMsg = JSON.stringify(errMsg);
+          this.showNotification('snackbar-danger', errMsg, 'bottom', 'center');
         }
       });
     }
@@ -290,7 +301,7 @@ export class ProfileComponent implements OnInit {
     if (this.availableSkills.includes(skill.skill_type)) {
       this.selectedSkill = skill.skill_type;
     } else {
-      this.selectedSkill = '';
+      this.selectedSkill = 'Academic Skills';
     }
 
     this.customSkill = skill.skill_name;
@@ -302,7 +313,7 @@ export class ProfileComponent implements OnInit {
   cancelEditSkill() {
     this.editingSkillId = null;
     this.editingSkillIndex = null;
-    this.selectedSkill = '';
+    this.selectedSkill = 'Academic Skills';
     this.customSkill = '';
     this.clearSkillImages();
   }
@@ -313,6 +324,15 @@ export class ProfileComponent implements OnInit {
   async onSkillImageSelected(event: any): Promise<void> {
     const files = event.target.files;
     if (!files || files.length === 0) return;
+
+    // Check for valid image files
+    for (let i = 0; i < files.length; i++) {
+      if (!files[i].type.startsWith('image/')) {
+        this.showNotification('snackbar-danger', 'Please select valid image files only.', 'bottom', 'center');
+        event.target.value = '';
+        return;
+      }
+    }
 
     const skillType = this.selectedSkill; // The limit is based on the selected skill category
     let maxImages = 1; // Default
@@ -402,7 +422,9 @@ export class ProfileComponent implements OnInit {
           },
           error: (err) => {
             console.error('Failed to delete skill:', err);
-            this.showNotification('snackbar-danger', 'Failed to delete skill', 'bottom', 'center');
+            let errMsg = err.error?.message || err.error?.error || 'Failed to delete skill';
+            if (typeof errMsg !== 'string') errMsg = JSON.stringify(errMsg);
+            this.showNotification('snackbar-danger', errMsg, 'bottom', 'center');
           }
         });
       }
@@ -445,6 +467,13 @@ export class ProfileComponent implements OnInit {
   async onFileSelected(event: any): Promise<void> {
     const file = event.target.files[0];
     if (file) {
+      if (!file.type.startsWith('image/')) {
+        this.selectedProfileImage = null;
+        event.target.value = '';
+        this.showNotification('snackbar-danger', 'Please select a valid image file.', 'bottom', 'center');
+        return;
+      }
+
       // Compress the selected image before setting it
       const compressedFile = await this.imageCompressionService.compressImage(file, {
         maxSizeMB: 1, // Target max size 1MB for profile picture
@@ -507,7 +536,9 @@ export class ProfileComponent implements OnInit {
         },
         error: (err) => {
           console.error('Failed to save user details:', err);
-          this.showNotification('snackbar-danger', 'Failed to update profile.', 'bottom', 'center');
+          let errMsg = err.error?.message || err.error?.error || 'Failed to update profile.';
+          if (typeof errMsg !== 'string') errMsg = JSON.stringify(errMsg);
+          this.showNotification('snackbar-danger', errMsg, 'bottom', 'center');
         }
       });
     }
@@ -530,7 +561,8 @@ export class ProfileComponent implements OnInit {
       },
       error: (err) => {
         console.error('Failed to change password:', err);
-        const errMsg = err.error?.message || 'Failed to change password';
+        let errMsg = err.error?.message || err.error?.error || 'Failed to change password';
+        if (typeof errMsg !== 'string') errMsg = JSON.stringify(errMsg);
         this.showNotification('snackbar-danger', errMsg, 'bottom', 'center');
       }
     });

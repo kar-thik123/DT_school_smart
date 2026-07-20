@@ -32,7 +32,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideHttpClient(withInterceptorsFromDi()),
     provideRouter(APP_ROUTE),
-    provideAnimations(),
+
     { provide: LocationStrategy, useClass: HashLocationStrategy },
     DirectionService,
     LanguageService,

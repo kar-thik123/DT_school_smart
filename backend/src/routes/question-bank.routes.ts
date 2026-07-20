@@ -107,6 +107,16 @@ router.post('/', requirePermission('QUESTION_BANK', 'CREATE'), async (req: any, 
     const isValidHierarchy = await validateHierarchy(parsed.subject_id, parsed.unit_id, parsed.topic_id, parsed.sub_topic_id, org_id);
     if (!isValidHierarchy) return res.status(400).json({ message: 'Invalid hierarchy: subject -> unit -> topic -> sub_topic mismatch' });
 
+    if (parsed.subject_id) {
+      const subject = await prisma.subject.findFirst({ where: { id: parsed.subject_id, organization_id: org_id } });
+      if (subject) {
+        if (parsed.grade_id && parsed.grade_id !== subject.grade_id) {
+          return res.status(400).json({ message: 'Provided grade_id does not match the subject\'s grade_id' });
+        }
+        parsed.grade_id = subject.grade_id;
+      }
+    }
+
     // Validate type-specific config
     try {
       validateConfig(parsed.type, parsed.answer_config);
@@ -262,6 +272,16 @@ router.put('/:id', requirePermission('QUESTION_BANK', 'EDIT'), async (req: any, 
 
     const isValidHierarchy = await validateHierarchy(parsed.subject_id, parsed.unit_id, parsed.topic_id, parsed.sub_topic_id, org_id);
     if (!isValidHierarchy) return res.status(400).json({ message: 'Invalid hierarchy' });
+
+    if (parsed.subject_id) {
+      const subject = await prisma.subject.findFirst({ where: { id: parsed.subject_id, organization_id: org_id } });
+      if (subject) {
+        if (parsed.grade_id && parsed.grade_id !== subject.grade_id) {
+          return res.status(400).json({ message: 'Provided grade_id does not match the subject\'s grade_id' });
+        }
+        parsed.grade_id = subject.grade_id;
+      }
+    }
 
     const updated = await prisma.question.update({
       where: { id: existing.id },

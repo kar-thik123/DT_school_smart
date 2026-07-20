@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { AuthService } from '@core';
 import { RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
@@ -7,6 +8,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { BreadcrumbComponent } from '@shared/components/breadcrumb/breadcrumb.component';
 import { CommonModule, DatePipe } from '@angular/common';
 import { MailService, Mail } from '../../core/service/mail.service';
+import { NotificationService } from '../../core/service/notification.service';
 
 @Component({
   selector: 'app-inbox',
@@ -22,7 +24,7 @@ import { MailService, Mail } from '../../core/service/mail.service';
     DatePipe
   ]
 })
-export class InboxComponent implements OnInit {
+export class InboxComponent implements OnInit, OnDestroy {
   breadscrums = [
     {
       title: 'Inbox',
@@ -36,14 +38,35 @@ export class InboxComponent implements OnInit {
   isLoading = false;
 
   currentUserId: string;
+  private notificationSub!: Subscription;
 
-  constructor(private mailService: MailService, private authService: AuthService) {
+  constructor(
+    private mailService: MailService, 
+    private authService: AuthService,
+    private notificationService: NotificationService
+  ) {
     this.currentUserId = this.authService.currentUserValue?.id;
   }
 
   ngOnInit() {
     const folder = history.state?.folder || 'inbox';
     this.loadMails(folder);
+
+    // Live update on new email
+    this.notificationSub = this.notificationService.onNewNotification().subscribe((notification) => {
+      if (notification && (notification.type === 'email' || notification.type === 'INTERNAL_MAIL')) {
+        // Refresh the current folder silently
+        if (this.currentFolder === 'inbox') {
+          this.loadMails('inbox');
+        }
+      }
+    });
+  }
+
+  ngOnDestroy() {
+    if (this.notificationSub) {
+      this.notificationSub.unsubscribe();
+    }
   }
 
   loadMails(folder: string) {

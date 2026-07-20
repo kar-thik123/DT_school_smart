@@ -104,17 +104,21 @@
                     @for (attachment of mail!.attachments!; track attachment.id) {
                     <div class="col-md-2" style="margin-bottom: 15px;">
                       @if (isImage(attachment.mimetype)) {
-                      <a [href]="serverUrl + attachment.url" target="_blank">
+                      <div class="attachment-image-container">
                         <img class="img-thumbnail img-responsive" alt="attachment"
                           [src]="serverUrl + attachment.url"
                           style="max-height: 100px; object-fit: cover;">
-                      </a>
+                        <a [href]="serverUrl + attachment.url" target="_blank" [download]="attachment.filename" class="download-overlay" [title]="'Download ' + attachment.filename">
+                          <mat-icon>file_download</mat-icon>
+                        </a>
+                      </div>
                       } @else {
-                      <a [href]="serverUrl + attachment.url" target="_blank"
-                        class="d-block text-center p-t-20 p-b-20 bg-light"
-                        style="border: 1px solid #ddd; border-radius: 4px;">
+                      <div class="attachment-file-container bg-light" style="border: 1px solid #ddd; border-radius: 4px; padding: 20px 0; text-align: center;">
                         <i class="material-icons text-muted" style="font-size: 36px;">insert_drive_file</i>
-                      </a>
+                        <a [href]="serverUrl + attachment.url" target="_blank" [download]="attachment.filename" class="download-overlay" [title]="'Download ' + attachment.filename">
+                          <mat-icon>file_download</mat-icon>
+                        </a>
+                      </div>
                       }
                       <a class="name" [href]="serverUrl + attachment.url" target="_blank"
                         style="display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"

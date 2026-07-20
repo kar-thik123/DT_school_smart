@@ -39,7 +39,7 @@ export class NotificationService implements OnDestroy {
   constructor(
     private http: HttpClient,
     private storage: LocalStorageService
-  ) {}
+  ) { }
 
   // --- REST API Methods ---
 
@@ -101,8 +101,8 @@ export class NotificationService implements OnDestroy {
     }
     if (!token) return;
 
-    // Extract base URL (without /api path)
-    const wsUrl = environment.apiUrl.replace('/api', '');
+    // Explicitly connect to the backend URL to avoid proxy dropouts
+    const wsUrl = 'http://localhost:5000';
 
     this.socket = io(wsUrl, {
       auth: { token },

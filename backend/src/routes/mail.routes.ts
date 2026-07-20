@@ -22,7 +22,21 @@ const storage = multer.diskStorage({
 
 const upload = multer({ 
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  fileFilter: (req, file, cb) => {
+    const allowedMimes = [
+      'image/jpeg', 'image/png', 'image/gif', 
+      'application/pdf', 
+      'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 
+      'text/plain', 
+      'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    ];
+    if (allowedMimes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type'));
+    }
+  }
 });
 
 const router = Router();
@@ -108,8 +122,17 @@ router.get('/folder/:folder', async (req: any, res: Response) => {
   }
 });
 
+const uploadMiddleware = (req: any, res: Response, next: any) => {
+  upload.array('attachments')(req, res, (err: any) => {
+    if (err) {
+      return res.status(400).json({ message: err.message || 'Error uploading file' });
+    }
+    next();
+  });
+};
+
 // POST send or draft mail
-router.post('/send', upload.array('attachments'), async (req: any, res: Response) => {
+router.post('/send', uploadMiddleware, async (req: any, res: Response) => {
   try {
     console.log('--- Send Mail Request ---');
     console.log('Body:', req.body);
