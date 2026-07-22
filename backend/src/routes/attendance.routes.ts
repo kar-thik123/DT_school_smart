@@ -85,14 +85,17 @@ router.post('/mark', requirePermission('ATTENDANCE', 'MANAGE'), async (req: any,
 
 // GET daily attendance
 router.get('/daily', requirePermission('ATTENDANCE', 'VIEW'), async (req: any, res: Response) => {
+  console.time('Route /daily: Total Request Time');
   try {
     const orgId = req.user.organization_id;
     const { grade_id, section_id, phase_id, date } = req.query;
 
     if (!grade_id || !phase_id || !date) {
+      console.timeEnd('Route /daily: Total Request Time');
       return res.status(400).json({ message: 'grade_id, phase_id, and date are required' });
     }
 
+    console.time('Route /daily: Controller to Service');
     const records = await StudentAttendanceService.getDailyAttendance(
       orgId,
       String(grade_id),
@@ -100,23 +103,30 @@ router.get('/daily', requirePermission('ATTENDANCE', 'VIEW'), async (req: any, r
       String(phase_id),
       String(date)
     );
+    console.timeEnd('Route /daily: Controller to Service');
 
+    console.time('Route /daily: Response Mapping');
     res.json(records);
+    console.timeEnd('Route /daily: Response Mapping');
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
+  console.timeEnd('Route /daily: Total Request Time');
 });
 
 // GET range attendance
 router.get('/range', requirePermission('ATTENDANCE', 'VIEW'), async (req: any, res: Response) => {
+  console.time('Route /range: Total Request Time');
   try {
     const orgId = req.user.organization_id;
     const { grade_id, section_id, start_date, end_date } = req.query;
 
     if (!grade_id || !start_date || !end_date) {
+      console.timeEnd('Route /range: Total Request Time');
       return res.status(400).json({ message: 'grade_id, start_date, and end_date are required' });
     }
 
+    console.time('Route /range: Controller to Service');
     const records = await StudentAttendanceService.getRangeAttendance(
       orgId,
       String(grade_id),
@@ -124,11 +134,15 @@ router.get('/range', requirePermission('ATTENDANCE', 'VIEW'), async (req: any, r
       String(start_date),
       String(end_date)
     );
+    console.timeEnd('Route /range: Controller to Service');
 
+    console.time('Route /range: Response Mapping');
     res.json(records);
+    console.timeEnd('Route /range: Response Mapping');
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
+  console.timeEnd('Route /range: Total Request Time');
 });
 
 // GET summary percentage

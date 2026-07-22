@@ -14,9 +14,12 @@ router.use(authMiddleware);
 
 // GET enrollments
 router.get('/', requirePermission('ACADEMIC_STRUCTURE', 'READ'), async (req: any, res: Response) => {
+  console.time('Route /student-enrollments: Total Request Time');
   try {
     const { grade_id, section_id, subject_group_id } = req.query;
+    console.time('Route /student-enrollments: Context Resolve');
     const yearId = await AcademicContextResolver.resolveAcademicYearId(req);
+    console.timeEnd('Route /student-enrollments: Context Resolve');
     const filter: any = { 
       organization_id: req.user.organization_id,
       academic_year_id: yearId
@@ -32,7 +35,9 @@ router.get('/', requirePermission('ACADEMIC_STRUCTURE', 'READ'), async (req: any
 
     const isGlobalAdmin = req.user.permissions?.includes('IDENTITY:IS_MANAGEMENT') || req.user.permissions?.includes('IDENTITY:IS_SUPER_ADMIN');
     if (!isGlobalAdmin) {
+      console.time('Route /student-enrollments: Visibility Filter');
       const visibilityFilter = await AssignmentVisibilityResolver.buildTeacherSectionWhereClause(req);
+      console.timeEnd('Route /student-enrollments: Visibility Filter');
       if (visibilityFilter.id) {
         if (filter.section_id) {
           filter.AND = [
@@ -50,6 +55,7 @@ router.get('/', requirePermission('ACADEMIC_STRUCTURE', 'READ'), async (req: any
     const limit = parseInt(req.query.limit as string) || 20;
     const skip = (page - 1) * limit;
 
+    console.time('Prisma Query: getStudentEnrollments');
     const [total_count, enrollments] = await prisma.$transaction([
       prisma.studentEnrollment.count({ where: filter }),
       prisma.studentEnrollment.findMany({
@@ -74,16 +80,20 @@ router.get('/', requirePermission('ACADEMIC_STRUCTURE', 'READ'), async (req: any
         orderBy: { created_at: 'desc' }
       })
     ]);
+    console.timeEnd('Prisma Query: getStudentEnrollments');
     
+    console.time('Route /student-enrollments: Response Mapping');
     res.json({
       data: enrollments,
       total_count,
       current_page: page,
       last_page: Math.ceil(total_count / limit)
     });
+    console.timeEnd('Route /student-enrollments: Response Mapping');
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
+  console.timeEnd('Route /student-enrollments: Total Request Time');
 });
 
 // GET active students without enrollment for a specific year

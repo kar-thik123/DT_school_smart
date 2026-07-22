@@ -412,10 +412,11 @@ export class StudentAttendanceComponent implements OnInit, OnDestroy {
     if (this.selectedSectionId && this.selectedSectionId !== 'ALL') enrollUrl += `&section_id=${this.selectedSectionId}`;
     if (this.selectedGroupId && this.selectedGroupId !== 'ALL') enrollUrl += `&subject_group_id=${this.selectedGroupId}`;
 
-    this.httpClient.get<any[]>(enrollUrl).subscribe({
-      next: (enrollments) => {
+    this.httpClient.get<any>(enrollUrl).subscribe({
+      next: (response: any) => {
+        const enrollments = response.data || [];
         if (!this.morningPhaseId || !this.afternoonPhaseId) {
-          const data = enrollments.map((e, index) => ({
+          const data = enrollments.map((e: any, index: number) => ({
             sno: index + 1,
             id: e.student_id,
             student_id: e.student_id,
@@ -441,7 +442,7 @@ export class StudentAttendanceComponent implements OnInit, OnDestroy {
             const afternoonMap = new Map();
             afternoon.forEach((r: any) => afternoonMap.set(r.student_id, r));
 
-            const data = enrollments.map((e, index) => {
+            const data = enrollments.map((e: any, index: number) => {
               const mExisting = morningMap.get(e.student_id);
               const aExisting = afternoonMap.get(e.student_id);
 

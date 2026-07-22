@@ -13,17 +13,6 @@ const requireStudent = async (req: any, res: Response, next: any) => {
     if (!req.user.permissions?.includes('IDENTITY:IS_STUDENT')) {
       return res.status(403).json({ message: 'Student identity required.' });
     }
-
-    const organization_id = req.user.organization_id;
-    // Check Feature Flag
-    const org = await prisma.organization.findUnique({
-      where: { id: organization_id },
-      select: { enable_student_dashboard: true }
-    });
-    
-    if (!org?.enable_student_dashboard) {
-      return res.status(403).json({ message: 'Student Dashboard is currently disabled for your organization.' });
-    }
     
     next();
   } catch (error) {

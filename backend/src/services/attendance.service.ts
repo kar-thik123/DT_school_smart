@@ -84,21 +84,27 @@ export class StudentAttendanceService {
   }
 
   static async getDailyAttendance(organizationId: string, gradeId: string, sectionId: string | undefined, phaseId: string, dateStr: string) {
+    console.time('Service: getDailyAttendance Total');
+    console.time('Service: Date Parse');
     const attendance_date = new Date(dateStr);
     attendance_date.setUTCHours(0, 0, 0, 0);
+    console.timeEnd('Service: Date Parse');
 
-    return prisma.studentAttendance.findMany({
+    console.time('Prisma Query: getDailyAttendance');
+    const records = await prisma.studentAttendance.findMany({
       where: {
         organization_id: organizationId,
         grade_id: gradeId,
         ...(sectionId ? { section_id: sectionId } : {}),
         phase_id: phaseId,
         attendance_date
-      },
-      include: {
-        student: { select: { id: true, name: true, roll_number: true } }
       }
+      // Removed unnecessary include: { student } to avoid Prisma mapping overhead
     });
+    console.timeEnd('Prisma Query: getDailyAttendance');
+    
+    console.timeEnd('Service: getDailyAttendance Total');
+    return records;
   }
 
   static async getStudentAttendance(organizationId: string, studentId: string, academicYearId: string) {
@@ -114,13 +120,17 @@ export class StudentAttendanceService {
   }
 
   static async getRangeAttendance(organizationId: string, gradeId: string, sectionId: string | undefined, startDateStr: string, endDateStr: string) {
+    console.time('Service: getRangeAttendance Total');
+    console.time('Service: Date Parse Range');
     const startDate = new Date(startDateStr);
     startDate.setUTCHours(0, 0, 0, 0);
 
     const endDate = new Date(endDateStr);
     endDate.setUTCHours(23, 59, 59, 999);
+    console.timeEnd('Service: Date Parse Range');
 
-    return prisma.studentAttendance.findMany({
+    console.time('Prisma Query: getRangeAttendance');
+    const records = await prisma.studentAttendance.findMany({
       where: {
         organization_id: organizationId,
         grade_id: gradeId,
@@ -131,20 +141,16 @@ export class StudentAttendanceService {
         }
       },
       include: {
-        student: { 
-          select: { 
-            id: true, 
-            name: true, 
-            roll_number: true,
-            user_profile: { select: { profile_image: true } }
-          } 
-        },
         phase: { select: { id: true, phase_name: true } }
       },
       orderBy: {
         attendance_date: 'asc'
       }
     });
+    console.timeEnd('Prisma Query: getRangeAttendance');
+    
+    console.timeEnd('Service: getRangeAttendance Total');
+    return records;
   }
 
   static async getSummaryPercentage(organizationId: string, academicYearId: string, gradeId: string, sectionId?: string) {

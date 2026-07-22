@@ -15,25 +15,15 @@ router.use(authMiddleware);
 router.get('/staff-list', requirePermission('STAFF_ATTENDANCE', 'VIEW'), async (req: any, res: Response) => {
   try {
     const orgId = req.user.organization_id;
-    const staffRoles = await prisma.role.findMany({
-      where: {
-        OR: [
-          { name: { in: ['TEACHER', 'MANAGEMENT', 'SUPER_ADMIN', 'ADMIN', 'LIBRARIAN', 'ACCOUNTANT', 'RECEPTIONIST'] } },
-          { name: { notIn: ['STUDENT', 'PARENT'] } }
-        ],
-        AND: [
-          { OR: [{ organization_id: orgId }, { is_system: true }] }
-        ]
-      }
-    });
-
-    const roleIds = staffRoles.map((r: any) => r.id);
-    
     const staff = await prisma.user.findMany({
       where: {
         organization_id: orgId,
-        role_id: { in: roleIds },
-        is_active: true
+        is_active: true,
+        role: {
+          permissions: {
+            none: { permission: { module: 'IDENTITY', action: 'IS_STUDENT' } }
+          }
+        }
       },
       select: {
         id: true,
