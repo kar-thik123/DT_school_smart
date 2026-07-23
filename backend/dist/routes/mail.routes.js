@@ -25,7 +25,22 @@ const storage = multer_1.default.diskStorage({
 });
 const upload = (0, multer_1.default)({
     storage,
-    limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+    fileFilter: (req, file, cb) => {
+        const allowedMimes = [
+            'image/jpeg', 'image/png', 'image/gif',
+            'application/pdf',
+            'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'text/plain',
+            'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        ];
+        if (allowedMimes.includes(file.mimetype)) {
+            cb(null, true);
+        }
+        else {
+            cb(new Error('Invalid file type'));
+        }
+    }
 });
 const router = (0, express_1.Router)();
 router.use(auth_middleware_1.authMiddleware);
@@ -107,8 +122,16 @@ router.get('/folder/:folder', async (req, res) => {
         res.status(500).json({ message: 'Error fetching mails' });
     }
 });
+const uploadMiddleware = (req, res, next) => {
+    upload.array('attachments')(req, res, (err) => {
+        if (err) {
+            return res.status(400).json({ message: err.message || 'Error uploading file' });
+        }
+        next();
+    });
+};
 // POST send or draft mail
-router.post('/send', upload.array('attachments'), async (req, res) => {
+router.post('/send', uploadMiddleware, async (req, res) => {
     try {
         console.log('--- Send Mail Request ---');
         console.log('Body:', req.body);

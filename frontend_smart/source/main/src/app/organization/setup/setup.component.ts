@@ -421,14 +421,10 @@ export class SetupComponent implements OnInit, OnDestroy, AfterViewInit {
       this.loaderService.show('Provisioning organization... Please wait.');
     }
     this.isSubmitting = true;
+    
+    this.loaderService.show('Provisioning Tenant Environment...');
+
     const rawValue = this.provisioningForm.getRawValue();
-    
-    console.log('--- RUNTIME AUDIT LOGGING ---');
-    console.log('this.logoPreview:', this.logoPreview);
-    console.log('this.orgForm.value:', this.orgForm.value);
-    console.log('this.orgForm.getRawValue():', this.orgForm.getRawValue());
-    console.log('rawValue.organization.logo_url:', rawValue.organization.logo_url);
-    
     const payload: any = {
       ...rawValue.organization,
       ...rawValue.domain,
@@ -436,8 +432,12 @@ export class SetupComponent implements OnInit, OnDestroy, AfterViewInit {
       ...rawValue.admin,
       ...rawValue.license
     };
+    
+    console.log('[DEBUG] Base payload prepared:', payload);
 
     if (this.isEditMode && this.editOrgDetails?.status !== 'DRAFT' && this.editOrgId) {
+      console.log('[DEBUG] Edit mode active, preparing update payload');
+      // Direct update for ACTIVE/SUSPENDED tenants
       const updatePayload = {
         school_name: payload.school_name,
         contact_email: payload.contact_email,
@@ -453,6 +453,8 @@ export class SetupComponent implements OnInit, OnDestroy, AfterViewInit {
         admin_password: rawValue.admin.admin_password,
         initial_academic_year: rawValue.admin.initial_academic_year
       };
+      
+      console.log('[DEBUG] Dispatching PATCH to updateSettings:', updatePayload);
 
       this.orgService.updateSettings(this.editOrgId, updatePayload)
         .pipe(finalize(() => {
@@ -460,15 +462,20 @@ export class SetupComponent implements OnInit, OnDestroy, AfterViewInit {
           this.loaderService.hide();
         }))
         .subscribe({
-        next: () => {
+        next: (response) => {
+          console.log('[DEBUG] updateSettings SUCCESS response:', response);
           this.snackBar.open('Tenant Updated Successfully!', 'Success', { duration: 5000 });
-          this.router.navigate(['/organization/manage', this.editOrgId]);
+          this.router.navigate(['/organization/manage', this.editOrgId]).then(res => {
+             console.log('[DEBUG] updateSettings redirect result:', res);
+          });
         },
         error: (err) => {
+          console.error('[DEBUG] updateSettings ERROR:', err);
           this.snackBar.open(err.error?.message || 'Update failed', 'Close', { duration: 5000 });
         }
       });
     } else {
+       console.log('[DEBUG] New tenant provisioning path');
       if (this.isEditMode && this.editOrgDetails?.status === 'DRAFT' && this.editOrgId) {
          payload.draft_id = this.editOrgId;
       }

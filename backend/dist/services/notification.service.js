@@ -79,9 +79,13 @@ class NotificationService {
             return null;
         }
     }
+    static ioInstance = null;
+    static setIO(io) {
+        this.ioInstance = io;
+    }
     static dispatchRealtime(notification) {
         try {
-            const { io } = require('../server');
+            const io = global.io;
             if (io) {
                 notification.recipients.forEach((recipient) => {
                     // Flatten for UI compat
@@ -100,9 +104,12 @@ class NotificationService {
                     io.to(`user:${recipient.user_id}`).emit('new-notification', uiNotif);
                 });
             }
+            else {
+                console.warn('Realtime dispatch bypassed: global.io is undefined');
+            }
         }
         catch (e) {
-            console.warn('Realtime dispatch failed. Ensure socket.io is initialized.');
+            console.warn('Realtime dispatch failed:', e);
         }
     }
 }

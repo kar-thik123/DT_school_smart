@@ -60,7 +60,16 @@ export class ManageComponent implements OnInit {
   }
 
   openEditDialog() {
-    if (!this.org) return;
-    this.router.navigate(['/organization/edit', this.org.id]);
+    console.log('[DEBUG] openEditDialog clicked');
+    if (!this.org) {
+       console.log('[DEBUG] this.org is falsy. Aborting navigation.');
+       return;
+    }
+    console.log('[DEBUG] Navigating to edit with org ID:', this.org.id);
+    this.router.navigate(['/organization/edit', this.org.id]).then(success => {
+       console.log('[DEBUG] Router navigation result:', success);
+    }).catch(err => {
+       console.error('[DEBUG] Router navigation error:', err);
+    });
   }
 }

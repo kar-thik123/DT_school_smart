@@ -260,6 +260,9 @@ router.patch('/:id/status', authMiddleware, requirePermission('IDENTITY', 'IS_SY
 
 // 6.5 Update Organization Settings (Platform Developer)
 router.patch('/:id/settings', authMiddleware, requirePermission('IDENTITY', 'IS_SYSTEM_ADMIN'), async (req: any, res: Response) => {
+  console.log(`[DEBUG] Backend PATCH /organizations/${req.params.id}/settings hit`);
+  console.log('[DEBUG] Request headers:', req.headers);
+  console.log('[DEBUG] Request body:', req.body);
   try {
     const orgId = req.params.id;
     const {

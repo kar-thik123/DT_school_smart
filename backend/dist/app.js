@@ -41,18 +41,25 @@ console.log('Starting application, mounting routes...');
 app.use((0, cors_1.default)({
     origin: [
         'http://localhost:4200',
-        'http://144.91.71.246'
-    ],
-    credentials: true,
+        'https://school.dtacticsit.com',
+        'http://school.dtacticsit.com'
+    ]
 }));
-// Security Headers with HSTS conditional on env config
-const enableHttps = process.env.ENABLE_HTTPS === 'true';
 app.use((0, helmet_1.default)({
-    hsts: enableHttps ? {
+    hsts: {
         maxAge: 31536000,
         includeSubDomains: true,
         preload: true
-    } : false
+    },
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            objectSrc: ["'none'"],
+            frameAncestors: ["'none'"],
+            upgradeInsecureRequests: [],
+        }
+    },
+    xContentTypeOptions: true
 }));
 // Response Compression
 app.use((0, compression_1.default)());

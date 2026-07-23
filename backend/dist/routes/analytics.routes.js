@@ -205,6 +205,7 @@ router.get('/management/overview', (0, auth_middleware_1.requirePermission)('IDE
                 organization_id: org_id,
                 is_active: true,
                 role: {
+                    name: { notIn: ['System Admin', 'SYSTEM_ADMIN', 'Super Admin', 'SUPER_ADMIN', 'Management', 'MANAGEMENT', 'Admin', 'ADMIN'] },
                     permissions: {
                         some: {
                             permission: {
@@ -222,6 +223,7 @@ router.get('/management/overview', (0, auth_middleware_1.requirePermission)('IDE
                 organization_id: org_id,
                 is_active: true,
                 role: {
+                    name: { notIn: ['System Admin', 'SYSTEM_ADMIN', 'Super Admin', 'SUPER_ADMIN', 'Management', 'MANAGEMENT', 'Admin', 'ADMIN'] },
                     permissions: {
                         some: {
                             permission: {

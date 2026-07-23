@@ -30,6 +30,8 @@ const io = new socket_io_1.Server(server, {
     }
 });
 exports.io = io;
+// Pass the io instance to global so any module can reliably dispatch realtime events
+global.io = io;
 // Socket.io authentication middleware
 io.use(async (socket, next) => {
     try {

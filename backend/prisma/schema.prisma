@@ -16,7 +16,6 @@ model Organization {
   contact_phone               String?
   address                     String?
   logo_url                    String?
-  profile_url                 String?                       @db.VarChar(255)
   domain_type                 String                        @default("subdomain")
   subdomain                   String?                       @unique
   custom_domain               String?                       @unique
@@ -27,14 +26,16 @@ model Organization {
   backup_enabled              Boolean                       @default(false)
   status                      OrganizationStatus            @default(DRAFT)
   login_limit                 Int                           @default(100)
-  enable_student_dashboard    Boolean                       @default(false)
   created_at                  DateTime                      @default(now())
+  enable_student_dashboard    Boolean                       @default(false)
+  profile_url                 String?                       @db.VarChar(255)
   SkillVerificationAssignment SkillVerificationAssignment[]
   academic_years              AcademicYear[]
   attendance_phases           AttendancePhase[]
   audit_logs                  AuditLog[]
   boards                      Board[]
   completion_trackings        CompletionTracking[]
+  examinations                Examination[]
   grades                      Grade[]
   internal_mails              InternalMail[]
   master_grades               MasterGrade[]
@@ -50,16 +51,17 @@ model Organization {
   roles                       Role[]
   sections                    Section[]
   Skill                       Skill[]
+  staff_attendances           StaffAttendance[]
   student_assessment_attempts StudentAssessmentAttempt[]
   student_attendances         StudentAttendance[]
-  staff_attendances           StaffAttendance[]
+  StudentDashboardSummary     StudentDashboardSummary[]
+  StudentDashboardWeeklyTrend StudentDashboardWeeklyTrend[]
   student_enrollments         StudentEnrollment[]
+  student_exam_results        StudentExamResult[]
   student_group_mappings      StudentGroupMapping[]
   student_profiles            StudentProfile[]
   StudentTopicCompletion      StudentTopicCompletion[]
   StudentTransferHistory      StudentTransferHistory[]
-  StudentDashboardSummary     StudentDashboardSummary[]
-  StudentDashboardWeeklyTrend StudentDashboardWeeklyTrend[]
   sub_topics                  SubTopic[]
   subject_groups              SubjectGroup[]
   subjects                    Subject[]
@@ -70,8 +72,6 @@ model Organization {
   units                       Unit[]
   user_profiles               UserProfile[]
   users                       User[]
-  examinations                Examination[]
-  student_exam_results        StudentExamResult[]
 
   @@index([subdomain])
   @@index([custom_domain])
@@ -104,11 +104,13 @@ model User {
   grade_id                      String?                       @db.Uuid
   section_id                    String?                       @db.Uuid
   is_active                     Boolean                       @default(true)
-  failed_login_attempts         Int                           @default(0)
-  locked_until                  DateTime?
   created_at                    DateTime                      @default(now())
   updated_at                    DateTime                      @default(now()) @updatedAt
   roll_number                   String?
+  failed_login_attempts         Int                           @default(0)
+  locked_until                  DateTime?
+  examinations_created          Examination[]                 @relation("ExaminationCreator")
+  examinations_modified         Examination[]                 @relation("ExaminationModifier")
   mails_received                InternalMail[]                @relation("MailReceiver")
   mails_sent                    InternalMail[]                @relation("MailSender")
   notification_recipients       NotificationRecipient[]
@@ -119,13 +121,20 @@ model User {
   questions                     Question[]
   skills                        Skill[]                       @relation("SkillOwner")
   verified_skills               Skill[]                       @relation("SkillVerifier")
+  staff_attendance_marked       StaffAttendance[]             @relation("StaffAttendanceMarker")
+  staff_attendance_records      StaffAttendance[]             @relation("StaffAttendanceRecord")
   student_assessment_attempts   StudentAssessmentAttempt[]
+  attendance_marked_by          StudentAttendance[]           @relation("AttendanceMarker")
+  attendance_marked_for         StudentAttendance[]           @relation("AttendanceStudent")
+  StudentDashboardSummary       StudentDashboardSummary[]
+  StudentDashboardWeeklyTrend   StudentDashboardWeeklyTrend[]
   enrollments                   StudentEnrollment[]
+  student_exam_results_created  StudentExamResult[]           @relation("StudentExamResultCreator")
+  student_exam_results_modified StudentExamResult[]           @relation("StudentExamResultModifier")
+  student_exam_results          StudentExamResult[]           @relation("StudentExamResults")
   student_group_mappings        StudentGroupMapping[]
   student_profile               StudentProfile?
   StudentTopicCompletion        StudentTopicCompletion[]
-  StudentDashboardSummary       StudentDashboardSummary[]
-  StudentDashboardWeeklyTrend   StudentDashboardWeeklyTrend[]
   transfer_history_as_creator   StudentTransferHistory[]      @relation("TransferCreator")
   transfer_history_as_student   StudentTransferHistory[]      @relation("TransferStudent")
   teacher_assignments           TeacherAssignment[]
@@ -134,15 +143,6 @@ model User {
   organization                  Organization                  @relation(fields: [organization_id], references: [id], onDelete: Cascade)
   role                          Role                          @relation(fields: [role_id], references: [id])
   section                       Section?                      @relation(fields: [section_id], references: [id])
-  attendance_marked_for         StudentAttendance[]           @relation("AttendanceStudent")
-  attendance_marked_by          StudentAttendance[]           @relation("AttendanceMarker")
-  staff_attendance_records      StaffAttendance[]             @relation("StaffAttendanceRecord")
-  staff_attendance_marked       StaffAttendance[]             @relation("StaffAttendanceMarker")
-  examinations_created          Examination[]                 @relation("ExaminationCreator")
-  examinations_modified         Examination[]                 @relation("ExaminationModifier")
-  student_exam_results_created  StudentExamResult[]           @relation("StudentExamResultCreator")
-  student_exam_results_modified StudentExamResult[]           @relation("StudentExamResultModifier")
-  student_exam_results          StudentExamResult[]           @relation("StudentExamResults")
 
   @@index([organization_id])
   @@index([email])
@@ -178,12 +178,12 @@ model UserProfile {
   country           String?
   address           String?
   about             String?
-  favorite_subjects String[]     @default([])
-  favorite_colour   String?
   profile_image     String?
   academic_profiles Json?        @default("[]")
   academic_birth    DateTime?    @db.Date
   date_of_birth     DateTime?    @db.Date
+  favorite_colour   String?
+  favorite_subjects String[]     @default([])
   organization      Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
   user              User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
@@ -291,26 +291,26 @@ model AcademicYear {
   organization_id             String                        @db.Uuid
   created_at                  DateTime                      @default(now())
   updated_at                  DateTime                      @default(now()) @updatedAt
+  SkillVerificationAssignment SkillVerificationAssignment[]
   organization                Organization                  @relation(fields: [organization_id], references: [id], onDelete: Cascade)
   completion_trackings        CompletionTracking[]
+  examinations                Examination[]
   grades                      Grade[]
   practice_attempts           PracticeAttempt[]
   promotion_from              PromotionHistory[]            @relation("FromAcademicYear")
   promotion_to                PromotionHistory[]            @relation("ToAcademicYear")
   Skill                       Skill[]
+  staff_attendances           StaffAttendance[]
   assessment_attempts         StudentAssessmentAttempt[]
+  student_attendances         StudentAttendance[]
+  StudentDashboardSummary     StudentDashboardSummary[]
+  StudentDashboardWeeklyTrend StudentDashboardWeeklyTrend[]
   enrollments                 StudentEnrollment[]
+  student_exam_results        StudentExamResult[]
   student_group_mappings      StudentGroupMapping[]
   student_transfer_history    StudentTransferHistory[]      @relation("TransferAcademicYear")
   teacher_assignments         TeacherAssignment[]
   topic_activations           TopicActivation[]
-  StudentDashboardSummary     StudentDashboardSummary[]
-  StudentDashboardWeeklyTrend StudentDashboardWeeklyTrend[]
-  student_attendances         StudentAttendance[]
-  staff_attendances           StaffAttendance[]
-  examinations                Examination[]
-  student_exam_results        StudentExamResult[]
-  SkillVerificationAssignment SkillVerificationAssignment[]
 
   @@unique([name, organization_id])
   @@index([organization_id])
@@ -354,6 +354,7 @@ model Grade {
   sections              Section[]
   student_attendances   StudentAttendance[]
   enrollments           StudentEnrollment[]
+  student_exam_results  StudentExamResult[]
   transfer_history_from StudentTransferHistory[] @relation("TransferFromGrade")
   transfer_history_to   StudentTransferHistory[] @relation("TransferToGrade")
   subject_groups        SubjectGroup[]
@@ -361,7 +362,6 @@ model Grade {
   teacher_assignments   TeacherAssignment[]
   units                 Unit[]
   users                 User[]
-  student_exam_results  StudentExamResult[]
 
   @@unique([name, academic_year_id, organization_id])
   @@index([organization_id])
@@ -386,13 +386,13 @@ model Section {
   organization          Organization             @relation(fields: [organization_id], references: [id], onDelete: Cascade)
   student_attendances   StudentAttendance[]
   enrollments           StudentEnrollment[]
+  student_exam_results  StudentExamResult[]
   transfer_history_from StudentTransferHistory[] @relation("TransferFromSection")
   transfer_history_to   StudentTransferHistory[] @relation("TransferToSection")
   subject_groups        SubjectGroup[]
   teacher_assignments   TeacherAssignment[]
   units                 Unit[]
   users                 User[]
-  student_exam_results  StudentExamResult[]
 
   @@unique([name, grade_id, organization_id])
   @@index([organization_id])
@@ -414,6 +414,7 @@ model Subject {
   practice_attempts            PracticeAttempt[]
   questions                    Question[]
   student_assessment_attempts  StudentAssessmentAttempt[]
+  student_exam_subject_results StudentExamSubjectResult[]
   StudentTopicCompletion       StudentTopicCompletion[]
   subject_groups               SubjectGroupSubject[]
   grade                        Grade                      @relation(fields: [grade_id], references: [id], onDelete: Cascade)
@@ -422,7 +423,6 @@ model Subject {
   syllabuses                   Syllabus[]
   teacher_assignments          TeacherAssignment[]
   units                        Unit[]
-  student_exam_subject_results StudentExamSubjectResult[]
 
   @@unique([name, grade_id, organization_id])
   @@index([organization_id])
@@ -1037,8 +1037,196 @@ model SkillVerificationAssignment {
   skill_types      String[]
   verifier_ids     String[]      @db.Uuid
   academic_year_id String?       @db.Uuid
-  organization     Organization  @relation(fields: [organization_id], references: [id], onDelete: Cascade)
   academic_year    AcademicYear? @relation(fields: [academic_year_id], references: [id], onDelete: Cascade)
+  organization     Organization  @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+}
+
+model StudentDashboardSummary {
+  id                           String       @id @default(uuid()) @db.Uuid
+  organization_id              String       @db.Uuid
+  student_id                   String       @db.Uuid
+  practice_accuracy            Float        @default(0)
+  questions_attempted          Int          @default(0)
+  skills_completion_percentage Float        @default(0)
+  verified_skills              Int          @default(0)
+  pending_skills               Int          @default(0)
+  last_activity_at             DateTime?
+  created_at                   DateTime     @default(now())
+  updated_at                   DateTime     @updatedAt
+  academic_year_id             String       @db.Uuid
+  academic_year                AcademicYear @relation(fields: [academic_year_id], references: [id], onDelete: Cascade)
+  organization                 Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  student                      User         @relation(fields: [student_id], references: [id], onDelete: Cascade)
+
+  @@unique([organization_id, student_id, academic_year_id])
+  @@index([organization_id, student_id])
+  @@index([academic_year_id])
+  @@map("student_dashboard_summaries")
+}
+
+model StudentDashboardWeeklyTrend {
+  id                  String       @id @default(uuid()) @db.Uuid
+  organization_id     String       @db.Uuid
+  student_id          String       @db.Uuid
+  week_start_date     DateTime     @db.Date
+  accuracy_percentage Float        @default(0)
+  questions_attempted Int          @default(0)
+  created_at          DateTime     @default(now())
+  updated_at          DateTime     @updatedAt
+  academic_year_id    String       @db.Uuid
+  academic_year       AcademicYear @relation(fields: [academic_year_id], references: [id], onDelete: Cascade)
+  organization        Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  student             User         @relation(fields: [student_id], references: [id], onDelete: Cascade)
+
+  @@unique([organization_id, student_id, academic_year_id, week_start_date])
+  @@index([organization_id, student_id])
+  @@index([academic_year_id])
+  @@map("student_dashboard_weekly_trends")
+}
+
+model AttendancePhase {
+  id                String              @id @default(uuid()) @db.Uuid
+  organization_id   String              @db.Uuid
+  phase_name        String
+  start_period      Int
+  end_period        Int
+  display_order     Int                 @default(0)
+  is_active         Boolean             @default(true)
+  created_at        DateTime            @default(now())
+  updated_at        DateTime            @default(now()) @updatedAt
+  organization      Organization        @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  staff_attendances StaffAttendance[]
+  attendances       StudentAttendance[]
+
+  @@unique([organization_id, phase_name])
+  @@index([organization_id])
+  @@map("attendance_phases")
+}
+
+model StudentAttendance {
+  id               String           @id @default(uuid()) @db.Uuid
+  organization_id  String           @db.Uuid
+  academic_year_id String           @db.Uuid
+  student_id       String           @db.Uuid
+  grade_id         String           @db.Uuid
+  section_id       String?          @db.Uuid
+  phase_id         String           @db.Uuid
+  attendance_date  DateTime         @db.Date
+  status           AttendanceStatus @default(PRESENT)
+  marked_by        String           @db.Uuid
+  created_at       DateTime         @default(now())
+  updated_at       DateTime         @default(now()) @updatedAt
+  academic_year    AcademicYear     @relation(fields: [academic_year_id], references: [id], onDelete: Cascade)
+  grade            Grade            @relation(fields: [grade_id], references: [id], onDelete: Cascade)
+  marker           User             @relation("AttendanceMarker", fields: [marked_by], references: [id], onDelete: Cascade)
+  organization     Organization     @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  phase            AttendancePhase  @relation(fields: [phase_id], references: [id], onDelete: Cascade)
+  section          Section?         @relation(fields: [section_id], references: [id], onDelete: Cascade)
+  student          User             @relation("AttendanceStudent", fields: [student_id], references: [id], onDelete: Cascade)
+
+  @@unique([organization_id, student_id, attendance_date, phase_id])
+  @@index([organization_id, grade_id, section_id, attendance_date])
+  @@index([student_id])
+  @@map("student_attendance")
+}
+
+model Examination {
+  id                   String              @id @default(uuid()) @db.Uuid
+  exam_name            String
+  organization_id      String              @db.Uuid
+  academic_year_id     String              @db.Uuid
+  created_by           String              @db.Uuid
+  modified_by          String?             @db.Uuid
+  created_at           DateTime            @default(now())
+  updated_at           DateTime            @default(now()) @updatedAt
+  academic_year        AcademicYear        @relation(fields: [academic_year_id], references: [id], onDelete: Cascade)
+  creator              User                @relation("ExaminationCreator", fields: [created_by], references: [id], onDelete: Cascade)
+  modifier             User?               @relation("ExaminationModifier", fields: [modified_by], references: [id])
+  organization         Organization        @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  student_exam_results StudentExamResult[]
+
+  @@index([organization_id])
+  @@index([academic_year_id])
+  @@map("examinations")
+}
+
+model StudentExamResult {
+  id                   String                     @id @default(uuid()) @db.Uuid
+  organization_id      String                     @db.Uuid
+  academic_year_id     String                     @db.Uuid
+  created_by           String                     @db.Uuid
+  modified_by          String?                    @db.Uuid
+  created_at           DateTime                   @default(now())
+  updated_at           DateTime                   @default(now()) @updatedAt
+  examination_id       String                     @db.Uuid
+  grade                String?
+  grade_id             String                     @db.Uuid
+  percentage           Float?
+  remarks              String?
+  result_status        ResultStatus?
+  section_id           String?                    @db.Uuid
+  student_id           String                     @db.Uuid
+  total_max_marks      Float?
+  total_obtained_marks Float?
+  academic_year        AcademicYear               @relation(fields: [academic_year_id], references: [id], onDelete: Cascade)
+  creator              User                       @relation("StudentExamResultCreator", fields: [created_by], references: [id], onDelete: Cascade)
+  examination          Examination                @relation(fields: [examination_id], references: [id], onDelete: Cascade)
+  grade_rel            Grade                      @relation(fields: [grade_id], references: [id], onDelete: Cascade)
+  modifier             User?                      @relation("StudentExamResultModifier", fields: [modified_by], references: [id])
+  organization         Organization               @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  section              Section?                   @relation(fields: [section_id], references: [id], onDelete: Cascade)
+  student              User                       @relation("StudentExamResults", fields: [student_id], references: [id], onDelete: Cascade)
+  subject_results      StudentExamSubjectResult[]
+
+  @@unique([examination_id, student_id])
+  @@index([organization_id, academic_year_id])
+  @@index([student_id])
+  @@index([grade_id, section_id])
+  @@map("student_exam_results")
+}
+
+model StudentExamSubjectResult {
+  id                     String            @id @default(uuid()) @db.Uuid
+  student_exam_result_id String            @db.Uuid
+  subject_id             String            @db.Uuid
+  max_marks              Float
+  obtained_marks         Float
+  pass_marks             Float?
+  is_absent              Boolean           @default(false)
+  status                 ResultStatus?
+  grade                  String?
+  remarks                String?
+  created_at             DateTime          @default(now())
+  updated_at             DateTime          @default(now()) @updatedAt
+  student_exam_result    StudentExamResult @relation(fields: [student_exam_result_id], references: [id], onDelete: Cascade)
+  subject                Subject           @relation(fields: [subject_id], references: [id], onDelete: Cascade)
+
+  @@unique([student_exam_result_id, subject_id])
+  @@index([subject_id])
+  @@map("student_exam_subject_results")
+}
+
+model StaffAttendance {
+  id               String           @id @default(uuid()) @db.Uuid
+  organization_id  String           @db.Uuid
+  academic_year_id String           @db.Uuid
+  staff_id         String           @db.Uuid
+  phase_id         String           @db.Uuid
+  attendance_date  DateTime         @db.Date
+  status           AttendanceStatus @default(PRESENT)
+  marked_by        String           @db.Uuid
+  created_at       DateTime         @default(now())
+  updated_at       DateTime         @default(now()) @updatedAt
+  academic_year    AcademicYear     @relation(fields: [academic_year_id], references: [id], onDelete: Cascade)
+  marker           User             @relation("StaffAttendanceMarker", fields: [marked_by], references: [id], onDelete: Cascade)
+  organization     Organization     @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  phase            AttendancePhase  @relation(fields: [phase_id], references: [id], onDelete: Cascade)
+  staff            User             @relation("StaffAttendanceRecord", fields: [staff_id], references: [id], onDelete: Cascade)
+
+  @@unique([organization_id, staff_id, attendance_date, phase_id])
+  @@index([organization_id, attendance_date])
+  @@index([staff_id])
+  @@map("staff_attendance")
 }
 
 enum OrganizationStatus {
@@ -1109,59 +1297,6 @@ enum CompletionLevel {
   SUBTOPIC
 }
 
-// -----------------------------------------------------------------------------
-// STUDENT DASHBOARD MODELS
-// -----------------------------------------------------------------------------
-
-model StudentDashboardSummary {
-  id               String @id @default(uuid()) @db.Uuid
-  organization_id  String @db.Uuid
-  student_id       String @db.Uuid
-  academic_year_id String @db.Uuid
-
-  practice_accuracy            Float @default(0)
-  questions_attempted          Int   @default(0)
-  skills_completion_percentage Float @default(0)
-  verified_skills              Int   @default(0)
-  pending_skills               Int   @default(0)
-
-  last_activity_at DateTime?
-  created_at       DateTime  @default(now())
-  updated_at       DateTime  @updatedAt
-
-  academic_year AcademicYear @relation(fields: [academic_year_id], references: [id], onDelete: Cascade)
-  organization  Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
-  student       User         @relation(fields: [student_id], references: [id], onDelete: Cascade)
-
-  @@unique([organization_id, student_id, academic_year_id])
-  @@index([organization_id, student_id])
-  @@index([academic_year_id])
-  @@map("student_dashboard_summaries")
-}
-
-model StudentDashboardWeeklyTrend {
-  id               String @id @default(uuid()) @db.Uuid
-  organization_id  String @db.Uuid
-  student_id       String @db.Uuid
-  academic_year_id String @db.Uuid
-
-  week_start_date     DateTime @db.Date
-  accuracy_percentage Float    @default(0)
-  questions_attempted Int      @default(0)
-
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-
-  academic_year AcademicYear @relation(fields: [academic_year_id], references: [id], onDelete: Cascade)
-  organization  Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
-  student       User         @relation(fields: [student_id], references: [id], onDelete: Cascade)
-
-  @@unique([organization_id, student_id, academic_year_id, week_start_date])
-  @@index([organization_id, student_id])
-  @@index([academic_year_id])
-  @@map("student_dashboard_weekly_trends")
-}
-
 enum AttendanceStatus {
   PRESENT
   ABSENT
@@ -1169,168 +1304,8 @@ enum AttendanceStatus {
   EXCUSED
 }
 
-model AttendancePhase {
-  id              String   @id @default(uuid()) @db.Uuid
-  organization_id String   @db.Uuid
-  phase_name      String // e.g., "Phase 1" or "Morning Session"
-  start_period    Int // e.g., 1
-  end_period      Int // e.g., 4
-  display_order   Int      @default(0)
-  is_active       Boolean  @default(true)
-  created_at      DateTime @default(now())
-  updated_at      DateTime @default(now()) @updatedAt
-
-  organization      Organization        @relation(fields: [organization_id], references: [id], onDelete: Cascade)
-  attendances       StudentAttendance[]
-  staff_attendances StaffAttendance[]
-
-  @@unique([organization_id, phase_name])
-  @@index([organization_id])
-  @@map("attendance_phases")
-}
-
-model StudentAttendance {
-  id               String           @id @default(uuid()) @db.Uuid
-  organization_id  String           @db.Uuid
-  academic_year_id String           @db.Uuid
-  student_id       String           @db.Uuid
-  grade_id         String           @db.Uuid
-  section_id       String?          @db.Uuid
-  phase_id         String           @db.Uuid
-  attendance_date  DateTime         @db.Date
-  status           AttendanceStatus @default(PRESENT)
-  marked_by        String           @db.Uuid
-
-  created_at DateTime @default(now())
-  updated_at DateTime @default(now()) @updatedAt
-
-  organization  Organization    @relation(fields: [organization_id], references: [id], onDelete: Cascade)
-  academic_year AcademicYear    @relation(fields: [academic_year_id], references: [id], onDelete: Cascade)
-  student       User            @relation("AttendanceStudent", fields: [student_id], references: [id], onDelete: Cascade)
-  grade         Grade           @relation(fields: [grade_id], references: [id], onDelete: Cascade)
-  section       Section?        @relation(fields: [section_id], references: [id], onDelete: Cascade)
-  phase         AttendancePhase @relation(fields: [phase_id], references: [id], onDelete: Cascade)
-  marker        User            @relation("AttendanceMarker", fields: [marked_by], references: [id], onDelete: Cascade)
-
-  @@unique([organization_id, student_id, attendance_date, phase_id])
-  @@index([organization_id, grade_id, section_id, attendance_date])
-  @@index([student_id])
-  @@map("student_attendance")
-}
-
-model Examination {
-  id               String  @id @default(uuid()) @db.Uuid
-  exam_name        String
-  organization_id  String  @db.Uuid
-  academic_year_id String  @db.Uuid
-  created_by       String  @db.Uuid
-  modified_by      String? @db.Uuid
-
-  created_at DateTime @default(now())
-  updated_at DateTime @default(now()) @updatedAt
-
-  organization         Organization        @relation(fields: [organization_id], references: [id], onDelete: Cascade)
-  academic_year        AcademicYear        @relation(fields: [academic_year_id], references: [id], onDelete: Cascade)
-  creator              User                @relation("ExaminationCreator", fields: [created_by], references: [id], onDelete: Cascade)
-  modifier             User?               @relation("ExaminationModifier", fields: [modified_by], references: [id], onDelete: SetNull)
-  student_exam_results StudentExamResult[]
-
-  @@index([organization_id])
-  @@index([academic_year_id])
-  @@map("examinations")
-}
-
 enum ResultStatus {
   PASS
   FAIL
   WITHHELD
-}
-
-model StudentExamResult {
-  id               String  @id @default(uuid()) @db.Uuid
-  examination_id   String  @db.Uuid
-  student_id       String  @db.Uuid
-  organization_id  String  @db.Uuid
-  academic_year_id String  @db.Uuid
-  grade_id         String  @db.Uuid
-  section_id       String? @db.Uuid
-
-  total_max_marks      Float?
-  total_obtained_marks Float?
-  percentage           Float?
-  result_status        ResultStatus?
-  grade                String?
-  remarks              String?
-
-  created_by  String   @db.Uuid
-  modified_by String?  @db.Uuid
-  created_at  DateTime @default(now())
-  updated_at  DateTime @default(now()) @updatedAt
-
-  examination   Examination  @relation(fields: [examination_id], references: [id], onDelete: Cascade)
-  student       User         @relation("StudentExamResults", fields: [student_id], references: [id], onDelete: Cascade)
-  organization  Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
-  academic_year AcademicYear @relation(fields: [academic_year_id], references: [id], onDelete: Cascade)
-  grade_rel     Grade        @relation(fields: [grade_id], references: [id], onDelete: Cascade)
-  section       Section?     @relation(fields: [section_id], references: [id], onDelete: Cascade)
-  creator       User         @relation("StudentExamResultCreator", fields: [created_by], references: [id], onDelete: Cascade)
-  modifier      User?        @relation("StudentExamResultModifier", fields: [modified_by], references: [id], onDelete: SetNull)
-
-  subject_results StudentExamSubjectResult[]
-
-  @@unique([examination_id, student_id])
-  @@index([organization_id, academic_year_id])
-  @@index([student_id])
-  @@index([grade_id, section_id])
-  @@map("student_exam_results")
-}
-
-model StudentExamSubjectResult {
-  id                     String @id @default(uuid()) @db.Uuid
-  student_exam_result_id String @db.Uuid
-  subject_id             String @db.Uuid
-
-  max_marks      Float
-  obtained_marks Float
-  pass_marks     Float?
-  is_absent      Boolean @default(false)
-
-  status  ResultStatus?
-  grade   String?
-  remarks String?
-
-  created_at DateTime @default(now())
-  updated_at DateTime @default(now()) @updatedAt
-
-  student_exam_result StudentExamResult @relation(fields: [student_exam_result_id], references: [id], onDelete: Cascade)
-  subject             Subject           @relation(fields: [subject_id], references: [id], onDelete: Cascade)
-
-  @@unique([student_exam_result_id, subject_id])
-  @@index([subject_id])
-  @@map("student_exam_subject_results")
-}
-
-model StaffAttendance {
-  id               String           @id @default(uuid()) @db.Uuid
-  organization_id  String           @db.Uuid
-  academic_year_id String           @db.Uuid
-  staff_id         String           @db.Uuid
-  phase_id         String           @db.Uuid
-  attendance_date  DateTime         @db.Date
-  status           AttendanceStatus @default(PRESENT)
-  marked_by        String           @db.Uuid
-
-  created_at DateTime @default(now())
-  updated_at DateTime @default(now()) @updatedAt
-
-  organization  Organization    @relation(fields: [organization_id], references: [id], onDelete: Cascade)
-  academic_year AcademicYear    @relation(fields: [academic_year_id], references: [id], onDelete: Cascade)
-  staff         User            @relation("StaffAttendanceRecord", fields: [staff_id], references: [id], onDelete: Cascade)
-  phase         AttendancePhase @relation(fields: [phase_id], references: [id], onDelete: Cascade)
-  marker        User            @relation("StaffAttendanceMarker", fields: [marked_by], references: [id], onDelete: Cascade)
-
-  @@unique([organization_id, staff_id, attendance_date, phase_id])
-  @@index([organization_id, attendance_date])
-  @@index([staff_id])
-  @@map("staff_attendance")
 }

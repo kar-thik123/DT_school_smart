@@ -106,6 +106,15 @@ router.post('/', (0, auth_middleware_1.requirePermission)('QUESTION_BANK', 'CREA
         const isValidHierarchy = await validateHierarchy(parsed.subject_id, parsed.unit_id, parsed.topic_id, parsed.sub_topic_id, org_id);
         if (!isValidHierarchy)
             return res.status(400).json({ message: 'Invalid hierarchy: subject -> unit -> topic -> sub_topic mismatch' });
+        if (parsed.subject_id) {
+            const subject = await prisma_1.default.subject.findFirst({ where: { id: parsed.subject_id, organization_id: org_id } });
+            if (subject) {
+                if (parsed.grade_id && parsed.grade_id !== subject.grade_id) {
+                    return res.status(400).json({ message: 'Provided grade_id does not match the subject\'s grade_id' });
+                }
+                parsed.grade_id = subject.grade_id;
+            }
+        }
         // Validate type-specific config
         try {
             validateConfig(parsed.type, parsed.answer_config);
@@ -140,7 +149,7 @@ router.post('/', (0, auth_middleware_1.requirePermission)('QUESTION_BANK', 'CREA
             entity_id: question.id,
             title: 'Question Added',
             message: `A new question has been successfully added to the bank.`,
-            context_data: { icon: 'plus-circle', color: 'notification-green' },
+            context_data: { icon: 'add_circle_outline', color: 'notification-green' },
             recipient_ids: [req.user.user_id]
         });
         res.status(201).json({ message: 'Question created', question });
@@ -259,6 +268,15 @@ router.put('/:id', (0, auth_middleware_1.requirePermission)('QUESTION_BANK', 'ED
         const isValidHierarchy = await validateHierarchy(parsed.subject_id, parsed.unit_id, parsed.topic_id, parsed.sub_topic_id, org_id);
         if (!isValidHierarchy)
             return res.status(400).json({ message: 'Invalid hierarchy' });
+        if (parsed.subject_id) {
+            const subject = await prisma_1.default.subject.findFirst({ where: { id: parsed.subject_id, organization_id: org_id } });
+            if (subject) {
+                if (parsed.grade_id && parsed.grade_id !== subject.grade_id) {
+                    return res.status(400).json({ message: 'Provided grade_id does not match the subject\'s grade_id' });
+                }
+                parsed.grade_id = subject.grade_id;
+            }
+        }
         const updated = await prisma_1.default.question.update({
             where: { id: existing.id },
             data: parsed
