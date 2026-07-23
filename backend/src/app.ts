@@ -40,7 +40,8 @@ console.log('Starting application, mounting routes...');
 app.use(cors({
   origin: [
     'http://localhost:4200',
-    'https://school.dtacticsit.com'
+    'https://school.dtacticsit.com',
+    'http://school.dtacticsit.com'
   ]
 }));
 

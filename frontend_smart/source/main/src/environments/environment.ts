@@ -1,5 +1,5 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://school.dtacticsit.com/api',
+  apiUrl: '/api',
   enableRealtimeNotifications: false
 };
