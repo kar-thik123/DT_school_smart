@@ -97,24 +97,29 @@
                         <mat-icon *ngIf="loadingRows.has(row.id)" class="fa-spin">sync</mat-icon>
                       </button>
                       <mat-menu #menu="matMenu">
-                        <button mat-menu-item [routerLink]="['/organization/manage', row.id]">
+                        <button mat-menu-item [routerLink]="['/organization/setup', row.id]" *ngIf="row.status === 'DRAFT'">
+                          <mat-icon color="primary">edit</mat-icon>
+                          <span>Resume / Edit Draft</span>
+                        </button>
+                        
+                        <button mat-menu-item [routerLink]="['/organization/manage', row.id]" *ngIf="row.status !== 'DRAFT'">
                           <mat-icon>settings</mat-icon>
                           <span>Manage Console</span>
                         </button>
 
                         
-                        <hr class="m-0">
+                        <hr class="m-0" *ngIf="row.status !== 'DRAFT'">
                         
                         <!-- Lifecycle Actions -->
-                        <button mat-menu-item (click)="toggleStatus(row, 'ACTIVE')" *ngIf="row.status !== 'ACTIVE'">
+                        <button mat-menu-item (click)="toggleStatus(row, 'ACTIVE')" *ngIf="row.status !== 'ACTIVE' && row.status !== 'DRAFT'">
                           <mat-icon color="primary">play_circle</mat-icon>
                           <span>Activate Tenant</span>
                         </button>
-                        <button mat-menu-item (click)="toggleStatus(row, 'MAINTENANCE')" *ngIf="row.status !== 'MAINTENANCE'">
+                        <button mat-menu-item (click)="toggleStatus(row, 'MAINTENANCE')" *ngIf="row.status !== 'MAINTENANCE' && row.status !== 'DRAFT'">
                           <mat-icon color="accent">build</mat-icon>
                           <span>Maintenance Mode</span>
                         </button>
-                        <button mat-menu-item (click)="toggleStatus(row, 'SUSPENDED')" class="text-danger" *ngIf="row.status !== 'SUSPENDED'" [disabled]="row.subdomain === 'sys'">
+                        <button mat-menu-item (click)="toggleStatus(row, 'SUSPENDED')" class="text-danger" *ngIf="row.status !== 'SUSPENDED' && row.status !== 'DRAFT'" [disabled]="row.subdomain === 'sys'">
                           <mat-icon color="warn">block</mat-icon>
                           <span>Suspend Tenant</span>
                         </button>
@@ -123,7 +128,7 @@
 
                         <button mat-menu-item (click)="deleteTenant(row)" class="text-danger" [disabled]="row.subdomain === 'sys' || row.status === 'ACTIVE'">
                           <mat-icon color="warn">delete_forever</mat-icon>
-                          <span>Delete Tenant</span>
+                          <span>{{ row.status === 'DRAFT' ? 'Delete Draft' : 'Delete Tenant' }}</span>
                         </button>
                       </mat-menu>
                     </td>

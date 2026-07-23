@@ -22,6 +22,22 @@ export class OrganizationService {
     return this.http.post<ReadinessStatus>(`${this.apiUrl}/validate-provisioning`, payload);
   }
 
+  saveDraft(payload: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/draft`, payload);
+  }
+
+  updateDraft(id: string, payload: any): Observable<any> {
+    return this.http.patch<any>(`${this.apiUrl}/draft/${id}`, payload);
+  }
+
+  getDraft(id: string): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/draft/${id}`);
+  }
+
+  deleteDraft(id: string): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/draft/${id}`);
+  }
+
   uploadLogo(file: File): Observable<{ logoUrl: string }> {
     const formData = new FormData();
     formData.append('logo', file);

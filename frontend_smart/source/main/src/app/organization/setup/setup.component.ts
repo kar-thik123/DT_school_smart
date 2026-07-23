@@ -144,72 +144,119 @@ export class SetupComponent implements OnInit, OnDestroy, AfterViewInit {
 
   loadOrganizationForEdit() {
     if (!this.editOrgId) return;
+    this.loaderService.show('Loading details...');
     this.orgService.getOrganizationById(this.editOrgId).subscribe({
       next: (org) => {
+        this.loaderService.hide();
         this.editOrgDetails = org;
-        this.orgForm.patchValue({
-          school_name: org.school_name,
-          school_type: org.school_type || 'K-12',
-          medium: org.medium || 'English',
-          contact_email: org.contact_email,
-          contact_phone: org.contact_phone,
-          address: org.address,
-          logo_url: org.logo_url,
-          profile_url: org.profile_url
-        });
-        if (org.logo_url) {
-          this.logoPreview = org.logo_url;
+
+        if (org.status === 'DRAFT') {
+           this.orgService.getDraft(this.editOrgId!).subscribe({
+              next: (draftResponse) => {
+                 this.patchDraftToForm(draftResponse);
+              },
+              error: () => this.snackBar.open('Failed to load draft details', 'Close', { duration: 3000 })
+           });
+        } else {
+           this.orgForm.patchValue({
+             school_name: org.school_name,
+             school_type: org.school_type || 'K-12',
+             medium: org.medium || 'English',
+             contact_email: org.contact_email,
+             contact_phone: org.contact_phone,
+             address: org.address,
+             logo_url: org.logo_url,
+             profile_url: org.profile_url
+           });
+           if (org.logo_url) {
+             this.logoPreview = org.logo_url;
+           }
+           if (org.profile_url) {
+             this.profilePreview = org.profile_url;
+           }
+
+           this.domainForm.patchValue({
+             deployment_model: org.domain_type || 'Platform Domain',
+             subdomain: org.subdomain,
+             custom_domain: org.custom_domain,
+             smtp_host: org.smtp_host,
+             smtp_port: org.smtp_port
+           });
+
+           this.licenseForm.patchValue({
+             licensed_seats: org.login_limit,
+             warning_threshold: org.license?.warning_threshold || 80,
+             renewal_date: org.license?.renewal_date ? new Date(org.license.renewal_date).toISOString().split('T')[0] : null,
+             grace_period_days: org.license?.grace_period_days || 7,
+             internal_notes: org.license?.internal_notes || ''
+           });
+
+           this.adminForm.patchValue({
+             admin_name: org.users?.[0]?.name || 'School Admin',
+             admin_email: org.users?.[0]?.email || '',
+             admin_password: '', // Kept empty for edit, user can type new password
+             initial_academic_year: org.academic_years?.[0]?.name || 'N/A',
+             backup_enabled: org.backup_enabled
+           });
         }
-        if (org.profile_url) {
-          this.profilePreview = org.profile_url;
-        }
-
-        this.domainForm.patchValue({
-          deployment_model: org.domain_type || 'Platform Domain',
-          subdomain: org.subdomain,
-          custom_domain: org.custom_domain,
-          smtp_host: org.smtp_host,
-          smtp_port: org.smtp_port
-        });
-
-        this.licenseForm.patchValue({
-          licensed_seats: org.login_limit,
-          warning_threshold: org.license?.warning_threshold || 80,
-          renewal_date: org.license?.renewal_date ? new Date(org.license.renewal_date).toISOString().split('T')[0] : null,
-          grace_period_days: org.license?.grace_period_days || 7,
-          internal_notes: org.license?.internal_notes || ''
-        });
-
-        this.adminForm.patchValue({
-          admin_name: org.users?.[0]?.name || 'School Admin',
-          admin_email: org.users?.[0]?.email || '',
-          admin_password: '********', // Masked for edit
-          initial_academic_year: org.academic_years?.[0]?.name || 'N/A',
-          backup_enabled: org.backup_enabled
-        });
-
-        // Disable security and foundational fields in edit mode
-        this.adminForm.get('admin_email')?.disable();
-        this.adminForm.get('admin_password')?.disable();
-        this.adminForm.get('initial_academic_year')?.disable();
-        
-        // Disable domain_type / subdomain as it shouldn't be easy to change, but user requested subdomain is editable. We will leave it enabled per requirement.
       },
       error: () => {
+        this.loaderService.hide();
         this.snackBar.open('Failed to load organization details', 'Close', { duration: 3000 });
       }
     });
   }
 
+  patchDraftToForm(draftResponse: any) {
+     this.provisioningForm.patchValue(draftResponse);
+     
+     if (draftResponse.organization?.logo_url) {
+       this.logoPreview = draftResponse.organization.logo_url;
+     }
+     if (draftResponse.organization?.profile_url) {
+       this.profilePreview = draftResponse.organization.profile_url;
+     }
+     if (draftResponse.license?.renewal_date) {
+       this.licenseForm.patchValue({
+         renewal_date: new Date(draftResponse.license.renewal_date).toISOString().split('T')[0]
+       });
+     }
+     
+     if (draftResponse.step !== undefined && this.stepper) {
+       setTimeout(() => {
+         this.stepper.selectedIndex = draftResponse.step;
+       });
+     }
+  }
+
   saveDraft() {
-    if (this.isProvisioned || this.isEditMode) return;
-    const draft = {
-      form: this.provisioningForm.value,
-      step: this.stepper ? this.stepper.selectedIndex : 0,
-      timestamp: new Date().toISOString()
+    if (this.isProvisioned || (this.isEditMode && this.editOrgDetails?.status !== 'DRAFT')) return;
+    
+    this.loaderService.show('Saving draft...');
+    const rawValue = this.provisioningForm.getRawValue();
+    const payload = {
+      ...rawValue.organization,
+      ...rawValue.domain,
+      domain_type: rawValue.domain.deployment_model,
+      ...rawValue.admin,
+      ...rawValue.license,
+      step: this.stepper ? this.stepper.selectedIndex : 0
     };
-    localStorage.setItem('provisioning_draft', JSON.stringify(draft));
-    this.snackBar.open('Draft saved successfully', 'Close', { duration: 2000 });
+
+    if (this.isEditMode && this.editOrgDetails?.status === 'DRAFT' && this.editOrgId) {
+       this.orgService.updateDraft(this.editOrgId, payload).pipe(finalize(() => this.loaderService.hide())).subscribe({
+         next: () => this.snackBar.open('Draft updated successfully', 'Close', { duration: 2000 }),
+         error: () => this.snackBar.open('Failed to update draft', 'Close', { duration: 3000 })
+       });
+    } else {
+       this.orgService.saveDraft(payload).pipe(finalize(() => this.loaderService.hide())).subscribe({
+         next: (res) => {
+            this.snackBar.open('Draft saved successfully', 'Close', { duration: 2000 });
+            this.router.navigate(['/organization/setup', res.organization.id]);
+         },
+         error: () => this.snackBar.open('Failed to save draft', 'Close', { duration: 3000 })
+       });
+    }
   }
 
   clearDraft() {
@@ -217,27 +264,8 @@ export class SetupComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   loadDraft() {
-    const draftStr = localStorage.getItem('provisioning_draft');
-    if (draftStr) {
-      try {
-        const draft = JSON.parse(draftStr);
-        if (draft.form) {
-          this.provisioningForm.patchValue(draft.form);
-        } else {
-          this.provisioningForm.patchValue(draft);
-        }
-        
-        if (draft.step !== undefined) {
-          setTimeout(() => {
-            if (this.stepper) {
-              this.stepper.selectedIndex = draft.step;
-            }
-          });
-        }
-      } catch (e) {
-        console.error('Failed to parse draft', e);
-      }
-    }
+    // Kept to clean up old local drafts if any exist, but we no longer load from localStorage
+    localStorage.removeItem('provisioning_draft');
   }
 
   private generateAcademicYears() {
@@ -387,22 +415,21 @@ export class SetupComponent implements OnInit, OnDestroy, AfterViewInit {
       return;
     }
 
-    if (this.isEditMode) {
+    if (this.isEditMode && this.editOrgDetails?.status !== 'DRAFT') {
       this.loaderService.show('Saving changes... Please wait.');
     } else {
       this.loaderService.show('Provisioning organization... Please wait.');
     }
     this.isSubmitting = true;
-    const rawValue = this.provisioningForm.getRawValue(); // use getRawValue to include disabled fields if needed
+    const rawValue = this.provisioningForm.getRawValue();
     
-    // RUNTIME LOGGING
     console.log('--- RUNTIME AUDIT LOGGING ---');
     console.log('this.logoPreview:', this.logoPreview);
     console.log('this.orgForm.value:', this.orgForm.value);
     console.log('this.orgForm.getRawValue():', this.orgForm.getRawValue());
     console.log('rawValue.organization.logo_url:', rawValue.organization.logo_url);
     
-    const payload: ProvisioningPayload = {
+    const payload: any = {
       ...rawValue.organization,
       ...rawValue.domain,
       domain_type: rawValue.domain.deployment_model,
@@ -410,8 +437,7 @@ export class SetupComponent implements OnInit, OnDestroy, AfterViewInit {
       ...rawValue.license
     };
 
-    if (this.isEditMode && this.editOrgId) {
-      // Map to patch settings endpoint
+    if (this.isEditMode && this.editOrgDetails?.status !== 'DRAFT' && this.editOrgId) {
       const updatePayload = {
         school_name: payload.school_name,
         contact_email: payload.contact_email,
@@ -422,7 +448,10 @@ export class SetupComponent implements OnInit, OnDestroy, AfterViewInit {
         login_limit: rawValue.license.licensed_seats,
         smtp_host: rawValue.domain.smtp_host,
         smtp_port: rawValue.domain.smtp_port,
-        backup_enabled: rawValue.admin.backup_enabled
+        backup_enabled: rawValue.admin.backup_enabled,
+        admin_email: rawValue.admin.admin_email,
+        admin_password: rawValue.admin.admin_password,
+        initial_academic_year: rawValue.admin.initial_academic_year
       };
 
       this.orgService.updateSettings(this.editOrgId, updatePayload)
@@ -440,6 +469,9 @@ export class SetupComponent implements OnInit, OnDestroy, AfterViewInit {
         }
       });
     } else {
+      if (this.isEditMode && this.editOrgDetails?.status === 'DRAFT' && this.editOrgId) {
+         payload.draft_id = this.editOrgId;
+      }
       this.orgService.provisionOrganization(payload)
         .pipe(finalize(() => {
           this.isSubmitting = false;

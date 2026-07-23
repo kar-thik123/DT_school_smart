@@ -168,7 +168,12 @@ export class ListComponent implements OnInit, OnDestroy {
     }).then((result) => {
       if (result.isConfirmed) {
         this.loadingRows.add(row.id);
-        this.orgService.deleteOrganization(row.id).subscribe({
+        
+        const deleteRequest = row.status === 'DRAFT' 
+          ? this.orgService.deleteDraft(row.id) 
+          : this.orgService.deleteOrganization(row.id);
+          
+        deleteRequest.subscribe({
           next: () => {
             this.snackBar.open('Tenant deleted successfully', 'Close', { duration: 3000 });
             this.loadOrganizations();
