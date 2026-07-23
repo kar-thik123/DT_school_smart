@@ -101,8 +101,8 @@ export class NotificationService implements OnDestroy {
     }
     if (!token) return;
 
-    // Explicitly connect to the backend URL to avoid proxy dropouts
-    const wsUrl = 'http://localhost:5000';
+    // Automatically connect to the current origin instead of hardcoding localhost
+    const wsUrl = window.location.origin;
 
     this.socket = io(wsUrl, {
       auth: { token },
