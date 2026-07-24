@@ -1,4 +1,5 @@
 import express from 'express';
+import path from 'path';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
@@ -77,7 +78,7 @@ app.use(compression());
 
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ limit: '2mb', extended: true }));
-app.use('/api/uploads', express.static('uploads'));
+app.use('/api/uploads', express.static(path.join(__dirname, '../uploads')));
 
 app.use('/api', auditMiddleware);
 
