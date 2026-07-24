@@ -81,7 +81,12 @@ export class SetupComponent implements OnInit, OnDestroy, AfterViewInit {
   provisioningResult: any = null;
   private formSub?: Subscription;
 
+  constructor() {
+    console.log('[DEBUG-SETUP] SetupComponent Constructor executed.');
+  }
+
   ngOnInit() {
+    console.log('[DEBUG-SETUP] SetupComponent ngOnInit executed.');
     this.editOrgId = this.route.snapshot.paramMap.get('id');
     this.isEditMode = !!this.editOrgId;
 
@@ -145,8 +150,10 @@ export class SetupComponent implements OnInit, OnDestroy, AfterViewInit {
   loadOrganizationForEdit() {
     if (!this.editOrgId) return;
     this.loaderService.show('Loading details...');
+    console.log('[DEBUG-SETUP] Dispatching API request: getOrganizationById', this.editOrgId);
     this.orgService.getOrganizationById(this.editOrgId).subscribe({
       next: (org) => {
+        console.log('[DEBUG-SETUP] API request success: getOrganizationById', org);
         this.loaderService.hide();
         this.editOrgDetails = org;
 
